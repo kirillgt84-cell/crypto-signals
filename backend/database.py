@@ -1,94 +1,141 @@
 import os
+import json
+import asyncio
 from typing import List, Dict, Any, Optional
 import logging
 
 logger = logging.getLogger(__name__)
 
+# Use aiohttp for async HTTP requests
 try:
-    from libsql_client import create_client
-    LIBSQL_AVAILABLE = True
+    import aiohttp
+    AIOHTTP_AVAILABLE = True
 except ImportError:
-    LIBSQL_AVAILABLE = False
-    logger.warning("libsql_client not available")
+    AIOHTTP_AVAILABLE = False
+    logger.warning("aiohttp not available, falling back to sync requests")
+    import requests
 
 class TursoDB:
     def __init__(self):
         self.url = os.getenv('TURSO_DATABASE_URL')
         self.token = os.getenv('TURSO_AUTH_TOKEN')
-        self._client = None
+        self._session = None
         
+        # Extract database name from URL
         if self.url:
+            # Handle different URL formats
             if self.url.startswith('libsql://'):
-                self.url = self.url.replace('libsql://', 'https://')
-            elif self.url.startswith('wss://'):
-                self.url = self.url.replace('wss://', 'https://')
+                self.db_name = self.url.replace('libsql://', '').split('.')[0]
+                self.api_url = f"https://{self.url.replace('libsql://', '')}"
+            elif self.url.startswith('https://'):
+                self.db_name = self.url.replace('https://', '').split('.')[0]
+                self.api_url = self.url
+            else:
+                self.db_name = self.url
+                self.api_url = f"https://{self.url}"
+        else:
+            self.db_name = None
+            self.api_url = None
         
-        logger.info(f"TursoDB initialized")
+        logger.info(f"TursoDB initialized: db={self.db_name}")
     
     async def connect(self):
-        if not self.url: 
-            raise ValueError("TURSO_DATABASE_URL not set")
+        if not self.url or not self.token: 
+            raise ValueError("TURSO_DATABASE_URL and TURSO_AUTH_TOKEN must be set")
+        
+        if AIOHTTP_AVAILABLE:
+            self._session = aiohttp.ClientSession()
+        
+        logger.info("TursoDB ready (HTTP API)")
+    
+    async def close(self):
+        if self._session:
+            await self._session.close()
+            self._session = None
+    
+    async def query(self, sql: str, args: List[Any] = None) -> List[Dict]:
+        """Execute SQL query via Turso HTTP API"""
         if not self.token:
             raise ValueError("TURSO_AUTH_TOKEN not set")
         
-        if not LIBSQL_AVAILABLE:
-            raise ImportError("libsql_client is required")
+        # Build the request
+        url = f"https://api.turso.tech/v1/databases/{self.db_name}/query"
         
-        self._client = create_client(url=self.url, auth_token=self.token)
-        logger.info("Connected to Turso successfully")
-    
-    async def close(self):
-        if self._client:
-            await self._client.close()
-            self._client = None
-    
-    async def query(self, sql: str, args: List[Any] = None) -> List[Dict]:
-        if not self._client: 
-            await self.connect()
+        headers = {
+            "Authorization": f"Bearer {self.token}",
+            "Content-Type": "application/json"
+        }
+        
+        # Prepare statement with args
+        if args:
+            statement = {
+                "sql": sql,
+                "args": [{"value": str(arg) if not isinstance(arg, (int, float)) else arg} for arg in args]
+            }
+        else:
+            statement = {"sql": sql}
+        
+        body = {"statements": [statement]}
         
         try:
-            result = await self._client.execute(sql, args or [])
-            
-            # Debug logging
-            logger.debug(f"Result type: {type(result)}")
-            logger.debug(f"Result dir: {[x for x in dir(result) if not x.startswith('_')]}")
-            
-            # Parse result - handle different structures
-            if isinstance(result, tuple):
-                # Some versions return tuple (rows, columns)
-                rows, columns = result
-            elif hasattr(result, 'rows') and hasattr(result, 'columns'):
-                rows = result.rows
-                columns = result.columns
-            elif isinstance(result, dict):
-                rows = result.get('rows', [])
-                columns = result.get('columns', [])
+            if AIOHTTP_AVAILABLE and self._session:
+                async with self._session.post(url, headers=headers, json=body) as resp:
+                    if resp.status != 200:
+                        text = await resp.text()
+                        logger.error(f"Turso API error: {resp.status} - {text}")
+                        raise Exception(f"Turso API error: {resp.status}")
+                    data = await resp.json()
             else:
-                # Try iterating
-                try:
-                    columns = list(result[0].keys()) if result else []
-                    return [dict(row) for row in result]
-                except:
-                    logger.error(f"Cannot parse result: {type(result)}")
-                    return []
+                # Fallback to sync requests in async context
+                loop = asyncio.get_event_loop()
+                response = await loop.run_in_executor(
+                    None, 
+                    lambda: requests.post(url, headers=headers, json=body)
+                )
+                if response.status_code != 200:
+                    logger.error(f"Turso API error: {response.status_code} - {response.text}")
+                    raise Exception(f"Turso API error: {response.status_code}")
+                data = response.json()
             
-            # Convert rows to dicts
+            # Parse result
+            results = data.get("results", [])
+            if not results:
+                return []
+            
+            result = results[0]
+            
+            # Check for errors
+            if "error" in result:
+                logger.error(f"Query error: {result['error']}")
+                raise Exception(f"Query error: {result['error']}")
+            
+            # Extract rows and columns
+            response_result = result.get("response", {}).get("result", {})
+            cols = response_result.get("cols", [])
+            rows = response_result.get("rows", [])
+            
+            # Convert to dict list
             output = []
+            column_names = [col.get("name", f"col_{i}") for i, col in enumerate(cols)]
+            
             for row in rows:
                 row_dict = {}
-                for i, col in enumerate(columns):
+                for i, col_name in enumerate(column_names):
                     if i < len(row):
-                        row_dict[col] = row[i]
+                        cell = row[i]
+                        # Turso returns values as {"type": "...", "value": ...}
+                        if isinstance(cell, dict):
+                            row_dict[col_name] = cell.get("value")
+                        else:
+                            row_dict[col_name] = cell
                     else:
-                        row_dict[col] = None
+                        row_dict[col_name] = None
                 output.append(row_dict)
             
             return output
             
         except Exception as e:
             logger.error(f"Query failed: {e}")
-            import traceback
-            logger.error(traceback.format_exc())
             raise
 
 _db = None
@@ -118,7 +165,7 @@ async def create_signal(symbol: str, direction: str, entry_price: float,
                VALUES (?, ?, ?, ?, ?, ?) RETURNING id""",
             [symbol, direction, entry_price, target_price, stop_price, confidence]
         )
-        return r[0]['id'] if r else None
+        return r[0].get('id') if r else None
     except Exception as e:
         logger.error(f"create_signal failed: {e}")
         return None
@@ -141,7 +188,7 @@ async def create_paper_account(user_id: int, symbol: str, balance: float = 10000
             "INSERT INTO paper_accounts (user_id, symbol, balance, initial_balance) VALUES (?, ?, ?, ?) RETURNING id",
             [user_id, symbol, balance, balance]
         )
-        return r[0]['id'] if r else None
+        return r[0].get('id') if r else None
     except Exception as e:
         logger.error(f"create_paper_account failed: {e}")
         return None
@@ -165,7 +212,7 @@ async def get_account_balance(account_id: int) -> float:
             "SELECT balance FROM paper_accounts WHERE id = ?",
             [account_id]
         )
-        return r[0]['balance'] if r else 0.0
+        return r[0].get('balance', 0.0) if r else 0.0
     except Exception as e:
         logger.error(f"get_account_balance failed: {e}")
         return 0.0
@@ -190,7 +237,7 @@ async def create_paper_trade(account_id: int, signal_id: int, symbol: str,
                VALUES (?, ?, ?, ?, ?, ?, 'open') RETURNING id""",
             [account_id, signal_id, symbol, direction, entry_price, quantity]
         )
-        return r[0]['id'] if r else None
+        return r[0].get('id') if r else None
     except Exception as e:
         logger.error(f"create_paper_trade failed: {e}")
         return None
@@ -217,10 +264,10 @@ async def close_paper_trade(trade_id: int, exit_price: float) -> Optional[float]
             return None
         
         trade = trade[0]
-        entry_price = trade['entry_price']
-        quantity = trade['quantity']
-        direction = trade['direction']
-        account_id = trade['account_id']
+        entry_price = trade.get('entry_price', 0)
+        quantity = trade.get('quantity', 0)
+        direction = trade.get('direction', 'long')
+        account_id = trade.get('account_id')
         
         if direction == 'long':
             pnl = (exit_price - entry_price) * quantity
@@ -249,31 +296,31 @@ async def get_account_stats(account_id: int) -> Dict:
             "SELECT COUNT(*) as count FROM paper_trades WHERE account_id = ? AND status = 'closed'",
             [account_id]
         )
-        total_trades = total_result[0]['count'] if total_result else 0
+        total_trades = total_result[0].get('count', 0) if total_result else 0
         
         win_result = await get_db().query(
             "SELECT COUNT(*) as count FROM paper_trades WHERE account_id = ? AND status = 'closed' AND pnl > 0",
             [account_id]
         )
-        winning_trades = win_result[0]['count'] if win_result else 0
+        winning_trades = win_result[0].get('count', 0) if win_result else 0
         
         pnl_result = await get_db().query(
             "SELECT SUM(pnl) as total FROM paper_trades WHERE account_id = ? AND status = 'closed'",
             [account_id]
         )
-        total_pnl = pnl_result[0]['total'] or 0.0
+        total_pnl = (pnl_result[0].get('total') or 0.0) if pnl_result else 0.0
         
         gross_profit_result = await get_db().query(
             "SELECT SUM(pnl) as total FROM paper_trades WHERE account_id = ? AND status = 'closed' AND pnl > 0",
             [account_id]
         )
-        gross_profit = gross_profit_result[0]['total'] or 0.0
+        gross_profit = (gross_profit_result[0].get('total') or 0.0) if gross_profit_result else 0.0
         
         gross_loss_result = await get_db().query(
             "SELECT ABS(SUM(pnl)) as total FROM paper_trades WHERE account_id = ? AND status = 'closed' AND pnl < 0",
             [account_id]
         )
-        gross_loss = gross_loss_result[0]['total'] or 0.0
+        gross_loss = (gross_loss_result[0].get('total') or 0.0) if gross_loss_result else 0.0
         
         winrate = (winning_trades / total_trades * 100) if total_trades > 0 else 0.0
         profit_factor = (gross_profit / gross_loss) if gross_loss > 0 else 0.0
