@@ -1,4 +1,5 @@
 import logging
+import os
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
@@ -10,6 +11,15 @@ from contextlib import asynccontextmanager
 # Setup logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+# Scanner (lazy import to avoid startup issues)
+scanner = None
+try:
+    from strategies.scanner import start_scheduler
+    SCANNER_AVAILABLE = True
+except ImportError as e:
+    logger.warning(f"Scanner not available: {e}")
+    SCANNER_AVAILABLE = False
 
 async def init_database():
     """Initialize database tables on startup"""
@@ -58,9 +68,26 @@ async def lifespan(app: FastAPI):
         # Auto-initialize database
         await init_database()
         
+        # Start signal scanner (if enabled)
+        if SCANNER_AVAILABLE and os.getenv("ENABLE_SCANNER", "true").lower() == "true":
+            # Use internal API URL for scanner
+            api_url = os.getenv("API_BASE_URL", "http://localhost:8000")
+            scheduler = start_scheduler(api_url)
+            app.state.scheduler = scheduler
+            logger.info(f"Signal scanner started (API: {api_url})")
+        else:
+            logger.info("Signal scanner disabled")
+        
     except Exception as e:
         logger.error(f"Failed to connect to database: {e}")
     yield
+    # Shutdown
+    try:
+        if hasattr(app.state, 'scheduler'):
+            app.state.scheduler.shutdown()
+            logger.info("Scanner stopped")
+    except:
+        pass
     try:
         await db.get_db().close()
         logger.info("Database connection closed")
