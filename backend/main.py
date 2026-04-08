@@ -41,6 +41,28 @@ app.add_middleware(
     allow_headers=["*"]
 )
 
+# ============= Database Init =============
+@app.post("/api/v1/db/init")
+async def init_database():
+    """Initialize database tables (run once after creating PostgreSQL)"""
+    try:
+        # Read schema file
+        with open('schema.sql', 'r') as f:
+            schema = f.read()
+        
+        # Execute each statement
+        statements = [s.strip() for s in schema.split(';') if s.strip()]
+        for statement in statements:
+            try:
+                await db.get_db().execute(statement)
+            except Exception as e:
+                logger.warning(f"Statement may already exist: {e}")
+        
+        return {"message": "Database initialized successfully"}
+    except Exception as e:
+        logger.error(f"Error initializing database: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 # ============= Health =============
 @app.get("/health")
 async def health():
