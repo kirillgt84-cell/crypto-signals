@@ -1,5 +1,8 @@
-import React from 'react';
+'use client';
+
+import React, { useEffect, useState } from 'react';
 import { TrendingUp, TrendingDown, Activity, Target, Clock, Wallet, BarChart3, ArrowUpRight, ArrowDownRight } from 'lucide-react';
+import { api, Signal, AccountStats } from '@/lib/api';
 
 interface MetricCardProps {
   title: string;
@@ -33,7 +36,7 @@ const MetricCard: React.FC<MetricCardProps> = ({ title, value, change, changeTyp
   </div>
 );
 
-interface Signal {
+interface SignalView {
   id: string;
   symbol: string;
   direction: 'long' | 'short';
@@ -45,7 +48,7 @@ interface Signal {
   strategy?: string;
 }
 
-const ActiveSignal: React.FC<{ signal: Signal }> = ({ signal }) => {
+const ActiveSignal: React.FC<{ signal: SignalView }> = ({ signal }) => {
   const riskReward = Math.abs((signal.targetPrice - signal.entryPrice) / (signal.entryPrice - signal.stopPrice)).toFixed(1);
   
   return (
@@ -132,7 +135,25 @@ const MiniChart: React.FC<{ data: number[]; color: string }> = ({ data, color })
   );
 };
 
+const formatTimeAgo = (dateString: string): string => {
+  const date = new Date(dateString);
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffHrs = Math.floor(diffMs / (1000 * 60 * 60));
+  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+  
+  if (diffDays > 0) return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
+  if (diffHrs > 0) return `${diffHrs} hour${diffHrs > 1 ? 's' : ''} ago`;
+  return 'Just now';
+};
+
 const Dashboard: React.FC = () => {
+  const [signals, setSignals] = useState<SignalView[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [accountStats, setAccountStats] = useState<AccountStats | null>(null);
+
+  // Default metrics (will be replaced with real data later)
   const metrics = {
     portfolioValue: '$10,847.23',
     totalReturn: '+8.47%',
@@ -146,31 +167,6 @@ const Dashboard: React.FC = () => {
     totalTrades: 108,
   };
 
-  const activeSignals: Signal[] = [
-    {
-      id: '1',
-      symbol: 'BTC/USDT',
-      direction: 'long',
-      entryPrice: 67450,
-      targetPrice: 68950,
-      stopPrice: 66700,
-      timestamp: '2 hours ago',
-      confidence: 72,
-      strategy: 'Trend Pullback',
-    },
-    {
-      id: '2',
-      symbol: 'GOOGL',
-      direction: 'long',
-      entryPrice: 175.20,
-      targetPrice: 182.50,
-      stopPrice: 171.80,
-      timestamp: '5 hours ago',
-      confidence: 68,
-      strategy: 'Trend Pullback',
-    },
-  ];
-
   const recentTrades = [
     { symbol: 'BTC/USDT', pnl: '+3.67%', type: 'long', date: '2026-04-07', exit: 'TP' },
     { symbol: 'BTC/USDT', pnl: '-1.43%', type: 'long', date: '2026-04-06', exit: 'SL' },
@@ -180,6 +176,47 @@ const Dashboard: React.FC = () => {
   ];
 
   const equityCurve = [10000, 10200, 10150, 10400, 10350, 10600, 10500, 10800, 10700, 10847];
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        
+        // Fetch active signals
+        const signalsData = await api.getSignals();
+        const formattedSignals: SignalView[] = signalsData.map(s => ({
+          id: s.id.toString(),
+          symbol: s.symbol,
+          direction: s.direction as 'long' | 'short',
+          entryPrice: s.entry_price,
+          targetPrice: s.target_price,
+          stopPrice: s.stop_price,
+          timestamp: formatTimeAgo(s.created_at),
+          confidence: s.confidence,
+          strategy: 'Hybrid',
+        }));
+        setSignals(formattedSignals);
+
+        // Try to fetch account stats (demo account id=1)
+        try {
+          const stats = await api.getAccountStats(1);
+          setAccountStats(stats);
+        } catch {
+          // Account might not exist, that's ok
+        }
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to fetch data');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+    
+    // Poll for updates every 30 seconds
+    const interval = setInterval(fetchData, 30000);
+    return () => clearInterval(interval);
+  }, []);
 
   return (
     <div className="min-h-screen bg-background text-text-primary p-4 md:p-6">
@@ -194,7 +231,9 @@ const Dashboard: React.FC = () => {
         <div className="flex items-center gap-4">
           <div className="text-right">
             <p className="text-xs text-text-muted uppercase">Paper Balance</p>
-            <p className="text-2xl font-bold font-mono text-profit">{metrics.portfolioValue}</p>
+            <p className="text-2xl font-bold font-mono text-profit">
+              {accountStats ? `$${accountStats.balance.toLocaleString()}` : metrics.portfolioValue}
+            </p>
           </div>
           <div className="w-12 h-12 rounded-xl bg-accent/20 flex items-center justify-center border border-accent/30">
             <Wallet className="w-6 h-6 text-accent" />
@@ -215,7 +254,7 @@ const Dashboard: React.FC = () => {
         <MetricCard
           title="Winrate"
           value={metrics.winrate}
-          change="108 trades"
+          change={`${accountStats?.total_trades || metrics.totalTrades} trades`}
           changeType="neutral"
           icon={<Target className="w-5 h-5" />}
           subtitle="46.7% profitable"
@@ -250,12 +289,33 @@ const Dashboard: React.FC = () => {
                 Active Signals
               </h2>
               <span className="px-3 py-1 rounded-full bg-accent/20 text-accent text-sm font-medium">
-                {activeSignals.length} active
+                {signals.length} active
               </span>
             </div>
             
+            {loading && (
+              <div className="text-center py-8 text-text-muted">
+                <div className="animate-spin w-8 h-8 border-2 border-accent border-t-transparent rounded-full mx-auto mb-3" />
+                Loading signals...
+              </div>
+            )}
+            
+            {error && (
+              <div className="text-center py-8 text-loss">
+                <p>Error loading signals</p>
+                <p className="text-sm text-text-muted mt-1">{error}</p>
+              </div>
+            )}
+            
+            {!loading && !error && signals.length === 0 && (
+              <div className="text-center py-8 text-text-muted">
+                <p>No active signals at the moment</p>
+                <p className="text-sm mt-1">Check back later for new opportunities</p>
+              </div>
+            )}
+            
             <div className="space-y-3">
-              {activeSignals.map(signal => (
+              {signals.map(signal => (
                 <ActiveSignal key={signal.id} signal={signal} />
               ))}
             </div>
@@ -363,7 +423,7 @@ const Dashboard: React.FC = () => {
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-text-muted text-sm">Last Signal</span>
-                <span className="text-xs text-text-muted">2h ago</span>
+                <span className="text-xs text-text-muted">{signals.length > 0 ? signals[0].timestamp : '2h ago'}</span>
               </div>
             </div>
           </div>
