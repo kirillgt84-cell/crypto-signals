@@ -11,14 +11,55 @@ from contextlib import asynccontextmanager
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+async def init_database():
+    """Initialize database tables on startup"""
+    try:
+        # Read and execute schema
+        with open('schema.sql', 'r') as f:
+            schema = f.read()
+        
+        statements = [s.strip() for s in schema.split(';') if s.strip()]
+        for statement in statements:
+            try:
+                await db.get_db().execute(statement)
+            except Exception as e:
+                logger.warning(f"Statement skipped (may already exist): {e}")
+        
+        logger.info("Database tables initialized")
+        
+        # Check if we need seed data
+        signals = await db.get_active_signals()
+        if not signals:
+            logger.info("No signals found, creating demo data...")
+            # Create demo account
+            account_id = await db.create_paper_account(1, "BTC/USDT", 10000.0)
+            
+            # Create demo signals
+            demo_signals = [
+                ("BTC/USDT", "long", 67450, 68950, 66700, 72),
+                ("ETH/USDT", "short", 3520, 3400, 3580, 65),
+                ("SOL/USDT", "long", 145, 158, 138, 68),
+            ]
+            
+            for s in demo_signals:
+                await db.create_signal(*s)
+            
+            logger.info(f"Demo data created: account_id={account_id}")
+        
+    except Exception as e:
+        logger.error(f"Database initialization failed: {e}")
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     try:
         await db.get_db().connect()
         logger.info("Database connected successfully")
+        
+        # Auto-initialize database
+        await init_database()
+        
     except Exception as e:
         logger.error(f"Failed to connect to database: {e}")
-        # Continue even if DB fails - health check will show status
     yield
     try:
         await db.get_db().close()
