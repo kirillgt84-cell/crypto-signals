@@ -6,136 +6,75 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-# Use aiohttp for async HTTP requests
+# Try libsql_client HTTP mode
 try:
-    import aiohttp
-    AIOHTTP_AVAILABLE = True
+    from libsql_client.http import Client
+    LIBSQL_HTTP_AVAILABLE = True
 except ImportError:
-    AIOHTTP_AVAILABLE = False
-    logger.warning("aiohttp not available, falling back to sync requests")
-    import requests
+    LIBSQL_HTTP_AVAILABLE = False
+    logger.warning("libsql_client.http not available")
 
 class TursoDB:
     def __init__(self):
         self.url = os.getenv('TURSO_DATABASE_URL')
         self.token = os.getenv('TURSO_AUTH_TOKEN')
-        self._session = None
+        self._client = None
         
-        # Extract database name from URL
-        if self.url:
-            # Handle different URL formats
-            if self.url.startswith('libsql://'):
-                self.db_name = self.url.replace('libsql://', '').split('.')[0]
-                self.api_url = f"https://{self.url.replace('libsql://', '')}"
-            elif self.url.startswith('https://'):
-                self.db_name = self.url.replace('https://', '').split('.')[0]
-                self.api_url = self.url
-            else:
-                self.db_name = self.url
-                self.api_url = f"https://{self.url}"
-        else:
-            self.db_name = None
-            self.api_url = None
-        
-        logger.info(f"TursoDB initialized: db={self.db_name}")
+        logger.info(f"TursoDB initialized")
     
     async def connect(self):
         if not self.url or not self.token: 
             raise ValueError("TURSO_DATABASE_URL and TURSO_AUTH_TOKEN must be set")
         
-        if AIOHTTP_AVAILABLE:
-            self._session = aiohttp.ClientSession()
+        if not LIBSQL_HTTP_AVAILABLE:
+            raise ImportError("libsql_client is required")
         
-        logger.info("TursoDB ready (HTTP API)")
+        # Use HTTP client instead of WebSocket
+        self._client = Client(self.url, auth_token=self.token)
+        logger.info("Connected to Turso (HTTP mode)")
     
     async def close(self):
-        if self._session:
-            await self._session.close()
-            self._session = None
+        if self._client:
+            await self._client.close()
+            self._client = None
     
     async def query(self, sql: str, args: List[Any] = None) -> List[Dict]:
-        """Execute SQL query via Turso HTTP API"""
-        if not self.token:
-            raise ValueError("TURSO_AUTH_TOKEN not set")
-        
-        # Build the request
-        url = f"https://api.turso.tech/v1/databases/{self.db_name}/query"
-        
-        headers = {
-            "Authorization": f"Bearer {self.token}",
-            "Content-Type": "application/json"
-        }
-        
-        # Prepare statement with args
-        if args:
-            statement = {
-                "sql": sql,
-                "args": [{"value": str(arg) if not isinstance(arg, (int, float)) else arg} for arg in args]
-            }
-        else:
-            statement = {"sql": sql}
-        
-        body = {"statements": [statement]}
+        """Execute SQL query via Turso HTTP client"""
+        if not self._client: 
+            await self.connect()
         
         try:
-            if AIOHTTP_AVAILABLE and self._session:
-                async with self._session.post(url, headers=headers, json=body) as resp:
-                    if resp.status != 200:
-                        text = await resp.text()
-                        logger.error(f"Turso API error: {resp.status} - {text}")
-                        raise Exception(f"Turso API error: {resp.status}")
-                    data = await resp.json()
+            # Execute the query
+            result = await self._client.execute(sql, args or [])
+            
+            # Parse result based on structure
+            if hasattr(result, 'rows') and hasattr(result, 'columns'):
+                # Standard structure
+                rows = result.rows
+                columns = result.columns
+            elif isinstance(result, list):
+                # Result is already a list of rows
+                return [dict(row) for row in result if hasattr(row, 'keys')]
             else:
-                # Fallback to sync requests in async context
-                loop = asyncio.get_event_loop()
-                response = await loop.run_in_executor(
-                    None, 
-                    lambda: requests.post(url, headers=headers, json=body)
-                )
-                if response.status_code != 200:
-                    logger.error(f"Turso API error: {response.status_code} - {response.text}")
-                    raise Exception(f"Turso API error: {response.status_code}")
-                data = response.json()
+                # Try to get rows and columns
+                rows = getattr(result, 'rows', [])
+                columns = getattr(result, 'columns', [])
             
-            # Parse result
-            results = data.get("results", [])
-            if not results:
-                return []
-            
-            result = results[0]
-            
-            # Check for errors
-            if "error" in result:
-                logger.error(f"Query error: {result['error']}")
-                raise Exception(f"Query error: {result['error']}")
-            
-            # Extract rows and columns
-            response_result = result.get("response", {}).get("result", {})
-            cols = response_result.get("cols", [])
-            rows = response_result.get("rows", [])
-            
-            # Convert to dict list
+            # Convert rows to dicts
             output = []
-            column_names = [col.get("name", f"col_{i}") for i, col in enumerate(cols)]
-            
             for row in rows:
                 row_dict = {}
-                for i, col_name in enumerate(column_names):
+                for i, col in enumerate(columns):
                     if i < len(row):
-                        cell = row[i]
-                        # Turso returns values as {"type": "...", "value": ...}
-                        if isinstance(cell, dict):
-                            row_dict[col_name] = cell.get("value")
-                        else:
-                            row_dict[col_name] = cell
+                        row_dict[col] = row[i]
                     else:
-                        row_dict[col_name] = None
+                        row_dict[col] = None
                 output.append(row_dict)
             
             return output
             
         except Exception as e:
-            logger.error(f"Query failed: {e}")
+            logger.error(f"Query failed: {sql[:50]}... Error: {e}")
             raise
 
 _db = None
