@@ -1,31 +1,61 @@
 import os
 from typing import List, Dict, Any, Optional
 from libsql_client import create_client
+import logging
+
+logger = logging.getLogger(__name__)
 
 class TursoDB:
     def __init__(self):
         self.url = os.getenv('TURSO_DATABASE_URL')
         self.token = os.getenv('TURSO_AUTH_TOKEN')
         self._client = None
+        
+        # Fix URL format if needed
+        if self.url:
+            # Convert libsql:// to https:// for HRANA protocol
+            if self.url.startswith('libsql://'):
+                self.url = self.url.replace('libsql://', 'https://')
+            elif self.url.startswith('wss://'):
+                self.url = self.url.replace('wss://', 'https://')
+        
+        logger.info(f"TursoDB initialized with URL: {self.url[:30] if self.url else 'NOT SET'}...")
     
     async def connect(self):
-        if not self.url: raise ValueError("TURSO_DATABASE_URL not set")
-        self._client = create_client(url=self.url, auth_token=self.token)
+        if not self.url: 
+            raise ValueError("TURSO_DATABASE_URL not set")
+        if not self.token:
+            raise ValueError("TURSO_AUTH_TOKEN not set")
+        
+        try:
+            self._client = create_client(url=self.url, auth_token=self.token)
+            logger.info("Connected to Turso successfully")
+        except Exception as e:
+            logger.error(f"Failed to connect to Turso: {e}")
+            raise
     
     async def close(self):
         if self._client:
             await self._client.close()
             self._client = None
+            logger.info("Turso connection closed")
     
     async def query(self, sql: str, args: List[Any] = None) -> List[Dict]:
-        if not self._client: await self.connect()
-        result = await self._client.execute(sql, args or [])
-        return [{col: row[i] for i, col in enumerate(result.columns)} for row in result.rows]
+        if not self._client: 
+            await self.connect()
+        
+        try:
+            result = await self._client.execute(sql, args or [])
+            return [{col: row[i] for i, col in enumerate(result.columns)} for row in result.rows]
+        except Exception as e:
+            logger.error(f"Query failed: {sql[:50]}... Error: {e}")
+            raise
 
 _db = None
 def get_db():
     global _db
-    if _db is None: _db = TursoDB()
+    if _db is None: 
+        _db = TursoDB()
     return _db
 
 # Signals
