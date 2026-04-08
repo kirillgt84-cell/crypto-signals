@@ -1,18 +1,16 @@
 import os
-import json
-import asyncio
 from typing import List, Dict, Any, Optional
 import logging
 
 logger = logging.getLogger(__name__)
 
-# Try libsql_client HTTP mode
+# Use libsql_client with HTTP transport
 try:
-    from libsql_client.http import Client
-    LIBSQL_HTTP_AVAILABLE = True
+    import libsql_client
+    LIBSQL_AVAILABLE = True
 except ImportError:
-    LIBSQL_HTTP_AVAILABLE = False
-    logger.warning("libsql_client.http not available")
+    LIBSQL_AVAILABLE = False
+    logger.warning("libsql_client not available")
 
 class TursoDB:
     def __init__(self):
@@ -26,12 +24,13 @@ class TursoDB:
         if not self.url or not self.token: 
             raise ValueError("TURSO_DATABASE_URL and TURSO_AUTH_TOKEN must be set")
         
-        if not LIBSQL_HTTP_AVAILABLE:
+        if not LIBSQL_AVAILABLE:
             raise ImportError("libsql_client is required")
         
-        # Use HTTP client instead of WebSocket
-        self._client = Client(self.url, auth_token=self.token)
-        logger.info("Connected to Turso (HTTP mode)")
+        # Create client using the library's create_client function
+        # This automatically handles the URL and token
+        self._client = libsql_client.create_client(url=self.url, auth_token=self.token)
+        logger.info("Connected to Turso successfully")
     
     async def close(self):
         if self._client:
@@ -39,26 +38,20 @@ class TursoDB:
             self._client = None
     
     async def query(self, sql: str, args: List[Any] = None) -> List[Dict]:
-        """Execute SQL query via Turso HTTP client"""
+        """Execute SQL query"""
         if not self._client: 
             await self.connect()
         
         try:
-            # Execute the query
             result = await self._client.execute(sql, args or [])
             
-            # Parse result based on structure
+            # Parse result
             if hasattr(result, 'rows') and hasattr(result, 'columns'):
-                # Standard structure
                 rows = result.rows
                 columns = result.columns
-            elif isinstance(result, list):
-                # Result is already a list of rows
-                return [dict(row) for row in result if hasattr(row, 'keys')]
             else:
-                # Try to get rows and columns
-                rows = getattr(result, 'rows', [])
-                columns = getattr(result, 'columns', [])
+                logger.warning(f"Unexpected result type: {type(result)}")
+                return []
             
             # Convert rows to dicts
             output = []
