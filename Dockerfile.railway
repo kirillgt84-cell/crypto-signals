@@ -5,10 +5,13 @@ WORKDIR /app
 RUN apt-get update && apt-get install -y gcc && rm -rf /var/lib/apt/lists/*
 
 COPY backend/requirements.txt .
-RUN pip install --no-cache-dir uvicorn[standard]==0.27.0
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY backend/ .
 
-# Railway provides PORT env var
-CMD uvicorn main:app --host 0.0.0.0 --port ${PORT:-8000}
+ENV PYTHONUNBUFFERED=1
+
+# Create startup script
+RUN echo '#!/bin/sh\nuvicorn main:app --host 0.0.0.0 --port ${PORT:-8000}' > /app/start.sh && chmod +x /app/start.sh
+
+CMD ["/bin/sh", "/app/start.sh"]
