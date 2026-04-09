@@ -1,11 +1,12 @@
-'use client';
+"use client";
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import AdminLayout from './components/admin/AdminLayout';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { CryptoChart } from './components/crypto/CryptoChart';
 import { 
   TrendingUp, 
   TrendingDown, 
@@ -19,15 +20,13 @@ import {
   ChevronRight
 } from 'lucide-react';
 import { cn, formatNumber, formatPrice, formatPercent } from '@/lib/utils';
-import CryptoChart from './components/dashboard/CryptoChart';
-import MarketDepth from './components/dashboard/MarketDepth';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
 const SYMBOLS = [
-  { value: 'BTCUSDT', label: 'BTC/USDT', icon: '₿' },
-  { value: 'ETHUSDT', label: 'ETH/USDT', icon: 'Ξ' },
-  { value: 'SOLUSDT', label: 'SOL/USDT', icon: '◎' },
+  { value: 'BTCUSDT', label: 'BTC/USD', icon: '₿' },
+  { value: 'ETHUSDT', label: 'ETH/USD', icon: 'Ξ' },
+  { value: 'SOLUSDT', label: 'SOL/USD', icon: '◎' },
 ];
 
 const TIMEFRAMES = [
@@ -35,6 +34,42 @@ const TIMEFRAMES = [
   { value: '4h', label: '4H' },
   { value: '1d', label: '1D' },
 ];
+
+// Generate mock candle data for the chart
+const generateChartData = (basePrice: number, dataPoints: number = 60) => {
+  const data = [];
+  let price = basePrice;
+  let oi = 15000;
+  
+  for (let i = dataPoints; i >= 0; i--) {
+    const date = new Date();
+    date.setHours(date.getHours() - i);
+    
+    const volatility = 0.002;
+    const change = (Math.random() - 0.48) * 2 * volatility * price;
+    const open = price;
+    const close = price + change;
+    const high = Math.max(open, close) + Math.random() * Math.abs(change) * 0.5;
+    const low = Math.min(open, close) - Math.random() * Math.abs(change) * 0.5;
+    const volume = Math.random() * 1000 + 500;
+    
+    oi = oi + (Math.random() - 0.5) * 100;
+    
+    data.push({
+      time: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit' }),
+      open,
+      high,
+      low,
+      close,
+      volume,
+      oi,
+    });
+    
+    price = close;
+  }
+  
+  return data;
+};
 
 export default function DashboardPage() {
   const [symbol, setSymbol] = useState('BTCUSDT');
@@ -73,7 +108,12 @@ export default function DashboardPage() {
     }
   };
 
-  if (!data) {
+  const chartData = useMemo(() => {
+    if (!data?.oi?.price) return [];
+    return generateChartData(data.oi.price);
+  }, [data?.oi?.price, symbol, timeframe]);
+
+  if (!data || chartData.length === 0) {
     return (
       <AdminLayout>
         <div className="flex items-center justify-center h-96">
@@ -137,10 +177,10 @@ export default function DashboardPage() {
 
       {/* Main Grid */}
       <div className="grid grid-cols-12 gap-6">
-        {/* Left Column - Chart */}
+        {/* Left Column - Crypto Chart */}
         <div className="col-span-12 lg:col-span-8 space-y-6">
-          {/* Price & Chart Card */}
-          <Card className="border-slate-800 bg-slate-900/50">
+          {/* Main Chart Card - Crypto Style */}
+          <Card className="border-slate-800 bg-slate-900/50 overflow-hidden">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <div>
                 <div className="flex items-center gap-3">
@@ -179,23 +219,38 @@ export default function DashboardPage() {
                 </CardDescription>
               </div>
             </CardHeader>
-            <CardContent>
-              <CryptoChart symbol={symbol} timeframe={timeframe} />
+            <CardContent className="relative">
+              <CryptoChart data={chartData} showOI={true} />
             </CardContent>
           </Card>
 
-          {/* Market Depth */}
-          <Card className="border-slate-800 bg-slate-900/50">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium flex items-center gap-2">
-                <BarChart3 className="h-4 w-4 text-slate-400" />
-                Volume Profile
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <MarketDepth data={cluster} />
-            </CardContent>
-          </Card>
+          {/* Market Stats Grid */}
+          <div className="grid grid-cols-4 gap-4">
+            <Card className="border-slate-800 bg-slate-900/50">
+              <CardContent className="p-4">
+                <p className="text-xs text-slate-500 mb-1">24h Volume</p>
+                <p className="text-lg font-mono font-semibold text-white">${formatNumber(oi.volume || 2450000000)}</p>
+              </CardContent>
+            </Card>
+            <Card className="border-slate-800 bg-slate-900/50">
+              <CardContent className="p-4">
+                <p className="text-xs text-slate-500 mb-1">24h High</p>
+                <p className="text-lg font-mono font-semibold text-white">{formatPrice(oi.high_24h || oi.price * 1.02)}</p>
+              </CardContent>
+            </Card>
+            <Card className="border-slate-800 bg-slate-900/50">
+              <CardContent className="p-4">
+                <p className="text-xs text-slate-500 mb-1">24h Low</p>
+                <p className="text-lg font-mono font-semibold text-white">{formatPrice(oi.low_24h || oi.price * 0.98)}</p>
+              </CardContent>
+            </Card>
+            <Card className="border-slate-800 bg-slate-900/50">
+              <CardContent className="p-4">
+                <p className="text-xs text-slate-500 mb-1">Signal Strength</p>
+                <p className="text-lg font-mono font-semibold text-emerald-400">{oi.analysis?.strength || 4}/5</p>
+              </CardContent>
+            </Card>
+          </div>
         </div>
 
         {/* Right Column - Metrics */}
@@ -253,7 +308,7 @@ export default function DashboardPage() {
                       )}
                       <span className="text-slate-300">{check.description}</span>
                     </div>
-                    <span className="text-xs text-slate-500 font-mono">{check.value}</span>
+                    <span className="text-xs text-slate-500 font-mono truncate max-w-[80px]">{check.value}</span>
                   </div>
                 ))}
               </div>
