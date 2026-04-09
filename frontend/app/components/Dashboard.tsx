@@ -5,7 +5,7 @@ import OIPanel from './dashboard/OIPanel';
 import CVDChart from './dashboard/CVDChart';
 import ClusterMap from './dashboard/ClusterMap';
 import LevelsPanel from './dashboard/LevelsPanel';
-import ChecklistPanel from './dashboard/ChecklistPanel';
+import ChecklistPanel, { ChecklistData } from './dashboard/ChecklistPanel';
 
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
@@ -78,28 +78,6 @@ interface LevelsData {
   };
 }
 
-interface ChecklistData {
-  score: number;
-  max_score: number;
-  recommendation: string;
-  action: string;
-  color: string;
-  checks: {
-    oi_signal: { passed: boolean; value: string; description: string; weight: string };
-    cvd_confirmation: { passed: boolean; value: string; description: string; weight: string };
-    cluster_clear: { passed: boolean; value: string; description: string; weight: string };
-    ema_position: { passed: boolean; value: string; description: string; weight: string };
-    funding_normal: { passed: boolean; value: string; description: string; weight: string };
-  };
-  levels: {
-    price: number;
-    ema50: number;
-    ema200: number;
-    poc: number;
-    liquidation_long: number;
-    liquidation_short: number;
-  };
-}
 
 export default function Dashboard() {
   const [symbol, setSymbol] = useState('BTCUSDT');

@@ -8,6 +8,7 @@ interface OIAnalysis {
   oi_change_24h: number;
   price: number;
   price_change_24h: number;
+  timeframe?: string;
   analysis: {
     status: string;
     signal: string;

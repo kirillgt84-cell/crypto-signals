@@ -22,11 +22,36 @@ from scheduler import start_scheduler, stop_scheduler
 # Глобальная переменная для scheduler
 scheduler = None
 
+async def init_database():
+    """Initialize database schema"""
+    try:
+        from database import get_db
+        db = get_db()
+        
+        # Read schema.sql
+        schema_path = os.path.join(os.path.dirname(__file__), 'schema.sql')
+        if os.path.exists(schema_path):
+            with open(schema_path, 'r') as f:
+                schema_sql = f.read()
+            
+            # Execute schema
+            await db.connect()
+            await db._pool.execute(schema_sql)
+            await db.close()
+            logger.info("Database schema initialized successfully")
+        else:
+            logger.warning("schema.sql not found, skipping DB init")
+    except Exception as e:
+        logger.error(f"Failed to init database: {e}")
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Lifespan context manager for startup/shutdown"""
     global scheduler
     logger.info("Starting OI Dashboard API...")
+    
+    # Initialize database schema
+    await init_database()
     
     # Запускаем scheduler
     scheduler = start_scheduler()

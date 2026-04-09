@@ -3,14 +3,14 @@
 import React from 'react';
 import { Check, X, AlertTriangle, Circle, TrendingUp, TrendingDown, Shield } from 'lucide-react';
 
-interface CheckItem {
+export interface CheckItem {
   passed: boolean;
   value: string;
   description: string;
   weight: 'required' | 'preferred' | 'background';
 }
 
-interface ChecklistData {
+export interface ChecklistData {
   score: number;
   max_score: number;
   recommendation: string;
