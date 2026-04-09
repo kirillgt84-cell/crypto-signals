@@ -400,13 +400,13 @@ class BinanceFuturesFetcher:
                     "bearish" if current_price < ema50 < ema200 else "mixed"
             
             return {
-                "current_price": round(current_price, 2),
-                "ema50": round(ema50, 2),
-                "ema200": round(ema200, 2),
-                "trend": trend,
-                "distance_to_ema50_pct": round((current_price - ema50) / ema50 * 100, 2),
-                "distance_to_ema200_pct": round((current_price - ema200) / ema200 * 100, 2),
-                "support_levels": [round(ema50, 2), round(ema200, 2)],
+                "current_price": float(round(current_price, 2)),
+                "ema50": float(round(ema50, 2)),
+                "ema200": float(round(ema200, 2)),
+                "trend": str(trend),
+                "distance_to_ema50_pct": float(round((current_price - ema50) / ema50 * 100, 2)),
+                "distance_to_ema200_pct": float(round((current_price - ema200) / ema200 * 100, 2)),
+                "support_levels": [float(round(ema50, 2)), float(round(ema200, 2))],
                 "recommendation": "buy_dip" if trend == "bullish" and current_price > ema50 else \
                                 "wait" if trend == "mixed" else "caution"
             }
