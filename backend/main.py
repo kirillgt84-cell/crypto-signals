@@ -15,15 +15,31 @@ from contextlib import asynccontextmanager
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Импорт роутеров
+# Импорт роутеров и scheduler
 from routers import market
+from scheduler import start_scheduler, stop_scheduler
+
+# Глобальная переменная для scheduler
+scheduler = None
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Lifespan context manager for startup/shutdown"""
+    global scheduler
     logger.info("Starting OI Dashboard API...")
+    
+    # Запускаем scheduler
+    scheduler = start_scheduler()
+    
+    # Первоначальное сохранение OI
+    from scheduler import save_oi_snapshot
+    await save_oi_snapshot()
+    
     yield
+    
+    # Shutdown
     logger.info("Shutting down...")
+    stop_scheduler(scheduler)
 
 app = FastAPI(
     title="SignalStream OI Dashboard",
@@ -63,10 +79,11 @@ async def root():
         "version": "2.0.0",
         "endpoints": {
             "market": {
-                "oi": "/api/v1/market/oi/{symbol}",
+                "oi": "/api/v1/market/oi/{symbol}?timeframe=1h",
+                "checklist": "/api/v1/market/checklist/{symbol}?timeframe=1h",
                 "cvd": "/api/v1/market/cvd/{symbol}",
-                "clusters": "/api/v1/market/clusters/{symbol}",
-                "context": "/api/v1/market/context/{symbol}"
+                "profile": "/api/v1/market/profile/{symbol}",
+                "levels": "/api/v1/market/levels/{symbol}?timeframe=1h"
             }
         }
     }

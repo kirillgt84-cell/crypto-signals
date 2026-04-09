@@ -1,45 +1,41 @@
--- PostgreSQL schema for SignalStream
-
-CREATE TABLE IF NOT EXISTS users (
-    id SERIAL PRIMARY KEY,
-    email TEXT UNIQUE,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+-- PostgreSQL schema for OI Dashboard
+-- Таблица для истории Open Interest (time-series)
+CREATE TABLE IF NOT EXISTS oi_history (
+    time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    symbol VARCHAR(20) NOT NULL,
+    timeframe VARCHAR(10) NOT NULL,
+    open_interest DOUBLE PRECISION,
+    price DOUBLE PRECISION,
+    volume DOUBLE PRECISION,
+    funding_rate DOUBLE PRECISION,
+    PRIMARY KEY (time, symbol, timeframe)
 );
 
-CREATE TABLE IF NOT EXISTS paper_accounts (
+-- Индекс для быстрого поиска последних данных
+CREATE INDEX IF NOT EXISTS idx_oi_latest ON oi_history(symbol, timeframe, time DESC);
+
+-- Таблица для журнала сделок (ручной ввод)
+CREATE TABLE IF NOT EXISTS trades (
     id SERIAL PRIMARY KEY,
-    user_id INTEGER,
-    symbol TEXT,
-    balance REAL DEFAULT 10000,
-    initial_balance REAL DEFAULT 10000
+    symbol VARCHAR(20),
+    direction VARCHAR(10), -- LONG/SHORT
+    entry_price DECIMAL,
+    stop_price DECIMAL,
+    target_price DECIMAL,
+    quantity DECIMAL,
+    checklist_score INTEGER, -- 0-7 на момент входа
+    entry_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    exit_time TIMESTAMP,
+    exit_price DECIMAL,
+    pnl DECIMAL,
+    notes TEXT,
+    status VARCHAR(20) DEFAULT 'open'
 );
 
-CREATE TABLE IF NOT EXISTS signals (
-    id SERIAL PRIMARY KEY,
-    symbol TEXT,
-    direction TEXT CHECK(direction IN ('long','short')),
-    entry_price REAL,
-    target_price REAL,
-    stop_price REAL,
-    status TEXT DEFAULT 'active',
-    confidence INTEGER,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+-- Таблица для кэширования CVD (опционально)
+CREATE TABLE IF NOT EXISTS cvd_cache (
+    symbol VARCHAR(20) PRIMARY KEY,
+    cvd_value DOUBLE PRECISION,
+    net_delta DOUBLE PRECISION,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
-
-CREATE TABLE IF NOT EXISTS paper_trades (
-    id SERIAL PRIMARY KEY,
-    account_id INTEGER,
-    signal_id INTEGER,
-    symbol TEXT,
-    direction TEXT,
-    entry_price REAL,
-    exit_price REAL,
-    quantity REAL,
-    pnl REAL,
-    status TEXT DEFAULT 'open',
-    opened_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    closed_at TIMESTAMP
-);
-
-CREATE INDEX IF NOT EXISTS idx_signals_status ON signals(status);
-CREATE INDEX IF NOT EXISTS idx_trades_account ON paper_trades(account_id);
