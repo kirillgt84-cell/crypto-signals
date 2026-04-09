@@ -207,7 +207,9 @@ async def get_checklist(
             }
         }
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        import traceback
+        error_detail = f"{str(e)}\n{traceback.format_exc()}"
+        raise HTTPException(status_code=500, detail=error_detail)
 
 @router.get("/cvd/{symbol}")
 async def get_cvd(
