@@ -4,6 +4,7 @@ import React from 'react';
 import { Target, TrendingUp, TrendingDown, AlertTriangle } from 'lucide-react';
 
 interface LevelsData {
+  timeframe?: string;
   liquidation_levels: {
     current_price: number;
     funding_rate: number;
@@ -36,6 +37,9 @@ export default function LevelsPanel({ data }: { data: LevelsData }) {
         <h3 className="text-xl font-bold flex items-center gap-2">
           <Target className="w-5 h-5 text-red-500" />
           Key Levels
+          <span className="text-xs bg-gray-700 px-2 py-0.5 rounded text-gray-400 uppercase">
+            {data.timeframe || '1h'}
+          </span>
         </h3>
         <div className={`px-3 py-1 rounded-full text-sm font-bold uppercase ${
           isBullishTrend ? 'bg-green-500/20 text-green-500' : 

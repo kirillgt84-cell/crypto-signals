@@ -17,6 +17,7 @@ const TIMEFRAMES = [
 
 interface OIData {
   symbol: string;
+  timeframe?: string;
   open_interest: number;
   oi_change_24h: number;
   price: number;
@@ -32,6 +33,7 @@ interface OIData {
 }
 
 interface CVDData {
+  timeframe?: string;
   cvd_value: number;
   net_delta: number;
   buy_volume: number;
@@ -41,6 +43,7 @@ interface CVDData {
 }
 
 interface ClusterData {
+  timeframe?: string;
   poc: number;
   clusters: Array<{
     price: number;
@@ -52,6 +55,7 @@ interface ClusterData {
 }
 
 interface LevelsData {
+  timeframe?: string;
   liquidation_levels: {
     current_price: number;
     funding_rate: number;

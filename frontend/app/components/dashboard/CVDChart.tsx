@@ -4,6 +4,7 @@ import React from 'react';
 import { BarChart3, TrendingUp, TrendingDown } from 'lucide-react';
 
 interface CVDData {
+  timeframe?: string;
   cvd_value: number;
   net_delta: number;
   buy_volume: number;
@@ -32,6 +33,9 @@ export default function CVDChart({ data }: { data: CVDData }) {
         <h3 className="text-xl font-bold flex items-center gap-2">
           <BarChart3 className="w-5 h-5 text-purple-500" />
           CVD (Cumulative Volume Delta)
+          <span className="text-xs bg-gray-700 px-2 py-0.5 rounded text-gray-400 uppercase">
+            {data.timeframe || '1h'}
+          </span>
         </h3>
         <div className={`px-3 py-1 rounded-full text-sm font-bold uppercase ${
           isBullish ? 'bg-green-500/20 text-green-500' : 'bg-red-500/20 text-red-500'

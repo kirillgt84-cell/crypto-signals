@@ -33,6 +33,9 @@ export default function OIPanel({ data }: { data: OIAnalysis }) {
         <h3 className="text-xl font-bold flex items-center gap-2">
           <Activity className="w-5 h-5 text-blue-500" />
           Open Interest Analysis
+          <span className="text-xs bg-gray-700 px-2 py-0.5 rounded text-gray-400 uppercase">
+            {data.timeframe || '1h'}
+          </span>
         </h3>
         <div 
           className="px-3 py-1 rounded-full text-sm font-bold uppercase"

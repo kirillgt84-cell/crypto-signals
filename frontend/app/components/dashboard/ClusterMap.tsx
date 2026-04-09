@@ -12,6 +12,7 @@ interface Cluster {
 }
 
 interface ClusterData {
+  timeframe?: string;
   poc: number;
   clusters: Cluster[];
 }
@@ -25,6 +26,9 @@ export default function ClusterMap({ data }: { data: ClusterData }) {
         <h3 className="text-xl font-bold flex items-center gap-2">
           <Layers className="w-5 h-5 text-yellow-500" />
           Volume Clusters
+          <span className="text-xs bg-gray-700 px-2 py-0.5 rounded text-gray-400 uppercase">
+            {data.timeframe || '1h'}
+          </span>
         </h3>
         <div className="bg-gray-800 px-3 py-1 rounded-full text-sm">
           POC: <span className="font-mono font-bold text-yellow-400">${data.poc.toLocaleString()}</span>
