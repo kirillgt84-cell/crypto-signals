@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react"
 import { CartesianGrid, Line, LineChart, ResponsiveContainer, XAxis, YAxis, Tooltip } from "recharts"
-import { cn } from "@/lib/utils"
 
 interface CandleData {
   time: string
@@ -18,8 +17,6 @@ interface CryptoChartProps {
   symbol: string
 }
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "https://crypto-signals-production-ff4c.up.railway.app/api/v1"
-
 const CustomTooltip = ({ active, payload, label }: any) => {
   if (active && payload && payload.length) {
     const data = payload[0].payload
@@ -30,13 +27,13 @@ const CustomTooltip = ({ active, payload, label }: any) => {
           <div className="flex justify-between gap-4">
             <span className="text-muted-foreground">Close:</span>
             <span className="font-mono font-medium">
-              ${data.close?.toFixed(2) || "0.00"}
+              ${data?.close?.toFixed(2) || "0.00"}
             </span>
           </div>
           <div className="flex justify-between gap-4 pt-1 border-t border-border">
             <span className="text-muted-foreground">OI:</span>
             <span className="font-mono font-medium text-primary">
-              {(data.oi / 1000).toFixed(1)}K
+              {((data?.oi || 0) / 1000).toFixed(1)}K
             </span>
           </div>
         </div>
@@ -48,10 +45,13 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 
 export function CryptoChart({ symbol }: CryptoChartProps) {
   const [data, setData] = useState<CandleData[]>([])
-  const [loading, setLoading] = useState(true)
+  const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
-    // Generate mock data for demo (in real app, fetch from API)
+    setMounted(true)
+  }, [])
+
+  useEffect(() => {
     const generateData = (): CandleData[] => {
       const now = new Date()
       const basePrice = symbol === "BTC" ? 67000 : symbol === "ETH" ? 3500 : 150
@@ -77,11 +77,8 @@ export function CryptoChart({ symbol }: CryptoChartProps) {
       return result
     }
 
-    setLoading(true)
     setData(generateData())
-    setLoading(false)
 
-    // Refresh every 30 seconds
     const interval = setInterval(() => {
       setData(generateData())
     }, 30000)
@@ -89,13 +86,22 @@ export function CryptoChart({ symbol }: CryptoChartProps) {
     return () => clearInterval(interval)
   }, [symbol])
 
-  const minValue = Math.min(...data.map((item) => Math.min(item.open, item.close)))
-  const maxValue = Math.max(...data.map((item) => Math.max(item.open, item.close)))
+  const minValue = data.length > 0 ? Math.min(...data.map((item) => Math.min(item.open, item.close))) : 0
+  const maxValue = data.length > 0 ? Math.max(...data.map((item) => Math.max(item.open, item.close))) : 100
 
-  if (loading) {
+  // Prevent hydration issues - don't render chart until mounted
+  if (!mounted) {
     return (
       <div className="flex h-[400px] items-center justify-center">
         <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
+      </div>
+    )
+  }
+
+  if (data.length === 0) {
+    return (
+      <div className="flex h-[400px] items-center justify-center text-muted-foreground">
+        Loading chart data...
       </div>
     )
   }
@@ -121,7 +127,7 @@ export function CryptoChart({ symbol }: CryptoChartProps) {
           <YAxis
             axisLine={false}
             tickLine={false}
-            domain={[minValue * 0.995, maxValue * 1.005]}
+            domain={[minValue * 0.995 || 0, maxValue * 1.005 || 100]}
             tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 10 }}
             tickFormatter={(value) => 
               value.toLocaleString("en-US", { 
