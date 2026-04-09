@@ -1,6 +1,7 @@
 """
 Router для market data (OI, CVD, Clusters)
 """
+from datetime import datetime
 from fastapi import APIRouter, HTTPException
 from fetchers.binance_futures import BinanceFuturesFetcher
 from interpreters.oi_interpreter import interpret_oi_advanced
