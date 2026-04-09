@@ -67,7 +67,7 @@ class BinanceFuturesFetcher:
                 "open_interest": current_oi,
                 "oi_change_24h": round(oi_change_pct, 2),
                 "oi_change_value": 0,
-                "price": float(ticker['lastPrice']),
+                "price": float(current_close) if 'current_close' in locals() else 70000,
                 "price_change_24h": round(price_change_pct, 2),
                 "volume_24h": volume,
                 "interpretation": self._interpret_oi(oi_change_pct, price_change_pct)
