@@ -18,11 +18,16 @@ class BinanceFuturesFetcher:
             self.session = aiohttp.ClientSession()
         return self.session
     
-    async def get_oi_analysis(self, symbol: str = "BTCUSDT") -> Dict:
+    async def get_oi_analysis(self, symbol: str = "BTCUSDT", timeframe: str = "1h") -> Dict:
         """
         Получает Open Interest + цену + объем + интерпретацию
+        timeframe: 1h, 4h, 1d - влияет на расчет изменений
         """
         session = await self._get_session()
+        
+        # Маппинг таймфреймов к часам для расчета изменений
+        tf_hours = {"1h": 1, "4h": 4, "1d": 24}
+        hours = tf_hours.get(timeframe, 1)
         
         try:
             # Текущий OI
@@ -33,19 +38,27 @@ class BinanceFuturesFetcher:
             ) as resp:
                 oi_data = await resp.json()
             
-            # Текущая цена и объем (24ч)
+            # Цена и объем за период (берем изменение за указанный период из klines)
             async with session.get(
-                f"{self.BASE_URL}/fapi/v1/ticker/24hr",
-                params={"symbol": symbol},
+                f"{self.BASE_URL}/fapi/v1/klines",
+                params={"symbol": symbol, "interval": timeframe, "limit": 2},
                 headers={"Accept": "application/json"}
             ) as resp:
-                ticker = await resp.json()
+                klines = await resp.json()
             
             current_oi = float(oi_data['openInterest'])
-            price_change_pct = float(ticker['priceChangePercent'])
-            volume = float(ticker['volume'])
             
-            # Упрощенный расчет изменения OI (пока 0, можно добавить кэширование)
+            # Расчет изменения цены за период
+            if isinstance(klines, list) and len(klines) >= 2:
+                prev_close = float(klines[0][4])
+                current_close = float(klines[1][4])
+                price_change_pct = ((current_close - prev_close) / prev_close) * 100
+                volume = float(klines[1][5])
+            else:
+                price_change_pct = 0
+                volume = 0
+            
+            # OI change пока 0 (нужен кэш или история)
             oi_change_pct = 0
             
             return {
@@ -344,9 +357,10 @@ class BinanceFuturesFetcher:
                 "error": "Using fallback data"
             }
     
-    async def get_ema_levels(self, symbol: str = "BTCUSDT") -> Dict:
+    async def get_ema_levels(self, symbol: str = "BTCUSDT", timeframe: str = "1h") -> Dict:
         """
         Получение EMA 50 и 200 для определения тренда
+        timeframe: 1h, 4h, 1d
         """
         import logging
         logger = logging.getLogger(__name__)
@@ -357,7 +371,7 @@ class BinanceFuturesFetcher:
             # Получаем свечи за последние 300 периодов (для EMA200)
             async with session.get(
                 f"{self.BASE_URL}/fapi/v1/klines",
-                params={"symbol": symbol, "interval": "1h", "limit": 300},
+                params={"symbol": symbol, "interval": timeframe, "limit": 300},
                 headers={"Accept": "application/json"}
             ) as resp:
                 klines = await resp.json()

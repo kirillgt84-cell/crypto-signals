@@ -9,6 +9,12 @@ import LevelsPanel from './dashboard/LevelsPanel';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
+const TIMEFRAMES = [
+  { value: '1h', label: '1H' },
+  { value: '4h', label: '4H' },
+  { value: '1d', label: '1D' },
+];
+
 interface OIData {
   symbol: string;
   open_interest: number;
@@ -69,6 +75,7 @@ interface LevelsData {
 
 export default function Dashboard() {
   const [symbol, setSymbol] = useState('BTCUSDT');
+  const [timeframe, setTimeframe] = useState('1h');
   const [oiData, setOiData] = useState<OIData | null>(null);
   const [cvdData, setCvdData] = useState<CVDData | null>(null);
   const [clusterData, setClusterData] = useState<ClusterData | null>(null);
@@ -81,19 +88,19 @@ export default function Dashboard() {
     // Обновляем каждые 30 секунд
     const interval = setInterval(fetchAllData, 30000);
     return () => clearInterval(interval);
-  }, [symbol]);
+  }, [symbol, timeframe]);
 
   const fetchAllData = async () => {
     setLoading(true);
     setError(null);
     
     try {
-      // Параллельно загружаем все данные
+      // Параллельно загружаем все данные с таймфреймом
       const [oiRes, cvdRes, clusterRes, levelsRes] = await Promise.all([
-        fetch(`${API_BASE}/api/v1/market/oi/${symbol}`),
-        fetch(`${API_BASE}/api/v1/market/cvd/${symbol}`),
-        fetch(`${API_BASE}/api/v1/market/clusters/${symbol}`),
-        fetch(`${API_BASE}/api/v1/market/levels/${symbol}`)
+        fetch(`${API_BASE}/api/v1/market/oi/${symbol}?timeframe=${timeframe}`),
+        fetch(`${API_BASE}/api/v1/market/cvd/${symbol}?timeframe=${timeframe}`),
+        fetch(`${API_BASE}/api/v1/market/clusters/${symbol}?timeframe=${timeframe}`),
+        fetch(`${API_BASE}/api/v1/market/levels/${symbol}?timeframe=${timeframe}`)
       ]);
 
       if (!oiRes.ok) throw new Error('Failed to fetch OI data');
@@ -126,6 +133,24 @@ export default function Dashboard() {
         </div>
         
         <div className="flex items-center gap-4">
+          {/* Timeframe Selector */}
+          <div className="flex bg-gray-800 rounded-lg p-1">
+            {TIMEFRAMES.map((tf) => (
+              <button
+                key={tf.value}
+                onClick={() => setTimeframe(tf.value)}
+                className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                  timeframe === tf.value
+                    ? 'bg-blue-600 text-white'
+                    : 'text-gray-400 hover:text-white'
+                }`}
+              >
+                {tf.label}
+              </button>
+            ))}
+          </div>
+          
+          {/* Symbol Selector */}
           <select 
             value={symbol}
             onChange={(e) => setSymbol(e.target.value)}
