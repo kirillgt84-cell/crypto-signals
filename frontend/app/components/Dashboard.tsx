@@ -106,7 +106,7 @@ export default function Dashboard() {
       const [oiRes, cvdRes, clusterRes, levelsRes, checklistRes] = await Promise.all([
         fetch(`${API_BASE}/api/v1/market/oi/${symbol}?timeframe=${timeframe}`),
         fetch(`${API_BASE}/api/v1/market/cvd/${symbol}?timeframe=${timeframe}`),
-        fetch(`${API_BASE}/api/v1/market/clusters/${symbol}?timeframe=${timeframe}`),
+        fetch(`${API_BASE}/api/v1/market/profile/${symbol}`),
         fetch(`${API_BASE}/api/v1/market/levels/${symbol}?timeframe=${timeframe}`),
         fetch(`${API_BASE}/api/v1/market/checklist/${symbol}?timeframe=${timeframe}`)
       ]);
