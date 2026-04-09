@@ -1,421 +1,362 @@
-"use client";
+"use client"
 
-import React, { useEffect, useState, useMemo } from 'react';
-import AdminLayout from './components/admin/AdminLayout';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { CryptoChart } from './components/crypto/CryptoChart';
-import { 
-  TrendingUp, 
-  TrendingDown, 
-  Activity,
-  Target,
-  Shield,
-  Wallet,
-  BarChart3,
-  Flame,
-  CircleDollarSign,
-  ChevronRight
-} from 'lucide-react';
-import { cn, formatNumber, formatPrice, formatPercent } from '@/lib/utils';
+import { useEffect, useState } from "react"
+import { TrendingUp, TrendingDown, Activity, BarChart3, Wallet, ArrowUpRight, ArrowDownRight, Target, Shield, Zap } from "lucide-react"
+import { Card, CardAction, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
+import { CryptoChart } from "./components/CryptoChart"
+import Sidebar from "./components/admin/Sidebar"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { cn } from "@/lib/utils"
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "https://crypto-signals-production-ff4c.up.railway.app/api/v1"
 
-const SYMBOLS = [
-  { value: 'BTCUSDT', label: 'BTC/USD', icon: '₿' },
-  { value: 'ETHUSDT', label: 'ETH/USD', icon: 'Ξ' },
-  { value: 'SOLUSDT', label: 'SOL/USD', icon: '◎' },
-];
+const symbols = ["BTC", "ETH", "SOL", "BNB", "XRP", "DOGE", "ADA", "LINK", "AVAX", "MATIC"]
 
-const TIMEFRAMES = [
-  { value: '1h', label: '1H' },
-  { value: '4h', label: '4H' },
-  { value: '1d', label: '1D' },
-];
+interface MarketData {
+  symbol: string
+  price: number
+  change_24h: number
+  oi: number
+  oi_change: number
+  volume: number
+  signal: "LONG" | "SHORT" | "NEUTRAL"
+  score?: number
+}
 
-// Generate mock candle data for the chart
-const generateChartData = (basePrice: number, dataPoints: number = 60) => {
-  const data = [];
-  let price = basePrice;
-  let oi = 15000;
+interface ChecklistItem {
+  name: string
+  passed: boolean
+  description: string
+}
+
+interface ChecklistData {
+  symbol: string
+  score: number
+  total: number
+  items: ChecklistItem[]
+  recommendation: string
+  timestamp: string
+}
+
+// Section Card Component matching arhamkhnz template
+function SectionCard({
+  title,
+  description,
+  value,
+  trend,
+  trendUp,
+  icon: Icon,
+}: {
+  title: string
+  description: string
+  value: string
+  trend: string
+  trendUp: boolean
+  icon: React.ElementType
+}) {
+  return (
+    <Card className="@container/card bg-gradient-to-t from-primary/5 to-card">
+      <CardHeader>
+        <CardDescription>{description}</CardDescription>
+        <CardTitle className="text-3xl font-semibold tabular-nums">
+          {value}
+        </CardTitle>
+        <CardAction>
+          <Badge variant="outline" className={cn(
+            "gap-1 text-sm",
+            trendUp ? "text-emerald-500" : "text-red-500"
+          )}>
+            {trendUp ? <TrendingUp className="h-3.5 w-3.5" /> : <TrendingDown className="h-3.5 w-3.5" />}
+            {trend}
+          </Badge>
+        </CardAction>
+      </CardHeader>
+      <CardFooter className="flex-col items-start gap-1.5 text-sm">
+        <div className="line-clamp-1 flex gap-2 font-medium">
+          {title}
+          <span className={cn(
+            "flex items-center gap-1",
+            trendUp ? "text-emerald-500" : "text-red-500"
+          )}>
+            {trendUp ? <ArrowUpRight className="h-3.5 w-3.5" /> : <ArrowDownRight className="h-3.5 w-3.5" />}
+          </span>
+        </div>
+        <div className="text-muted-foreground">Real-time market data</div>
+      </CardFooter>
+    </Card>
+  )
+}
+
+// Section Cards Grid - exact match to arhamkhnz template
+function SectionCards({ data }: { data: MarketData }) {
+  return (
+    <div className="*:data-[slot=card]:bg-gradient-to-t *:data-[slot=card]:from-primary/5 *:data-[slot=card]:to-card *:data-[slot=card]:shadow-xs grid grid-cols-1 gap-4 px-4 py-4 md:grid-cols-2 lg:grid-cols-4 lg:px-6">
+      <SectionCard
+        description="Current Price"
+        title={data.symbol}
+        value={`$${data.price.toLocaleString()}`}
+        trend={`${data.change_24h >= 0 ? "+" : ""}${data.change_24h.toFixed(2)}%`}
+        trendUp={data.change_24h >= 0}
+        icon={Activity}
+      />
+      <SectionCard
+        description="Open Interest"
+        title="OI Value"
+        value={`$${(data.oi / 1e9).toFixed(2)}B`}
+        trend={`${data.oi_change >= 0 ? "+" : ""}${data.oi_change.toFixed(2)}%`}
+        trendUp={data.oi_change >= 0}
+        icon={BarChart3}
+      />
+      <SectionCard
+        description="24h Volume"
+        title="Trading Volume"
+        value={`$${(data.volume / 1e9).toFixed(2)}B`}
+        trend="High activity"
+        trendUp={true}
+        icon={TrendingUp}
+      />
+      <SectionCard
+        description="Signal"
+        title="Trading Signal"
+        value={data.signal}
+        trend={data.score ? `Score: ${data.score}/7` : "Analyzing..."}
+        trendUp={data.signal === "LONG"}
+        icon={Target}
+      />
+    </div>
+  )
+}
+
+// Chart Area Component
+function ChartArea({ symbol, className }: { symbol: string; className?: string }) {
+  return (
+    <Card className={cn("flex flex-col", className)}>
+      <CardHeader className="gap-2">
+        <CardTitle>Price Action & OI</CardTitle>
+        <CardDescription>
+          Real-time price and Open Interest correlation for {symbol}
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="flex-1 px-2 sm:px-6">
+        <CryptoChart symbol={symbol} />
+      </CardContent>
+    </Card>
+  )
+}
+
+// Checklist Score Card
+function ChecklistScoreCard({ 
+  symbol, 
+  checklist, 
+  loading 
+}: { 
+  symbol: string
+  checklist: ChecklistData | null
+  loading: boolean 
+}) {
+  const passedCount = checklist?.items.filter(i => i.passed).length || 0
+  const total = checklist?.total || 7
+  const percentage = total > 0 ? Math.round((passedCount / total) * 100) : 0
   
-  for (let i = dataPoints; i >= 0; i--) {
-    const date = new Date();
-    date.setHours(date.getHours() - i);
-    
-    const volatility = 0.002;
-    const change = (Math.random() - 0.48) * 2 * volatility * price;
-    const open = price;
-    const close = price + change;
-    const high = Math.max(open, close) + Math.random() * Math.abs(change) * 0.5;
-    const low = Math.min(open, close) - Math.random() * Math.abs(change) * 0.5;
-    const volume = Math.random() * 1000 + 500;
-    
-    oi = oi + (Math.random() - 0.5) * 100;
-    
-    data.push({
-      time: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit' }),
-      open,
-      high,
-      low,
-      close,
-      volume,
-      oi,
-    });
-    
-    price = close;
-  }
-  
-  return data;
-};
+  return (
+    <Card className="flex flex-col">
+      <CardHeader className="gap-2">
+        <CardTitle>Entry Checklist</CardTitle>
+        <CardDescription>
+          7-filter system score for {symbol}
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="flex flex-1 items-center justify-center py-10">
+        {loading ? (
+          <div className="text-center">
+            <div className="mx-auto mb-4 h-16 w-16 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
+            <p className="text-muted-foreground">Analyzing market conditions...</p>
+          </div>
+        ) : checklist ? (
+          <div className="text-center">
+            <div className={cn(
+              "mx-auto mb-4 flex h-24 w-24 items-center justify-center rounded-full border-4 text-3xl font-bold",
+              percentage >= 70 ? "border-emerald-500 text-emerald-500" : 
+              percentage >= 40 ? "border-amber-500 text-amber-500" : "border-red-500 text-red-500"
+            )}>
+              {passedCount}/{total}
+            </div>
+            <p className="mb-2 text-lg font-medium">{checklist.recommendation}</p>
+            <div className="flex flex-wrap justify-center gap-2">
+              {checklist.items.map((item, idx) => (
+                <Badge 
+                  key={idx} 
+                  variant={item.passed ? "default" : "secondary"}
+                  className={item.passed ? "bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500/20" : ""}
+                >
+                  {item.passed ? "✓" : "✗"} {item.name}
+                </Badge>
+              ))}
+            </div>
+          </div>
+        ) : (
+          <div className="text-center text-muted-foreground">
+            Select a symbol to view checklist
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  )
+}
 
-export default function DashboardPage() {
-  const [symbol, setSymbol] = useState('BTCUSDT');
-  const [timeframe, setTimeframe] = useState('1h');
-  const [data, setData] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
-  const [walletConnected, setWalletConnected] = useState(false);
+// Key Levels Card
+function KeyLevelsCard({ 
+  symbol, 
+  levels 
+}: { 
+  symbol: string
+  levels: any 
+}) {
+  return (
+    <Card>
+      <CardHeader className="gap-2">
+        <CardTitle>Key Levels</CardTitle>
+        <CardDescription>
+          EMA & liquidation levels for {symbol}
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        {levels ? (
+          <div className="space-y-3">
+            {levels.ema20 && (
+              <div className="flex items-center justify-between rounded-lg bg-muted px-3 py-2">
+                <span className="text-sm text-muted-foreground">EMA 20</span>
+                <span className="font-medium">${levels.ema20.toLocaleString()}</span>
+              </div>
+            )}
+            {levels.ema50 && (
+              <div className="flex items-center justify-between rounded-lg bg-muted px-3 py-2">
+                <span className="text-sm text-muted-foreground">EMA 50</span>
+                <span className="font-medium">${levels.ema50.toLocaleString()}</span>
+              </div>
+            )}
+            {levels.poc && (
+              <div className="flex items-center justify-between rounded-lg bg-muted px-3 py-2">
+                <span className="text-sm text-muted-foreground">POC</span>
+                <span className="font-medium">${levels.poc.toLocaleString()}</span>
+              </div>
+            )}
+            {levels.liquidation_levels?.slice(0, 2).map((level: any, i: number) => (
+              <div key={i} className="flex items-center justify-between rounded-lg bg-muted px-3 py-2">
+                <span className="text-sm text-muted-foreground">{level.side} Zone</span>
+                <span className="font-medium">${level.price.toLocaleString()}</span>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="py-4 text-center text-muted-foreground">
+            Loading levels...
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  )
+}
+
+// Main Dashboard Component
+export default function Dashboard() {
+  const [symbol, setSymbol] = useState("BTC")
+  const [marketData, setMarketData] = useState<MarketData | null>(null)
+  const [checklist, setChecklist] = useState<ChecklistData | null>(null)
+  const [levels, setLevels] = useState<any>(null)
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    fetchData();
-    const interval = setInterval(fetchData, 30000);
-    return () => clearInterval(interval);
-  }, [symbol, timeframe]);
-
-  const fetchData = async () => {
-    try {
-      const [oiRes, checklistRes, clusterRes, levelsRes] = await Promise.all([
-        fetch(`${API_BASE}/api/v1/market/oi/${symbol}?timeframe=${timeframe}`),
-        fetch(`${API_BASE}/api/v1/market/checklist/${symbol}?timeframe=${timeframe}`),
-        fetch(`${API_BASE}/api/v1/market/profile/${symbol}`),
-        fetch(`${API_BASE}/api/v1/market/levels/${symbol}?timeframe=${timeframe}`),
-      ]);
-
-      const [oi, checklist, cluster, levels] = await Promise.all([
-        oiRes.json(),
-        checklistRes.json(),
-        clusterRes.json(),
-        levelsRes.json(),
-      ]);
-
-      setData({ oi, checklist, cluster, levels });
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setLoading(false);
+    async function fetchData() {
+      setLoading(true)
+      try {
+        const [oiRes, checklistRes, levelsRes] = await Promise.all([
+          fetch(`${API_BASE_URL}/market/oi/${symbol}`),
+          fetch(`${API_BASE_URL}/market/checklist/${symbol}`),
+          fetch(`${API_BASE_URL}/market/levels/${symbol}`),
+        ])
+        
+        const oiData = await oiRes.json()
+        const checklistData = await checklistRes.json()
+        const levelsData = await levelsRes.json()
+        
+        setMarketData({
+          symbol,
+          price: oiData.price || 0,
+          change_24h: oiData.change_24h || 0,
+          oi: oiData.oi || 0,
+          oi_change: oiData.oi_change || 0,
+          volume: oiData.volume || 0,
+          signal: checklistData.score >= 5 ? "LONG" : checklistData.score <= 2 ? "SHORT" : "NEUTRAL",
+          score: checklistData.score,
+        })
+        
+        setChecklist(checklistData)
+        setLevels(levelsData)
+      } catch (error) {
+        console.error("Failed to fetch market data:", error)
+      } finally {
+        setLoading(false)
+      }
     }
-  };
 
-  const chartData = useMemo(() => {
-    if (!data?.oi?.price) return [];
-    return generateChartData(data.oi.price);
-  }, [data?.oi?.price, symbol, timeframe]);
-
-  if (!data || chartData.length === 0) {
-    return (
-      <AdminLayout>
-        <div className="flex items-center justify-center h-96">
-          <Activity className="h-8 w-8 text-blue-500 animate-pulse" />
-        </div>
-      </AdminLayout>
-    );
-  }
-
-  const { oi, checklist, cluster, levels } = data;
-  const isBullish = oi.analysis?.signal?.includes('bullish');
-  const isBearish = oi.analysis?.signal?.includes('bearish');
+    fetchData()
+    const interval = setInterval(fetchData, 30000)
+    return () => clearInterval(interval)
+  }, [symbol])
 
   return (
-    <AdminLayout>
-      {/* Page Header */}
-      <div className="mb-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-white">OI Dashboard</h1>
-            <p className="text-slate-400 text-sm mt-1">Open Interest Analytics & Market Context</p>
+    <div className="flex min-h-screen">
+      <Sidebar />
+      
+      <main className="flex-1 overflow-hidden">
+        {/* Header */}
+        <header className="flex h-16 items-center justify-between border-b border-border px-4 lg:px-6">
+          <div className="flex items-center gap-4">
+            <h1 className="text-xl font-semibold">Dashboard</h1>
+            <Select value={symbol} onValueChange={setSymbol}>
+              <SelectTrigger className="w-28">
+                <SelectValue placeholder="Symbol" />
+              </SelectTrigger>
+              <SelectContent>
+                {symbols.map(s => (
+                  <SelectItem key={s} value={s}>{s}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
-          
-          <div className="flex items-center gap-3">
-            <Tabs value={symbol} onValueChange={setSymbol}>
-              <TabsList className="bg-slate-900 border border-slate-800">
-                {SYMBOLS.map((sym) => (
-                  <TabsTrigger key={sym.value} value={sym.value} className="text-xs">
-                    <span className="mr-1">{sym.icon}</span>
-                    {sym.label}
-                  </TabsTrigger>
-                ))}
-              </TabsList>
-            </Tabs>
-
-            <Tabs value={timeframe} onValueChange={setTimeframe}>
-              <TabsList className="bg-slate-900 border border-slate-800">
-                {TIMEFRAMES.map((tf) => (
-                  <TabsTrigger key={tf.value} value={tf.value} className="text-xs px-3">
-                    {tf.label}
-                  </TabsTrigger>
-                ))}
-              </TabsList>
-            </Tabs>
-
-            <button
-              onClick={() => setWalletConnected(!walletConnected)}
-              className={cn(
-                "flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all",
-                walletConnected 
-                  ? "bg-emerald-500/10 text-emerald-500 border border-emerald-500/20" 
-                  : "bg-blue-600 hover:bg-blue-700 text-white"
-              )}
-            >
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" className="hidden sm:flex items-center gap-2">
               <Wallet className="h-4 w-4" />
-              {walletConnected ? '0x7a...3f9' : 'Connect Wallet'}
-            </button>
+              Connect
+            </Button>
+            <Button size="sm" className="bg-primary text-primary-foreground">
+              <Zap className="mr-1.5 h-4 w-4" />
+              Trade
+            </Button>
           </div>
-        </div>
-      </div>
+        </header>
 
-      {/* Main Grid */}
-      <div className="grid grid-cols-12 gap-6">
-        {/* Left Column - Crypto Chart */}
-        <div className="col-span-12 lg:col-span-8 space-y-6">
-          {/* Main Chart Card - Crypto Style */}
-          <Card className="border-slate-800 bg-slate-900/50 overflow-hidden">
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <div>
-                <div className="flex items-center gap-3">
-                  <span className="text-3xl font-bold text-white font-mono">
-                    {formatPrice(oi.price)}
-                  </span>
-                  <Badge 
-                    variant={oi.price_change_24h >= 0 ? "default" : "destructive"}
-                    className={cn(
-                      "text-xs",
-                      oi.price_change_24h >= 0 ? "bg-emerald-500/20 text-emerald-400 border-emerald-500/30" : ""
-                    )}
-                  >
-                    {formatPercent(oi.price_change_24h)}
-                  </Badge>
-                </div>
-                <CardDescription className="flex items-center gap-2 mt-2">
-                  <span className="text-slate-400">OI:</span>
-                  <span className={cn(
-                    "font-mono font-medium",
-                    oi.oi_change_24h >= 0 ? "text-emerald-400" : "text-red-400"
-                  )}>
-                    {formatNumber(oi.open_interest)} 
-                    <span className="ml-1 text-xs">({formatPercent(oi.oi_change_24h)})</span>
-                  </span>
-                  <Badge 
-                    variant="outline"
-                    className={cn(
-                      "ml-2 text-xs",
-                      isBullish ? "border-emerald-500/30 text-emerald-400" : 
-                      isBearish ? "border-red-500/30 text-red-400" : "border-slate-600 text-slate-400"
-                    )}
-                  >
-                    {oi.analysis?.status?.replace('_', ' ') || 'Neutral'}
-                  </Badge>
-                </CardDescription>
-              </div>
-            </CardHeader>
-            <CardContent className="relative">
-              <CryptoChart data={chartData} showOI={true} />
-            </CardContent>
-          </Card>
+        {/* Section Cards Grid */}
+        {marketData && <SectionCards data={marketData} />}
 
-          {/* Market Stats Grid */}
-          <div className="grid grid-cols-4 gap-4">
-            <Card className="border-slate-800 bg-slate-900/50">
-              <CardContent className="p-4">
-                <p className="text-xs text-slate-500 mb-1">24h Volume</p>
-                <p className="text-lg font-mono font-semibold text-white">${formatNumber(oi.volume || 2450000000)}</p>
-              </CardContent>
-            </Card>
-            <Card className="border-slate-800 bg-slate-900/50">
-              <CardContent className="p-4">
-                <p className="text-xs text-slate-500 mb-1">24h High</p>
-                <p className="text-lg font-mono font-semibold text-white">{formatPrice(oi.high_24h || oi.price * 1.02)}</p>
-              </CardContent>
-            </Card>
-            <Card className="border-slate-800 bg-slate-900/50">
-              <CardContent className="p-4">
-                <p className="text-xs text-slate-500 mb-1">24h Low</p>
-                <p className="text-lg font-mono font-semibold text-white">{formatPrice(oi.low_24h || oi.price * 0.98)}</p>
-              </CardContent>
-            </Card>
-            <Card className="border-slate-800 bg-slate-900/50">
-              <CardContent className="p-4">
-                <p className="text-xs text-slate-500 mb-1">Signal Strength</p>
-                <p className="text-lg font-mono font-semibold text-emerald-400">{oi.analysis?.strength || 4}/5</p>
-              </CardContent>
-            </Card>
-          </div>
+        {/* Chart and Checklist Area */}
+        <div className="grid grid-cols-1 gap-4 px-4 py-4 lg:grid-cols-3 lg:px-6">
+          <ChartArea symbol={symbol} className="lg:col-span-2" />
+          <ChecklistScoreCard 
+            symbol={symbol} 
+            checklist={checklist} 
+            loading={loading} 
+          />
         </div>
 
-        {/* Right Column - Metrics */}
-        <div className="col-span-12 lg:col-span-4 space-y-4">
-          {/* Checklist Score */}
-          <Card className={cn(
-            "border",
-            checklist.score >= 6 ? "border-emerald-500/30 bg-emerald-950/10" :
-            checklist.score >= 4 ? "border-amber-500/30 bg-amber-950/10" :
-            "border-red-500/30 bg-red-950/10"
-          )}>
-            <CardHeader className="pb-2">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-sm font-medium flex items-center gap-2">
-                  <Shield className="h-4 w-4" />
-                  Entry Checklist
-                </CardTitle>
-                <span className={cn(
-                  "text-2xl font-bold",
-                  checklist.score >= 6 ? "text-emerald-400" :
-                  checklist.score >= 4 ? "text-amber-400" :
-                  "text-red-400"
-                )}>
-                  {checklist.score}/{checklist.max_score}
-                </span>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <Progress 
-                value={(checklist.score / checklist.max_score) * 100} 
-                className={cn(
-                  "h-2",
-                  checklist.score >= 6 ? "bg-emerald-950" :
-                  checklist.score >= 4 ? "bg-amber-950" :
-                  "bg-red-950"
-                )}
-              />
-              
-              <div className="space-y-2">
-                {Object.entries(checklist.checks).map(([key, check]: [string, any]) => (
-                  <div key={key} className="flex items-center justify-between text-sm">
-                    <div className="flex items-center gap-2">
-                      {check.passed ? (
-                        <div className="h-4 w-4 rounded-full bg-emerald-500/20 flex items-center justify-center">
-                          <TrendingUp className="h-3 w-3 text-emerald-400" />
-                        </div>
-                      ) : check.weight === 'required' ? (
-                        <div className="h-4 w-4 rounded-full bg-red-500/20 flex items-center justify-center">
-                          <TrendingDown className="h-3 w-3 text-red-400" />
-                        </div>
-                      ) : (
-                        <div className="h-4 w-4 rounded-full bg-amber-500/20 flex items-center justify-center">
-                          <Activity className="h-3 w-3 text-amber-400" />
-                        </div>
-                      )}
-                      <span className="text-slate-300">{check.description}</span>
-                    </div>
-                    <span className="text-xs text-slate-500 font-mono truncate max-w-[80px]">{check.value}</span>
-                  </div>
-                ))}
-              </div>
-
-              <button
-                disabled={!walletConnected || checklist.score < 4}
-                className={cn(
-                  "w-full py-3 rounded-lg font-semibold text-sm transition-all flex items-center justify-center gap-2",
-                  walletConnected && checklist.score >= 4
-                    ? checklist.score >= 6 
-                      ? "bg-emerald-600 hover:bg-emerald-500 text-white"
-                      : "bg-amber-600 hover:bg-amber-500 text-white"
-                    : "bg-slate-800 text-slate-500 cursor-not-allowed"
-                )}
-              >
-                {checklist.action}
-                <ChevronRight className="h-4 w-4" />
-              </button>
-            </CardContent>
-          </Card>
-
-          {/* Key Levels */}
-          <Card className="border-slate-800 bg-slate-900/50">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium flex items-center gap-2">
-                <Target className="h-4 w-4 text-slate-400" />
-                Key Levels
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <div className="flex items-center justify-between p-3 rounded-lg bg-slate-950 border border-slate-800">
-                <span className="text-sm text-slate-400">EMA 50</span>
-                <div className="text-right">
-                  <span className="text-sm font-mono text-white">{formatPrice(levels.ema_levels?.ema50)}</span>
-                  <span className={cn(
-                    "text-xs ml-2",
-                    levels.ema_levels?.distance_to_ema50_pct >= 0 ? "text-emerald-400" : "text-red-400"
-                  )}>
-                    {formatPercent(levels.ema_levels?.distance_to_ema50_pct)}
-                  </span>
-                </div>
-              </div>
-
-              <div className="flex items-center justify-between p-3 rounded-lg bg-slate-950 border border-slate-800">
-                <span className="text-sm text-slate-400">EMA 200</span>
-                <div className="text-right">
-                  <span className="text-sm font-mono text-white">{formatPrice(levels.ema_levels?.ema200)}</span>
-                  <span className={cn(
-                    "text-xs ml-2",
-                    levels.ema_levels?.distance_to_ema200_pct >= 0 ? "text-emerald-400" : "text-red-400"
-                  )}>
-                    {formatPercent(levels.ema_levels?.distance_to_ema200_pct)}
-                  </span>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-2">
-                <div className="p-3 rounded-lg bg-red-950/20 border border-red-900/30">
-                  <span className="text-xs text-red-400">Long Liq 20x</span>
-                  <p className="text-sm font-mono text-white">{formatPrice(levels.liquidation_levels?.closest_long)}</p>
-                </div>
-                <div className="p-3 rounded-lg bg-emerald-950/20 border border-emerald-900/30">
-                  <span className="text-xs text-emerald-400">Short Liq 20x</span>
-                  <p className="text-sm font-mono text-white">{formatPrice(levels.liquidation_levels?.closest_short)}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Funding Rate */}
-          <Card className="border-slate-800 bg-slate-900/50">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium flex items-center gap-2">
-                <CircleDollarSign className="h-4 w-4 text-slate-400" />
-                Funding Rate
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center justify-between">
-                <span className={cn(
-                  "text-2xl font-bold",
-                  Math.abs(levels.liquidation_levels?.funding_rate) > 0.0001 
-                    ? levels.liquidation_levels?.funding_rate > 0 ? "text-red-400" : "text-emerald-400"
-                    : "text-slate-400"
-                )}>
-                  {(levels.liquidation_levels?.funding_rate * 100).toFixed(4)}%
-                </span>
-                <Badge 
-                  variant="outline"
-                  className="text-xs border-slate-700 text-slate-400"
-                >
-                  8h
-                </Badge>
-              </div>
-              {Math.abs(levels.liquidation_levels?.funding_rate) > 0.0001 && (
-                <p className="text-xs text-amber-400 mt-2 flex items-center gap-1">
-                  <Flame className="h-3 w-3" />
-                  {levels.liquidation_levels?.funding_rate > 0 
-                    ? 'High funding - longs are crowded'
-                    : 'Negative funding - shorts paying'
-                  }
-                </p>
-              )}
-            </CardContent>
-          </Card>
+        {/* Key Levels */}
+        <div className="px-4 pb-6 lg:px-6">
+          <KeyLevelsCard symbol={symbol} levels={levels} />
         </div>
-      </div>
-    </AdminLayout>
-  );
+      </main>
+    </div>
+  )
 }
