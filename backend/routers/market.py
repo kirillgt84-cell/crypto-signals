@@ -71,3 +71,21 @@ async def get_context(symbol: str):
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/levels/{symbol}")
+async def get_levels(symbol: str):
+    """
+    Ликвидационные уровни и EMA
+    """
+    try:
+        liquidation = await fetcher.get_liquidation_levels(symbol.upper())
+        ema = await fetcher.get_ema_levels(symbol.upper())
+        
+        return {
+            "symbol": symbol,
+            "liquidation_levels": liquidation,
+            "ema_levels": ema,
+            "timestamp": datetime.utcnow().isoformat()
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

@@ -237,6 +237,100 @@ class BinanceFuturesFetcher:
             ]
         }
     
+    async def get_liquidation_levels(self, symbol: str = "BTCUSDT") -> Dict:
+        """
+        Расчет уровней ликвидаций (примерные на основе популярных плеч)
+        """
+        session = await self._get_session()
+        
+        # Получаем текущую цену
+        async with session.get(
+            f"{self.BASE_URL}/fapi/v1/ticker/24hr",
+            params={"symbol": symbol}
+        ) as resp:
+            ticker = await resp.json()
+        
+        current_price = float(ticker['lastPrice'])
+        
+        # Получаем funding rate для определения настроения
+        async with session.get(
+            f"{self.BASE_URL}/fapi/v1/fundingRate",
+            params={"symbol": symbol, "limit": 1}
+        ) as resp:
+            funding = await resp.json()
+        
+        funding_rate = float(funding[0]['fundingRate']) if funding else 0
+        
+        # Расчет уровней ликвидаций для популярных плеч
+        # 10x, 20x, 50x liquidation thresholds
+        levels = {
+            "current_price": current_price,
+            "funding_rate": funding_rate,
+            "long_liquidations": [
+                {"price": round(current_price * 0.95, 2), "leverage": "20x", "distance": "-5%"},
+                {"price": round(current_price * 0.90, 2), "leverage": "10x", "distance": "-10%"},
+                {"price": round(current_price * 0.80, 2), "leverage": "5x", "distance": "-20%"},
+            ],
+            "short_liquidations": [
+                {"price": round(current_price * 1.05, 2), "leverage": "20x", "distance": "+5%"},
+                {"price": round(current_price * 1.10, 2), "leverage": "10x", "distance": "+10%"},
+                {"price": round(current_price * 1.20, 2), "leverage": "5x", "distance": "+20%"},
+            ],
+            "closest_long": round(current_price * 0.95, 2),
+            "closest_short": round(current_price * 1.05, 2),
+            "funding_signal": "bearish" if funding_rate > 0.0001 else "bullish" if funding_rate < -0.0001 else "neutral"
+        }
+        
+        return levels
+    
+    async def get_ema_levels(self, symbol: str = "BTCUSDT") -> Dict:
+        """
+        Получение EMA 50 и 200 для определения тренда
+        """
+        session = await self._get_session()
+        
+        # Получаем свечи за последние 300 периодов (для EMA200)
+        async with session.get(
+            f"{self.BASE_URL}/fapi/v1/klines",
+            params={"symbol": symbol, "interval": "1h", "limit": 300}
+        ) as resp:
+            klines = await resp.json()
+        
+        if not isinstance(klines, list) or len(klines) < 200:
+            return {"error": "Insufficient data"}
+        
+        # Создаем DataFrame
+        df = pd.DataFrame(klines, columns=[
+            'timestamp', 'open', 'high', 'low', 'close', 'volume',
+            'close_time', 'quote_volume', 'trades', 'taker_buy_base',
+            'taker_buy_quote', 'ignore'
+        ])
+        df['close'] = df['close'].astype(float)
+        
+        # Расчет EMA
+        df['ema50'] = df['close'].ewm(span=50, adjust=False).mean()
+        df['ema200'] = df['close'].ewm(span=200, adjust=False).mean()
+        
+        current_price = df['close'].iloc[-1]
+        ema50 = df['ema50'].iloc[-1]
+        ema200 = df['ema200'].iloc[-1]
+        
+        # Определяем тренд
+        trend = "bullish" if current_price > ema50 > ema200 else \
+                "bearish" if current_price < ema50 < ema200 else "mixed"
+        
+        return {
+            "current_price": round(current_price, 2),
+            "ema50": round(ema50, 2),
+            "ema200": round(ema200, 2),
+            "trend": trend,
+            "distance_to_ema50_pct": round((current_price - ema50) / ema50 * 100, 2),
+            "distance_to_ema200_pct": round((current_price - ema200) / ema200 * 100, 2),
+            "support_levels": [round(ema50, 2), round(ema200, 2)],
+            "recommendation": "buy_dip" if trend == "bullish" and current_price > ema50 else \
+                            "wait" if trend == "mixed" else "caution"
+        }
+    
     async def close(self):
         if self.session:
             await self.session.close()
