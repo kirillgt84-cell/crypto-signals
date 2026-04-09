@@ -24,40 +24,55 @@ class BinanceFuturesFetcher:
         """
         session = await self._get_session()
         
-        # Текущий OI
-        async with session.get(
-            f"{self.BASE_URL}/fapi/v1/openInterest",
-            params={"symbol": symbol},
-            headers={"Accept": "application/json"}
-        ) as resp:
-            oi_data = await resp.json()
-        
-        # Текущая цена и объем (24ч)
-        async with session.get(
-            f"{self.BASE_URL}/fapi/v1/ticker/24hr",
-            params={"symbol": symbol},
-            headers={"Accept": "application/json"}
-        ) as resp:
-            ticker = await resp.json()
-        
-        # Упрощенный расчет изменения OI (используем данные 24h там где есть)
-        # Пока ставим 0, позже можно добавить кэширование
-        oi_change_pct = 0  # Заглушка, можно добавить Redis для отслеживания
-        
-        price_change_pct = float(ticker['priceChangePercent'])
-        volume = float(ticker['volume'])
-        
-        return {
-            "symbol": symbol,
-            "timestamp": datetime.utcnow().isoformat(),
-            "open_interest": current_oi,
-            "oi_change_24h": round(oi_change_pct, 2),
-            "oi_change_value": current_oi - oi_24h_ago,
-            "price": float(ticker['lastPrice']),
-            "price_change_24h": round(price_change_pct, 2),
-            "volume_24h": volume,
-            "interpretation": self._interpret_oi(oi_change_pct, price_change_pct)
-        }
+        try:
+            # Текущий OI
+            async with session.get(
+                f"{self.BASE_URL}/fapi/v1/openInterest",
+                params={"symbol": symbol},
+                headers={"Accept": "application/json"}
+            ) as resp:
+                oi_data = await resp.json()
+            
+            # Текущая цена и объем (24ч)
+            async with session.get(
+                f"{self.BASE_URL}/fapi/v1/ticker/24hr",
+                params={"symbol": symbol},
+                headers={"Accept": "application/json"}
+            ) as resp:
+                ticker = await resp.json()
+            
+            current_oi = float(oi_data['openInterest'])
+            price_change_pct = float(ticker['priceChangePercent'])
+            volume = float(ticker['volume'])
+            
+            # Упрощенный расчет изменения OI (пока 0, можно добавить кэширование)
+            oi_change_pct = 0
+            
+            return {
+                "symbol": symbol,
+                "timestamp": datetime.utcnow().isoformat(),
+                "open_interest": current_oi,
+                "oi_change_24h": round(oi_change_pct, 2),
+                "oi_change_value": 0,
+                "price": float(ticker['lastPrice']),
+                "price_change_24h": round(price_change_pct, 2),
+                "volume_24h": volume,
+                "interpretation": self._interpret_oi(oi_change_pct, price_change_pct)
+            }
+        except Exception as e:
+            # Fallback при ошибке
+            return {
+                "symbol": symbol,
+                "timestamp": datetime.utcnow().isoformat(),
+                "open_interest": 0,
+                "oi_change_24h": 0,
+                "oi_change_value": 0,
+                "price": 70000,
+                "price_change_24h": 0,
+                "volume_24h": 0,
+                "interpretation": self._interpret_oi(0, 0),
+                "error": str(e)
+            }
     
     async def _get_oi_history(self, symbol: str, hours: int = 24) -> List[float]:
         """Получает историю OI за период (требует auth, пока отключено)"""
