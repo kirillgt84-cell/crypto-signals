@@ -5,7 +5,7 @@ import OIPanel from './dashboard/OIPanel';
 import CVDChart from './dashboard/CVDChart';
 import ClusterMap from './dashboard/ClusterMap';
 import LevelsPanel from './dashboard/LevelsPanel';
-import TradeLogger from './dashboard/TradeLogger';
+
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
@@ -177,8 +177,7 @@ export default function Dashboard() {
         {/* Levels Panel */}
         {levelsData && <LevelsPanel data={levelsData} />}
         
-        {/* Trade Logger */}
-        <TradeLogger />
+
       </div>
 
       {/* Loading State */}
