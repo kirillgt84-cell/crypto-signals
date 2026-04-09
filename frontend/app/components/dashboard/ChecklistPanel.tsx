@@ -1,7 +1,17 @@
 'use client';
 
 import React from 'react';
-import { Check, X, AlertTriangle, Circle, TrendingUp, TrendingDown, Shield } from 'lucide-react';
+import { 
+  Check, 
+  X, 
+  AlertTriangle, 
+  Shield, 
+  TrendingUp, 
+  TrendingDown,
+  Lock,
+  Unlock,
+  Zap
+} from 'lucide-react';
 
 export interface CheckItem {
   passed: boolean;
@@ -13,7 +23,7 @@ export interface CheckItem {
 export interface ChecklistData {
   score: number;
   max_score: number;
-  recommendation: string;
+  recommendation: 'STRONG_BUY' | 'BUY' | 'CAUTION' | 'WAIT' | string;
   action: string;
   color: string;
   checks: {
@@ -36,151 +46,227 @@ export interface ChecklistData {
 export default function ChecklistPanel({ data }: { data: ChecklistData }) {
   if (!data) return null;
 
-  const { score, max_score, recommendation, action, color, checks, levels } = data;
+  const { score, max_score, recommendation, action, checks, levels } = data;
+  const percentage = (score / max_score) * 100;
   
-  const getColorClass = (color: string) => {
-    switch (color) {
-      case 'green': return 'bg-green-600 border-green-500 text-white';
-      case 'yellow': return 'bg-yellow-600 border-yellow-500 text-white';
-      case 'orange': return 'bg-orange-600 border-orange-500 text-white';
-      case 'red': return 'bg-red-600 border-red-500 text-white';
-      default: return 'bg-gray-600 border-gray-500 text-white';
+  // Calculate circle progress
+  const radius = 36;
+  const circumference = 2 * Math.PI * radius;
+  const strokeDashoffset = circumference - (percentage / 100) * circumference;
+
+  const getScoreColor = () => {
+    if (score >= 6) return '#00ff88';
+    if (score >= 4) return '#ffcc00';
+    return '#ff3366';
+  };
+
+  const getRecommendationStyle = () => {
+    switch (recommendation) {
+      case 'STRONG_BUY':
+        return {
+          bg: 'from-green-500/20 to-green-600/20',
+          border: 'border-green-500/40',
+          text: 'text-green-400',
+          glow: 'shadow-green-500/30',
+          icon: <TrendingUp className="w-6 h-6" />
+        };
+      case 'BUY':
+        return {
+          bg: 'from-yellow-500/20 to-yellow-600/20',
+          border: 'border-yellow-500/40',
+          text: 'text-yellow-400',
+          glow: 'shadow-yellow-500/30',
+          icon: <Unlock className="w-6 h-6" />
+        };
+      case 'CAUTION':
+        return {
+          bg: 'from-orange-500/20 to-orange-600/20',
+          border: 'border-orange-500/40',
+          text: 'text-orange-400',
+          glow: 'shadow-orange-500/30',
+          icon: <AlertTriangle className="w-6 h-6" />
+        };
+      default:
+        return {
+          bg: 'from-red-500/20 to-red-600/20',
+          border: 'border-red-500/40',
+          text: 'text-red-400',
+          glow: 'shadow-red-500/30',
+          icon: <Lock className="w-6 h-6" />
+        };
     }
   };
 
-  const getCheckIcon = (passed: boolean, weight: string) => {
-    if (passed) {
-      return <Check className="w-5 h-5 text-green-500" />;
-    }
-    if (weight === 'required') {
-      return <X className="w-5 h-5 text-red-500" />;
-    }
-    return <AlertTriangle className="w-5 h-5 text-yellow-500" />;
-  };
-
-  const getWeightLabel = (weight: string) => {
-    switch (weight) {
-      case 'required': return 'Обязательно';
-      case 'preferred': return 'Желательно';
-      case 'background': return 'Фон';
-      default: return '';
-    }
-  };
+  const style = getRecommendationStyle();
 
   const checkItems = [
-    { key: 'oi_signal', label: 'OI Сигнал', ...checks.oi_signal },
-    { key: 'cvd_confirmation', label: 'CVD Подтверждение', ...checks.cvd_confirmation },
-    { key: 'cluster_clear', label: 'Cluster Путь', ...checks.cluster_clear },
-    { key: 'ema_position', label: 'EMA Позиция', ...checks.ema_position },
-    { key: 'funding_normal', label: 'Funding Норма', ...checks.funding_normal },
+    { key: 'oi_signal', label: 'OI Signal', icon: '🔥', ...checks.oi_signal },
+    { key: 'cvd_confirmation', label: 'CVD Confirm', icon: '📊', ...checks.cvd_confirmation },
+    { key: 'cluster_clear', label: 'Cluster Clear', icon: '🎯', ...checks.cluster_clear },
+    { key: 'ema_position', label: 'EMA Position', icon: '📈', ...checks.ema_position },
+    { key: 'funding_normal', label: 'Funding OK', icon: '⚡', ...checks.funding_normal },
   ];
 
-  return (
-    <div className="bg-gray-900 border border-gray-800 rounded-xl p-6">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <h3 className="text-xl font-bold flex items-center gap-2">
-          <Shield className="w-5 h-5 text-cyan-500" />
-          Checklist Входа
-        </h3>
-        <div className="text-2xl font-bold font-mono">
-          <span className={score >= 6 ? 'text-green-500' : score >= 4 ? 'text-yellow-500' : 'text-red-500'}>
-            {score}
-          </span>
-          <span className="text-gray-600">/{max_score}</span>
-        </div>
-      </div>
+  const getWeightBadge = (weight: string) => {
+    switch (weight) {
+      case 'required':
+        return <span className="px-1.5 py-0.5 rounded text-[10px] bg-red-500/20 text-red-400 border border-red-500/30">REQ</span>;
+      case 'preferred':
+        return <span className="px-1.5 py-0.5 rounded text-[10px] bg-yellow-500/20 text-yellow-400 border border-yellow-500/30">OPT</span>;
+      default:
+        return <span className="px-1.5 py-0.5 rounded text-[10px] bg-gray-500/20 text-gray-400 border border-gray-500/30">BG</span>;
+    }
+  };
 
-      {/* Score Bar */}
-      <div className="mb-6">
-        <div className="h-3 bg-gray-800 rounded-full overflow-hidden">
-          <div 
-            className={`h-full transition-all duration-500 ${
-              score >= 6 ? 'bg-green-500' : score >= 4 ? 'bg-yellow-500' : 'bg-red-500'
-            }`}
-            style={{ width: `${(score / max_score) * 100}%` }}
-          />
+  return (
+    <div className="glass-card rounded-2xl p-5">
+      {/* Header with Circular Progress */}
+      <div className="flex items-center gap-4 mb-6">
+        {/* Circular Score */}
+        <div className="relative w-24 h-24 flex-shrink-0">
+          <svg className="w-full h-full -rotate-90" viewBox="0 0 80 80">
+            {/* Background circle */}
+            <circle
+              cx="40"
+              cy="40"
+              r={radius}
+              stroke="rgba(255,255,255,0.1)"
+              strokeWidth="8"
+              fill="none"
+            />
+            {/* Progress circle */}
+            <circle
+              cx="40"
+              cy="40"
+              r={radius}
+              stroke={getScoreColor()}
+              strokeWidth="8"
+              fill="none"
+              strokeLinecap="round"
+              strokeDasharray={circumference}
+              strokeDashoffset={strokeDashoffset}
+              className="transition-all duration-1000 ease-out"
+              style={{
+                filter: `drop-shadow(0 0 6px ${getScoreColor()})`
+              }}
+            />
+          </svg>
+          {/* Score text */}
+          <div className="absolute inset-0 flex flex-col items-center justify-center">
+            <span className="text-2xl font-bold font-mono" style={{ color: getScoreColor() }}>
+              {score}
+            </span>
+            <span className="text-xs text-gray-500">/{max_score}</span>
+          </div>
+        </div>
+
+        {/* Title & Status */}
+        <div className="flex-1">
+          <div className="flex items-center gap-2 mb-1">
+            <Shield className="w-5 h-5 text-cyan-400" />
+            <h3 className="font-semibold text-white">Entry Checklist</h3>
+          </div>
+          <p className="text-xs text-gray-500 mb-2">7-Point Analysis</p>
+          <div className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-lg text-xs font-bold uppercase ${style.text} bg-gradient-to-r ${style.bg} border ${style.border}`}>
+            {style.icon}
+            {recommendation.replace('_', ' ')}
+          </div>
         </div>
       </div>
 
       {/* Check Items */}
-      <div className="space-y-3 mb-6">
+      <div className="space-y-2 mb-5">
         {checkItems.map((item) => (
           <div 
             key={item.key}
-            className={`p-3 rounded-lg border ${
-              item.passed 
-                ? 'bg-green-900/20 border-green-800' 
+            className={`
+              flex items-center gap-3 p-3 rounded-xl border transition-all
+              ${item.passed 
+                ? 'bg-green-500/5 border-green-500/20' 
                 : item.weight === 'required'
-                  ? 'bg-red-900/20 border-red-800'
-                  : 'bg-yellow-900/20 border-yellow-800'
-            }`}
+                  ? 'bg-red-500/5 border-red-500/20'
+                  : 'bg-yellow-500/5 border-yellow-500/20'
+              }
+            `}
           >
-            <div className="flex items-start gap-3">
-              <div className="mt-0.5">
-                {getCheckIcon(item.passed, item.weight)}
+            {/* Status Icon */}
+            <div className={`
+              w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0
+              ${item.passed 
+                ? 'bg-green-500/20 text-green-400' 
+                : item.weight === 'required'
+                  ? 'bg-red-500/20 text-red-400'
+                  : 'bg-yellow-500/20 text-yellow-400'
+              }
+            `}>
+              {item.passed ? (
+                <Check className="w-4 h-4" />
+              ) : item.weight === 'required' ? (
+                <X className="w-4 h-4" />
+              ) : (
+                <AlertTriangle className="w-4 h-4" />
+              )}
+            </div>
+
+            {/* Content */}
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 mb-0.5">
+                <span className="text-sm">{item.icon}</span>
+                <span className="text-sm font-medium text-white truncate">{item.label}</span>
+                {getWeightBadge(item.weight)}
               </div>
-              <div className="flex-1">
-                <div className="flex items-center justify-between mb-1">
-                  <span className="font-medium text-sm">{item.label}</span>
-                  <span className={`text-xs px-2 py-0.5 rounded ${
-                    item.weight === 'required' 
-                      ? 'bg-red-900/50 text-red-400' 
-                      : item.weight === 'preferred'
-                        ? 'bg-yellow-900/50 text-yellow-400'
-                        : 'bg-gray-700 text-gray-400'
-                  }`}>
-                    {getWeightLabel(item.weight)}
-                  </span>
-                </div>
-                <p className="text-xs text-gray-400">{item.description}</p>
-                <p className="text-xs font-mono mt-1 text-gray-300">{item.value}</p>
-              </div>
+              <p className="text-xs text-gray-500 truncate">{item.description}</p>
+            </div>
+
+            {/* Value */}
+            <div className="text-right flex-shrink-0">
+              <p className={`text-xs font-mono ${
+                item.passed ? 'text-green-400' : 'text-gray-400'
+              }`}>
+                {item.value}
+              </p>
             </div>
           </div>
         ))}
       </div>
 
-      {/* Levels Summary */}
-      <div className="bg-gray-800 rounded-lg p-3 mb-6">
-        <p className="text-xs text-gray-400 uppercase mb-2">Ключевые Уровни</p>
-        <div className="grid grid-cols-2 gap-2 text-xs">
+      {/* Key Levels Summary */}
+      <div className="p-3 rounded-xl bg-black/20 border border-white/5 mb-4">
+        <p className="text-xs text-gray-500 uppercase mb-2">Key Levels</p>
+        <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-xs">
           <div className="flex justify-between">
-            <span className="text-gray-500">Цена:</span>
+            <span className="text-gray-500">Price</span>
             <span className="font-mono text-white">${levels?.price?.toLocaleString()}</span>
           </div>
           <div className="flex justify-between">
-            <span className="text-gray-500">EMA50:</span>
+            <span className="text-gray-500">EMA50</span>
             <span className="font-mono text-blue-400">${levels?.ema50?.toLocaleString()}</span>
           </div>
           <div className="flex justify-between">
-            <span className="text-gray-500">POC:</span>
+            <span className="text-gray-500">POC</span>
             <span className="font-mono text-yellow-400">${levels?.poc?.toLocaleString()}</span>
           </div>
           <div className="flex justify-between">
-            <span className="text-gray-500">Liq 20x:</span>
+            <span className="text-gray-500">Liq 20x</span>
             <span className="font-mono text-red-400">${levels?.liquidation_long?.toLocaleString()}</span>
           </div>
         </div>
       </div>
 
       {/* Action Button */}
-      <div className={`p-4 rounded-xl border-2 text-center ${getColorClass(color)}`}>
+      <div className={`
+        p-4 rounded-xl border-2 text-center
+        bg-gradient-to-r ${style.bg} ${style.border} ${style.glow}
+      `}>
         <div className="flex items-center justify-center gap-2 mb-1">
-          {recommendation === 'STRONG_BUY' || recommendation === 'BUY' ? (
-            <TrendingUp className="w-6 h-6" />
-          ) : recommendation === 'WAIT' ? (
-            <X className="w-6 h-6" />
-          ) : (
-            <AlertTriangle className="w-6 h-6" />
-          )}
-          <span className="text-lg font-bold">{action}</span>
+          {style.icon}
+          <span className="text-lg font-bold text-white">{action}</span>
         </div>
-        <p className="text-xs opacity-80">
-          {recommendation === 'STRONG_BUY' && 'Все фильтры пройдены - можно входить'}
-          {recommendation === 'BUY' && 'Основные фильтры ОК, но есть риски'}
-          {recommendation === 'CAUTION' && 'Высокий риск, лучше подождать'}
-          {recommendation === 'WAIT' && 'Вход запрещен - ждите лучшего сетапа'}
+        <p className="text-xs text-gray-400">
+          {recommendation === 'STRONG_BUY' && 'All filters passed - good entry'}
+          {recommendation === 'BUY' && 'Main filters OK, minor risks'}
+          {recommendation === 'CAUTION' && 'High risk, consider waiting'}
+          {recommendation === 'WAIT' && 'Entry blocked - wait for setup'}
         </p>
       </div>
     </div>

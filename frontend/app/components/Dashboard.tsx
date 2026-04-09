@@ -6,14 +6,29 @@ import CVDChart from './dashboard/CVDChart';
 import ClusterMap from './dashboard/ClusterMap';
 import LevelsPanel from './dashboard/LevelsPanel';
 import ChecklistPanel, { ChecklistData } from './dashboard/ChecklistPanel';
-
+import { 
+  Activity, 
+  Clock, 
+  RefreshCw, 
+  TrendingUp, 
+  BarChart3, 
+  Target,
+  Shield,
+  Zap
+} from 'lucide-react';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
 const TIMEFRAMES = [
-  { value: '1h', label: '1H' },
-  { value: '4h', label: '4H' },
-  { value: '1d', label: '1D' },
+  { value: '1h', label: '1H', description: 'Hourly view' },
+  { value: '4h', label: '4H', description: '4-Hour view' },
+  { value: '1d', label: '1D', description: 'Daily view' },
+];
+
+const SYMBOLS = [
+  { value: 'BTCUSDT', label: 'BTC', name: 'Bitcoin', color: '#f7931a' },
+  { value: 'ETHUSDT', label: 'ETH', name: 'Ethereum', color: '#627eea' },
+  { value: 'SOLUSDT', label: 'SOL', name: 'Solana', color: '#00ffa3' },
 ];
 
 interface OIData {
@@ -78,7 +93,6 @@ interface LevelsData {
   };
 }
 
-
 export default function Dashboard() {
   const [symbol, setSymbol] = useState('BTCUSDT');
   const [timeframe, setTimeframe] = useState('1h');
@@ -89,10 +103,10 @@ export default function Dashboard() {
   const [checklistData, setChecklistData] = useState<ChecklistData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [lastUpdate, setLastUpdate] = useState<Date>(new Date());
 
   useEffect(() => {
     fetchAllData();
-    // Обновляем каждые 30 секунд
     const interval = setInterval(fetchAllData, 30000);
     return () => clearInterval(interval);
   }, [symbol, timeframe]);
@@ -102,7 +116,6 @@ export default function Dashboard() {
     setError(null);
     
     try {
-      // Параллельно загружаем все данные с таймфреймом
       const [oiRes, cvdRes, clusterRes, levelsRes, checklistRes] = await Promise.all([
         fetch(`${API_BASE}/api/v1/market/oi/${symbol}?timeframe=${timeframe}`),
         fetch(`${API_BASE}/api/v1/market/cvd/${symbol}?timeframe=${timeframe}`),
@@ -113,17 +126,16 @@ export default function Dashboard() {
 
       if (!oiRes.ok) throw new Error('Failed to fetch OI data');
       
-      const oi = await oiRes.json();
-      const cvd = await cvdRes.json();
-      const clusters = await clusterRes.json();
-      const levels = await levelsRes.json();
-      const checklist = await checklistRes.json();
+      const [oi, cvd, clusters, levels, checklist] = await Promise.all([
+        oiRes.json(), cvdRes.json(), clusterRes.json(), levelsRes.json(), checklistRes.json()
+      ]);
 
       setOiData(oi);
       setCvdData(cvd);
       setClusterData(clusters);
       setLevelsData(levels);
       setChecklistData(checklist);
+      setLastUpdate(new Date());
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unknown error');
     } finally {
@@ -131,106 +143,168 @@ export default function Dashboard() {
     }
   };
 
+  const currentSymbol = SYMBOLS.find(s => s.value === symbol);
+
   return (
-    <div className="min-h-screen bg-gray-950 text-white p-6">
+    <div className="min-h-screen p-4 md:p-6">
       {/* Header */}
-      <header className="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-500 to-purple-500 bg-clip-text text-transparent">
-            OI Dashboard
-          </h1>
-          <p className="text-gray-400 mt-1">Open Interest Analytics & Market Context</p>
-        </div>
-        
-        <div className="flex items-center gap-4">
-          {/* Timeframe Selector */}
-          <div className="flex bg-gray-800 rounded-lg p-1">
-            {TIMEFRAMES.map((tf) => (
-              <button
-                key={tf.value}
-                onClick={() => setTimeframe(tf.value)}
-                className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${
-                  timeframe === tf.value
-                    ? 'bg-blue-600 text-white'
-                    : 'text-gray-400 hover:text-white'
-                }`}
+      <header className="mb-6">
+        {/* Top Bar */}
+        <div className="glass-card rounded-2xl p-4 mb-4">
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+            {/* Logo & Title */}
+            <div className="flex items-center gap-4">
+              <div className="relative">
+                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
+                  <Activity className="w-6 h-6 text-white" />
+                </div>
+                <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-[#0a0a0f] animate-pulse" />
+              </div>
+              <div>
+                <h1 className="text-2xl font-bold bg-gradient-to-r from-white to-gray-400 bg-clip-text text-transparent">
+                  OI Dashboard
+                </h1>
+                <p className="text-gray-500 text-sm flex items-center gap-2">
+                  <Zap className="w-3 h-3 text-yellow-500" />
+                  Real-time Market Analytics
+                </p>
+              </div>
+            </div>
+
+            {/* Controls */}
+            <div className="flex items-center gap-3 flex-wrap">
+              {/* Symbol Selector */}
+              <div className="flex bg-black/30 rounded-xl p-1 border border-white/5">
+                {SYMBOLS.map((sym) => (
+                  <button
+                    key={sym.value}
+                    onClick={() => setSymbol(sym.value)}
+                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300 flex items-center gap-2 ${
+                      symbol === sym.value
+                        ? 'bg-white/10 text-white shadow-lg'
+                        : 'text-gray-400 hover:text-white hover:bg-white/5'
+                    }`}
+                  >
+                    <span 
+                      className="w-2 h-2 rounded-full"
+                      style={{ backgroundColor: sym.color }}
+                    />
+                    {sym.label}
+                  </button>
+                ))}
+              </div>
+
+              {/* Timeframe Selector */}
+              <div className="flex bg-black/30 rounded-xl p-1 border border-white/5">
+                {TIMEFRAMES.map((tf) => (
+                  <button
+                    key={tf.value}
+                    onClick={() => setTimeframe(tf.value)}
+                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300 ${
+                      timeframe === tf.value
+                        ? 'bg-gradient-to-r from-blue-600 to-blue-500 text-white shadow-lg shadow-blue-500/25'
+                        : 'text-gray-400 hover:text-white'
+                    }`}
+                  >
+                    {tf.label}
+                  </button>
+                ))}
+              </div>
+
+              {/* Refresh Button */}
+              <button 
+                onClick={fetchAllData}
+                disabled={loading}
+                className="p-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 transition-all disabled:opacity-50"
               >
-                {tf.label}
+                <RefreshCw className={`w-5 h-5 text-gray-400 ${loading ? 'animate-spin' : ''}`} />
               </button>
-            ))}
+            </div>
           </div>
-          
-          {/* Symbol Selector */}
-          <select 
-            value={symbol}
-            onChange={(e) => setSymbol(e.target.value)}
-            className="bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-white"
-          >
-            <option value="BTCUSDT">BTC/USDT</option>
-            <option value="ETHUSDT">ETH/USDT</option>
-            <option value="SOLUSDT">SOL/USDT</option>
-          </select>
-          
-          <button 
-            onClick={fetchAllData}
-            disabled={loading}
-            className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-700 px-4 py-2 rounded-lg transition-colors flex items-center gap-2"
-          >
-            {loading ? (
-              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-            ) : (
-              <span>Refresh</span>
-            )}
-          </button>
+
+          {/* Market Status Bar */}
+          <div className="mt-4 pt-4 border-t border-white/5 flex items-center justify-between text-sm">
+            <div className="flex items-center gap-6">
+              <div className="flex items-center gap-2">
+                <Clock className="w-4 h-4 text-gray-500" />
+                <span className="text-gray-400">
+                  Last update: {lastUpdate.toLocaleTimeString()}
+                </span>
+              </div>
+              {oiData && (
+                <div className="flex items-center gap-4">
+                  <span className="text-gray-500">|</span>
+                  <span className="text-gray-400">
+                    OI: <span className="text-white font-mono">{(oiData.open_interest / 1000).toFixed(1)}K</span>
+                  </span>
+                  <span className={`font-mono ${oiData.oi_change_24h >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                    {oiData.oi_change_24h >= 0 ? '+' : ''}{oiData.oi_change_24h.toFixed(2)}%
+                  </span>
+                </div>
+              )}
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+              <span className="text-green-400 text-xs uppercase tracking-wider">Live</span>
+            </div>
+          </div>
         </div>
       </header>
 
-      {/* Error */}
+      {/* Error Message */}
       {error && (
-        <div className="bg-red-900/20 border border-red-800 rounded-xl p-4 mb-6 text-center">
-          <p className="text-red-400">{error}</p>
-          <button 
-            onClick={fetchAllData}
-            className="mt-2 text-blue-400 hover:text-blue-300"
-          >
-            Retry
-          </button>
+        <div className="glass-card rounded-xl p-4 mb-6 border-red-500/30 bg-red-500/10">
+          <p className="text-red-400 text-center">{error}</p>
         </div>
       )}
 
-      {/* Main Grid - 3 колонки */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Левая колонка - OI + Checklist */}
-        <div className="space-y-6">
+      {/* Main Dashboard Grid */}
+      <div className="grid grid-cols-1 xl:grid-cols-12 gap-4">
+        {/* Left Column - OI & Checklist */}
+        <div className="xl:col-span-4 space-y-4">
           {oiData && <OIPanel data={oiData} />}
           {checklistData && <ChecklistPanel data={checklistData} />}
         </div>
         
-        {/* Центральная колонка - CVD + Cluster */}
-        <div className="space-y-6">
+        {/* Center Column - Charts */}
+        <div className="xl:col-span-5 space-y-4">
           {cvdData && <CVDChart data={cvdData} />}
           {clusterData && <ClusterMap data={clusterData} />}
         </div>
         
-        {/* Правая колонка - Levels */}
-        <div className="space-y-6">
+        {/* Right Column - Levels */}
+        <div className="xl:col-span-3">
           {levelsData && <LevelsPanel data={levelsData} />}
         </div>
       </div>
 
-      {/* Loading State */}
+      {/* Loading Overlay */}
       {loading && !oiData && (
-        <div className="fixed inset-0 bg-gray-950/80 flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-[#0a0a0f]/90 backdrop-blur-sm flex items-center justify-center z-50">
           <div className="text-center">
-            <div className="animate-spin w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full mx-auto mb-4" />
-            <p className="text-gray-400">Loading market data...</p>
+            <div className="relative w-16 h-16 mx-auto mb-4">
+              <div className="absolute inset-0 border-2 border-blue-500/20 rounded-full" />
+              <div className="absolute inset-0 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+              <Activity className="absolute inset-0 m-auto w-6 h-6 text-blue-500" />
+            </div>
+            <p className="text-gray-400 animate-pulse">Loading market data...</p>
           </div>
         </div>
       )}
 
       {/* Footer */}
-      <footer className="mt-12 pt-6 border-t border-gray-800 text-center text-gray-500 text-sm">
-        <p>SignalStream OI Dashboard v2.0 • Data from Binance Futures • Updates every 30s</p>
+      <footer className="mt-8 py-6 border-t border-white/5">
+        <div className="flex flex-col md:flex-row items-center justify-between gap-4 text-sm text-gray-500">
+          <p>SignalStream OI Dashboard v2.0</p>
+          <div className="flex items-center gap-4">
+            <span className="flex items-center gap-2">
+              <BarChart3 className="w-4 h-4" />
+              Binance Futures
+            </span>
+            <span>|</span>
+            <span>Updates every 30s</span>
+          </div>
+        </div>
       </footer>
     </div>
   );
