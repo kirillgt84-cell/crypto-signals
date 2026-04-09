@@ -6,10 +6,27 @@ from fastapi import APIRouter, HTTPException, Query
 from fetchers.binance_futures import BinanceFuturesFetcher
 from interpreters.oi_interpreter import interpret_oi_advanced
 from database import get_db
+import numpy as np
 
 router = APIRouter(prefix="/api/v1/market", tags=["market"])
 
 fetcher = BinanceFuturesFetcher()
+
+def clean_json(obj):
+    """Convert numpy types to Python native types for JSON serialization"""
+    if isinstance(obj, dict):
+        return {k: clean_json(v) for k, v in obj.items()}
+    elif isinstance(obj, list):
+        return [clean_json(v) for v in obj]
+    elif isinstance(obj, (np.bool_, np.bool)):
+        return bool(obj)
+    elif isinstance(obj, (np.integer, np.int64, np.int32)):
+        return int(obj)
+    elif isinstance(obj, (np.floating, np.float64, np.float32)):
+        return float(obj)
+    elif isinstance(obj, np.ndarray):
+        return obj.tolist()
+    return obj
 
 @router.get("/oi/{symbol}")
 async def get_oi_analysis(
@@ -190,7 +207,7 @@ async def get_checklist(
             action = "ОЖИДАНИЕ"
             color = "red"
         
-        return {
+        return clean_json({
             "symbol": symbol.upper(),
             "timeframe": timeframe,
             "timestamp": datetime.utcnow().isoformat(),
@@ -208,7 +225,7 @@ async def get_checklist(
                 "liquidation_long": liq_data.get('closest_long'),
                 "liquidation_short": liq_data.get('closest_short')
             }
-        }
+        })
     except Exception as e:
         import traceback
         error_detail = f"{str(e)}\n{traceback.format_exc()}"
