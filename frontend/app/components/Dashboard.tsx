@@ -5,6 +5,7 @@ import OIPanel from './dashboard/OIPanel';
 import CVDChart from './dashboard/CVDChart';
 import ClusterMap from './dashboard/ClusterMap';
 import LevelsPanel from './dashboard/LevelsPanel';
+import ChecklistPanel from './dashboard/ChecklistPanel';
 
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
@@ -77,6 +78,29 @@ interface LevelsData {
   };
 }
 
+interface ChecklistData {
+  score: number;
+  max_score: number;
+  recommendation: string;
+  action: string;
+  color: string;
+  checks: {
+    oi_signal: { passed: boolean; value: string; description: string; weight: string };
+    cvd_confirmation: { passed: boolean; value: string; description: string; weight: string };
+    cluster_clear: { passed: boolean; value: string; description: string; weight: string };
+    ema_position: { passed: boolean; value: string; description: string; weight: string };
+    funding_normal: { passed: boolean; value: string; description: string; weight: string };
+  };
+  levels: {
+    price: number;
+    ema50: number;
+    ema200: number;
+    poc: number;
+    liquidation_long: number;
+    liquidation_short: number;
+  };
+}
+
 export default function Dashboard() {
   const [symbol, setSymbol] = useState('BTCUSDT');
   const [timeframe, setTimeframe] = useState('1h');
@@ -84,6 +108,7 @@ export default function Dashboard() {
   const [cvdData, setCvdData] = useState<CVDData | null>(null);
   const [clusterData, setClusterData] = useState<ClusterData | null>(null);
   const [levelsData, setLevelsData] = useState<LevelsData | null>(null);
+  const [checklistData, setChecklistData] = useState<ChecklistData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -100,11 +125,12 @@ export default function Dashboard() {
     
     try {
       // Параллельно загружаем все данные с таймфреймом
-      const [oiRes, cvdRes, clusterRes, levelsRes] = await Promise.all([
+      const [oiRes, cvdRes, clusterRes, levelsRes, checklistRes] = await Promise.all([
         fetch(`${API_BASE}/api/v1/market/oi/${symbol}?timeframe=${timeframe}`),
         fetch(`${API_BASE}/api/v1/market/cvd/${symbol}?timeframe=${timeframe}`),
         fetch(`${API_BASE}/api/v1/market/clusters/${symbol}?timeframe=${timeframe}`),
-        fetch(`${API_BASE}/api/v1/market/levels/${symbol}?timeframe=${timeframe}`)
+        fetch(`${API_BASE}/api/v1/market/levels/${symbol}?timeframe=${timeframe}`),
+        fetch(`${API_BASE}/api/v1/market/checklist/${symbol}?timeframe=${timeframe}`)
       ]);
 
       if (!oiRes.ok) throw new Error('Failed to fetch OI data');
@@ -113,11 +139,13 @@ export default function Dashboard() {
       const cvd = await cvdRes.json();
       const clusters = await clusterRes.json();
       const levels = await levelsRes.json();
+      const checklist = await checklistRes.json();
 
       setOiData(oi);
       setCvdData(cvd);
       setClusterData(clusters);
       setLevelsData(levels);
+      setChecklistData(checklist);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unknown error');
     } finally {
@@ -192,21 +220,24 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* Main Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-        {/* OI Panel */}
-        {oiData && <OIPanel data={oiData} />}
+      {/* Main Grid - 3 колонки */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Левая колонка - OI + Checklist */}
+        <div className="space-y-6">
+          {oiData && <OIPanel data={oiData} />}
+          {checklistData && <ChecklistPanel data={checklistData} />}
+        </div>
         
-        {/* CVD Chart */}
-        {cvdData && <CVDChart data={cvdData} />}
+        {/* Центральная колонка - CVD + Cluster */}
+        <div className="space-y-6">
+          {cvdData && <CVDChart data={cvdData} />}
+          {clusterData && <ClusterMap data={clusterData} />}
+        </div>
         
-        {/* Cluster Map */}
-        {clusterData && <ClusterMap data={clusterData} />}
-        
-        {/* Levels Panel */}
-        {levelsData && <LevelsPanel data={levelsData} />}
-        
-
+        {/* Правая колонка - Levels */}
+        <div className="space-y-6">
+          {levelsData && <LevelsPanel data={levelsData} />}
+        </div>
       </div>
 
       {/* Loading State */}
