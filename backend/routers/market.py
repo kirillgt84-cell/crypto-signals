@@ -74,6 +74,9 @@ async def get_checklist(
     Полный чек-лист входа (7 фильтров)
     Возвращает score 0-7 и рекомендацию
     """
+    import logging
+    logger = logging.getLogger(__name__)
+    logger.info(f"Checklist called: {symbol}, {timeframe}")
     try:
         # Получаем все данные
         oi_data = await fetcher.get_oi_analysis(symbol.upper(), timeframe)
