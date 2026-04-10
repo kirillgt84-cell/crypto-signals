@@ -70,6 +70,7 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
                 size="icon"
                 onClick={onToggle}
                 className="hidden h-8 w-8 lg:flex"
+                data-testid="sidebar-toggle"
               >
                 <ChevronLeft className="h-4 w-4" />
               </Button>
