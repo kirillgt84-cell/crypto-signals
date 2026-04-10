@@ -1,11 +1,10 @@
 "use client"
 
-import { useEffect, useState, useMemo } from "react"
-import { TrendingUp, TrendingDown, Activity, BarChart3, Wallet, ArrowUpRight, ArrowDownRight, Target, Zap, Sigma, MoveHorizontal } from "lucide-react"
-import { Card, CardAction, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { useEffect, useState } from "react"
+import { TrendingUp, TrendingDown, Activity, BarChart3, Wallet, Target, Zap, Sigma } from "lucide-react"
+import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { CryptoChart } from "./components/CryptoChart"
 import { TradingViewChart } from "./components/TradingViewChart"
 import Sidebar from "./components/admin/Sidebar"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -68,31 +67,59 @@ interface LiquidationLevel {
   size: number
 }
 
-// Mock data for fallback - adapts to timeframe
-const getMockMarketData = (symbol: string, timeframe: string): MarketData => ({
-  symbol,
-  price: symbol === "BTC" ? 67234 : symbol === "ETH" ? 3456 : 145,
-  change_24h: Math.random() * 10 - 3,
-  oi: 15.5e9 * (timeframe === "15" ? 1 : timeframe === "60" ? 1.02 : timeframe === "240" ? 1.05 : 1.1),
-  oi_change: Math.random() * 5 - 1,
-  volume: 28.3e9 * (timeframe === "15" ? 0.1 : timeframe === "60" ? 0.3 : timeframe === "240" ? 0.6 : 1),
-  cvd: 2450000 * (timeframe === "15" ? 1 : timeframe === "60" ? 2.5 : timeframe === "240" ? 6 : 15),
-  cvd_change: 5.2 * (Math.random() * 2 - 0.5),
-  signal: Math.random() > 0.5 ? "LONG" : "SHORT",
-  score: Math.floor(Math.random() * 7),
-  ema20: symbol === "BTC" ? 66800 + (Math.random() * 200 - 100) : symbol === "ETH" ? 3420 + (Math.random() * 20 - 10) : 142,
-  ema50: symbol === "BTC" ? 65800 + (Math.random() * 300 - 150) : symbol === "ETH" ? 3350 + (Math.random() * 30 - 15) : 135,
-  ema200: symbol === "BTC" ? 62800 : symbol === "ETH" ? 3150 : 125,
-  poc: symbol === "BTC" ? 66800 + (Math.random() * 400 - 200) : symbol === "ETH" ? 3420 + (Math.random() * 40 - 20) : 142,
-  vah: symbol === "BTC" ? 68200 : symbol === "ETH" ? 3520 : 152,
-  val: symbol === "BTC" ? 65400 : symbol === "ETH" ? 3320 : 132,
-  atr: (symbol === "BTC" ? 450 : symbol === "ETH" ? 25 : 1.5) * (timeframe === "15" ? 0.3 : timeframe === "60" ? 0.6 : timeframe === "240" ? 1.2 : 2.5),
-  funding: 0.008,
-  rsi: 30 + Math.random() * 50,
-  macd: (Math.random() - 0.5) * 200,
-  macd_signal: (Math.random() - 0.5) * 150,
-  exchange_flow: -450.5,
-})
+// Base prices for different symbols
+const basePrices: Record<string, number> = {
+  BTC: 67234,
+  ETH: 3456,
+  SOL: 145,
+  BNB: 590,
+  XRP: 0.62,
+  DOGE: 0.16,
+  ADA: 0.45,
+  LINK: 14.2,
+  AVAX: 35.5,
+  MATIC: 0.58
+}
+
+// Mock data for fallback - adapts to symbol and timeframe
+const getMockMarketData = (symbol: string, timeframe: string): MarketData => {
+  const basePrice = basePrices[symbol] || 100
+  const priceVariation = (Math.random() * 0.02 - 0.01) // ±1%
+  const currentPrice = basePrice * (1 + priceVariation)
+  
+  // Calculate levels based on current price (not hardcoded)
+  const ema20 = currentPrice * (1 + (Math.random() * 0.02 - 0.01))
+  const ema50 = currentPrice * (1 + (Math.random() * 0.04 - 0.02))
+  const ema200 = currentPrice * (1 + (Math.random() * 0.1 - 0.05))
+  const poc = currentPrice * (1 + (Math.random() * 0.015 - 0.0075))
+  const vah = currentPrice * 1.02
+  const val = currentPrice * 0.98
+  
+  return {
+    symbol,
+    price: currentPrice,
+    change_24h: Math.random() * 10 - 3,
+    oi: 15.5e9 * (timeframe === "15" ? 1 : timeframe === "60" ? 1.02 : timeframe === "240" ? 1.05 : 1.1),
+    oi_change: Math.random() * 5 - 1,
+    volume: 28.3e9 * (timeframe === "15" ? 0.1 : timeframe === "60" ? 0.3 : timeframe === "240" ? 0.6 : 1),
+    cvd: 2450000 * (timeframe === "15" ? 1 : timeframe === "60" ? 2.5 : timeframe === "240" ? 6 : 15),
+    cvd_change: 5.2 * (Math.random() * 2 - 0.5),
+    signal: Math.random() > 0.5 ? "LONG" : "SHORT",
+    score: Math.floor(Math.random() * 7),
+    ema20,
+    ema50,
+    ema200,
+    poc,
+    vah,
+    val,
+    atr: currentPrice * 0.008 * (timeframe === "15" ? 0.3 : timeframe === "60" ? 0.6 : timeframe === "240" ? 1.2 : 2.5),
+    funding: (Math.random() - 0.5) * 0.02,
+    rsi: 30 + Math.random() * 50,
+    macd: (Math.random() - 0.5) * 200,
+    macd_signal: (Math.random() - 0.5) * 150,
+    exchange_flow: (Math.random() - 0.5) * 1000,
+  }
+}
 
 const getMockChecklist = (symbol: string, timeframe: string): ChecklistData => ({
   symbol,
@@ -112,24 +139,24 @@ const getMockChecklist = (symbol: string, timeframe: string): ChecklistData => (
 })
 
 const getMockLiquidations = (symbol: string, timeframe: string): LiquidationLevel[] => {
+  const basePrice = basePrices[symbol] || 100
   const multiplier = timeframe === "15" ? 1 : timeframe === "60" ? 1.5 : timeframe === "240" ? 2.5 : 5
+  
   return [
-    { price: (symbol === "BTC" ? 65000 : 3200) - (multiplier * 100), side: "Long", size: 125000000 * multiplier },
-    { price: (symbol === "BTC" ? 69000 : 3700) + (multiplier * 100), side: "Short", size: 98000000 * multiplier },
-    { price: (symbol === "BTC" ? 64000 : 3100) - (multiplier * 200), side: "Long", size: 85000000 * multiplier },
-    { price: (symbol === "BTC" ? 70000 : 3800) + (multiplier * 200), side: "Short", size: 72000000 * multiplier },
+    { price: basePrice * 0.97 - (multiplier * basePrice * 0.001), side: "Long", size: 125000000 * multiplier },
+    { price: basePrice * 1.03 + (multiplier * basePrice * 0.001), side: "Short", size: 98000000 * multiplier },
+    { price: basePrice * 0.95 - (multiplier * basePrice * 0.002), side: "Long", size: 85000000 * multiplier },
+    { price: basePrice * 1.05 + (multiplier * basePrice * 0.002), side: "Short", size: 72000000 * multiplier },
   ]
 }
 
-// Helper functions
 // Helper functions with timeframe context
 const getRSIInterpretation = (rsi: number, timeframe: string): { text: string; color: string; detail: string } => {
-  // Different thresholds for different timeframes
   const thresholds = {
-    "15": { overbought: 75, oversold: 25 },   // M15: wider range due to noise
-    "60": { overbought: 72, oversold: 28 },   // 1H: standard
-    "240": { overbought: 70, oversold: 30 }, // 4H: standard
-    "D": { overbought: 65, oversold: 35 },   // 1D: earlier signals for swing trading
+    "15": { overbought: 75, oversold: 25 },
+    "60": { overbought: 72, oversold: 28 },
+    "240": { overbought: 70, oversold: 30 },
+    "D": { overbought: 65, oversold: 35 },
   }
   const tf = thresholds[timeframe as keyof typeof thresholds] || thresholds["60"]
   const tfLabel = timeframe === "15" ? "M15" : timeframe === "60" ? "1H" : timeframe === "240" ? "4H" : "1D"
@@ -189,7 +216,6 @@ const getMACDInterpretation = (macd: number, signal: number, timeframe: string):
 }
 
 const getFundingInterpretation = (funding: number, timeframe: string): { text: string; color: string; detail: string } => {
-  // Funding is 8-hour based, but interpretation changes with trading horizon
   const tfLabel = timeframe === "15" ? "Scalp" : timeframe === "60" ? "Intraday" : timeframe === "240" ? "Swing" : "Position"
   
   if (funding > 0.03) {
@@ -310,9 +336,6 @@ function MetricCard({
 
 // Row 1: OI Analysis Cards
 function OIAnalysisCards({ data }: { data: MarketData }) {
-  const distanceToEMA20 = ((data.price - data.ema20) / data.price * 100).toFixed(2)
-  const distanceToEMA50 = ((data.price - data.ema50) / data.price * 100).toFixed(2)
-  
   return (
     <div className="grid grid-cols-1 gap-4 px-4 py-4 sm:grid-cols-2 lg:grid-cols-4 lg:px-6">
       <MetricCard
@@ -391,7 +414,7 @@ function ChartSection({ symbol, timeframe, data }: { symbol: string; timeframe: 
       <CardHeader className="gap-2">
         <CardTitle>Price Action & OI Analysis</CardTitle>
         <CardDescription>
-          Real-time chart with POC, EMA levels for {symbol} on {timeframes.find(tf => tf.value === timeframe)?.label}
+          Real-time chart with POC, EMA levels for {symbol} at ${data.price.toLocaleString(undefined, {maximumFractionDigits: 2})} on {timeframes.find(tf => tf.value === timeframe)?.label}
         </CardDescription>
       </CardHeader>
       <CardContent className="flex-1 px-2 sm:px-6">
@@ -474,12 +497,15 @@ function EntryLevelsCard({ data }: { data: MarketData }) {
   const distanceToPOC = data.price - data.poc
   const distanceToVAH = data.price - data.vah
   
+  // Determine number of decimal places based on price magnitude
+  const decimals = data.price < 1 ? 4 : data.price < 100 ? 2 : 0
+  
   return (
     <Card>
       <CardHeader className="gap-2">
         <CardTitle>Entry Levels</CardTitle>
         <CardDescription>
-          Key levels and distances from current price ${data.price.toLocaleString()}
+          Key levels and distances from current price <span className="font-mono font-bold">${data.price.toLocaleString(undefined, {minimumFractionDigits: decimals, maximumFractionDigits: decimals})}</span>
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -490,9 +516,9 @@ function EntryLevelsCard({ data }: { data: MarketData }) {
               <p className="text-xs text-muted-foreground">Dynamic support/resistance</p>
             </div>
             <div className="text-right">
-              <span className="font-mono font-medium">${data.ema20.toLocaleString()}</span>
+              <span className="font-mono font-medium">${data.ema20.toLocaleString(undefined, {minimumFractionDigits: decimals, maximumFractionDigits: decimals})}</span>
               <p className={cn("text-xs", distanceToEMA20 >= 0 ? "text-emerald-500" : "text-red-500")}>
-                {distanceToEMA20 >= 0 ? "+" : ""}${Math.abs(distanceToEMA20).toFixed(0)} ({(distanceToEMA20/data.price*100).toFixed(2)}%)
+                {distanceToEMA20 >= 0 ? "+" : ""}${Math.abs(distanceToEMA20).toFixed(decimals)} ({(distanceToEMA20/data.price*100).toFixed(2)}%)
               </p>
             </div>
           </div>
@@ -503,9 +529,9 @@ function EntryLevelsCard({ data }: { data: MarketData }) {
               <p className="text-xs text-muted-foreground">Trend direction</p>
             </div>
             <div className="text-right">
-              <span className="font-mono font-medium">${data.ema50.toLocaleString()}</span>
+              <span className="font-mono font-medium">${data.ema50.toLocaleString(undefined, {minimumFractionDigits: decimals, maximumFractionDigits: decimals})}</span>
               <p className={cn("text-xs", distanceToEMA50 >= 0 ? "text-emerald-500" : "text-red-500")}>
-                {distanceToEMA50 >= 0 ? "+" : ""}${Math.abs(distanceToEMA50).toFixed(0)} ({(distanceToEMA50/data.price*100).toFixed(2)}%)
+                {distanceToEMA50 >= 0 ? "+" : ""}${Math.abs(distanceToEMA50).toFixed(decimals)} ({(distanceToEMA50/data.price*100).toFixed(2)}%)
               </p>
             </div>
           </div>
@@ -516,9 +542,9 @@ function EntryLevelsCard({ data }: { data: MarketData }) {
               <p className="text-xs text-muted-foreground">Point of Control - high volume node</p>
             </div>
             <div className="text-right">
-              <span className="font-mono font-medium">${data.poc.toLocaleString()}</span>
+              <span className="font-mono font-medium">${data.poc.toLocaleString(undefined, {minimumFractionDigits: decimals, maximumFractionDigits: decimals})}</span>
               <p className={cn("text-xs", distanceToPOC >= 0 ? "text-emerald-500" : "text-red-500")}>
-                {distanceToPOC >= 0 ? "+" : ""}${Math.abs(distanceToPOC).toFixed(0)}
+                {distanceToPOC >= 0 ? "+" : ""}${Math.abs(distanceToPOC).toFixed(decimals)}
               </p>
             </div>
           </div>
@@ -529,9 +555,9 @@ function EntryLevelsCard({ data }: { data: MarketData }) {
               <p className="text-xs text-muted-foreground">Value Area High - resistance zone</p>
             </div>
             <div className="text-right">
-              <span className="font-mono font-medium">${data.vah.toLocaleString()}</span>
+              <span className="font-mono font-medium">${data.vah.toLocaleString(undefined, {minimumFractionDigits: decimals, maximumFractionDigits: decimals})}</span>
               <p className={cn("text-xs", distanceToVAH >= 0 ? "text-emerald-500" : "text-red-500")}>
-                {distanceToVAH >= 0 ? "+" : ""}${Math.abs(distanceToVAH).toFixed(0)}
+                {distanceToVAH >= 0 ? "+" : ""}${Math.abs(distanceToVAH).toFixed(decimals)}
               </p>
             </div>
           </div>
@@ -542,9 +568,9 @@ function EntryLevelsCard({ data }: { data: MarketData }) {
               <p className="text-xs text-muted-foreground">Average True Range - position sizing</p>
             </div>
             <div className="text-right">
-              <span className="font-mono font-medium">${data.atr.toFixed(0)}</span>
+              <span className="font-mono font-medium">${data.atr.toFixed(decimals)}</span>
               <p className="text-xs text-muted-foreground">
-                Stop = 2×ATR = ${(data.atr * 2).toFixed(0)}
+                Stop = 2×ATR = ${(data.atr * 2).toFixed(decimals)}
               </p>
             </div>
           </div>
@@ -619,22 +645,25 @@ function SecondaryIndicators({ data, timeframe }: { data: MarketData; timeframe:
 }
 
 // Liquidation Map Component
-function LiquidationMap({ liquidations, currentPrice }: { liquidations: LiquidationLevel[]; currentPrice: number }) {
+function LiquidationMap({ liquidations, currentPrice, symbol }: { liquidations: LiquidationLevel[]; currentPrice: number; symbol: string }) {
   const sortedLiquidations = [...liquidations].sort((a, b) => a.price - b.price)
-  const maxSize = Math.max(...liquidations.map(l => l.size))
+  const maxSize = Math.max(...liquidations.map(l => l.size), 1)
+  
+  // Determine decimal places based on price
+  const decimals = currentPrice < 1 ? 4 : currentPrice < 100 ? 2 : 0
   
   return (
     <Card>
       <CardHeader>
         <CardTitle>Liquidation Map</CardTitle>
-        <CardDescription>Concentrated liquidation levels - where price may hunt</CardDescription>
+        <CardDescription>Concentrated liquidation levels - where price may hunt (Current: ${currentPrice.toLocaleString(undefined, {minimumFractionDigits: decimals, maximumFractionDigits: decimals})})</CardDescription>
       </CardHeader>
       <CardContent>
         <div className="space-y-2">
           {sortedLiquidations.map((level, i) => {
             const isBelow = level.price < currentPrice
             const distance = Math.abs((level.price - currentPrice) / currentPrice * 100)
-            const width = (level.size / maxSize * 100).toFixed(0)
+            const width = Math.max(10, (level.size / maxSize * 100))
             
             return (
               <div key={i} className="relative">
@@ -643,7 +672,7 @@ function LiquidationMap({ liquidations, currentPrice }: { liquidations: Liquidat
                     "font-mono",
                     level.side === "Long" ? "text-red-500" : "text-emerald-500"
                   )}>
-                    {level.side}s at ${level.price.toLocaleString()}
+                    {level.side}s at ${level.price.toLocaleString(undefined, {minimumFractionDigits: decimals, maximumFractionDigits: decimals})}
                   </span>
                   <span className="text-muted-foreground">{distance.toFixed(1)}%</span>
                 </div>
@@ -775,7 +804,7 @@ export default function Dashboard() {
         {/* Row 4: Entry Levels + Liquidation Map */}
         <div className="grid grid-cols-1 gap-4 px-4 py-4 lg:grid-cols-2 lg:px-6">
           <EntryLevelsCard data={marketData} />
-          <LiquidationMap liquidations={liquidations} currentPrice={marketData.price} />
+          <LiquidationMap liquidations={liquidations} currentPrice={marketData.price} symbol={symbol} />
         </div>
 
         {/* Row 5: Secondary Indicators */}
