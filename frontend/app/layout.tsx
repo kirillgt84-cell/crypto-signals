@@ -6,8 +6,8 @@ import { ThemeProvider } from './components/theme-provider'
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'SignalStream - Crypto Trading Signals',
-  description: 'Smart trading signals powered by data',
+  title: 'Fast Lane - Crypto Trading Dashboard',
+  description: 'Professional crypto analytics and trading signals',
 }
 
 export default function RootLayout({

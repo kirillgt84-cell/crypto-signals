@@ -370,7 +370,7 @@ export default function Dashboard() {
     <div className="flex min-h-screen">
       <Sidebar />
       
-      <main className="flex-1 overflow-hidden">
+      <main className="flex-1 overflow-hidden ml-0 lg:ml-64">
         {/* Header */}
         <header className="flex h-16 items-center justify-between border-b border-border px-4 lg:px-6">
           <div className="flex items-center gap-4">

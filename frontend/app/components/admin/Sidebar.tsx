@@ -70,7 +70,7 @@ export default function Sidebar() {
                 <Activity className="h-4 w-4 text-primary-foreground" />
               </div>
               {!collapsed && (
-                <span className="text-lg font-bold">OI Admin</span>
+                <span className="text-lg font-bold">Fast Lane</span>
               )}
             </Link>
             {!collapsed && (
