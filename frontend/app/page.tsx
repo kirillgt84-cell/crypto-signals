@@ -15,6 +15,13 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "https://crypto-signals-
 
 const symbols = ["BTC", "ETH", "SOL", "BNB", "XRP", "DOGE", "ADA", "LINK", "AVAX", "MATIC"]
 
+const timeframes = [
+  { value: "15", label: "M15" },
+  { value: "60", label: "1H" },
+  { value: "240", label: "4H" },
+  { value: "D", label: "1D" },
+]
+
 interface MarketData {
   symbol: string
   price: number
@@ -61,55 +68,58 @@ interface LiquidationLevel {
   size: number
 }
 
-// Mock data for fallback
-const getMockMarketData = (symbol: string): MarketData => ({
+// Mock data for fallback - adapts to timeframe
+const getMockMarketData = (symbol: string, timeframe: string): MarketData => ({
   symbol,
   price: symbol === "BTC" ? 67234 : symbol === "ETH" ? 3456 : 145,
   change_24h: Math.random() * 10 - 3,
-  oi: 15.5e9,
+  oi: 15.5e9 * (timeframe === "15" ? 1 : timeframe === "60" ? 1.02 : timeframe === "240" ? 1.05 : 1.1),
   oi_change: Math.random() * 5 - 1,
-  volume: 28.3e9,
-  cvd: 2450000,
-  cvd_change: 5.2,
+  volume: 28.3e9 * (timeframe === "15" ? 0.1 : timeframe === "60" ? 0.3 : timeframe === "240" ? 0.6 : 1),
+  cvd: 2450000 * (timeframe === "15" ? 1 : timeframe === "60" ? 2.5 : timeframe === "240" ? 6 : 15),
+  cvd_change: 5.2 * (Math.random() * 2 - 0.5),
   signal: Math.random() > 0.5 ? "LONG" : "SHORT",
   score: Math.floor(Math.random() * 7),
-  ema20: symbol === "BTC" ? 66800 : symbol === "ETH" ? 3420 : 142,
-  ema50: symbol === "BTC" ? 65800 : symbol === "ETH" ? 3350 : 135,
+  ema20: symbol === "BTC" ? 66800 + (Math.random() * 200 - 100) : symbol === "ETH" ? 3420 + (Math.random() * 20 - 10) : 142,
+  ema50: symbol === "BTC" ? 65800 + (Math.random() * 300 - 150) : symbol === "ETH" ? 3350 + (Math.random() * 30 - 15) : 135,
   ema200: symbol === "BTC" ? 62800 : symbol === "ETH" ? 3150 : 125,
-  poc: symbol === "BTC" ? 66800 : symbol === "ETH" ? 3420 : 142,
+  poc: symbol === "BTC" ? 66800 + (Math.random() * 400 - 200) : symbol === "ETH" ? 3420 + (Math.random() * 40 - 20) : 142,
   vah: symbol === "BTC" ? 68200 : symbol === "ETH" ? 3520 : 152,
   val: symbol === "BTC" ? 65400 : symbol === "ETH" ? 3320 : 132,
-  atr: symbol === "BTC" ? 450 : symbol === "ETH" ? 25 : 1.5,
+  atr: (symbol === "BTC" ? 450 : symbol === "ETH" ? 25 : 1.5) * (timeframe === "15" ? 0.3 : timeframe === "60" ? 0.6 : timeframe === "240" ? 1.2 : 2.5),
   funding: 0.008,
-  rsi: 58,
-  macd: 125,
-  macd_signal: 98,
+  rsi: 30 + Math.random() * 50,
+  macd: (Math.random() - 0.5) * 200,
+  macd_signal: (Math.random() - 0.5) * 150,
   exchange_flow: -450.5,
 })
 
-const getMockChecklist = (symbol: string): ChecklistData => ({
+const getMockChecklist = (symbol: string, timeframe: string): ChecklistData => ({
   symbol,
-  score: 5,
+  score: Math.floor(Math.random() * 5) + 2,
   total: 7,
   items: [
-    { name: "Trend", passed: true, description: "Above EMA20" },
-    { name: "OI Rising", passed: true, description: "OI +5%" },
-    { name: "Volume", passed: true, description: "High volume" },
-    { name: "CVD", passed: false, description: "Neutral" },
-    { name: "Liquidations", passed: true, description: "Shorts liquidated" },
-    { name: "Levels", passed: false, description: "At resistance" },
-    { name: "Funding", passed: true, description: "Negative funding" },
+    { name: "Trend", passed: Math.random() > 0.3, description: timeframe === "15" ? "Short-term trend" : timeframe === "60" ? "Hourly trend" : timeframe === "240" ? "4H trend" : "Daily trend" },
+    { name: "OI Rising", passed: Math.random() > 0.4, description: `OI ${Math.random() > 0.5 ? "+" : "-"}${(Math.random() * 5).toFixed(1)}%` },
+    { name: "Volume", passed: Math.random() > 0.3, description: timeframe === "15" ? "M15 Volume" : timeframe === "60" ? "H1 Volume" : timeframe === "240" ? "H4 Volume" : "Daily Volume" },
+    { name: "CVD", passed: Math.random() > 0.5, description: Math.random() > 0.5 ? "Bid dominant" : "Ask dominant" },
+    { name: "Liquidations", passed: Math.random() > 0.4, description: timeframe === "15" ? "Recent liqs" : "Accumulated liqs" },
+    { name: "Levels", passed: Math.random() > 0.5, description: Math.random() > 0.5 ? "At support" : "At resistance" },
+    { name: "Funding", passed: Math.random() > 0.5, description: "Funding check" },
   ],
-  recommendation: "Strong LONG setup",
+  recommendation: Math.random() > 0.5 ? "Strong LONG setup" : Math.random() > 0.5 ? "LONG setup" : Math.random() > 0.5 ? "NEUTRAL" : "SHORT setup",
   timestamp: new Date().toISOString(),
 })
 
-const getMockLiquidations = (symbol: string): LiquidationLevel[] => [
-  { price: symbol === "BTC" ? 65000 : 3200, side: "Long", size: 125000000 },
-  { price: symbol === "BTC" ? 69000 : 3700, side: "Short", size: 98000000 },
-  { price: symbol === "BTC" ? 64000 : 3100, side: "Long", size: 85000000 },
-  { price: symbol === "BTC" ? 70000 : 3800, side: "Short", size: 72000000 },
-]
+const getMockLiquidations = (symbol: string, timeframe: string): LiquidationLevel[] => {
+  const multiplier = timeframe === "15" ? 1 : timeframe === "60" ? 1.5 : timeframe === "240" ? 2.5 : 5
+  return [
+    { price: (symbol === "BTC" ? 65000 : 3200) - (multiplier * 100), side: "Long", size: 125000000 * multiplier },
+    { price: (symbol === "BTC" ? 69000 : 3700) + (multiplier * 100), side: "Short", size: 98000000 * multiplier },
+    { price: (symbol === "BTC" ? 64000 : 3100) - (multiplier * 200), side: "Long", size: 85000000 * multiplier },
+    { price: (symbol === "BTC" ? 70000 : 3800) + (multiplier * 200), side: "Short", size: 72000000 * multiplier },
+  ]
+}
 
 // Helper functions
 const getRSIInterpretation = (rsi: number): { text: string; color: string } => {
@@ -257,18 +267,18 @@ function ChartLegend({ data }: { data: MarketData }) {
 }
 
 // Row 2: TradingView Chart with levels
-function ChartSection({ symbol, data }: { symbol: string; data: MarketData }) {
+function ChartSection({ symbol, timeframe, data }: { symbol: string; timeframe: string; data: MarketData }) {
   return (
     <Card className="flex flex-col">
       <CardHeader className="gap-2">
         <CardTitle>Price Action & OI Analysis</CardTitle>
         <CardDescription>
-          Real-time chart with POC, EMA levels for {symbol}
+          Real-time chart with POC, EMA levels for {symbol} on {timeframes.find(tf => tf.value === timeframe)?.label}
         </CardDescription>
       </CardHeader>
       <CardContent className="flex-1 px-2 sm:px-6">
         <div className="mb-4">
-          <TradingViewChart symbol={symbol} ema20={data.ema20} ema50={data.ema50} poc={data.poc} />
+          <TradingViewChart symbol={symbol} timeframe={timeframe} ema20={data.ema20} ema50={data.ema50} poc={data.poc} />
         </div>
         <ChartLegend data={data} />
       </CardContent>
@@ -552,6 +562,7 @@ function LiquidationMap({ liquidations, currentPrice }: { liquidations: Liquidat
 export default function Dashboard() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [symbol, setSymbol] = useState("BTC")
+  const [timeframe, setTimeframe] = useState("60")
   const [marketData, setMarketData] = useState<MarketData | null>(null)
   const [checklist, setChecklist] = useState<ChecklistData | null>(null)
   const [liquidations, setLiquidations] = useState<LiquidationLevel[]>([])
@@ -562,9 +573,9 @@ export default function Dashboard() {
       setLoading(true)
       try {
         // Simulate API calls with mock data for now
-        const mockData = getMockMarketData(symbol)
-        const mockChecklist = getMockChecklist(symbol)
-        const mockLiquidations = getMockLiquidations(symbol)
+        const mockData = getMockMarketData(symbol, timeframe)
+        const mockChecklist = getMockChecklist(symbol, timeframe)
+        const mockLiquidations = getMockLiquidations(symbol, timeframe)
         
         setMarketData(mockData)
         setChecklist(mockChecklist)
@@ -579,7 +590,7 @@ export default function Dashboard() {
     fetchData()
     const interval = setInterval(fetchData, 30000)
     return () => clearInterval(interval)
-  }, [symbol])
+  }, [symbol, timeframe])
 
   if (!marketData) {
     return (
@@ -599,12 +610,22 @@ export default function Dashboard() {
           <div className="flex items-center gap-4">
             <h1 className="text-xl font-semibold">Dashboard</h1>
             <Select value={symbol} onValueChange={setSymbol}>
-              <SelectTrigger className="w-28">
+              <SelectTrigger className="w-24">
                 <SelectValue placeholder="Symbol" />
               </SelectTrigger>
               <SelectContent>
                 {symbols.map(s => (
                   <SelectItem key={s} value={s}>{s}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select value={timeframe} onValueChange={setTimeframe}>
+              <SelectTrigger className="w-20">
+                <SelectValue placeholder="TF" />
+              </SelectTrigger>
+              <SelectContent>
+                {timeframes.map(tf => (
+                  <SelectItem key={tf.value} value={tf.value}>{tf.label}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -627,7 +648,7 @@ export default function Dashboard() {
         {/* Row 2: TradingView Chart + Checklist */}
         <div className="grid grid-cols-1 gap-4 px-4 py-4 lg:grid-cols-3 lg:px-6">
           <div className="lg:col-span-2">
-            <ChartSection symbol={symbol} data={marketData} />
+            <ChartSection symbol={symbol} timeframe={timeframe} data={marketData} />
           </div>
           <ChecklistScoreCard 
             symbol={symbol} 

@@ -4,12 +4,13 @@ import { useEffect, useRef, useState } from "react"
 
 interface TradingViewChartProps {
   symbol: string
+  timeframe?: string
   ema20?: number
   ema50?: number
   poc?: number
 }
 
-export function TradingViewChart({ symbol, ema20, ema50, poc }: TradingViewChartProps) {
+export function TradingViewChart({ symbol, timeframe = "60", ema20, ema50, poc }: TradingViewChartProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const [isScriptLoaded, setIsScriptLoaded] = useState(false)
 
@@ -59,7 +60,7 @@ export function TradingViewChart({ symbol, ema20, ema50, poc }: TradingViewChart
     widgetContainer.appendChild(copyrightDiv)
     containerRef.current.appendChild(widgetContainer)
 
-    // Initialize TradingView widget
+    // Initialize TradingView widget with timeframe
     const script = document.createElement("script")
     script.type = "text/javascript"
     script.src = "https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js"
@@ -67,7 +68,7 @@ export function TradingViewChart({ symbol, ema20, ema50, poc }: TradingViewChart
     script.innerHTML = JSON.stringify({
       autosize: true,
       symbol: tvSymbol,
-      interval: "15",
+      interval: timeframe,
       timezone: "exchange",
       theme: "dark",
       style: "1",
@@ -97,7 +98,7 @@ export function TradingViewChart({ symbol, ema20, ema50, poc }: TradingViewChart
         containerRef.current.innerHTML = ""
       }
     }
-  }, [symbol, isScriptLoaded])
+  }, [symbol, timeframe, isScriptLoaded])
 
   if (!isScriptLoaded) {
     return (
