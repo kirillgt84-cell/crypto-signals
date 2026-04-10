@@ -240,7 +240,7 @@ function MetricCard({
           </div>
         ) : (
           <CardTitle className="text-2xl font-semibold tabular-nums">
-            {value}
+            {value || "--"}
           </CardTitle>
         )}
         {subvalue && !loading && (
@@ -262,29 +262,32 @@ function MetricCard({
 
 // Row 1: OI Analysis Cards
 function OIAnalysisCards({ data, loading }: { data: MarketData; loading: boolean }) {
+  const price = data?.price || 0
+  const decimals = price < 1 ? 4 : price < 100 ? 2 : 0
+  
   return (
     <div className="grid grid-cols-1 gap-4 px-4 py-4 sm:grid-cols-2 lg:grid-cols-4 lg:px-6">
       <MetricCard
         title="Price"
-        value={`$${data.price?.toLocaleString(undefined, {maximumFractionDigits: data.price < 1 ? 4 : data.price < 100 ? 2 : 0}) || "0"}`}
-        subvalue={`24h: ${(data.change_24h || 0) >= 0 ? "+" : ""}${(data.change_24h || 0).toFixed(2)}%`}
-        trend={(data.change_24h || 0) >= 0 ? "Rising" : "Falling"}
-        trendUp={(data.change_24h || 0) >= 0}
+        value={price > 0 ? `$${price.toLocaleString(undefined, {maximumFractionDigits: decimals})}` : "--"}
+        subvalue={`24h: ${(data?.change_24h || 0) >= 0 ? "+" : ""}${(data?.change_24h || 0).toFixed(2)}%`}
+        trend={(data?.change_24h || 0) >= 0 ? "Rising" : "Falling"}
+        trendUp={(data?.change_24h || 0) >= 0}
         icon={BarChart3}
         loading={loading}
       />
       <MetricCard
         title="Open Interest"
-        value={`$${((data.oi || 0) / 1e9).toFixed(2)}B`}
-        subvalue={`Change: ${(data.oi_change || 0).toFixed(2)}%`}
-        trend={(data.oi_change || 0) >= 0 ? "Rising" : "Falling"}
-        trendUp={(data.oi_change || 0) >= 0}
+        value={`$${((data?.oi || 0) / 1e9).toFixed(2)}B`}
+        subvalue={`Change: ${(data?.oi_change || 0).toFixed(2)}%`}
+        trend={(data?.oi_change || 0) >= 0 ? "Rising" : "Falling"}
+        trendUp={(data?.oi_change || 0) >= 0}
         icon={Activity}
         loading={loading}
       />
       <MetricCard
         title="24h Volume"
-        value={`$${((data.volume || 0) / 1e9).toFixed(2)}B`}
+        value={`$${((data?.volume || 0) / 1e9).toFixed(2)}B`}
         subvalue="Trading Activity"
         trend="High"
         trendUp={true}
@@ -293,10 +296,10 @@ function OIAnalysisCards({ data, loading }: { data: MarketData; loading: boolean
       />
       <MetricCard
         title="Signal"
-        value={data.signal || "NEUTRAL"}
-        subvalue={data.score !== undefined ? `Score: ${data.score}/7` : "Analyzing..."}
-        trend={data.signal === "LONG" ? "Bullish" : data.signal === "SHORT" ? "Bearish" : "Neutral"}
-        trendUp={data.signal === "LONG"}
+        value={data?.signal || "NEUTRAL"}
+        subvalue={data?.score !== undefined ? `Score: ${data.score}/7` : "Analyzing..."}
+        trend={data?.signal === "LONG" ? "Bullish" : data?.signal === "SHORT" ? "Bearish" : "Neutral"}
+        trendUp={data?.signal === "LONG"}
         icon={Target}
         loading={loading}
       />
@@ -318,18 +321,20 @@ function ChartLegend({ data, loading }: { data: MarketData; loading: boolean }) 
     )
   }
   
-  const distanceToEMA20 = ((data.price - data.ema20) / data.price * 100)
-  const distanceToEMA50 = ((data.price - data.ema50) / data.price * 100)
+  const price = data?.price || 0
+  const decimals = price < 1 ? 4 : price < 100 ? 2 : 0
+  const distanceToEMA20 = price > 0 ? ((price - (data?.ema20 || 0)) / price * 100) : 0
+  const distanceToEMA50 = price > 0 ? ((price - (data?.ema50 || 0)) / price * 100) : 0
   
   return (
     <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 p-4 bg-muted/30 rounded-lg">
       <div>
         <p className="text-xs text-muted-foreground">Price</p>
-        <p className="font-mono font-medium">${data.price?.toLocaleString(undefined, {maximumFractionDigits: data.price < 1 ? 4 : 2})}</p>
+        <p className="font-mono font-medium">${price > 0 ? price.toLocaleString(undefined, {maximumFractionDigits: decimals}) : "--"}</p>
       </div>
       <div>
         <p className="text-xs text-muted-foreground">OI Value</p>
-        <p className="font-mono font-medium">${(data.oi / 1e9).toFixed(2)}B</p>
+        <p className="font-mono font-medium">${((data?.oi || 0) / 1e9).toFixed(2)}B</p>
       </div>
       <div>
         <p className="text-xs text-muted-foreground">To EMA 20</p>
@@ -349,7 +354,8 @@ function ChartLegend({ data, loading }: { data: MarketData; loading: boolean }) 
 
 // Row 2: TradingView Chart with levels
 function ChartSection({ symbol, timeframe, data, loading }: { symbol: string; timeframe: string; data: MarketData; loading: boolean }) {
-  const decimals = data.price < 1 ? 4 : data.price < 100 ? 2 : 0
+  const price = data?.price || 0
+  const decimals = price < 1 ? 4 : price < 100 ? 2 : 0
   
   return (
     <Card className="flex flex-col">
@@ -359,13 +365,13 @@ function ChartSection({ symbol, timeframe, data, loading }: { symbol: string; ti
           {loading ? (
             "Loading market data..."
           ) : (
-            <>Real-time chart with POC, EMA levels for <strong>{symbol}</strong> at <span className="font-mono font-bold">${data.price.toLocaleString(undefined, {minimumFractionDigits: decimals, maximumFractionDigits: decimals})}</span> on {timeframes.find(tf => tf.value === timeframe)?.label}</>
+            <>Real-time chart with POC, EMA levels for <strong>{symbol}</strong> at <span className="font-mono font-bold">${price > 0 ? price.toLocaleString(undefined, {minimumFractionDigits: decimals, maximumFractionDigits: decimals}) : "--"}</span> on {timeframes.find(tf => tf.value === timeframe)?.label}</>
           )}
         </CardDescription>
       </CardHeader>
       <CardContent className="flex-1 px-2 sm:px-6">
         <div className="mb-4">
-          <TradingViewChart symbol={symbol} timeframe={timeframe} ema20={data.ema20} ema50={data.ema50} poc={data.poc} />
+          <TradingViewChart symbol={symbol} timeframe={timeframe} ema20={data?.ema20} ema50={data?.ema50} poc={data?.poc} />
         </div>
         <ChartLegend data={data} loading={loading} />
       </CardContent>
@@ -438,11 +444,12 @@ function ChecklistScoreCard({
 
 // Row 4: Entry Levels with distances
 function EntryLevelsCard({ data, loading }: { data: MarketData; loading: boolean }) {
-  const decimals = data.price < 1 ? 4 : data.price < 100 ? 2 : 0
-  const distanceToEMA20 = data.price - data.ema20
-  const distanceToEMA50 = data.price - data.ema50
-  const distanceToPOC = data.price - data.poc
-  const distanceToVAH = data.price - data.vah
+  const price = data?.price || 0
+  const decimals = price < 1 ? 4 : price < 100 ? 2 : 0
+  const distanceToEMA20 = price - (data?.ema20 || 0)
+  const distanceToEMA50 = price - (data?.ema50 || 0)
+  const distanceToPOC = price - (data?.poc || 0)
+  const distanceToVAH = price - (data?.vah || 0)
   
   return (
     <Card>
@@ -452,7 +459,7 @@ function EntryLevelsCard({ data, loading }: { data: MarketData; loading: boolean
           Key levels and distances from current price {loading ? (
             <Loader2 className="inline h-3 w-3 animate-spin" />
           ) : (
-            <span className="font-mono font-bold">${data.price.toLocaleString(undefined, {minimumFractionDigits: decimals, maximumFractionDigits: decimals})}</span>
+            <span className="font-mono font-bold">${price > 0 ? price.toLocaleString(undefined, {minimumFractionDigits: decimals, maximumFractionDigits: decimals}) : "--"}</span>
           )}
         </CardDescription>
       </CardHeader>
@@ -540,10 +547,16 @@ function EntryLevelsCard({ data, loading }: { data: MarketData; loading: boolean
 
 // Row 5: Secondary Indicators
 function SecondaryIndicators({ data, timeframe, loading }: { data: MarketData; timeframe: string; loading: boolean }) {
-  const rsiInterp = getRSIInterpretation(data.rsi, timeframe)
-  const macdInterp = getMACDInterpretation(data.macd, data.macd_signal, timeframe)
-  const fundingInterp = getFundingInterpretation(data.funding, timeframe)
-  const flowInterp = getExchangeFlowInterpretation(data.exchange_flow, timeframe)
+  const rsi = data?.rsi || 50
+  const macd = data?.macd || 0
+  const macdSignal = data?.macd_signal || 0
+  const funding = data?.funding || 0
+  const exchangeFlow = data?.exchange_flow || 0
+  
+  const rsiInterp = getRSIInterpretation(rsi, timeframe)
+  const macdInterp = getMACDInterpretation(macd, macdSignal, timeframe)
+  const fundingInterp = getFundingInterpretation(funding, timeframe)
+  const flowInterp = getExchangeFlowInterpretation(exchangeFlow, timeframe)
   
   return (
     <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 px-4 pb-6 lg:px-6">
@@ -628,16 +641,18 @@ function SecondaryIndicators({ data, timeframe, loading }: { data: MarketData; t
 
 // Liquidation Map Component
 function LiquidationMap({ liquidations, currentPrice, symbol, loading }: { liquidations: LiquidationLevel[]; currentPrice: number; symbol: string; loading: boolean }) {
-  const sortedLiquidations = [...liquidations].sort((a, b) => a.price - b.price)
-  const maxSize = Math.max(...liquidations.map(l => l.size), 1)
-  const decimals = currentPrice < 1 ? 4 : currentPrice < 100 ? 2 : 0
+  const safeLiquidations = liquidations || []
+  const sortedLiquidations = [...safeLiquidations].sort((a, b) => (a?.price || 0) - (b?.price || 0))
+  const maxSize = Math.max(...safeLiquidations.map(l => l?.size || 0), 1)
+  const price = currentPrice || 0
+  const decimals = price < 1 ? 4 : price < 100 ? 2 : 0
   
   return (
     <Card>
       <CardHeader>
         <CardTitle>Liquidation Map</CardTitle>
         <CardDescription>
-          Concentrated liquidation levels (Current: {loading ? <Loader2 className="inline h-3 w-3 animate-spin" /> : `$${currentPrice.toLocaleString(undefined, {minimumFractionDigits: decimals, maximumFractionDigits: decimals})}`})
+          Concentrated liquidation levels (Current: {loading ? <Loader2 className="inline h-3 w-3 animate-spin" /> : `$${price > 0 ? price.toLocaleString(undefined, {minimumFractionDigits: decimals, maximumFractionDigits: decimals}) : "--"}`})
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -653,17 +668,18 @@ function LiquidationMap({ liquidations, currentPrice, symbol, loading }: { liqui
           <>
             <div className="space-y-2">
               {sortedLiquidations.map((level, i) => {
-                const distance = Math.abs((level.price - currentPrice) / currentPrice * 100)
-                const width = Math.max(10, (level.size / maxSize * 100))
+                const levelPrice = level?.price || 0
+                const distance = price > 0 ? Math.abs((levelPrice - price) / price * 100) : 0
+                const width = Math.max(10, ((level?.size || 0) / maxSize * 100))
                 
                 return (
                   <div key={i} className="relative">
                     <div className="flex items-center justify-between text-sm mb-1">
                       <span className={cn(
                         "font-mono",
-                        level.side === "Long" ? "text-red-500" : "text-emerald-500"
+                        level?.side === "Long" ? "text-red-500" : "text-emerald-500"
                       )}>
-                        {level.side}s at ${level.price.toLocaleString(undefined, {minimumFractionDigits: decimals, maximumFractionDigits: decimals})}
+                        {level?.side || "Unknown"}s at ${levelPrice > 0 ? levelPrice.toLocaleString(undefined, {minimumFractionDigits: decimals, maximumFractionDigits: decimals}) : "--"}
                       </span>
                       <span className="text-muted-foreground">{distance.toFixed(1)}%</span>
                     </div>
@@ -677,7 +693,7 @@ function LiquidationMap({ liquidations, currentPrice, symbol, loading }: { liqui
                       />
                     </div>
                     <p className="text-xs text-muted-foreground mt-0.5">
-                      Size: ${(level.size / 1e6).toFixed(1)}M
+                      Size: ${((level?.size || 0) / 1e6).toFixed(1)}M
                     </p>
                   </div>
                 )
@@ -788,31 +804,34 @@ export default function Dashboard() {
           console.error("Profile API error:", profileRes.status)
         }
 
-        // Combine data into MarketData format
+        // Combine data into MarketData format with safe defaults
+        const price = Number(oiData.price) || 70000
+        const oi = Number(oiData.open_interest) || 0
+        
         const combinedData: MarketData = {
           symbol,
-          price: oiData.price || 0,
-          change_24h: oiData.change_24h || oiData.price_change_24h || 0,
-          oi: oiData.open_interest || oiData.oi || 0,
-          oi_change: oiData.oi_change_24h || oiData.oi_change || 0,
-          volume: oiData.volume || 0,
-          cvd: oiData.cvd || 0,
-          cvd_change: 0, // Will be calculated if available
+          price: price,
+          change_24h: Number(oiData.change_24h) || Number(oiData.price_change_24h) || 0,
+          oi: oi,
+          oi_change: Number(oiData.oi_change_24h) || Number(oiData.oi_change) || 0,
+          volume: Number(oiData.volume) || Number(oiData.volume_24h) || 0,
+          cvd: Number(oiData.cvd) || 0,
+          cvd_change: 0,
           signal: checklistData?.recommendation?.includes("LONG") ? "LONG" : 
                   checklistData?.recommendation?.includes("SHORT") ? "SHORT" : "NEUTRAL",
-          score: checklistData?.score || 0,
-          ema20: levelsData.ema20 || profileData.ema20 || oiData.price * 0.99,
-          ema50: levelsData.ema50 || profileData.ema50 || oiData.price * 0.98,
-          ema200: levelsData.ema200 || oiData.price * 0.95,
-          poc: profileData.poc || levelsData.poc || oiData.price,
-          vah: profileData.vah || oiData.price * 1.02,
-          val: profileData.val || oiData.price * 0.98,
-          atr: levelsData.atr || oiData.price * 0.008,
-          funding: oiData.funding_rate || oiData.funding || 0,
-          rsi: levelsData.rsi || oiData.rsi || 50,
-          macd: levelsData.macd || 0,
-          macd_signal: levelsData.macd_signal || 0,
-          exchange_flow: oiData.exchange_flow || 0,
+          score: Number(checklistData?.score) || 0,
+          ema20: Number(levelsData?.ema20) || Number(profileData?.ema20) || price * 0.99,
+          ema50: Number(levelsData?.ema50) || Number(profileData?.ema50) || price * 0.98,
+          ema200: Number(levelsData?.ema200) || price * 0.95,
+          poc: Number(profileData?.poc) || Number(levelsData?.poc) || price,
+          vah: Number(profileData?.vah) || price * 1.02,
+          val: Number(profileData?.val) || price * 0.98,
+          atr: Number(levelsData?.atr) || price * 0.008,
+          funding: Number(oiData.funding_rate) || Number(oiData.funding) || 0,
+          rsi: Number(levelsData?.rsi) || Number(oiData.rsi) || 50,
+          macd: Number(levelsData?.macd) || 0,
+          macd_signal: Number(levelsData?.macd_signal) || 0,
+          exchange_flow: Number(oiData.exchange_flow) || 0,
         }
         
         setMarketData(combinedData)
