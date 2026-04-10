@@ -1,4 +1,5 @@
 FROM python:3.11-slim
+# Trigger rebuild: 2026-04-10 - Fixed symbol handling
 
 WORKDIR /app
 
