@@ -1,11 +1,12 @@
 "use client"
 
-import { useEffect, useState } from "react"
-import { TrendingUp, TrendingDown, Activity, BarChart3, Wallet, ArrowUpRight, ArrowDownRight, Target, Zap } from "lucide-react"
+import { useEffect, useState, useMemo } from "react"
+import { TrendingUp, TrendingDown, Activity, BarChart3, Wallet, ArrowUpRight, ArrowDownRight, Target, Zap, Sigma, MoveHorizontal } from "lucide-react"
 import { Card, CardAction, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { CryptoChart } from "./components/CryptoChart"
+import { TradingViewChart } from "./components/TradingViewChart"
 import Sidebar from "./components/admin/Sidebar"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { cn } from "@/lib/utils"
@@ -21,8 +22,22 @@ interface MarketData {
   oi: number
   oi_change: number
   volume: number
+  cvd: number
+  cvd_change: number
   signal: "LONG" | "SHORT" | "NEUTRAL"
   score?: number
+  ema20: number
+  ema50: number
+  ema200: number
+  poc: number
+  vah: number
+  val: number
+  atr: number
+  funding: number
+  rsi: number
+  macd: number
+  macd_signal: number
+  exchange_flow: number
 }
 
 interface ChecklistItem {
@@ -40,6 +55,12 @@ interface ChecklistData {
   timestamp: string
 }
 
+interface LiquidationLevel {
+  price: number
+  side: "Long" | "Short"
+  size: number
+}
+
 // Mock data for fallback
 const getMockMarketData = (symbol: string): MarketData => ({
   symbol,
@@ -48,8 +69,22 @@ const getMockMarketData = (symbol: string): MarketData => ({
   oi: 15.5e9,
   oi_change: Math.random() * 5 - 1,
   volume: 28.3e9,
+  cvd: 2450000,
+  cvd_change: 5.2,
   signal: Math.random() > 0.5 ? "LONG" : "SHORT",
   score: Math.floor(Math.random() * 7),
+  ema20: symbol === "BTC" ? 66800 : symbol === "ETH" ? 3420 : 142,
+  ema50: symbol === "BTC" ? 65800 : symbol === "ETH" ? 3350 : 135,
+  ema200: symbol === "BTC" ? 62800 : symbol === "ETH" ? 3150 : 125,
+  poc: symbol === "BTC" ? 66800 : symbol === "ETH" ? 3420 : 142,
+  vah: symbol === "BTC" ? 68200 : symbol === "ETH" ? 3520 : 152,
+  val: symbol === "BTC" ? 65400 : symbol === "ETH" ? 3320 : 132,
+  atr: symbol === "BTC" ? 450 : symbol === "ETH" ? 25 : 1.5,
+  funding: 0.008,
+  rsi: 58,
+  macd: 125,
+  macd_signal: 98,
+  exchange_flow: -450.5,
 })
 
 const getMockChecklist = (symbol: string): ChecklistData => ({
@@ -69,111 +104,173 @@ const getMockChecklist = (symbol: string): ChecklistData => ({
   timestamp: new Date().toISOString(),
 })
 
-const getMockLevels = (symbol: string) => ({
-  ema20: symbol === "BTC" ? 66500 : symbol === "ETH" ? 3400 : 140,
-  ema50: symbol === "BTC" ? 65800 : symbol === "ETH" ? 3350 : 135,
-  poc: symbol === "BTC" ? 66800 : symbol === "ETH" ? 3420 : 142,
-  liquidation_levels: [
-    { side: "Long", price: symbol === "BTC" ? 65000 : 3200 },
-    { side: "Short", price: symbol === "BTC" ? 69000 : 3700 },
-  ],
-})
+const getMockLiquidations = (symbol: string): LiquidationLevel[] => [
+  { price: symbol === "BTC" ? 65000 : 3200, side: "Long", size: 125000000 },
+  { price: symbol === "BTC" ? 69000 : 3700, side: "Short", size: 98000000 },
+  { price: symbol === "BTC" ? 64000 : 3100, side: "Long", size: 85000000 },
+  { price: symbol === "BTC" ? 70000 : 3800, side: "Short", size: 72000000 },
+]
+
+// Helper functions
+const getRSIInterpretation = (rsi: number): { text: string; color: string } => {
+  if (rsi > 70) return { text: "Overbought", color: "text-red-500" }
+  if (rsi < 30) return { text: "Oversold", color: "text-emerald-500" }
+  return { text: "Neutral", color: "text-amber-500" }
+}
+
+const getMACDInterpretation = (macd: number, signal: number): { text: string; color: string } => {
+  if (macd > signal && macd > 0) return { text: "Bullish", color: "text-emerald-500" }
+  if (macd < signal && macd < 0) return { text: "Bearish", color: "text-red-500" }
+  if (macd > signal) return { text: "Crossing Up", color: "text-emerald-500" }
+  return { text: "Crossing Down", color: "text-red-500" }
+}
+
+const getFundingInterpretation = (funding: number): { text: string; color: string } => {
+  if (funding > 0.01) return { text: "Longs Pay (Overheated)", color: "text-red-500" }
+  if (funding < -0.01) return { text: "Shorts Pay (Fear)", color: "text-emerald-500" }
+  return { text: "Balanced", color: "text-muted-foreground" }
+}
+
+const getExchangeFlowInterpretation = (flow: number): { text: string; trend: "up" | "down" } => {
+  if (flow < 0) return { text: "Outflow (Bullish)", trend: "up" }
+  if (flow > 0) return { text: "Inflow (Bearish)", trend: "down" }
+  return { text: "Neutral", trend: "up" }
+}
 
 // Section Card Component
-function SectionCard({
+function MetricCard({
   title,
-  description,
   value,
+  subvalue,
   trend,
   trendUp,
+  icon: Icon,
 }: {
   title: string
-  description: string
   value: string
+  subvalue?: string
   trend: string
   trendUp: boolean
+  icon: React.ElementType
 }) {
   return (
     <Card className="bg-gradient-to-t from-primary/5 to-card">
       <CardHeader>
-        <CardDescription>{description}</CardDescription>
-        <CardTitle className="text-3xl font-semibold tabular-nums">
+        <div className="flex items-center gap-2">
+          <Icon className="h-4 w-4 text-muted-foreground" />
+          <CardDescription>{title}</CardDescription>
+        </div>
+        <CardTitle className="text-2xl font-semibold tabular-nums">
           {value}
         </CardTitle>
+        {subvalue && (
+          <p className="text-xs text-muted-foreground">{subvalue}</p>
+        )}
         <CardAction>
           <Badge variant="outline" className={cn(
-            "gap-1 text-sm",
+            "gap-1 text-xs",
             trendUp ? "text-emerald-500" : "text-red-500"
           )}>
-            {trendUp ? <TrendingUp className="h-3.5 w-3.5" /> : <TrendingDown className="h-3.5 w-3.5" />}
+            {trendUp ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
             {trend}
           </Badge>
         </CardAction>
       </CardHeader>
-      <CardFooter className="flex-col items-start gap-1.5 text-sm">
-        <div className="line-clamp-1 flex gap-2 font-medium">
-          {title}
-          <span className={cn(
-            "flex items-center gap-1",
-            trendUp ? "text-emerald-500" : "text-red-500"
-          )}>
-            {trendUp ? <ArrowUpRight className="h-3.5 w-3.5" /> : <ArrowDownRight className="h-3.5 w-3.5" />}
-          </span>
-        </div>
-        <div className="text-muted-foreground">Real-time market data</div>
-      </CardFooter>
     </Card>
   )
 }
 
-// Section Cards Grid
-function SectionCards({ data }: { data: MarketData }) {
+// Row 1: OI Analysis Cards
+function OIAnalysisCards({ data }: { data: MarketData }) {
+  const distanceToEMA20 = ((data.price - data.ema20) / data.price * 100).toFixed(2)
+  const distanceToEMA50 = ((data.price - data.ema50) / data.price * 100).toFixed(2)
+  
   return (
-    <div className="grid grid-cols-1 gap-4 px-4 py-4 md:grid-cols-2 lg:grid-cols-4 lg:px-6">
-      <SectionCard
-        description="Current Price"
-        title={data.symbol}
-        value={`$${data.price?.toLocaleString?.() || data.price || 0}`}
-        trend={`${(data.change_24h || 0) >= 0 ? "+" : ""}${(data.change_24h || 0).toFixed(2)}%`}
-        trendUp={(data.change_24h || 0) >= 0}
-      />
-      <SectionCard
-        description="Open Interest"
-        title="OI Value"
+    <div className="grid grid-cols-1 gap-4 px-4 py-4 sm:grid-cols-2 lg:grid-cols-4 lg:px-6">
+      <MetricCard
+        title="Open Interest"
         value={`$${((data.oi || 0) / 1e9).toFixed(2)}B`}
-        trend={`${(data.oi_change || 0) >= 0 ? "+" : ""}${(data.oi_change || 0).toFixed(2)}%`}
+        subvalue={`Change: ${(data.oi_change || 0).toFixed(2)}%`}
+        trend={(data.oi_change || 0) >= 0 ? "Rising" : "Falling"}
         trendUp={(data.oi_change || 0) >= 0}
+        icon={BarChart3}
       />
-      <SectionCard
-        description="24h Volume"
-        title="Trading Volume"
+      <MetricCard
+        title="24h Volume"
         value={`$${((data.volume || 0) / 1e9).toFixed(2)}B`}
-        trend="High activity"
+        subvalue="Trading Activity"
+        trend="High"
         trendUp={true}
+        icon={Activity}
       />
-      <SectionCard
-        description="Signal"
-        title="Trading Signal"
+      <MetricCard
+        title="CVD (Delta)"
+        value={`${(data.cvd / 1e6).toFixed(2)}M`}
+        subvalue={`Change: ${data.cvd_change >= 0 ? "+" : ""}${data.cvd_change.toFixed(2)}%`}
+        trend={data.cvd_change >= 0 ? "Bid Dominance" : "Ask Dominance"}
+        trendUp={data.cvd_change >= 0}
+        icon={Sigma}
+      />
+      <MetricCard
+        title="Signal"
         value={data.signal || "NEUTRAL"}
-        trend={data.score !== undefined ? `Score: ${data.score}/7` : "Analyzing..."}
+        subvalue={data.score !== undefined ? `Score: ${data.score}/7` : "Analyzing..."}
+        trend={data.signal === "LONG" ? "Bullish" : data.signal === "SHORT" ? "Bearish" : "Neutral"}
         trendUp={data.signal === "LONG"}
+        icon={Target}
       />
     </div>
   )
 }
 
-// Chart Area Component
-function ChartArea({ symbol, className }: { symbol: string; className?: string }) {
+// Chart Legend Component
+function ChartLegend({ data }: { data: MarketData }) {
+  const distanceToEMA20 = ((data.price - data.ema20) / data.price * 100)
+  const distanceToEMA50 = ((data.price - data.ema50) / data.price * 100)
+  
   return (
-    <Card className={cn("flex flex-col", className)}>
+    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 p-4 bg-muted/30 rounded-lg">
+      <div>
+        <p className="text-xs text-muted-foreground">OI Value</p>
+        <p className="font-mono font-medium">${(data.oi / 1e9).toFixed(2)}B</p>
+      </div>
+      <div>
+        <p className="text-xs text-muted-foreground">CVD</p>
+        <p className={cn("font-mono font-medium", data.cvd >= 0 ? "text-emerald-500" : "text-red-500")}>
+          {(data.cvd / 1e6).toFixed(2)}M
+        </p>
+      </div>
+      <div>
+        <p className="text-xs text-muted-foreground">To EMA 20</p>
+        <p className={cn("font-mono font-medium", distanceToEMA20 >= 0 ? "text-emerald-500" : "text-red-500")}>
+          {distanceToEMA20 >= 0 ? "+" : ""}{distanceToEMA20.toFixed(2)}%
+        </p>
+      </div>
+      <div>
+        <p className="text-xs text-muted-foreground">To EMA 50</p>
+        <p className={cn("font-mono font-medium", distanceToEMA50 >= 0 ? "text-emerald-500" : "text-red-500")}>
+          {distanceToEMA50 >= 0 ? "+" : ""}{distanceToEMA50.toFixed(2)}%
+        </p>
+      </div>
+    </div>
+  )
+}
+
+// Row 2: TradingView Chart with levels
+function ChartSection({ symbol, data }: { symbol: string; data: MarketData }) {
+  return (
+    <Card className="flex flex-col">
       <CardHeader className="gap-2">
-        <CardTitle>Price Action & OI</CardTitle>
+        <CardTitle>Price Action & OI Analysis</CardTitle>
         <CardDescription>
-          Real-time price and Open Interest correlation for {symbol}
+          Real-time chart with POC, EMA levels for {symbol}
         </CardDescription>
       </CardHeader>
-      <CardContent className="flex-1 px-2 sm:px-6 min-h-[400px]">
-        <CryptoChart symbol={symbol} />
+      <CardContent className="flex-1 px-2 sm:px-6">
+        <div className="mb-4">
+          <TradingViewChart symbol={symbol} ema20={data.ema20} ema50={data.ema50} poc={data.poc} />
+        </div>
+        <ChartLegend data={data} />
       </CardContent>
     </Card>
   )
@@ -242,57 +339,210 @@ function ChecklistScoreCard({
   )
 }
 
-// Key Levels Card
-function KeyLevelsCard({ 
-  symbol, 
-  levels 
-}: { 
-  symbol: string
-  levels: any 
-}) {
-  const liqLevels = levels?.liquidation_levels || []
+// Row 4: Entry Levels with distances
+function EntryLevelsCard({ data }: { data: MarketData }) {
+  const distanceToEMA20 = data.price - data.ema20
+  const distanceToEMA50 = data.price - data.ema50
+  const distanceToPOC = data.price - data.poc
+  const distanceToVAH = data.price - data.vah
   
   return (
     <Card>
       <CardHeader className="gap-2">
-        <CardTitle>Key Levels</CardTitle>
+        <CardTitle>Entry Levels</CardTitle>
         <CardDescription>
-          EMA & liquidation levels for {symbol}
+          Key levels and distances from current price ${data.price.toLocaleString()}
         </CardDescription>
       </CardHeader>
       <CardContent>
-        {levels ? (
-          <div className="space-y-3">
-            {levels.ema20 && (
-              <div className="flex items-center justify-between rounded-lg bg-muted px-3 py-2">
-                <span className="text-sm text-muted-foreground">EMA 20</span>
-                <span className="font-medium">${levels.ema20.toLocaleString()}</span>
-              </div>
-            )}
-            {levels.ema50 && (
-              <div className="flex items-center justify-between rounded-lg bg-muted px-3 py-2">
-                <span className="text-sm text-muted-foreground">EMA 50</span>
-                <span className="font-medium">${levels.ema50.toLocaleString()}</span>
-              </div>
-            )}
-            {levels.poc && (
-              <div className="flex items-center justify-between rounded-lg bg-muted px-3 py-2">
-                <span className="text-sm text-muted-foreground">POC</span>
-                <span className="font-medium">${levels.poc.toLocaleString()}</span>
-              </div>
-            )}
-            {Array.isArray(liqLevels) && liqLevels.slice(0, 2).map((level: any, i: number) => (
-              <div key={i} className="flex items-center justify-between rounded-lg bg-muted px-3 py-2">
-                <span className="text-sm text-muted-foreground">{level?.side || "Level"} Zone</span>
-                <span className="font-medium">${level?.price?.toLocaleString?.() || level?.price || 0}</span>
-              </div>
-            ))}
+        <div className="space-y-3">
+          <div className="flex items-center justify-between rounded-lg bg-muted px-3 py-2">
+            <div>
+              <span className="text-sm font-medium">EMA 20</span>
+              <p className="text-xs text-muted-foreground">Dynamic support/resistance</p>
+            </div>
+            <div className="text-right">
+              <span className="font-mono font-medium">${data.ema20.toLocaleString()}</span>
+              <p className={cn("text-xs", distanceToEMA20 >= 0 ? "text-emerald-500" : "text-red-500")}>
+                {distanceToEMA20 >= 0 ? "+" : ""}${Math.abs(distanceToEMA20).toFixed(0)} ({(distanceToEMA20/data.price*100).toFixed(2)}%)
+              </p>
+            </div>
           </div>
-        ) : (
-          <div className="py-4 text-center text-muted-foreground">
-            Loading levels...
+          
+          <div className="flex items-center justify-between rounded-lg bg-muted px-3 py-2">
+            <div>
+              <span className="text-sm font-medium">EMA 50</span>
+              <p className="text-xs text-muted-foreground">Trend direction</p>
+            </div>
+            <div className="text-right">
+              <span className="font-mono font-medium">${data.ema50.toLocaleString()}</span>
+              <p className={cn("text-xs", distanceToEMA50 >= 0 ? "text-emerald-500" : "text-red-500")}>
+                {distanceToEMA50 >= 0 ? "+" : ""}${Math.abs(distanceToEMA50).toFixed(0)} ({(distanceToEMA50/data.price*100).toFixed(2)}%)
+              </p>
+            </div>
           </div>
-        )}
+          
+          <div className="flex items-center justify-between rounded-lg bg-muted px-3 py-2">
+            <div>
+              <span className="text-sm font-medium">POC</span>
+              <p className="text-xs text-muted-foreground">Point of Control - high volume node</p>
+            </div>
+            <div className="text-right">
+              <span className="font-mono font-medium">${data.poc.toLocaleString()}</span>
+              <p className={cn("text-xs", distanceToPOC >= 0 ? "text-emerald-500" : "text-red-500")}>
+                {distanceToPOC >= 0 ? "+" : ""}${Math.abs(distanceToPOC).toFixed(0)}
+              </p>
+            </div>
+          </div>
+          
+          <div className="flex items-center justify-between rounded-lg bg-muted px-3 py-2">
+            <div>
+              <span className="text-sm font-medium">VAH</span>
+              <p className="text-xs text-muted-foreground">Value Area High - resistance zone</p>
+            </div>
+            <div className="text-right">
+              <span className="font-mono font-medium">${data.vah.toLocaleString()}</span>
+              <p className={cn("text-xs", distanceToVAH >= 0 ? "text-emerald-500" : "text-red-500")}>
+                {distanceToVAH >= 0 ? "+" : ""}${Math.abs(distanceToVAH).toFixed(0)}
+              </p>
+            </div>
+          </div>
+          
+          <div className="flex items-center justify-between rounded-lg bg-primary/10 px-3 py-2 border border-primary/20">
+            <div>
+              <span className="text-sm font-medium">ATR (Volatility)</span>
+              <p className="text-xs text-muted-foreground">Average True Range - position sizing</p>
+            </div>
+            <div className="text-right">
+              <span className="font-mono font-medium">${data.atr.toFixed(0)}</span>
+              <p className="text-xs text-muted-foreground">
+                Stop = 2×ATR = ${(data.atr * 2).toFixed(0)}
+              </p>
+            </div>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  )
+}
+
+// Row 5: Secondary Indicators
+function SecondaryIndicators({ data }: { data: MarketData }) {
+  const rsiInterp = getRSIInterpretation(data.rsi)
+  const macdInterp = getMACDInterpretation(data.macd, data.macd_signal)
+  const fundingInterp = getFundingInterpretation(data.funding)
+  const flowInterp = getExchangeFlowInterpretation(data.exchange_flow)
+  
+  return (
+    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 px-4 pb-6 lg:px-6">
+      {/* Funding Rate */}
+      <Card className="bg-gradient-to-t from-orange-500/5 to-card">
+        <CardHeader className="pb-2">
+          <CardDescription>Funding Rate</CardDescription>
+          <CardTitle className="text-xl">{(data.funding * 100).toFixed(3)}%</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className={cn("text-xs", fundingInterp.color)}>{fundingInterp.text}</p>
+        </CardContent>
+      </Card>
+      
+      {/* RSI */}
+      <Card className="bg-gradient-to-t from-purple-500/5 to-card">
+        <CardHeader className="pb-2">
+          <CardDescription>RSI (14)</CardDescription>
+          <CardTitle className="text-xl">{data.rsi.toFixed(1)}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className={cn("text-xs", rsiInterp.color)}>{rsiInterp.text}</p>
+          <p className="text-xs text-muted-foreground mt-1">
+            {data.rsi > 70 ? "Possible pullback" : data.rsi < 30 ? "Possible bounce" : "Momentum neutral"}
+          </p>
+        </CardContent>
+      </Card>
+      
+      {/* MACD */}
+      <Card className="bg-gradient-to-t from-blue-500/5 to-card">
+        <CardHeader className="pb-2">
+          <CardDescription>MACD</CardDescription>
+          <CardTitle className="text-xl">{data.macd > 0 ? "+" : ""}{data.macd.toFixed(0)}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className={cn("text-xs", macdInterp.color)}>{macdInterp.text}</p>
+          <p className="text-xs text-muted-foreground mt-1">
+            Signal: {data.macd_signal > 0 ? "+" : ""}{data.macd_signal.toFixed(0)}
+          </p>
+        </CardContent>
+      </Card>
+      
+      {/* Exchange Flows */}
+      <Card className="bg-gradient-to-t from-pink-500/5 to-card">
+        <CardHeader className="pb-2">
+          <CardDescription>Exchange Flows (24h)</CardDescription>
+          <CardTitle className="text-xl flex items-center gap-1">
+            {data.exchange_flow > 0 ? "+" : ""}{data.exchange_flow.toFixed(0)} {data.symbol}
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className={cn("text-xs", flowInterp.trend === "up" ? "text-emerald-500" : "text-red-500")}>
+            {flowInterp.text}
+          </p>
+          <p className="text-xs text-muted-foreground mt-1">Updated daily</p>
+        </CardContent>
+      </Card>
+    </div>
+  )
+}
+
+// Liquidation Map Component
+function LiquidationMap({ liquidations, currentPrice }: { liquidations: LiquidationLevel[]; currentPrice: number }) {
+  const sortedLiquidations = [...liquidations].sort((a, b) => a.price - b.price)
+  const maxSize = Math.max(...liquidations.map(l => l.size))
+  
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Liquidation Map</CardTitle>
+        <CardDescription>Concentrated liquidation levels - where price may hunt</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-2">
+          {sortedLiquidations.map((level, i) => {
+            const isBelow = level.price < currentPrice
+            const distance = Math.abs((level.price - currentPrice) / currentPrice * 100)
+            const width = (level.size / maxSize * 100).toFixed(0)
+            
+            return (
+              <div key={i} className="relative">
+                <div className="flex items-center justify-between text-sm mb-1">
+                  <span className={cn(
+                    "font-mono",
+                    level.side === "Long" ? "text-red-500" : "text-emerald-500"
+                  )}>
+                    {level.side}s at ${level.price.toLocaleString()}
+                  </span>
+                  <span className="text-muted-foreground">{distance.toFixed(1)}%</span>
+                </div>
+                <div className="h-2 bg-muted rounded-full overflow-hidden">
+                  <div 
+                    className={cn(
+                      "h-full rounded-full",
+                      level.side === "Long" ? "bg-red-500/70" : "bg-emerald-500/70"
+                    )}
+                    style={{ width: `${width}%` }}
+                  />
+                </div>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  Size: ${(level.size / 1e6).toFixed(1)}M
+                </p>
+              </div>
+            )
+          })}
+        </div>
+        <div className="mt-4 p-3 bg-muted rounded-lg">
+          <p className="text-xs text-muted-foreground">
+            💡 <strong>Tactic:</strong> Set TP before liquidation clusters, SL beyond nearest zone
+          </p>
+        </div>
       </CardContent>
     </Card>
   )
@@ -303,59 +553,23 @@ export default function Dashboard() {
   const [symbol, setSymbol] = useState("BTC")
   const [marketData, setMarketData] = useState<MarketData | null>(null)
   const [checklist, setChecklist] = useState<ChecklistData | null>(null)
-  const [levels, setLevels] = useState<any>(null)
+  const [liquidations, setLiquidations] = useState<LiquidationLevel[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     async function fetchData() {
       setLoading(true)
       try {
-        const [oiRes, checklistRes, levelsRes] = await Promise.all([
-          fetch(`${API_BASE_URL}/market/oi/${symbol}`),
-          fetch(`${API_BASE_URL}/market/checklist/${symbol}`),
-          fetch(`${API_BASE_URL}/market/levels/${symbol}`),
-        ])
+        // Simulate API calls with mock data for now
+        const mockData = getMockMarketData(symbol)
+        const mockChecklist = getMockChecklist(symbol)
+        const mockLiquidations = getMockLiquidations(symbol)
         
-        let oiData, checklistData, levelsData
-        
-        // Use real data if available, otherwise fallback to mock
-        if (oiRes.ok) {
-          oiData = await oiRes.json()
-        } else {
-          oiData = getMockMarketData(symbol)
-        }
-        
-        if (checklistRes.ok) {
-          checklistData = await checklistRes.json()
-        } else {
-          checklistData = getMockChecklist(symbol)
-        }
-        
-        if (levelsRes.ok) {
-          levelsData = await levelsRes.json()
-        } else {
-          levelsData = getMockLevels(symbol)
-        }
-        
-        setMarketData({
-          symbol,
-          price: oiData?.price || 0,
-          change_24h: oiData?.change_24h || 0,
-          oi: oiData?.oi || 0,
-          oi_change: oiData?.oi_change || 0,
-          volume: oiData?.volume || 0,
-          signal: checklistData?.score >= 5 ? "LONG" : checklistData?.score <= 2 ? "SHORT" : "NEUTRAL",
-          score: checklistData?.score,
-        })
-        
-        setChecklist(checklistData)
-        setLevels(levelsData)
+        setMarketData(mockData)
+        setChecklist(mockChecklist)
+        setLiquidations(mockLiquidations)
       } catch (error) {
         console.error("Failed to fetch market data:", error)
-        // Fallback to mock data on error
-        setMarketData(getMockMarketData(symbol))
-        setChecklist(getMockChecklist(symbol))
-        setLevels(getMockLevels(symbol))
       } finally {
         setLoading(false)
       }
@@ -365,6 +579,14 @@ export default function Dashboard() {
     const interval = setInterval(fetchData, 30000)
     return () => clearInterval(interval)
   }, [symbol])
+
+  if (!marketData) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
+      </div>
+    )
+  }
 
   return (
     <div className="flex min-h-screen">
@@ -398,12 +620,14 @@ export default function Dashboard() {
           </div>
         </header>
 
-        {/* Section Cards Grid */}
-        {marketData && <SectionCards data={marketData} />}
+        {/* Row 1: OI Analysis Cards */}
+        <OIAnalysisCards data={marketData} />
 
-        {/* Chart and Checklist Area */}
+        {/* Row 2: TradingView Chart + Checklist */}
         <div className="grid grid-cols-1 gap-4 px-4 py-4 lg:grid-cols-3 lg:px-6">
-          <ChartArea symbol={symbol} className="lg:col-span-2" />
+          <div className="lg:col-span-2">
+            <ChartSection symbol={symbol} data={marketData} />
+          </div>
           <ChecklistScoreCard 
             symbol={symbol} 
             checklist={checklist} 
@@ -411,10 +635,14 @@ export default function Dashboard() {
           />
         </div>
 
-        {/* Key Levels */}
-        <div className="px-4 pb-6 lg:px-6">
-          <KeyLevelsCard symbol={symbol} levels={levels} />
+        {/* Row 4: Entry Levels + Liquidation Map */}
+        <div className="grid grid-cols-1 gap-4 px-4 py-4 lg:grid-cols-2 lg:px-6">
+          <EntryLevelsCard data={marketData} />
+          <LiquidationMap liquidations={liquidations} currentPrice={marketData.price} />
         </div>
+
+        {/* Row 5: Secondary Indicators */}
+        <SecondaryIndicators data={marketData} />
       </main>
     </div>
   )
