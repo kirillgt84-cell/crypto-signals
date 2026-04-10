@@ -805,8 +805,11 @@ export default function Dashboard() {
         }
 
         // Combine data into MarketData format with safe defaults
-        const price = Number(oiData.price) || 70000
+        console.log("OI API response:", oiData)
+        const price = Number(oiData.price) || (symbol === "BTC" ? 70000 : symbol === "ETH" ? 3500 : 100)
         const oi = Number(oiData.open_interest) || 0
+        
+        console.log(`Setting price for ${symbol}:`, price)
         
         const combinedData: MarketData = {
           symbol,
@@ -850,35 +853,39 @@ export default function Dashboard() {
         
       } catch (err) {
         console.error("Failed to fetch market data:", err)
-        setError("API unavailable. Using demo data.")
+        setError("API error. Using cached/demo data.")
         
-        // Use fallback demo data based on symbol
-        const fallbackPrice = symbol === "BTC" ? 67234 : symbol === "ETH" ? 3456 : 100
-        
-        setMarketData({
-          symbol,
-          price: fallbackPrice,
-          change_24h: 2.5,
-          oi: 15.5e9,
-          oi_change: 5.2,
-          volume: 28.3e9,
-          cvd: 2450000,
-          cvd_change: 3.5,
-          signal: "LONG",
-          score: 5,
-          ema20: fallbackPrice * 0.99,
-          ema50: fallbackPrice * 0.98,
-          ema200: fallbackPrice * 0.95,
-          poc: fallbackPrice,
-          vah: fallbackPrice * 1.02,
-          val: fallbackPrice * 0.98,
-          atr: fallbackPrice * 0.008,
-          funding: 0.008,
-          rsi: 58,
-          macd: 125,
-          macd_signal: 98,
-          exchange_flow: -450,
-        })
+        // Only use fallback if we don't have valid price from OI API
+        // Check if we already got valid data before catch block
+        if (!marketData || marketData.price === 0) {
+          // Use fallback demo data based on symbol
+          const fallbackPrice = symbol === "BTC" ? 70000 : symbol === "ETH" ? 3500 : symbol === "SOL" ? 145 : 100
+          
+          setMarketData({
+            symbol,
+            price: fallbackPrice,
+            change_24h: 2.5,
+            oi: 15.5e9,
+            oi_change: 5.2,
+            volume: 28.3e9,
+            cvd: 2450000,
+            cvd_change: 3.5,
+            signal: "LONG",
+            score: 5,
+            ema20: fallbackPrice * 0.99,
+            ema50: fallbackPrice * 0.98,
+            ema200: fallbackPrice * 0.95,
+            poc: fallbackPrice,
+            vah: fallbackPrice * 1.02,
+            val: fallbackPrice * 0.98,
+            atr: fallbackPrice * 0.008,
+            funding: 0.008,
+            rsi: 58,
+            macd: 125,
+            macd_signal: 98,
+            exchange_flow: -450,
+          })
+        }
         
         setChecklist({
           symbol,

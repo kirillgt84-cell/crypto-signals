@@ -61,26 +61,67 @@ class BinanceFuturesFetcher:
             # OI change пока 0 (нужен кэш или история)
             oi_change_pct = 0
             
+            # Get mark price as fallback if klines failed
+            mark_price = None
+            try:
+                async with session.get(
+                    f"{self.BASE_URL}/fapi/v1/premiumIndex",
+                    params={"symbol": symbol},
+                    headers={"Accept": "application/json"}
+                ) as resp:
+                    mark_data = await resp.json()
+                    mark_price = float(mark_data.get('markPrice', 0))
+            except:
+                pass
+            
+            # Use klines close price or mark price
+            final_price = current_close if 'current_close' in locals() else mark_price
+            
             return {
                 "symbol": symbol,
                 "timestamp": datetime.utcnow().isoformat(),
                 "open_interest": current_oi,
                 "oi_change_24h": round(oi_change_pct, 2),
                 "oi_change_value": 0,
-                "price": float(current_close) if 'current_close' in locals() else 70000,
-                "price_change_24h": round(price_change_pct, 2),
+                "price": final_price,
+                "price_change_24h": round(price_change_pct, 2) if 'current_close' in locals() else 0,
                 "volume_24h": volume,
                 "interpretation": self._interpret_oi(oi_change_pct, price_change_pct)
             }
         except Exception as e:
-            # Fallback при ошибке
+            # Fallback при ошибке - пытаемся получить хотя бы mark price
+            try:
+                session = await self._get_session()
+                async with session.get(
+                    f"{self.BASE_URL}/fapi/v1/premiumIndex",
+                    params={"symbol": symbol},
+                    headers={"Accept": "application/json"}
+                ) as resp:
+                    mark_data = await resp.json()
+                    mark_price = float(mark_data.get('markPrice', 0))
+                    return {
+                        "symbol": symbol,
+                        "timestamp": datetime.utcnow().isoformat(),
+                        "open_interest": 0,
+                        "oi_change_24h": 0,
+                        "oi_change_value": 0,
+                        "price": mark_price,
+                        "price_change_24h": 0,
+                        "volume_24h": 0,
+                        "interpretation": self._interpret_oi(0, 0),
+                        "error": str(e)
+                    }
+            except:
+                pass
+            
+            # Ultimate fallback
             return {
                 "symbol": symbol,
                 "timestamp": datetime.utcnow().isoformat(),
                 "open_interest": 0,
                 "oi_change_24h": 0,
                 "oi_change_value": 0,
-                "price": 70000,
+                "price": 0,
                 "price_change_24h": 0,
                 "volume_24h": 0,
                 "interpretation": self._interpret_oi(0, 0),

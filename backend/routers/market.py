@@ -38,8 +38,13 @@ async def get_oi_analysis(
     Возвращает текущий OI и изменение за период из базы
     """
     try:
+        # Добавляем USDT к символу если его нет
+        symbol_upper = symbol.upper()
+        if not symbol_upper.endswith('USDT'):
+            symbol_upper = f"{symbol_upper}USDT"
+        
         # Получаем текущие данные
-        data = await fetcher.get_oi_analysis(symbol.upper(), timeframe)
+        data = await fetcher.get_oi_analysis(symbol_upper, timeframe)
         
         # Получаем исторические данные для расчета изменения
         db = get_db()
@@ -95,12 +100,17 @@ async def get_checklist(
     logger = logging.getLogger(__name__)
     logger.info(f"Checklist called: {symbol}, {timeframe}")
     try:
+        # Добавляем USDT к символу если его нет
+        symbol_upper = symbol.upper()
+        if not symbol_upper.endswith('USDT'):
+            symbol_upper = f"{symbol_upper}USDT"
+        
         # Получаем все данные
-        oi_data = await fetcher.get_oi_analysis(symbol.upper(), timeframe)
-        cvd_data = await fetcher.get_cvd(symbol.upper())
-        clusters_data = await fetcher.get_cluster_data(symbol.upper())
-        levels_data = await fetcher.get_ema_levels(symbol.upper(), timeframe)
-        liq_data = await fetcher.get_liquidation_levels(symbol.upper())
+        oi_data = await fetcher.get_oi_analysis(symbol_upper, timeframe)
+        cvd_data = await fetcher.get_cvd(symbol_upper)
+        clusters_data = await fetcher.get_cluster_data(symbol_upper)
+        levels_data = await fetcher.get_ema_levels(symbol_upper, timeframe)
+        liq_data = await fetcher.get_liquidation_levels(symbol_upper)
         
         # Расчет изменения OI из базы
         db = get_db()
@@ -238,7 +248,12 @@ async def get_cvd(
 ):
     """Cumulative Volume Delta"""
     try:
-        data = await fetcher.get_cvd(symbol.upper())
+        # Добавляем USDT к символу если его нет
+        symbol_upper = symbol.upper()
+        if not symbol_upper.endswith('USDT'):
+            symbol_upper = f"{symbol_upper}USDT"
+        
+        data = await fetcher.get_cvd(symbol_upper)
         data["timeframe"] = timeframe
         return data
     except Exception as e:
@@ -248,7 +263,12 @@ async def get_cvd(
 async def get_profile(symbol: str):
     """Volume Profile (POC, VAH, VAL)"""
     try:
-        data = await fetcher.get_cluster_data(symbol.upper())
+        # Добавляем USDT к символу если его нет
+        symbol_upper = symbol.upper()
+        if not symbol_upper.endswith('USDT'):
+            symbol_upper = f"{symbol_upper}USDT"
+        
+        data = await fetcher.get_cluster_data(symbol_upper)
         return data
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -260,8 +280,13 @@ async def get_levels(
 ):
     """Ликвидационные уровни и EMA"""
     try:
-        liquidation = await fetcher.get_liquidation_levels(symbol.upper())
-        ema = await fetcher.get_ema_levels(symbol.upper(), timeframe)
+        # Добавляем USDT к символу если его нет
+        symbol_upper = symbol.upper()
+        if not symbol_upper.endswith('USDT'):
+            symbol_upper = f"{symbol_upper}USDT"
+        
+        liquidation = await fetcher.get_liquidation_levels(symbol_upper)
+        ema = await fetcher.get_ema_levels(symbol_upper, timeframe)
         
         return {
             "symbol": symbol,
