@@ -122,29 +122,147 @@ const getMockLiquidations = (symbol: string, timeframe: string): LiquidationLeve
 }
 
 // Helper functions
-const getRSIInterpretation = (rsi: number): { text: string; color: string } => {
-  if (rsi > 70) return { text: "Overbought", color: "text-red-500" }
-  if (rsi < 30) return { text: "Oversold", color: "text-emerald-500" }
-  return { text: "Neutral", color: "text-amber-500" }
+// Helper functions with timeframe context
+const getRSIInterpretation = (rsi: number, timeframe: string): { text: string; color: string; detail: string } => {
+  // Different thresholds for different timeframes
+  const thresholds = {
+    "15": { overbought: 75, oversold: 25 },   // M15: wider range due to noise
+    "60": { overbought: 72, oversold: 28 },   // 1H: standard
+    "240": { overbought: 70, oversold: 30 }, // 4H: standard
+    "D": { overbought: 65, oversold: 35 },   // 1D: earlier signals for swing trading
+  }
+  const tf = thresholds[timeframe as keyof typeof thresholds] || thresholds["60"]
+  const tfLabel = timeframe === "15" ? "M15" : timeframe === "60" ? "1H" : timeframe === "240" ? "4H" : "1D"
+  
+  if (rsi > tf.overbought) {
+    return { 
+      text: `Overbought (${tfLabel})`, 
+      color: "text-red-500",
+      detail: timeframe === "15" ? " scalp short opportunity" : timeframe === "D" ? "swing reversal likely" : "consider taking profits"
+    }
+  }
+  if (rsi < tf.oversold) {
+    return { 
+      text: `Oversold (${tfLabel})`, 
+      color: "text-emerald-500",
+      detail: timeframe === "15" ? "scalp long opportunity" : timeframe === "D" ? "accumulation zone" : "bounce expected"
+    }
+  }
+  return { 
+    text: `Neutral (${tfLabel})`, 
+    color: "text-amber-500",
+    detail: timeframe === "15" ? "wait for breakout" : timeframe === "D" ? "trend continuation likely" : "momentum building"
+  }
 }
 
-const getMACDInterpretation = (macd: number, signal: number): { text: string; color: string } => {
-  if (macd > signal && macd > 0) return { text: "Bullish", color: "text-emerald-500" }
-  if (macd < signal && macd < 0) return { text: "Bearish", color: "text-red-500" }
-  if (macd > signal) return { text: "Crossing Up", color: "text-emerald-500" }
-  return { text: "Crossing Down", color: "text-red-500" }
+const getMACDInterpretation = (macd: number, signal: number, timeframe: string): { text: string; color: string; detail: string } => {
+  const isBullish = macd > signal
+  const isPositive = macd > 0
+  const tfLabel = timeframe === "15" ? "M15" : timeframe === "60" ? "1H" : timeframe === "240" ? "4H" : "1D"
+  
+  if (isBullish && isPositive) {
+    return { 
+      text: `Bullish (${tfLabel})`, 
+      color: "text-emerald-500",
+      detail: timeframe === "15" ? "momentum shift - quick scalp" : timeframe === "D" ? "strong uptrend confirmed" : "trend gaining strength"
+    }
+  }
+  if (!isBullish && !isPositive) {
+    return { 
+      text: `Bearish (${tfLabel})`, 
+      color: "text-red-500",
+      detail: timeframe === "15" ? "momentum down - quick short" : timeframe === "D" ? "downtrend established" : "selling pressure building"
+    }
+  }
+  if (isBullish && !isPositive) {
+    return { 
+      text: `Crossing Up (${tfLabel})`, 
+      color: "text-emerald-500",
+      detail: timeframe === "15" ? "early reversal signal" : timeframe === "D" ? "major trend reversal forming" : "potential bottom"
+    }
+  }
+  return { 
+    text: `Crossing Down (${tfLabel})`, 
+    color: "text-red-500",
+    detail: timeframe === "15" ? "early weakness signal" : timeframe === "D" ? "major top forming" : "potential reversal"
+  }
 }
 
-const getFundingInterpretation = (funding: number): { text: string; color: string } => {
-  if (funding > 0.01) return { text: "Longs Pay (Overheated)", color: "text-red-500" }
-  if (funding < -0.01) return { text: "Shorts Pay (Fear)", color: "text-emerald-500" }
-  return { text: "Balanced", color: "text-muted-foreground" }
+const getFundingInterpretation = (funding: number, timeframe: string): { text: string; color: string; detail: string } => {
+  // Funding is 8-hour based, but interpretation changes with trading horizon
+  const tfLabel = timeframe === "15" ? "Scalp" : timeframe === "60" ? "Intraday" : timeframe === "240" ? "Swing" : "Position"
+  
+  if (funding > 0.03) {
+    return { 
+      text: `Extreme Long Bias (${tfLabel})`, 
+      color: "text-red-500",
+      detail: timeframe === "15" ? "short squeeze possible - scalp with caution" : timeframe === "D" ? "unsustainable - major correction coming" : "funding squeeze risk"
+    }
+  }
+  if (funding > 0.01) {
+    return { 
+      text: `Longs Pay (${tfLabel})`, 
+      color: "text-amber-500",
+      detail: timeframe === "15" ? "slight overhead - manageable for scalps" : timeframe === "D" ? "avoid longs - pay every 8h" : "reduce position size"
+    }
+  }
+  if (funding < -0.03) {
+    return { 
+      text: `Extreme Short Bias (${tfLabel})`, 
+      color: "text-emerald-500",
+      detail: timeframe === "15" ? "long squeeze possible - quick bounces" : timeframe === "D" ? "capitulation - bottom forming" : "shorts getting squeezed"
+    }
+  }
+  if (funding < -0.01) {
+    return { 
+      text: `Shorts Pay (${tfLabel})`, 
+      color: "text-emerald-500",
+      detail: timeframe === "15" ? "paid to hold longs - scalp advantage" : timeframe === "D" ? "ideal for long swing positions" : "accumulation favored"
+    }
+  }
+  return { 
+    text: `Balanced (${tfLabel})`, 
+    color: "text-muted-foreground",
+    detail: "no funding pressure either direction"
+  }
 }
 
-const getExchangeFlowInterpretation = (flow: number): { text: string; trend: "up" | "down" } => {
-  if (flow < 0) return { text: "Outflow (Bullish)", trend: "up" }
-  if (flow > 0) return { text: "Inflow (Bearish)", trend: "down" }
-  return { text: "Neutral", trend: "up" }
+const getExchangeFlowInterpretation = (flow: number, timeframe: string): { text: string; trend: "up" | "down"; detail: string } => {
+  const tfLabel = timeframe === "15" ? "scalp" : timeframe === "60" ? "intraday" : timeframe === "240" ? "swing" : "position"
+  
+  if (flow < -500) {
+    return { 
+      text: "Heavy Outflow (Bullish)", 
+      trend: "up",
+      detail: `strong accumulation for ${tfLabel} trades`
+    }
+  }
+  if (flow < 0) {
+    return { 
+      text: "Outflow (Bullish)", 
+      trend: "up",
+      detail: `supply shock building - ${tfLabel} longs favored`
+    }
+  }
+  if (flow > 500) {
+    return { 
+      text: "Heavy Inflow (Bearish)", 
+      trend: "down",
+      detail: `profit taking for ${tfLabel} - caution advised`
+    }
+  }
+  if (flow > 0) {
+    return { 
+      text: "Inflow (Bearish)", 
+      trend: "down",
+      detail: `selling pressure for ${tfLabel} trades`
+    }
+  }
+  return { 
+    text: "Neutral", 
+    trend: "up",
+    detail: "no significant flow activity"
+  }
 }
 
 // Section Card Component
@@ -437,22 +555,23 @@ function EntryLevelsCard({ data }: { data: MarketData }) {
 }
 
 // Row 5: Secondary Indicators
-function SecondaryIndicators({ data }: { data: MarketData }) {
-  const rsiInterp = getRSIInterpretation(data.rsi)
-  const macdInterp = getMACDInterpretation(data.macd, data.macd_signal)
-  const fundingInterp = getFundingInterpretation(data.funding)
-  const flowInterp = getExchangeFlowInterpretation(data.exchange_flow)
+function SecondaryIndicators({ data, timeframe }: { data: MarketData; timeframe: string }) {
+  const rsiInterp = getRSIInterpretation(data.rsi, timeframe)
+  const macdInterp = getMACDInterpretation(data.macd, data.macd_signal, timeframe)
+  const fundingInterp = getFundingInterpretation(data.funding, timeframe)
+  const flowInterp = getExchangeFlowInterpretation(data.exchange_flow, timeframe)
   
   return (
     <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 px-4 pb-6 lg:px-6">
       {/* Funding Rate */}
       <Card className="bg-gradient-to-t from-orange-500/5 to-card">
         <CardHeader className="pb-2">
-          <CardDescription>Funding Rate</CardDescription>
+          <CardDescription>Funding Rate (8h)</CardDescription>
           <CardTitle className="text-xl">{(data.funding * 100).toFixed(3)}%</CardTitle>
         </CardHeader>
         <CardContent>
           <p className={cn("text-xs", fundingInterp.color)}>{fundingInterp.text}</p>
+          <p className="text-xs text-muted-foreground mt-1">{fundingInterp.detail}</p>
         </CardContent>
       </Card>
       
@@ -464,9 +583,7 @@ function SecondaryIndicators({ data }: { data: MarketData }) {
         </CardHeader>
         <CardContent>
           <p className={cn("text-xs", rsiInterp.color)}>{rsiInterp.text}</p>
-          <p className="text-xs text-muted-foreground mt-1">
-            {data.rsi > 70 ? "Possible pullback" : data.rsi < 30 ? "Possible bounce" : "Momentum neutral"}
-          </p>
+          <p className="text-xs text-muted-foreground mt-1">{rsiInterp.detail}</p>
         </CardContent>
       </Card>
       
@@ -478,9 +595,7 @@ function SecondaryIndicators({ data }: { data: MarketData }) {
         </CardHeader>
         <CardContent>
           <p className={cn("text-xs", macdInterp.color)}>{macdInterp.text}</p>
-          <p className="text-xs text-muted-foreground mt-1">
-            Signal: {data.macd_signal > 0 ? "+" : ""}{data.macd_signal.toFixed(0)}
-          </p>
+          <p className="text-xs text-muted-foreground mt-1">{macdInterp.detail}</p>
         </CardContent>
       </Card>
       
@@ -496,7 +611,7 @@ function SecondaryIndicators({ data }: { data: MarketData }) {
           <p className={cn("text-xs", flowInterp.trend === "up" ? "text-emerald-500" : "text-red-500")}>
             {flowInterp.text}
           </p>
-          <p className="text-xs text-muted-foreground mt-1">Updated daily</p>
+          <p className="text-xs text-muted-foreground mt-1">{flowInterp.detail}</p>
         </CardContent>
       </Card>
     </div>
@@ -664,7 +779,7 @@ export default function Dashboard() {
         </div>
 
         {/* Row 5: Secondary Indicators */}
-        <SecondaryIndicators data={marketData} />
+        <SecondaryIndicators data={marketData} timeframe={timeframe} />
       </main>
     </div>
   )
