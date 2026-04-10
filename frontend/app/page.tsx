@@ -1,7 +1,8 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { TrendingUp, TrendingDown, Activity, BarChart3, Wallet, Target, Zap, Sigma, Loader2 } from "lucide-react"
+import { TrendingUp, TrendingDown, Activity, BarChart3, Wallet, Target, Zap, Loader2 } from "lucide-react"
+import { Logo, LogoIcon } from "./components/Logo"
 import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -848,9 +849,21 @@ export default function Dashboard() {
   if (!mounted) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
-        <div className="flex flex-col items-center gap-4">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          <p className="text-muted-foreground">Loading Fast Lane...</p>
+        <div className="flex flex-col items-center gap-6">
+          {/* Animated Logo */}
+          <div className="relative">
+            <div className="w-20 h-20 animate-pulse">
+              <LogoIcon className="w-full h-full" />
+            </div>
+            {/* Spinning ring around logo */}
+            <div className="absolute inset-0 -m-2">
+              <Loader2 className="w-24 h-24 animate-spin text-primary/30" />
+            </div>
+          </div>
+          <div className="text-center">
+            <h2 className="text-xl font-bold tracking-tight">FAST LANE</h2>
+            <p className="text-sm text-muted-foreground mt-1">Loading market data...</p>
+          </div>
         </div>
       </div>
     )

@@ -16,6 +16,7 @@ import {
   Menu
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Logo } from '../Logo';
 
 interface SidebarProps {
   collapsed: boolean;
@@ -69,13 +70,8 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
             "flex h-16 items-center border-b border-border",
             collapsed ? "justify-center px-2" : "justify-between px-4"
           )}>
-            <Link href="/" className="flex items-center gap-2">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
-                <Activity className="h-4 w-4 text-primary-foreground" />
-              </div>
-              {!collapsed && (
-                <span className="text-lg font-bold">Fast Lane</span>
-              )}
+            <Link href="/" className="flex items-center">
+              <Logo collapsed={collapsed} />
             </Link>
             {!collapsed && (
               <Button
@@ -131,7 +127,7 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
               "flex items-center gap-3 rounded-lg bg-muted/50 p-3",
               collapsed && "justify-center"
             )}>
-              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-primary to-purple-600 text-xs font-bold text-white">
+              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-primary to-emerald-500 text-xs font-bold text-white">
                 JD
               </div>
               {!collapsed && (

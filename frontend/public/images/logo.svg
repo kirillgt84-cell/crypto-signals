@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <!-- Background -->
+  <rect width="200" height="200" fill="transparent"/>
+  
+  <!-- Chart bars (ascending) -->
+  <rect x="30" y="120" width="25" height="50" fill="#1e3a5f" rx="2"/>
+  <rect x="60" y="100" width="25" height="70" fill="#1e3a5f" rx="2"/>
+  <rect x="90" y="80" width="25" height="90" fill="#1e3a5f" rx="2"/>
+  <rect x="120" y="60" width="25" height="110" fill="#1e3a5f" rx="2"/>
+  
+  <!-- Green arrow (trending up) -->
+  <path d="M 40 100 L 100 50 L 160 30" stroke="#22c55e" stroke-width="8" fill="none" stroke-linecap="round"/>
+  <polygon points="160,30 150,25 150,35" fill="#22c55e"/>
+  
+  <!-- FAST LANE text -->
+  <text x="100" y="175" font-family="Arial, sans-serif" font-size="28" font-weight="bold" 
+        fill="#1e3a5f" text-anchor="middle">FAST LANE</text>
+</svg>
