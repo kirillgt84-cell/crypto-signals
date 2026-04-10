@@ -696,14 +696,42 @@ function LiquidationMap({ liquidations, currentPrice, symbol, loading }: { liqui
 
 // Main Dashboard Component
 export default function Dashboard() {
+  const [mounted, setMounted] = useState(false)
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [symbol, setSymbol] = useState("BTC")
   const [timeframe, setTimeframe] = useState("60")
-  const [marketData, setMarketData] = useState<MarketData | null>(null)
+  const [marketData, setMarketData] = useState<MarketData>({
+    symbol: "BTC",
+    price: 67234,
+    change_24h: 0,
+    oi: 15.5e9,
+    oi_change: 0,
+    volume: 28.3e9,
+    cvd: 2450000,
+    cvd_change: 0,
+    signal: "NEUTRAL",
+    score: 0,
+    ema20: 66800,
+    ema50: 65800,
+    ema200: 62800,
+    poc: 66800,
+    vah: 68200,
+    val: 65400,
+    atr: 450,
+    funding: 0.008,
+    rsi: 50,
+    macd: 0,
+    macd_signal: 0,
+    exchange_flow: 0,
+  })
   const [checklist, setChecklist] = useState<ChecklistData | null>(null)
   const [liquidations, setLiquidations] = useState<LiquidationLevel[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   // Map frontend timeframe to backend API timeframe
   const getApiTimeframe = (tf: string) => {
@@ -804,31 +832,8 @@ export default function Dashboard() {
         console.error("Failed to fetch market data:", err)
         setError("Failed to load market data. Using fallback values.")
         
-        // Set minimal fallback data
-        setMarketData({
-          symbol,
-          price: 0,
-          change_24h: 0,
-          oi: 0,
-          oi_change: 0,
-          volume: 0,
-          cvd: 0,
-          cvd_change: 0,
-          signal: "NEUTRAL",
-          score: 0,
-          ema20: 0,
-          ema50: 0,
-          ema200: 0,
-          poc: 0,
-          vah: 0,
-          val: 0,
-          atr: 0,
-          funding: 0,
-          rsi: 50,
-          macd: 0,
-          macd_signal: 0,
-          exchange_flow: 0,
-        })
+        // Keep existing data on error, just show error message
+        console.log("Keeping existing data due to API error")
       } finally {
         setLoading(false)
       }
@@ -838,6 +843,18 @@ export default function Dashboard() {
     const interval = setInterval(fetchData, 30000) // Refresh every 30 seconds
     return () => clearInterval(interval)
   }, [symbol, timeframe])
+
+  // Prevent hydration issues - show loading until mounted
+  if (!mounted) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <div className="flex flex-col items-center gap-4">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <p className="text-muted-foreground">Loading Fast Lane...</p>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="flex min-h-screen">
@@ -889,12 +906,12 @@ export default function Dashboard() {
         )}
 
         {/* Row 1: OI Analysis Cards */}
-        <OIAnalysisCards data={marketData || {} as MarketData} loading={loading} />
+        <OIAnalysisCards data={marketData} loading={loading} />
 
         {/* Row 2: TradingView Chart + Checklist */}
         <div className="grid grid-cols-1 gap-4 px-4 py-4 lg:grid-cols-3 lg:px-6">
           <div className="lg:col-span-2">
-            <ChartSection symbol={symbol} timeframe={timeframe} data={marketData || {} as MarketData} loading={loading} />
+            <ChartSection symbol={symbol} timeframe={timeframe} data={marketData} loading={loading} />
           </div>
           <ChecklistScoreCard 
             symbol={symbol} 
@@ -905,12 +922,12 @@ export default function Dashboard() {
 
         {/* Row 4: Entry Levels + Liquidation Map */}
         <div className="grid grid-cols-1 gap-4 px-4 py-4 lg:grid-cols-2 lg:px-6">
-          <EntryLevelsCard data={marketData || {} as MarketData} loading={loading} />
-          <LiquidationMap liquidations={liquidations} currentPrice={marketData?.price || 0} symbol={symbol} loading={loading} />
+          <EntryLevelsCard data={marketData} loading={loading} />
+          <LiquidationMap liquidations={liquidations} currentPrice={marketData.price} symbol={symbol} loading={loading} />
         </div>
 
         {/* Row 5: Secondary Indicators */}
-        <SecondaryIndicators data={marketData || {} as MarketData} timeframe={timeframe} loading={loading} />
+        <SecondaryIndicators data={marketData} timeframe={timeframe} loading={loading} />
       </main>
     </div>
   )
