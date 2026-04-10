@@ -850,10 +850,57 @@ export default function Dashboard() {
         
       } catch (err) {
         console.error("Failed to fetch market data:", err)
-        setError("Failed to load market data. Using fallback values.")
+        setError("API unavailable. Using demo data.")
         
-        // Keep existing data on error, just show error message
-        console.log("Keeping existing data due to API error")
+        // Use fallback demo data based on symbol
+        const fallbackPrice = symbol === "BTC" ? 67234 : symbol === "ETH" ? 3456 : 100
+        
+        setMarketData({
+          symbol,
+          price: fallbackPrice,
+          change_24h: 2.5,
+          oi: 15.5e9,
+          oi_change: 5.2,
+          volume: 28.3e9,
+          cvd: 2450000,
+          cvd_change: 3.5,
+          signal: "LONG",
+          score: 5,
+          ema20: fallbackPrice * 0.99,
+          ema50: fallbackPrice * 0.98,
+          ema200: fallbackPrice * 0.95,
+          poc: fallbackPrice,
+          vah: fallbackPrice * 1.02,
+          val: fallbackPrice * 0.98,
+          atr: fallbackPrice * 0.008,
+          funding: 0.008,
+          rsi: 58,
+          macd: 125,
+          macd_signal: 98,
+          exchange_flow: -450,
+        })
+        
+        setChecklist({
+          symbol,
+          score: 5,
+          total: 7,
+          items: [
+            { name: "Trend", passed: true, description: "Above EMA20" },
+            { name: "OI Rising", passed: true, description: "OI +5%" },
+            { name: "Volume", passed: true, description: "High volume" },
+            { name: "CVD", passed: false, description: "Neutral" },
+            { name: "Liquidations", passed: true, description: "Shorts liquidated" },
+            { name: "Levels", passed: false, description: "At resistance" },
+            { name: "Funding", passed: true, description: "Negative funding" },
+          ],
+          recommendation: "Strong LONG setup",
+          timestamp: new Date().toISOString(),
+        })
+        
+        setLiquidations([
+          { price: fallbackPrice * 0.97, side: "Long", size: 125000000 },
+          { price: fallbackPrice * 1.03, side: "Short", size: 98000000 },
+        ])
       } finally {
         setLoading(false)
       }

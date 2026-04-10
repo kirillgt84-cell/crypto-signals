@@ -6,11 +6,6 @@ import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { 
   LayoutDashboard, 
-  LineChart, 
-  Activity,
-  Settings,
-  Wallet,
-  Bell,
   ChevronLeft,
   ChevronRight,
   Menu
@@ -23,13 +18,9 @@ interface SidebarProps {
   onToggle: () => void;
 }
 
+// Only Dashboard page exists for now
 const navItems = [
   { href: '/', label: 'Dashboard', icon: LayoutDashboard },
-  { href: '/analytics', label: 'Analytics', icon: LineChart },
-  { href: '/market', label: 'Market', icon: Activity },
-  { href: '/wallet', label: 'Wallet', icon: Wallet },
-  { href: '/alerts', label: 'Alerts', icon: Bell },
-  { href: '/settings', label: 'Settings', icon: Settings },
 ];
 
 export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
