@@ -550,6 +550,7 @@ function LiquidationMap({ liquidations, currentPrice }: { liquidations: Liquidat
 
 // Main Dashboard Component
 export default function Dashboard() {
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [symbol, setSymbol] = useState("BTC")
   const [marketData, setMarketData] = useState<MarketData | null>(null)
   const [checklist, setChecklist] = useState<ChecklistData | null>(null)
@@ -590,9 +591,9 @@ export default function Dashboard() {
 
   return (
     <div className="flex min-h-screen">
-      <Sidebar />
+      <Sidebar collapsed={sidebarCollapsed} onToggle={() => setSidebarCollapsed(!sidebarCollapsed)} />
       
-      <main className="flex-1 overflow-hidden ml-0 lg:ml-64">
+      <main className={cn("flex-1 overflow-hidden transition-all duration-300", sidebarCollapsed ? "lg:ml-16" : "lg:ml-64")}>
         {/* Header */}
         <header className="flex h-16 items-center justify-between border-b border-border px-4 lg:px-6">
           <div className="flex items-center gap-4">

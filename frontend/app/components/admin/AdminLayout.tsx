@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { cn } from '@/lib/utils';
 import Sidebar from './Sidebar';
 import Header from './Header';
@@ -10,11 +10,19 @@ interface AdminLayoutProps {
 }
 
 export default function AdminLayout({ children }: AdminLayoutProps) {
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+
   return (
     <div className="min-h-screen bg-background">
-      <Sidebar />
+      <Sidebar 
+        collapsed={sidebarCollapsed} 
+        onToggle={() => setSidebarCollapsed(!sidebarCollapsed)} 
+      />
       
-      <div className="ml-16 lg:ml-64 transition-all duration-300">
+      <div className={cn(
+        "transition-all duration-300",
+        sidebarCollapsed ? "ml-16" : "ml-64"
+      )}>
         <Header />
         
         <main className="p-4 lg:p-6">

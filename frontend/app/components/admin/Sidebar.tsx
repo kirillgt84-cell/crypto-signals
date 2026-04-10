@@ -17,6 +17,11 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
+interface SidebarProps {
+  collapsed: boolean;
+  onToggle: () => void;
+}
+
 const navItems = [
   { href: '/', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/analytics', label: 'Analytics', icon: LineChart },
@@ -26,9 +31,8 @@ const navItems = [
   { href: '/settings', label: 'Settings', icon: Settings },
 ];
 
-export default function Sidebar() {
+export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
   const pathname = usePathname();
-  const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
 
   return (
@@ -77,7 +81,7 @@ export default function Sidebar() {
               <Button
                 variant="ghost"
                 size="icon"
-                onClick={() => setCollapsed(true)}
+                onClick={onToggle}
                 className="hidden h-8 w-8 lg:flex"
               >
                 <ChevronLeft className="h-4 w-4" />
@@ -87,7 +91,7 @@ export default function Sidebar() {
               <Button
                 variant="ghost"
                 size="icon"
-                onClick={() => setCollapsed(false)}
+                onClick={onToggle}
                 className="absolute -right-3 top-6 h-6 w-6 rounded-full border border-border bg-card shadow-sm"
               >
                 <ChevronRight className="h-3 w-3" />
