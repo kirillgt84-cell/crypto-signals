@@ -94,27 +94,30 @@ function MetricCard({
   loading?: boolean
 }) {
   return (
-    <Card className="bg-gradient-to-t from-primary/5 to-card h-full">
-      <CardHeader className="p-3">
-        <div className="flex items-center gap-1.5">
-          <Icon className="h-3.5 w-3.5 text-muted-foreground" />
-          <CardDescription className="text-[11px] font-medium">{title}</CardDescription>
-        </div>
-        {loading ? (
-          <div className="h-8 flex items-center">
-            <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+    <Card className="bg-gradient-to-t from-primary/5 to-card h-full flex flex-col">
+      <CardHeader className="p-3 flex-1 flex flex-col justify-between">
+        <div>
+          <div className="flex items-center gap-1.5 mb-1">
+            <Icon className="h-3.5 w-3.5 text-muted-foreground" />
+            <CardDescription className="text-[11px] font-medium">{title}</CardDescription>
           </div>
-        ) : (
-          <CardTitle className="text-xl font-bold tabular-nums tracking-tight">
-            {value || "--"}
-          </CardTitle>
-        )}
-        {subvalue && !loading && (
-          <p className="text-xs text-muted-foreground font-medium">{subvalue}</p>
-        )}
-        <CardAction className="mt-2">
+          {loading ? (
+            <div className="h-8 flex items-center">
+              <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+            </div>
+          ) : (
+            <CardTitle className="text-xl font-bold tabular-nums tracking-tight">
+              {value || "--"}
+            </CardTitle>
+          )}
+          {subvalue && !loading && (
+            <p className="text-xs text-muted-foreground font-medium mt-1">{subvalue}</p>
+          )}
+        </div>
+        
+        <CardAction className="mt-auto pt-3 self-stretch">
           <Badge variant="outline" className={cn(
-            "gap-2 text-sm px-3 py-1.5 font-bold",
+            "w-full justify-center gap-2 text-sm px-3 py-3 font-bold",
             trendUp ? "text-emerald-700 bg-emerald-100 border-emerald-300 dark:bg-emerald-900/40 dark:border-emerald-700" : "text-red-700 bg-red-100 border-red-300 dark:bg-red-900/40 dark:border-red-700"
           )}>
             {trendUp ? <TrendingUp className="h-5 w-5" /> : <TrendingDown className="h-5 w-5" />}
