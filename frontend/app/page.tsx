@@ -12,9 +12,8 @@ import Sidebar from "./components/admin/Sidebar"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { cn } from "@/lib/utils"
 
-// Ensure API base URL always includes /api/v1
-const RAW_API_URL = process.env.NEXT_PUBLIC_API_URL || "https://crypto-signals-production-ff4c.up.railway.app"
-const API_BASE_URL = RAW_API_URL.endsWith('/api/v1') ? RAW_API_URL : `${RAW_API_URL}/api/v1`
+// API Base URL - hardcoded to ensure correct path
+const API_BASE_URL = "https://crypto-signals-production-ff4c.up.railway.app/api/v1"
 
 const symbols = ["BTC", "ETH", "SOL", "BNB", "XRP", "DOGE", "ADA", "LINK", "AVAX", "MATIC"]
 
