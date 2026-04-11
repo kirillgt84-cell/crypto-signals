@@ -90,7 +90,7 @@ function MetricCard({
   loading?: boolean
 }) {
   return (
-    <Card className="bg-gradient-to-t from-primary/5 to-card">
+    <Card className="bg-gradient-to-t from-primary/5 to-card dark:from-primary/10">
       <CardHeader className="p-3 flex flex-row items-center justify-between">
         <div className="flex-1">
           <div className="flex items-center gap-1.5 mb-1">
