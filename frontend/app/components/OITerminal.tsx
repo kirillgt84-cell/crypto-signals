@@ -12,9 +12,6 @@ interface OIAnalysis {
   tactic?: string
   color: string
   strength: number
-  oi_direction?: "up" | "down" | "flat"
-  price_direction?: "down" | "flat" | "up"
-  volume_status?: "high" | "low" | "neutral"
   oi_change_pct?: number
   price_change_pct?: number
   volume_change_pct?: number
@@ -34,48 +31,49 @@ const COLORS = {
 export function OITerminal({ analysis, loading }: OITerminalProps) {
   if (loading) {
     return (
-      <div className="w-full max-w-md mx-auto border-2 border-primary/30 rounded-lg bg-black/80 p-4 font-mono">
-        <div className="flex items-center gap-2 text-primary mb-4">
-          <Radio className="w-4 h-4 animate-pulse" />
-          <span className="text-sm font-bold tracking-wider">MARKET STATE</span>
+      <div className="w-full h-full border-2 border-primary/30 rounded-lg bg-black/90 p-6 font-mono">
+        <div className="flex items-center gap-3 text-primary mb-6">
+          <Radio className="w-5 h-5 animate-pulse" />
+          <span className="text-lg font-bold tracking-wider">MARKET STATE</span>
         </div>
-        <div className="space-y-2">
+        <div className="space-y-4">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="h-6 bg-primary/20 rounded animate-pulse" />
+            <div key={i} className="h-8 bg-primary/20 rounded animate-pulse" />
           ))}
         </div>
       </div>
     )
   }
 
-  // Parse data
+  // Parse directions from description
   const desc = analysis?.description?.toLowerCase() || ""
   
-  const getMetricData = (type: "oi" | "price" | "volume") => {
-    if (!analysis) return { dir: "flat" as const, value: 0, pct: 0 }
+  // Extract direction from description symbols
+  const getDirection = (type: "oi" | "price" | "volume"): "up" | "down" | "flat" => {
+    if (!analysis) return "flat"
     
+    // Check for arrows in description
     if (type === "oi") {
-      const dir = analysis.oi_direction || (desc.includes("oi↑") ? "up" : desc.includes("oi↓") ? "down" : "flat")
-      const pct = analysis.oi_change_pct || 0
-      return { dir: dir as "up" | "down" | "flat", value: Math.abs(pct), pct }
+      if (desc.includes("oi↑") || desc.includes("растет")) return "up"
+      if (desc.includes("oi↓") || desc.includes("падает")) return "down"
+      return "flat"
     }
     if (type === "price") {
-      const dir = analysis.price_direction || (desc.includes("цена↑") ? "up" : desc.includes("цена↓") ? "down" : "flat")
-      const pct = analysis.price_change_pct || 0
-      return { dir: dir as "up" | "down" | "flat", value: Math.abs(pct), pct }
+      if (desc.includes("цена↑") || desc.includes("цена растет")) return "up"
+      if (desc.includes("цена↓") || desc.includes("цена падает")) return "down"
+      return "flat"
     }
     if (type === "volume") {
-      const stat = analysis.volume_status || (desc.includes("объем↑") ? "high" : desc.includes("объем↓") ? "low" : "neutral")
-      const dir = stat === "high" ? "up" : stat === "low" ? "down" : "flat"
-      const pct = analysis.volume_change_pct || 0
-      return { dir, value: Math.abs(pct), pct }
+      if (desc.includes("объем↑") || desc.includes("высокий")) return "up"
+      if (desc.includes("объем↓") || desc.includes("низкий")) return "down"
+      return "flat"
     }
-    return { dir: "flat" as const, value: 0, pct: 0 }
+    return "flat"
   }
 
-  const oi = getMetricData("oi")
-  const price = getMetricData("price")
-  const volume = getMetricData("volume")
+  const oiDir = getDirection("oi")
+  const priceDir = getDirection("price")
+  const volumeDir = getDirection("volume")
 
   const getArrow = (dir: string) => {
     if (dir === "up") return "↑"
@@ -93,125 +91,125 @@ export function OITerminal({ analysis, loading }: OITerminalProps) {
   const isBullish = signalColor === COLORS.green
   const isBearish = signalColor === COLORS.red
 
-  // Progress bar (10 segments)
-  const ProgressBar = ({ value, color }: { value: number; color: string }) => {
-    const filled = Math.min(10, Math.max(0, Math.round(value / 10)))
+  // Progress bar (15 segments)
+  const ProgressBar = ({ dir }: { dir: "up" | "down" | "flat" }) => {
+    const color = getColor(dir)
+    const filled = dir === "up" ? 12 : dir === "down" ? 3 : 7
     return (
-      <span className="text-xs tracking-tighter" style={{ color }}>
-        {"█".repeat(filled)}{"░".repeat(10 - filled)}
+      <span className="text-base tracking-tighter font-bold" style={{ color }}>
+        {"█".repeat(filled)}{"░".repeat(15 - filled)}
       </span>
     )
   }
 
   return (
     <motion.div 
-      className="w-full max-w-md mx-auto border-2 rounded-lg bg-black/90 p-4 font-mono"
+      className="w-full h-full border-2 rounded-xl bg-black/95 p-6 font-mono flex flex-col"
       style={{ borderColor: signalColor + "60" }}
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
     >
       {/* Header */}
-      <div className="flex items-center gap-2 mb-4 pb-2 border-b" style={{ borderColor: signalColor + "40" }}>
+      <div className="flex items-center gap-3 mb-6 pb-4 border-b-2" style={{ borderColor: signalColor + "40" }}>
         <motion.div
           animate={{ opacity: [1, 0.3, 1] }}
           transition={{ duration: 2, repeat: Infinity }}
         >
-          <Radio className="w-4 h-4" style={{ color: signalColor }} />
+          <Radio className="w-5 h-5" style={{ color: signalColor }} />
         </motion.div>
-        <span className="text-sm font-bold tracking-widest" style={{ color: signalColor }}>
+        <span className="text-xl font-bold tracking-widest" style={{ color: signalColor }}>
           MARKET STATE
         </span>
-        <span className="ml-auto text-[10px] text-muted-foreground">[LIVE]</span>
+        <span className="ml-auto text-sm text-muted-foreground font-bold">[LIVE]</span>
       </div>
 
       {analysis ? (
-        <div className="space-y-3">
+        <div className="flex-1 flex flex-col space-y-5">
           {/* Metrics */}
-          <div className="space-y-2">
+          <div className="space-y-4">
             {/* OI */}
-            <div className="flex items-center gap-3">
-              <BarChart3 className="w-4 h-4 text-muted-foreground" />
-              <span className="text-xs text-muted-foreground w-14">OI</span>
-              <ProgressBar value={oi.value * 10} color={getColor(oi.dir)} />
-              <span className="text-sm font-bold" style={{ color: getColor(oi.dir) }}>
-                {getArrow(oi.dir)}
-              </span>
-              <span className="text-[10px] text-muted-foreground">
-                {oi.pct > 0 ? `+${oi.pct.toFixed(1)}%` : `${oi.pct.toFixed(1)}%`}
+            <div className="flex items-center gap-4">
+              <BarChart3 className="w-5 h-5 text-muted-foreground" />
+              <span className="text-base text-muted-foreground w-20 font-bold">OI</span>
+              <ProgressBar dir={oiDir} />
+              <span className="text-2xl font-bold" style={{ color: getColor(oiDir) }}>
+                {getArrow(oiDir)}
               </span>
             </div>
 
             {/* PRICE */}
-            <div className="flex items-center gap-3">
-              <DollarSign className="w-4 h-4 text-muted-foreground" />
-              <span className="text-xs text-muted-foreground w-14">PRICE</span>
-              <ProgressBar value={price.value * 10} color={getColor(price.dir)} />
-              <span className="text-sm font-bold" style={{ color: getColor(price.dir) }}>
-                {getArrow(price.dir)}
-              </span>
-              <span className="text-[10px] text-muted-foreground">
-                {price.pct > 0 ? `+${price.pct.toFixed(1)}%` : `${price.pct.toFixed(1)}%`}
+            <div className="flex items-center gap-4">
+              <DollarSign className="w-5 h-5 text-muted-foreground" />
+              <span className="text-base text-muted-foreground w-20 font-bold">PRICE</span>
+              <ProgressBar dir={priceDir} />
+              <span className="text-2xl font-bold" style={{ color: getColor(priceDir) }}>
+                {getArrow(priceDir)}
               </span>
             </div>
 
             {/* VOLUME */}
-            <div className="flex items-center gap-3">
-              <Activity className="w-4 h-4 text-muted-foreground" />
-              <span className="text-xs text-muted-foreground w-14">VOLUME</span>
-              <ProgressBar value={volume.value * 10} color={getColor(volume.dir)} />
-              <span className="text-sm font-bold" style={{ color: getColor(volume.dir) }}>
-                {getArrow(volume.dir)}
-              </span>
-              <span className="text-[10px] text-muted-foreground">
-                {volume.dir === "up" ? "HIGH" : volume.dir === "down" ? "LOW" : "FLAT"}
+            <div className="flex items-center gap-4">
+              <Activity className="w-5 h-5 text-muted-foreground" />
+              <span className="text-base text-muted-foreground w-20 font-bold">VOLUME</span>
+              <ProgressBar dir={volumeDir} />
+              <span className="text-2xl font-bold" style={{ color: getColor(volumeDir) }}>
+                {getArrow(volumeDir)}
               </span>
             </div>
           </div>
 
           {/* Divider */}
-          <div className="border-t border-dashed border-muted-foreground/30" />
+          <div className="border-t-2 border-dashed border-muted-foreground/30" />
 
           {/* Status */}
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-muted-foreground">STATUS:</span>
+          <div className="flex items-center gap-3">
+            <span className="text-base text-muted-foreground font-bold">STATUS:</span>
             <span 
-              className="text-sm font-bold tracking-wider px-2 py-0.5 rounded"
+              className="text-lg font-bold tracking-wider px-4 py-1.5 rounded-lg"
               style={{ 
                 color: signalColor,
                 backgroundColor: signalColor + "20",
-                border: `1px solid ${signalColor}50`
+                border: `2px solid ${signalColor}60`
               }}
             >
-              {isBullish ? "🟢" : isBearish ? "🔴" : "⚪"} {" "}
+              {isBullish ? "●" : isBearish ? "●" : "○"} {" "}
               {analysis.status?.replace(/_/g, " ").toUpperCase()}
             </span>
           </div>
 
           {/* Logic */}
-          <div className="space-y-1">
-            <span className="text-[10px] text-muted-foreground uppercase tracking-wider">Logic:</span>
-            <p className="text-xs leading-relaxed text-foreground/90">
+          <div className="flex-1 space-y-2">
+            <span className="text-sm text-muted-foreground uppercase tracking-wider font-bold">Logic:</span>
+            <p className="text-base leading-relaxed text-foreground/90 font-medium">
               {analysis.description}
             </p>
             {analysis.detailed && (
-              <p className="text-[11px] text-muted-foreground">
+              <p className="text-sm text-muted-foreground leading-relaxed">
                 {analysis.detailed}
               </p>
             )}
           </div>
 
+          {/* Tactic */}
+          {analysis.tactic && (
+            <div className="pt-2">
+              <span className="text-sm text-muted-foreground uppercase tracking-wider font-bold">Tactic:</span>
+              <p className="text-sm text-muted-foreground mt-2 leading-relaxed">{analysis.tactic}</p>
+            </div>
+          )}
+
           {/* Action */}
           <motion.div 
-            className="mt-3 p-2 rounded text-center font-bold tracking-widest text-sm"
+            className="mt-auto p-4 rounded-lg text-center font-bold tracking-widest text-xl"
             style={{ 
-              backgroundColor: signalColor + "30",
-              border: `2px solid ${signalColor}`,
+              backgroundColor: signalColor + "25",
+              border: `3px solid ${signalColor}`,
               color: signalColor
             }}
             animate={{ 
               boxShadow: [
                 `0 0 0px ${signalColor}00`,
-                `0 0 10px ${signalColor}50`,
+                `0 0 20px ${signalColor}60`,
                 `0 0 0px ${signalColor}00`
               ]
             }}
@@ -219,17 +217,9 @@ export function OITerminal({ analysis, loading }: OITerminalProps) {
           >
             ▓▓▓▓ {analysis.action.toUpperCase()} ▓▓▓▓
           </motion.div>
-
-          {/* Tactic */}
-          {analysis.tactic && (
-            <div className="pt-1">
-              <span className="text-[10px] text-muted-foreground uppercase tracking-wider">Tactic:</span>
-              <p className="text-[11px] text-muted-foreground mt-1">{analysis.tactic}</p>
-            </div>
-          )}
         </div>
       ) : (
-        <div className="text-center text-muted-foreground text-sm py-8">
+        <div className="flex-1 flex items-center justify-center text-muted-foreground text-lg">
           Select symbol to initialize...
         </div>
       )}
