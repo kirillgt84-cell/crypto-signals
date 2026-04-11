@@ -529,7 +529,7 @@ function LiquidationMap({ liquidations, currentPrice, symbol, loading }: { liqui
 // Main Dashboard Component
 export default function Dashboard() {
   const [mounted, setMounted] = useState(false)
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(true)
   const [symbol, setSymbol] = useState("BTC")
   const [timeframe, setTimeframe] = useState("60")
   const [marketData, setMarketData] = useState<MarketData>({
