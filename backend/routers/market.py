@@ -55,7 +55,7 @@ async def get_oi_analysis(
         hours = hours_map.get(timeframe, 1)
         
         old_data = await db.query(
-            """SELECT open_interest, price FROM oi_history 
+            """SELECT open_interest, price, volume FROM oi_history 
                WHERE symbol = $1 AND timeframe = $2 
                AND time < NOW() - INTERVAL '%s hours'
                ORDER BY time DESC LIMIT 1""" % hours,
@@ -69,9 +69,16 @@ async def get_oi_analysis(
             oi_change_pct = ((current_oi - old_oi) / old_oi * 100) if old_oi > 0 else 0
             data['oi_change_24h'] = round(oi_change_pct, 2)
             data['oi_change_value'] = round(current_oi - old_oi, 2)
+            
+            # Расчет изменения объема
+            old_volume = old_data[0].get('volume', 0) or 0
+            current_volume = data.get('volume_24h', 0)
+            volume_change_pct = ((current_volume - old_volume) / old_volume * 100) if old_volume > 0 else 0
+            data['volume_change'] = round(volume_change_pct, 2)
         else:
             data['oi_change_24h'] = 0
             data['oi_change_value'] = 0
+            data['volume_change'] = 0
         
         # Добавляем расширенную интерпретацию
         advanced = interpret_oi_advanced(

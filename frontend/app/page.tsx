@@ -31,6 +31,7 @@ interface MarketData {
   oi: number
   oi_change: number
   volume: number
+  volume_change: number
   cvd: number
   cvd_change: number
   signal: "LONG" | "SHORT" | "NEUTRAL"
@@ -149,11 +150,11 @@ function OIAnalysisCards({ data, loading, timeframe }: { data: MarketData; loadi
         loading={loading}
       />
       <MetricCard
-        title="24h Volume"
-        value={`$${((data?.volume || 0) / 1e9).toFixed(2)}B`}
-        subvalue="Trading Activity"
-        trend="High"
-        trendUp={true}
+        title="Volume"
+        value={`$${((data?.volume || 0) * (data?.price || 0) / 1e9).toFixed(2)}B`}
+        subvalue={data?.volume_change !== undefined && data?.volume_change !== 0 ? `${data.volume_change >= 0 ? "+" : ""}${data.volume_change.toFixed(2)}% (${timeframe === "15" ? "15m" : timeframe === "60" ? "1h" : timeframe === "240" ? "4h" : "1d"})` : `${timeframe === "15" ? "15m" : timeframe === "60" ? "1h" : timeframe === "240" ? "4h" : "1d"} volume`}
+        trend={(data?.volume_change || 0) >= 0 ? "High" : "Low"}
+        trendUp={(data?.volume_change || 0) >= 0}
         icon={BarChart3}
         loading={loading}
       />
@@ -600,6 +601,7 @@ export default function Dashboard() {
     oi: 15.5e9,
     oi_change: 0,
     volume: 28.3e9,
+    volume_change: 0,
     cvd: 2450000,
     cvd_change: 0,
     signal: "NEUTRAL",
@@ -721,6 +723,7 @@ export default function Dashboard() {
           oi: oi,
           oi_change: Number(oiData.oi_change_24h) || Number(oiData.oi_change) || 0,
           volume: Number(oiData.volume) || Number(oiData.volume_24h) || 0,
+          volume_change: Number(oiData.volume_change) || 0,
           cvd: Number(oiData.cvd) || 0,
           cvd_change: 0,
           signal: checklistData?.recommendation?.includes("LONG") ? "LONG" : 
@@ -772,6 +775,7 @@ export default function Dashboard() {
             oi: 15.5e9,
             oi_change: 5.2,
             volume: 28.3e9,
+            volume_change: 2.5,
             cvd: 2450000,
             cvd_change: 3.5,
             signal: "LONG",
