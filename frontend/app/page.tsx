@@ -95,29 +95,29 @@ function MetricCard({
 }) {
   return (
     <Card className="bg-gradient-to-t from-primary/5 to-card">
-      <CardHeader>
+      <CardHeader className="p-4 lg:p-3">
         <div className="flex items-center gap-2">
-          <Icon className="h-4 w-4 text-muted-foreground" />
-          <CardDescription>{title}</CardDescription>
+          <Icon className="h-3 w-3 text-muted-foreground" />
+          <CardDescription className="text-xs">{title}</CardDescription>
         </div>
         {loading ? (
-          <div className="h-8 flex items-center">
-            <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+          <div className="h-7 flex items-center">
+            <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
           </div>
         ) : (
-          <CardTitle className="text-2xl font-semibold tabular-nums">
+          <CardTitle className="text-lg lg:text-base font-semibold tabular-nums">
             {value || "--"}
           </CardTitle>
         )}
         {subvalue && !loading && (
-          <p className="text-xs text-muted-foreground">{subvalue}</p>
+          <p className="text-[10px] text-muted-foreground truncate">{subvalue}</p>
         )}
-        <CardAction>
+        <CardAction className="mt-1">
           <Badge variant="outline" className={cn(
-            "gap-1 text-xs",
+            "gap-1 text-[10px] px-1.5 py-0.5",
             trendUp ? "text-emerald-500" : "text-red-500"
           )}>
-            {trendUp ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
+            {trendUp ? <TrendingUp className="h-2.5 w-2.5" /> : <TrendingDown className="h-2.5 w-2.5" />}
             {trend}
           </Badge>
         </CardAction>
@@ -132,7 +132,7 @@ function OIAnalysisCards({ data, loading, timeframe }: { data: MarketData; loadi
   const decimals = price < 1 ? 4 : price < 100 ? 2 : 0
   
   return (
-    <div className="grid grid-cols-1 gap-4 px-4 py-4 sm:grid-cols-2 lg:grid-cols-4 lg:px-6">
+    <div className="grid grid-cols-1 gap-3 px-4 py-4 sm:grid-cols-2 lg:grid-cols-5 lg:px-6">
       <MetricCard
         title="Price"
         value={price > 0 ? `$${price.toLocaleString(undefined, {maximumFractionDigits: decimals})}` : "--"}
