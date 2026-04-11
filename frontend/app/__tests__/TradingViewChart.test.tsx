@@ -9,7 +9,9 @@ describe('TradingViewChart', () => {
     expect(iframe).toBeInTheDocument()
     expect(iframe).toHaveAttribute('src')
     expect(iframe.getAttribute('src')).toContain('tradingview.com')
-    expect(iframe.getAttribute('src')).toContain('BINANCE:BTCUSDT.P')
+    // URL may be encoded, so check for both encoded and non-encoded versions
+    const src = iframe.getAttribute('src') || ''
+    expect(decodeURIComponent(src)).toContain('BINANCE:BTCUSDT.P')
   })
 
   it('uses correct interval for different timeframes', () => {

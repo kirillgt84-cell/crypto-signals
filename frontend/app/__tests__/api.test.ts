@@ -1,4 +1,4 @@
-import { getRSIInterpretation, getMACDInterpretation, getFundingInterpretation } from '../page'
+import { getRSIInterpretation, getMACDInterpretation, getFundingInterpretation } from '../lib/market-utils'
 
 describe('API Helper Functions', () => {
   describe('getRSIInterpretation', () => {
