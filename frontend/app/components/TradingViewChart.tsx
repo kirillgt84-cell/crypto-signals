@@ -38,7 +38,7 @@ export function TradingViewChart({
       theme: "dark",
       style: "1",
       locale: "en",
-      toolbar_bg: "#f1f3f6",
+      toolbar_bg: "#1a1a2e",
       enable_publishing: "false",
       hide_legend: "false",
       save_image: "false",
