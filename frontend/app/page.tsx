@@ -114,10 +114,10 @@ function MetricCard({
         )}
         <CardAction>
           <Badge variant="outline" className={cn(
-            "gap-1 text-[11px] px-2 py-0.5 font-medium",
-            trendUp ? "text-emerald-500" : "text-red-500"
+            "gap-1.5 text-xs px-2.5 py-1 font-semibold",
+            trendUp ? "text-emerald-600 bg-emerald-50 border-emerald-200 dark:bg-emerald-950/30 dark:border-emerald-800" : "text-red-600 bg-red-50 border-red-200 dark:bg-red-950/30 dark:border-red-800"
           )}>
-            {trendUp ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
+            {trendUp ? <TrendingUp className="h-4 w-4" /> : <TrendingDown className="h-4 w-4" />}
             {trend}
           </Badge>
         </CardAction>
