@@ -641,8 +641,16 @@ export default function Dashboard() {
         let oiData: any = {}, checklistData = null, levelsData: any = {}, profileData: any = {}
         let hasApiError = false
         
+        console.log(`API Responses for ${symbol}:`, { oiOk: oiRes.ok, checklistOk: checklistRes.ok, levelsOk: levelsRes.ok, profileOk: profileRes.ok })
+        
         if (oiRes.ok) {
-          oiData = await oiRes.json()
+          try {
+            oiData = await oiRes.json()
+            console.log(`OI data received for ${symbol}:`, oiData)
+          } catch (e) {
+            console.error(`Failed to parse OI data for ${symbol}:`, e)
+            hasApiError = true
+          }
         } else {
           console.error("OI API error:", oiRes.status)
           hasApiError = true
@@ -712,6 +720,7 @@ export default function Dashboard() {
         }
         
         setMarketData(combinedData)
+        console.log(`MarketData set for ${symbol}:`, combinedData)
         setChecklist(checklistData)
         
         // Set liquidations from levels data
