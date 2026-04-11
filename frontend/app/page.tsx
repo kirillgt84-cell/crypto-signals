@@ -124,7 +124,7 @@ function MetricCard({
 }
 
 // Row 1: OI Analysis Cards
-function OIAnalysisCards({ data, loading }: { data: MarketData; loading: boolean }) {
+function OIAnalysisCards({ data, loading, timeframe }: { data: MarketData; loading: boolean; timeframe: string }) {
   const price = data?.price || 0
   const decimals = price < 1 ? 4 : price < 100 ? 2 : 0
   
@@ -142,7 +142,7 @@ function OIAnalysisCards({ data, loading }: { data: MarketData; loading: boolean
       <MetricCard
         title="Open Interest"
         value={`$${((data?.oi || 0) * (data?.price || 0) / 1e9).toFixed(2)}B`}
-        subvalue={`Change: ${(data?.oi_change || 0).toFixed(2)}%`}
+        subvalue={`${(data?.oi_change || 0).toFixed(2)}% (${timeframe === "60" || timeframe === "240" ? "24h" : "7d"})`}
         trend={(data?.oi_change || 0) >= 0 ? "Rising" : "Falling"}
         trendUp={(data?.oi_change || 0) >= 0}
         icon={Activity}
@@ -897,7 +897,7 @@ export default function Dashboard() {
         )}
 
         {/* Row 1: OI Analysis Cards */}
-        <OIAnalysisCards data={marketData} loading={loading} />
+        <OIAnalysisCards data={marketData} loading={loading} timeframe={timeframe} />
 
         {/* Row 2: TradingView Chart + Checklist */}
         <div className="grid grid-cols-1 gap-4 px-4 py-4 lg:grid-cols-3 lg:px-6">
