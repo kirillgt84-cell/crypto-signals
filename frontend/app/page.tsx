@@ -112,12 +112,12 @@ function MetricCard({
         {subvalue && !loading && (
           <p className="text-xs text-muted-foreground font-medium">{subvalue}</p>
         )}
-        <CardAction>
+        <CardAction className="mt-2">
           <Badge variant="outline" className={cn(
-            "gap-1.5 text-xs px-2.5 py-1 font-semibold",
-            trendUp ? "text-emerald-600 bg-emerald-50 border-emerald-200 dark:bg-emerald-950/30 dark:border-emerald-800" : "text-red-600 bg-red-50 border-red-200 dark:bg-red-950/30 dark:border-red-800"
+            "gap-2 text-sm px-3 py-1.5 font-bold",
+            trendUp ? "text-emerald-700 bg-emerald-100 border-emerald-300 dark:bg-emerald-900/40 dark:border-emerald-700" : "text-red-700 bg-red-100 border-red-300 dark:bg-red-900/40 dark:border-red-700"
           )}>
-            {trendUp ? <TrendingUp className="h-4 w-4" /> : <TrendingDown className="h-4 w-4" />}
+            {trendUp ? <TrendingUp className="h-5 w-5" /> : <TrendingDown className="h-5 w-5" />}
             {trend}
           </Badge>
         </CardAction>
