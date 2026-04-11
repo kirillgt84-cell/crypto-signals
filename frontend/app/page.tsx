@@ -676,11 +676,11 @@ export default function Dashboard() {
         const price = !isNaN(rawPrice) && rawPrice > 0 ? rawPrice : 0
         const oi = Number(oiData.open_interest) || 0
         
-        // Set error state if APIs failed and we don't have valid price
-        if (hasApiError && price === 0) {
-          setError("API error. Using demo data.")
+        // Clear error if we have valid price, otherwise set appropriate error
+        if (price > 0) {
+          setError(null)
         } else if (hasApiError) {
-          setError("Some data sources unavailable. Using partial data.")
+          setError("API error. Using demo data.")
         }
         
         console.log(`Setting price for ${symbol}:`, price)
