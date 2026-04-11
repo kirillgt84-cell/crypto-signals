@@ -94,9 +94,9 @@ function MetricCard({
   loading?: boolean
 }) {
   return (
-    <Card className="bg-gradient-to-t from-primary/5 to-card h-full flex flex-col">
-      <CardHeader className="p-3 flex-1 flex flex-col justify-between">
-        <div>
+    <Card className="bg-gradient-to-t from-primary/5 to-card">
+      <CardHeader className="p-3 flex flex-row items-center justify-between">
+        <div className="flex-1">
           <div className="flex items-center gap-1.5 mb-1">
             <Icon className="h-3.5 w-3.5 text-muted-foreground" />
             <CardDescription className="text-[11px] font-medium">{title}</CardDescription>
@@ -115,14 +115,16 @@ function MetricCard({
           )}
         </div>
         
-        <CardAction className="mt-auto pt-3 self-stretch">
-          <Badge variant="outline" className={cn(
-            "w-full justify-center gap-2 text-sm px-3 py-3 font-bold",
-            trendUp ? "text-emerald-700 bg-emerald-100 border-emerald-300 dark:bg-emerald-900/40 dark:border-emerald-700" : "text-red-700 bg-red-100 border-red-300 dark:bg-red-900/40 dark:border-red-700"
+        <CardAction className="ml-3">
+          <div className={cn(
+            "flex flex-col items-center justify-center gap-2 px-3 py-4 rounded-md border min-h-[80px] min-w-[70px]",
+            trendUp 
+              ? "text-emerald-700 bg-emerald-100 border-emerald-300 dark:bg-emerald-900/40 dark:border-emerald-700" 
+              : "text-red-700 bg-red-100 border-red-300 dark:bg-red-900/40 dark:border-red-700"
           )}>
-            {trendUp ? <TrendingUp className="h-5 w-5" /> : <TrendingDown className="h-5 w-5" />}
-            {trend}
-          </Badge>
+            <span className="text-sm font-bold">{trend}</span>
+            {trendUp ? <TrendingUp className="h-6 w-6" /> : <TrendingDown className="h-6 w-6" />}
+          </div>
         </CardAction>
       </CardHeader>
     </Card>
