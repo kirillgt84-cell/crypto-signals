@@ -16,7 +16,7 @@ async def save_oi_snapshot():
         fetcher = BinanceFuturesFetcher()
         db = get_db()
         
-        symbols = ['BTCUSDT', 'ETHUSDT', 'SOLUSDT']
+        symbols = ['BTCUSDT', 'ETHUSDT', 'SOLUSDT', 'BNBUSDT', 'XRPUSDT', 'DOGEUSDT', 'ADAUSDT', 'LINKUSDT', 'AVAXUSDT', 'MATICUSDT']
         timeframes = ['1h', '4h', '1d']
         
         for symbol in symbols:
