@@ -672,6 +672,7 @@ export default function Dashboard() {
           fetch(`${API_BASE_URL}/market/levels/${symbol}?timeframe=${apiTf}`),
           fetch(`${API_BASE_URL}/market/profile/${symbol}`),
           fetch(`${API_BASE_URL}/market/spot-volume/${symbol}?timeframe=${apiTf}`),
+          fetch(`${API_BASE_URL}/market/cvd/${symbol}?timeframe=${apiTf}`),
         ])
         
         const oiRes = results[0].status === 'fulfilled' ? results[0].value : { ok: false, status: 'rejected' } as unknown as Response
@@ -679,9 +680,10 @@ export default function Dashboard() {
         const levelsRes = results[2].status === 'fulfilled' ? results[2].value : { ok: false, status: 'rejected' } as unknown as Response
         const profileRes = results[3].status === 'fulfilled' ? results[3].value : { ok: false, status: 'rejected' } as unknown as Response
         const spotVolumeRes = results[4].status === 'fulfilled' ? results[4].value : { ok: false, status: 'rejected' } as unknown as Response
+        const cvdRes = results[5].status === 'fulfilled' ? results[5].value : { ok: false, status: 'rejected' } as unknown as Response
 
         // Parse responses
-        let oiData: any = {}, checklistData = null, levelsData: any = {}, profileData: any = {}, spotVolumeData: any = {}
+        let oiData: any = {}, checklistData = null, levelsData: any = {}, profileData: any = {}, spotVolumeData: any = {}, cvdData: any = {}
         let hasApiError = false
         
         console.log(`API Responses for ${symbol}:`, { oiOk: oiRes.ok, checklistOk: checklistRes.ok, levelsOk: levelsRes.ok, profileOk: profileRes.ok })
@@ -725,6 +727,12 @@ export default function Dashboard() {
         } else {
           console.error("Spot Volume API error:", spotVolumeRes.status)
         }
+        
+        if (cvdRes.ok) {
+          cvdData = await cvdRes.json()
+        } else {
+          console.error("CVD API error:", cvdRes.status)
+        }
 
         // Combine data into MarketData format with safe defaults
         console.log("OI API response:", oiData)
@@ -752,7 +760,7 @@ export default function Dashboard() {
           volume_change: Number(oiData.volume_change) || 0,
           spot_volume: Number(spotVolumeData.spot_volume) || 0,
           spot_volume_change: Number(spotVolumeData.spot_volume_change) || 0,
-          cvd: Number(oiData.cvd) || 0,
+          cvd: Number(cvdData.cvd_value) || Number(cvdData.cvd) || 0,
           cvd_change: 0,
           signal: checklistData?.recommendation?.includes("LONG") ? "LONG" : 
                   checklistData?.recommendation?.includes("SHORT") ? "SHORT" : "NEUTRAL",
