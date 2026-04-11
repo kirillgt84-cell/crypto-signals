@@ -4,6 +4,7 @@ import { useEffect, useState } from "react"
 import { TrendingUp, TrendingDown, Activity, BarChart3, Wallet, Target, Zap, Loader2 } from "lucide-react"
 import { getRSIInterpretation, getMACDInterpretation, getFundingInterpretation, getExchangeFlowInterpretation } from "./lib/market-utils"
 import { Logo, LogoIcon } from "./components/Logo"
+import { ThemeToggle } from "./components/ThemeToggle"
 import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -829,6 +830,7 @@ export default function Dashboard() {
             {loading && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />}
           </div>
           <div className="flex items-center gap-2">
+            <ThemeToggle />
             <Button variant="outline" size="sm" className="hidden sm:flex items-center gap-2">
               <Wallet className="h-4 w-4" />
               Connect

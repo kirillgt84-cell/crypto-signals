@@ -109,8 +109,8 @@ export function OICompass({ analysis, loading }: OICompassProps) {
       {/* Compass Container */}
       <div className="relative w-72 h-72 mb-6">
         {/* Background circles */}
-        <div className="absolute inset-0 rounded-full border-2 border-dashed border-muted" />
-        <div className="absolute inset-8 rounded-full border border-muted/50" />
+        <div className="absolute inset-0 rounded-full border-2 border-dashed border-muted/40" />
+        <div className="absolute inset-8 rounded-full border border-muted/30" />
         
         {/* Center Hub with Signal */}
         <motion.div 
@@ -297,7 +297,7 @@ export function OICompass({ analysis, loading }: OICompassProps) {
                 key={level}
                 className="h-2 flex-1 rounded-full"
                 style={{
-                  backgroundColor: level <= analysis.strength ? analysis.color : "#e5e7eb"
+                  backgroundColor: level <= analysis.strength ? analysis.color : "hsl(var(--muted))"
                 }}
                 initial={{ scaleX: 0 }}
                 animate={{ scaleX: 1 }}
