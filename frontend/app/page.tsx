@@ -9,7 +9,7 @@ import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle }
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { TradingViewChart } from "./components/TradingViewChart"
-import { OISpeedometer } from "./components/OISpeedometer"
+import { OITerminal } from "./components/OITerminal"
 import Sidebar from "./components/admin/Sidebar"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { cn } from "@/lib/utils"
@@ -864,7 +864,7 @@ export default function Dashboard() {
               </CardDescription>
             </CardHeader>
             <CardContent className="flex-1 pt-0">
-              <OISpeedometer analysis={oiAnalysis} loading={loading} />
+              <OITerminal analysis={oiAnalysis} loading={loading} />
             </CardContent>
           </Card>
         </div>
