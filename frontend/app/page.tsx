@@ -52,21 +52,15 @@ interface MarketData {
   exchange_flow: number
 }
 
-interface ChecklistItem {
-  name: string
-  passed: boolean
+interface OIAnalysis {
+  status: string
+  signal: string
   description: string
-}
-
-interface ChecklistData {
-  symbol: string
-  score: number
-  total?: number
-  max_score?: number
-  items?: ChecklistItem[]
-  checks?: Record<string, { passed: boolean; value?: string; description: string; weight?: string }>
-  recommendation: string
-  timestamp: string
+  detailed?: string
+  action: string
+  tactic?: string
+  color: string
+  strength: number
 }
 
 interface LiquidationLevel {
@@ -260,74 +254,89 @@ function ChartSection({ symbol, timeframe, data, loading }: { symbol: string; ti
 }
 
 // Checklist Score Card
-function ChecklistScoreCard({ 
+function OIAnalysisCard({ 
   symbol, 
-  checklist, 
+  oiAnalysis, 
   loading 
 }: { 
   symbol: string
-  checklist: ChecklistData | null
+  oiAnalysis: any
   loading: boolean 
 }) {
-  // Support both old format (items) and new format (checks)
-  const rawItems = Array.isArray(checklist?.items) ? checklist?.items : []
-  const checks = checklist?.checks && typeof checklist?.checks === 'object' ? checklist?.checks : {}
-  
-  // Convert checks object to items array if needed
-  let items: ChecklistItem[] = rawItems
-  if (rawItems.length === 0 && Object.keys(checks).length > 0) {
-    items = Object.entries(checks).map(([name, check]) => ({
-      name: name.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
-      passed: check?.passed || false,
-      description: check?.description || ''
-    }))
-  }
-  
-  const passedCount = items.filter((i: ChecklistItem) => i.passed).length
-  const total = checklist?.total || checklist?.max_score || 7
-  const percentage = total > 0 ? Math.round((passedCount / total) * 100) : 0
-  
   return (
     <Card className="flex flex-col">
       <CardHeader className="gap-2">
-        <CardTitle>Entry Checklist</CardTitle>
+        <CardTitle>OI Analysis</CardTitle>
         <CardDescription>
-          7-filter system score for {symbol}
+          Open Interest + Price + Volume interpretation
         </CardDescription>
       </CardHeader>
-      <CardContent className="flex flex-1 items-center justify-center py-10">
+      <CardContent className="flex-1">
         {loading ? (
-          <div className="text-center">
+          <div className="text-center py-10">
             <Loader2 className="mx-auto mb-4 h-8 w-8 animate-spin text-primary" />
-            <p className="text-muted-foreground">Analyzing market conditions...</p>
+            <p className="text-muted-foreground">Analyzing OI patterns...</p>
           </div>
-        ) : checklist ? (
-          <div className="text-center">
-            <div className={cn(
-              "mx-auto mb-4 flex h-24 w-24 items-center justify-center rounded-full border-4 text-3xl font-bold",
-              percentage >= 70 ? "border-emerald-500 text-emerald-500" : 
-              percentage >= 40 ? "border-amber-500 text-amber-500" : "border-red-500 text-red-500"
-            )}>
-              {passedCount}/{total}
+        ) : oiAnalysis ? (
+          <div className="space-y-4">
+            {/* Status Badge */}
+            <div 
+              className="p-4 rounded-lg text-center"
+              style={{ 
+                backgroundColor: oiAnalysis.color + '20',
+                border: `2px solid ${oiAnalysis.color}`
+              }}
+            >
+              <p className="text-lg font-bold" style={{ color: oiAnalysis.color }}>
+                {oiAnalysis.status?.toUpperCase().replace(/_/g, ' ')}
+              </p>
+              <p className="text-sm font-medium mt-1">
+                {oiAnalysis.signal?.toUpperCase()}
+              </p>
             </div>
-            <p className="mb-2 text-lg font-medium">{checklist.recommendation || "Analyzing..."}</p>
-            {items.length > 0 && (
-              <div className="flex flex-wrap justify-center gap-2">
-                {items.map((item: ChecklistItem, idx: number) => (
-                  <Badge 
-                    key={idx} 
-                    variant={item.passed ? "default" : "secondary"}
-                    className={item.passed ? "bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500/20" : ""}
-                  >
-                    {item.passed ? "✓" : "✗"} {item.name}
-                  </Badge>
+            
+            {/* Description */}
+            <div className="space-y-2">
+              <p className="font-medium">{oiAnalysis.description}</p>
+              {oiAnalysis.detailed && (
+                <p className="text-sm text-muted-foreground">{oiAnalysis.detailed}</p>
+              )}
+            </div>
+            
+            {/* Action & Tactic */}
+            <div className="bg-muted p-3 rounded-lg space-y-2">
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-semibold">Action:</span>
+                <span className="text-sm">{oiAnalysis.action}</span>
+              </div>
+              {oiAnalysis.tactic && (
+                <div className="flex items-start gap-2">
+                  <span className="text-sm font-semibold">Tactic:</span>
+                  <span className="text-sm text-muted-foreground">{oiAnalysis.tactic}</span>
+                </div>
+              )}
+            </div>
+            
+            {/* Strength Indicator */}
+            <div className="flex items-center gap-2 text-sm">
+              <span className="font-medium">Signal Strength:</span>
+              <div className="flex gap-1">
+                {[...Array(5)].map((_, i) => (
+                  <div 
+                    key={i}
+                    className="w-4 h-4 rounded-sm"
+                    style={{ 
+                      backgroundColor: i < (oiAnalysis.strength || 0) ? oiAnalysis.color : '#e5e7eb'
+                    }}
+                  />
                 ))}
               </div>
-            )}
+              <span className="text-muted-foreground">({oiAnalysis.strength}/5)</span>
+            </div>
           </div>
         ) : (
-          <div className="text-center text-muted-foreground">
-            Select a symbol to view checklist
+          <div className="text-center text-muted-foreground py-10">
+            Select a symbol to view OI analysis
           </div>
         )}
       </CardContent>
@@ -637,7 +646,7 @@ export default function Dashboard() {
     macd_signal: 0,
     exchange_flow: 0,
   })
-  const [checklist, setChecklist] = useState<ChecklistData | null>(null)
+  const [oiAnalysis, setOiAnalysis] = useState<OIAnalysis | null>(null)
   const [liquidations, setLiquidations] = useState<LiquidationLevel[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -668,7 +677,6 @@ export default function Dashboard() {
         // Fetch all data in parallel with individual error handling
         const results = await Promise.allSettled([
           fetch(`${API_BASE_URL}/market/oi/${symbol}?timeframe=${apiTf}`),
-          fetch(`${API_BASE_URL}/market/checklist/${symbol}?timeframe=${apiTf}`),
           fetch(`${API_BASE_URL}/market/levels/${symbol}?timeframe=${apiTf}`),
           fetch(`${API_BASE_URL}/market/profile/${symbol}`),
           fetch(`${API_BASE_URL}/market/spot-volume/${symbol}?timeframe=${apiTf}`),
@@ -676,17 +684,16 @@ export default function Dashboard() {
         ])
         
         const oiRes = results[0].status === 'fulfilled' ? results[0].value : { ok: false, status: 'rejected' } as unknown as Response
-        const checklistRes = results[1].status === 'fulfilled' ? results[1].value : { ok: false, status: 'rejected' } as unknown as Response
-        const levelsRes = results[2].status === 'fulfilled' ? results[2].value : { ok: false, status: 'rejected' } as unknown as Response
-        const profileRes = results[3].status === 'fulfilled' ? results[3].value : { ok: false, status: 'rejected' } as unknown as Response
-        const spotVolumeRes = results[4].status === 'fulfilled' ? results[4].value : { ok: false, status: 'rejected' } as unknown as Response
-        const cvdRes = results[5].status === 'fulfilled' ? results[5].value : { ok: false, status: 'rejected' } as unknown as Response
+        const levelsRes = results[1].status === 'fulfilled' ? results[1].value : { ok: false, status: 'rejected' } as unknown as Response
+        const profileRes = results[2].status === 'fulfilled' ? results[2].value : { ok: false, status: 'rejected' } as unknown as Response
+        const spotVolumeRes = results[3].status === 'fulfilled' ? results[3].value : { ok: false, status: 'rejected' } as unknown as Response
+        const cvdRes = results[4].status === 'fulfilled' ? results[4].value : { ok: false, status: 'rejected' } as unknown as Response
 
         // Parse responses
-        let oiData: any = {}, checklistData = null, levelsData: any = {}, profileData: any = {}, spotVolumeData: any = {}, cvdData: any = {}
+        let oiData: any = {}, levelsData: any = {}, profileData: any = {}, spotVolumeData: any = {}, cvdData: any = {}
         let hasApiError = false
         
-        console.log(`API Responses for ${symbol}:`, { oiOk: oiRes.ok, checklistOk: checklistRes.ok, levelsOk: levelsRes.ok, profileOk: profileRes.ok })
+        console.log(`API Responses for ${symbol}:`, { oiOk: oiRes.ok, levelsOk: levelsRes.ok, profileOk: profileRes.ok })
         
         if (oiRes.ok) {
           try {
@@ -701,12 +708,7 @@ export default function Dashboard() {
           hasApiError = true
         }
         
-        if (checklistRes.ok) {
-          checklistData = await checklistRes.json()
-        } else {
-          console.error("Checklist API error:", checklistRes.status)
-          hasApiError = true
-        }
+
         
         if (levelsRes.ok) {
           levelsData = await levelsRes.json()
@@ -762,9 +764,9 @@ export default function Dashboard() {
           spot_volume_change: Number(spotVolumeData.spot_volume_change) || 0,
           cvd: Number(cvdData.cvd_value) || Number(cvdData.cvd) || 0,
           cvd_change: 0,
-          signal: checklistData?.recommendation?.includes("LONG") ? "LONG" : 
-                  checklistData?.recommendation?.includes("SHORT") ? "SHORT" : "NEUTRAL",
-          score: Number(checklistData?.score) || 0,
+          signal: oiData?.analysis?.signal?.includes("bullish") ? "LONG" : 
+                  oiData?.analysis?.signal?.includes("bearish") ? "SHORT" : "NEUTRAL",
+          score: oiData?.analysis?.strength || 0,
           ema20: Number(levelsData?.ema20) || Number(profileData?.ema20) || price * 0.99,
           ema50: Number(levelsData?.ema50) || Number(profileData?.ema50) || price * 0.98,
           ema200: Number(levelsData?.ema200) || price * 0.95,
@@ -781,7 +783,7 @@ export default function Dashboard() {
         
         setMarketData(combinedData)
         console.log(`MarketData set for ${symbol}:`, combinedData)
-        setChecklist(checklistData)
+        setOiAnalysis(oiData?.analysis || null)
         
         // Set liquidations from levels data
         if (levelsData.liquidation_levels || levelsData.liquidations) {
@@ -833,21 +835,15 @@ export default function Dashboard() {
           })
         }
         
-        setChecklist({
-          symbol,
-          score: 5,
-          total: 7,
-          items: [
-            { name: "Trend", passed: true, description: "Above EMA20" },
-            { name: "OI Rising", passed: true, description: "OI +5%" },
-            { name: "Volume", passed: true, description: "High volume" },
-            { name: "CVD", passed: false, description: "Neutral" },
-            { name: "Liquidations", passed: true, description: "Shorts liquidated" },
-            { name: "Levels", passed: false, description: "At resistance" },
-            { name: "Funding", passed: true, description: "Negative funding" },
-          ],
-          recommendation: "Strong LONG setup",
-          timestamp: new Date().toISOString(),
+        setOiAnalysis({
+          status: "long_buildup",
+          signal: "strong_bullish",
+          description: "OI↑ Цена↑ Объем↑ — Крупные игроки покупают, толпа шортит.",
+          detailed: "Рано или поздно толпа закроет шорты по стопам — цена пойдет вверх.",
+          action: "Рассматривать покупки (лонг)",
+          tactic: "Искать точки входа на ретестах. Ложный пробой или откат на 1-3%.",
+          color: "#22c55e",
+          strength: 4
         })
         
         const liqPrice = (!marketData || marketData.price === 0) ? fallbackPrice : marketData.price
@@ -941,14 +937,14 @@ export default function Dashboard() {
         {/* Row 1: OI Analysis Cards */}
         <OIAnalysisCards data={marketData} loading={loading} timeframe={timeframe} />
 
-        {/* Row 2: TradingView Chart + Checklist */}
+        {/* Row 2: TradingView Chart + OI Analysis */}
         <div className="grid grid-cols-1 gap-4 px-4 py-4 lg:grid-cols-3 lg:px-6">
           <div className="lg:col-span-2">
             <ChartSection symbol={symbol} timeframe={timeframe} data={marketData} loading={loading} />
           </div>
-          <ChecklistScoreCard 
+          <OIAnalysisCard 
             symbol={symbol} 
-            checklist={checklist} 
+            oiAnalysis={oiAnalysis} 
             loading={loading} 
           />
         </div>
