@@ -12,6 +12,9 @@ CREATE TABLE IF NOT EXISTS oi_history (
     PRIMARY KEY (time, symbol, timeframe)
 );
 
+-- Добавляем колонку spot_volume если её нет (для обратной совместимости)
+ALTER TABLE oi_history ADD COLUMN IF NOT EXISTS spot_volume DOUBLE PRECISION;
+
 -- Индекс для быстрого поиска последних данных
 CREATE INDEX IF NOT EXISTS idx_oi_latest ON oi_history(symbol, timeframe, time DESC);
 
