@@ -638,10 +638,10 @@ export default function Dashboard() {
           fetch(`${API_BASE_URL}/market/profile/${symbol}`),
         ])
         
-        const oiRes: Response = results[0].status === 'fulfilled' ? results[0].value : { ok: false, status: 'rejected' } as Response
-        const checklistRes: Response = results[1].status === 'fulfilled' ? results[1].value : { ok: false, status: 'rejected' } as Response
-        const levelsRes: Response = results[2].status === 'fulfilled' ? results[2].value : { ok: false, status: 'rejected' } as Response
-        const profileRes: Response = results[3].status === 'fulfilled' ? results[3].value : { ok: false, status: 'rejected' } as Response
+        const oiRes = results[0].status === 'fulfilled' ? results[0].value : { ok: false, status: 'rejected' } as unknown as Response
+        const checklistRes = results[1].status === 'fulfilled' ? results[1].value : { ok: false, status: 'rejected' } as unknown as Response
+        const levelsRes = results[2].status === 'fulfilled' ? results[2].value : { ok: false, status: 'rejected' } as unknown as Response
+        const profileRes = results[3].status === 'fulfilled' ? results[3].value : { ok: false, status: 'rejected' } as unknown as Response
 
         // Parse responses
         let oiData: any = {}, checklistData = null, levelsData: any = {}, profileData: any = {}
