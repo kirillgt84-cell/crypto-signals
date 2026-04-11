@@ -22,14 +22,15 @@ async def save_oi_snapshot():
         for symbol in symbols:
             for tf in timeframes:
                 try:
-                    # Получаем данные с Binance
+                    # Получаем данные с Binance (фьючерсы + спот)
                     data = await fetcher.get_oi_analysis(symbol, tf)
+                    spot_data = await fetcher.get_spot_volume(symbol, tf)
                     
                     # Сохраняем в БД
                     await db.execute(
                         """INSERT INTO oi_history 
-                           (time, symbol, timeframe, open_interest, price, volume, funding_rate)
-                           VALUES (NOW(), $1, $2, $3, $4, $5, $6)
+                           (time, symbol, timeframe, open_interest, price, volume, spot_volume, funding_rate)
+                           VALUES (NOW(), $1, $2, $3, $4, $5, $6, $7)
                            ON CONFLICT (time, symbol, timeframe) DO NOTHING""",
                         [
                             symbol,
@@ -37,10 +38,11 @@ async def save_oi_snapshot():
                             data.get('open_interest', 0),
                             data.get('price', 0),
                             data.get('volume_24h', 0),
+                            spot_data.get('spot_volume', 0),
                             data.get('funding_rate', 0)
                         ]
                     )
-                    logger.info(f"[Scheduler] Saved OI for {symbol} {tf}: {data.get('open_interest', 0)}")
+                    logger.info(f"[Scheduler] Saved OI for {symbol} {tf}: OI={data.get('open_interest', 0)}, SpotVol={spot_data.get('spot_volume', 0)}")
                     
                 except Exception as e:
                     logger.error(f"[Scheduler] Failed to save {symbol} {tf}: {e}")

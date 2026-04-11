@@ -7,6 +7,7 @@ CREATE TABLE IF NOT EXISTS oi_history (
     open_interest DOUBLE PRECISION,
     price DOUBLE PRECISION,
     volume DOUBLE PRECISION,
+    spot_volume DOUBLE PRECISION,
     funding_rate DOUBLE PRECISION,
     PRIMARY KEY (time, symbol, timeframe)
 );

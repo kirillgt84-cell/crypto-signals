@@ -466,6 +466,48 @@ class BinanceFuturesFetcher:
                 "error": "Using fallback data"
             }
     
+    async def get_spot_volume(self, symbol: str = "BTCUSDT", timeframe: str = "1h") -> Dict:
+        """
+        Получает спотовый объем для сравнения с фьючерсным
+        """
+        session = await self._get_session()
+        
+        # Маппинг таймфреймов для спота
+        tf_map = {"1h": "1h", "4h": "4h", "1d": "1d"}
+        interval = tf_map.get(timeframe, "1h")
+        
+        try:
+            # Спотовые klines
+            async with session.get(
+                f"https://api.binance.com/api/v3/klines",
+                params={"symbol": symbol, "interval": interval, "limit": 2},
+                headers={"Accept": "application/json"}
+            ) as resp:
+                klines = await resp.json()
+            
+            if isinstance(klines, list) and len(klines) >= 2:
+                current_volume = float(klines[1][5])
+                prev_volume = float(klines[0][5])
+                volume_change = ((current_volume - prev_volume) / prev_volume * 100) if prev_volume > 0 else 0
+            else:
+                current_volume = 0
+                volume_change = 0
+            
+            return {
+                "symbol": symbol,
+                "timeframe": timeframe,
+                "spot_volume": current_volume,
+                "spot_volume_change": round(volume_change, 2)
+            }
+        except Exception as e:
+            return {
+                "symbol": symbol,
+                "timeframe": timeframe,
+                "spot_volume": 0,
+                "spot_volume_change": 0,
+                "error": str(e)
+            }
+    
     async def close(self):
         if self.session:
             await self.session.close()

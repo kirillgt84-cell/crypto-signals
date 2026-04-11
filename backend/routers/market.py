@@ -55,7 +55,7 @@ async def get_oi_analysis(
         hours = hours_map.get(timeframe, 1)
         
         old_data = await db.query(
-            """SELECT open_interest, price, volume FROM oi_history 
+            """SELECT open_interest, price, volume, spot_volume FROM oi_history 
                WHERE symbol = $1 AND timeframe = $2 
                AND time < NOW() - INTERVAL '%s hours'
                ORDER BY time DESC LIMIT 1""" % hours,
@@ -70,15 +70,28 @@ async def get_oi_analysis(
             data['oi_change_24h'] = round(oi_change_pct, 2)
             data['oi_change_value'] = round(current_oi - old_oi, 2)
             
-            # Расчет изменения объема
+            # Расчет изменения фьючерсного объема
             old_volume = old_data[0].get('volume', 0) or 0
             current_volume = data.get('volume_24h', 0)
             volume_change_pct = ((current_volume - old_volume) / old_volume * 100) if old_volume > 0 else 0
             data['volume_change'] = round(volume_change_pct, 2)
+            
+            # Расчет изменения спотового объема
+            old_spot_volume = old_data[0].get('spot_volume', 0) or 0
+            # Получаем текущий спотовый объем
+            spot_data = await fetcher.get_spot_volume(symbol_upper, timeframe)
+            current_spot_volume = spot_data.get('spot_volume', 0)
+            spot_volume_change_pct = ((current_spot_volume - old_spot_volume) / old_spot_volume * 100) if old_spot_volume > 0 else 0
+            data['spot_volume'] = current_spot_volume
+            data['spot_volume_change'] = round(spot_volume_change_pct, 2)
         else:
             data['oi_change_24h'] = 0
             data['oi_change_value'] = 0
             data['volume_change'] = 0
+            # Получаем текущий спотовый объем даже если нет истории
+            spot_data = await fetcher.get_spot_volume(symbol_upper, timeframe)
+            data['spot_volume'] = spot_data.get('spot_volume', 0)
+            data['spot_volume_change'] = 0
         
         # Добавляем расширенную интерпретацию
         advanced = interpret_oi_advanced(
@@ -303,5 +316,23 @@ async def get_levels(
             "ema_levels": ema,
             "timestamp": datetime.utcnow().isoformat()
         }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/spot-volume/{symbol}")
+async def get_spot_volume(
+    symbol: str,
+    timeframe: str = Query("1h", description="Timeframe: 1h, 4h, 1d")
+):
+    """
+    Спотовый объем для сравнения с фьючерсным
+    """
+    try:
+        symbol_upper = symbol.upper()
+        if not symbol_upper.endswith('USDT'):
+            symbol_upper = f"{symbol_upper}USDT"
+        
+        data = await fetcher.get_spot_volume(symbol_upper, timeframe)
+        return data
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

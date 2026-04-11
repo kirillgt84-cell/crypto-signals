@@ -32,6 +32,8 @@ interface MarketData {
   oi_change: number
   volume: number
   volume_change: number
+  spot_volume: number
+  spot_volume_change: number
   cvd: number
   cvd_change: number
   signal: "LONG" | "SHORT" | "NEUTRAL"
@@ -155,6 +157,15 @@ function OIAnalysisCards({ data, loading, timeframe }: { data: MarketData; loadi
         subvalue={data?.volume_change !== undefined && data?.volume_change !== 0 ? `${data.volume_change >= 0 ? "+" : ""}${data.volume_change.toFixed(2)}% (${timeframe === "15" ? "15m" : timeframe === "60" ? "1h" : timeframe === "240" ? "4h" : "1d"})` : `${timeframe === "15" ? "15m" : timeframe === "60" ? "1h" : timeframe === "240" ? "4h" : "1d"} volume`}
         trend={(data?.volume_change || 0) >= 0 ? "High" : "Low"}
         trendUp={(data?.volume_change || 0) >= 0}
+        icon={BarChart3}
+        loading={loading}
+      />
+      <MetricCard
+        title="Spot Volume"
+        value={`$${((data?.spot_volume || 0) * (data?.price || 0) / 1e9).toFixed(2)}B`}
+        subvalue={data?.spot_volume_change !== undefined && data?.spot_volume_change !== 0 ? `${data.spot_volume_change >= 0 ? "+" : ""}${data.spot_volume_change.toFixed(2)}% (${timeframe === "15" ? "15m" : timeframe === "60" ? "1h" : timeframe === "240" ? "4h" : "1d"})` : `${timeframe === "15" ? "15m" : timeframe === "60" ? "1h" : timeframe === "240" ? "4h" : "1d"} volume`}
+        trend={(data?.spot_volume_change || 0) >= 0 ? "Rising" : "Falling"}
+        trendUp={(data?.spot_volume_change || 0) >= 0}
         icon={BarChart3}
         loading={loading}
       />
@@ -602,6 +613,8 @@ export default function Dashboard() {
     oi_change: 0,
     volume: 28.3e9,
     volume_change: 0,
+    spot_volume: 25.5e9,
+    spot_volume_change: 0,
     cvd: 2450000,
     cvd_change: 0,
     signal: "NEUTRAL",
@@ -653,15 +666,17 @@ export default function Dashboard() {
           fetch(`${API_BASE_URL}/market/checklist/${symbol}?timeframe=${apiTf}`),
           fetch(`${API_BASE_URL}/market/levels/${symbol}?timeframe=${apiTf}`),
           fetch(`${API_BASE_URL}/market/profile/${symbol}`),
+          fetch(`${API_BASE_URL}/market/spot-volume/${symbol}?timeframe=${apiTf}`),
         ])
         
         const oiRes = results[0].status === 'fulfilled' ? results[0].value : { ok: false, status: 'rejected' } as unknown as Response
         const checklistRes = results[1].status === 'fulfilled' ? results[1].value : { ok: false, status: 'rejected' } as unknown as Response
         const levelsRes = results[2].status === 'fulfilled' ? results[2].value : { ok: false, status: 'rejected' } as unknown as Response
         const profileRes = results[3].status === 'fulfilled' ? results[3].value : { ok: false, status: 'rejected' } as unknown as Response
+        const spotVolumeRes = results[4].status === 'fulfilled' ? results[4].value : { ok: false, status: 'rejected' } as unknown as Response
 
         // Parse responses
-        let oiData: any = {}, checklistData = null, levelsData: any = {}, profileData: any = {}
+        let oiData: any = {}, checklistData = null, levelsData: any = {}, profileData: any = {}, spotVolumeData: any = {}
         let hasApiError = false
         
         console.log(`API Responses for ${symbol}:`, { oiOk: oiRes.ok, checklistOk: checklistRes.ok, levelsOk: levelsRes.ok, profileOk: profileRes.ok })
@@ -699,6 +714,12 @@ export default function Dashboard() {
           console.error("Profile API error:", profileRes.status)
           hasApiError = true
         }
+        
+        if (spotVolumeRes.ok) {
+          spotVolumeData = await spotVolumeRes.json()
+        } else {
+          console.error("Spot Volume API error:", spotVolumeRes.status)
+        }
 
         // Combine data into MarketData format with safe defaults
         console.log("OI API response:", oiData)
@@ -724,6 +745,8 @@ export default function Dashboard() {
           oi_change: Number(oiData.oi_change_24h) || Number(oiData.oi_change) || 0,
           volume: Number(oiData.volume) || Number(oiData.volume_24h) || 0,
           volume_change: Number(oiData.volume_change) || 0,
+          spot_volume: Number(spotVolumeData.spot_volume) || 0,
+          spot_volume_change: Number(spotVolumeData.spot_volume_change) || 0,
           cvd: Number(oiData.cvd) || 0,
           cvd_change: 0,
           signal: checklistData?.recommendation?.includes("LONG") ? "LONG" : 
@@ -776,6 +799,8 @@ export default function Dashboard() {
             oi_change: 5.2,
             volume: 28.3e9,
             volume_change: 2.5,
+            spot_volume: 25.5e9,
+            spot_volume_change: 1.8,
             cvd: 2450000,
             cvd_change: 3.5,
             signal: "LONG",
