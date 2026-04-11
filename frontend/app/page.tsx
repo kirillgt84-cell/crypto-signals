@@ -58,8 +58,10 @@ interface ChecklistItem {
 interface ChecklistData {
   symbol: string
   score: number
-  total: number
-  items: ChecklistItem[]
+  total?: number
+  max_score?: number
+  items?: ChecklistItem[]
+  checks?: Record<string, { passed: boolean; value?: string; description: string; weight?: string }>
   recommendation: string
   timestamp: string
 }
@@ -250,9 +252,20 @@ function ChecklistScoreCard({
   checklist: ChecklistData | null
   loading: boolean 
 }) {
-  const items = checklist?.items || []
+  // Support both old format (items) and new format (checks)
+  const rawItems = checklist?.items || []
+  const checks = checklist?.checks || {}
+  
+  // Convert checks object to items array if needed
+  const items: ChecklistItem[] = rawItems.length > 0 ? rawItems : 
+    Object.entries(checks).map(([name, check]) => ({
+      name: name.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
+      passed: check.passed,
+      description: check.description
+    }))
+  
   const passedCount = items.filter((i: ChecklistItem) => i.passed).length
-  const total = checklist?.total || 7
+  const total = checklist?.total || checklist?.max_score || 7
   const percentage = total > 0 ? Math.round((passedCount / total) * 100) : 0
   
   return (
