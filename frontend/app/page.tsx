@@ -176,7 +176,7 @@ function OIAnalysisCards({ data, loading, timeframe }: { data: MarketData; loadi
       />
       <MetricCard
         title="CVD"
-        value={`${(data?.cvd || 0) > 0 ? "+" : ""}${(data?.cvd || 0).toLocaleString()}`}
+        value={`${(data?.cvd || 0) > 0 ? "+" : ""}${((data?.cvd || 0) / 1e6).toFixed(2)} mln`}
         subvalue={data?.cvd_change !== 0 ? `${(data?.cvd_change || 0) > 0 ? "+" : ""}${(data?.cvd_change || 0).toFixed(2)}%` : "Delta"}
         trend={(data?.cvd || 0) > 0 ? "Buying" : (data?.cvd || 0) < 0 ? "Selling" : "Neutral"}
         trendUp={(data?.cvd || 0) > 0}
