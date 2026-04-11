@@ -629,13 +629,18 @@ export default function Dashboard() {
       try {
         const apiTf = getApiTimeframe(timeframe)
         
-        // Fetch all data in parallel
-        const [oiRes, checklistRes, levelsRes, profileRes] = await Promise.all([
+        // Fetch all data in parallel with individual error handling
+        const results = await Promise.allSettled([
           fetch(`${API_BASE_URL}/market/oi/${symbol}?timeframe=${apiTf}`),
           fetch(`${API_BASE_URL}/market/checklist/${symbol}?timeframe=${apiTf}`),
           fetch(`${API_BASE_URL}/market/levels/${symbol}?timeframe=${apiTf}`),
           fetch(`${API_BASE_URL}/market/profile/${symbol}`),
         ])
+        
+        const oiRes = results[0].status === 'fulfilled' ? results[0].value : { ok: false, status: 'rejected' }
+        const checklistRes = results[1].status === 'fulfilled' ? results[1].value : { ok: false, status: 'rejected' }
+        const levelsRes = results[2].status === 'fulfilled' ? results[2].value : { ok: false, status: 'rejected' }
+        const profileRes = results[3].status === 'fulfilled' ? results[3].value : { ok: false, status: 'rejected' }
 
         // Parse responses
         let oiData: any = {}, checklistData = null, levelsData: any = {}, profileData: any = {}
