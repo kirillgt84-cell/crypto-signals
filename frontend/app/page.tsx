@@ -141,7 +141,7 @@ function OIAnalysisCards({ data, loading }: { data: MarketData; loading: boolean
       />
       <MetricCard
         title="Open Interest"
-        value={`$${((data?.oi || 0) / 1e9).toFixed(2)}B`}
+        value={`$${((data?.oi || 0) * (data?.price || 0) / 1e9).toFixed(2)}B`}
         subvalue={`Change: ${(data?.oi_change || 0).toFixed(2)}%`}
         trend={(data?.oi_change || 0) >= 0 ? "Rising" : "Falling"}
         trendUp={(data?.oi_change || 0) >= 0}
@@ -197,7 +197,7 @@ function ChartLegend({ data, loading }: { data: MarketData; loading: boolean }) 
       </div>
       <div>
         <p className="text-xs text-muted-foreground">OI Value</p>
-        <p className="font-mono font-medium">${((data?.oi || 0) / 1e9).toFixed(2)}B</p>
+        <p className="font-mono font-medium">${((data?.oi || 0) * (data?.price || 0) / 1e9).toFixed(2)}B</p>
       </div>
       <div>
         <p className="text-xs text-muted-foreground">To EMA 20</p>
