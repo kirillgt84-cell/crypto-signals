@@ -170,12 +170,12 @@ function OIAnalysisCards({ data, loading, timeframe }: { data: MarketData; loadi
         loading={loading}
       />
       <MetricCard
-        title="Signal"
-        value={data?.signal || "NEUTRAL"}
-        subvalue={data?.score !== undefined ? `Score: ${data.score}/7` : "Analyzing..."}
-        trend={data?.signal === "LONG" ? "Bullish" : data?.signal === "SHORT" ? "Bearish" : "Neutral"}
-        trendUp={data?.signal === "LONG"}
-        icon={Target}
+        title="CVD"
+        value={`${(data?.cvd || 0) > 0 ? "+" : ""}${(data?.cvd || 0).toLocaleString()}`}
+        subvalue={data?.cvd_change !== 0 ? `${(data?.cvd_change || 0) > 0 ? "+" : ""}${(data?.cvd_change || 0).toFixed(2)}%` : "Delta"}
+        trend={(data?.cvd || 0) > 0 ? "Buying" : (data?.cvd || 0) < 0 ? "Selling" : "Neutral"}
+        trendUp={(data?.cvd || 0) > 0}
+        icon={Activity}
         loading={loading}
       />
     </div>
