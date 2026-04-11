@@ -8,6 +8,7 @@ import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle }
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { TradingViewChart } from "./components/TradingViewChart"
+import { OICompass } from "./components/OICompass"
 import Sidebar from "./components/admin/Sidebar"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { cn } from "@/lib/utils"
@@ -253,96 +254,7 @@ function ChartSection({ symbol, timeframe, data, loading }: { symbol: string; ti
   )
 }
 
-// Checklist Score Card
-function OIAnalysisCard({ 
-  symbol, 
-  oiAnalysis, 
-  loading 
-}: { 
-  symbol: string
-  oiAnalysis: any
-  loading: boolean 
-}) {
-  return (
-    <Card className="flex flex-col">
-      <CardHeader className="gap-2">
-        <CardTitle>OI Analysis</CardTitle>
-        <CardDescription>
-          Open Interest + Price + Volume interpretation
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="flex-1">
-        {loading ? (
-          <div className="text-center py-10">
-            <Loader2 className="mx-auto mb-4 h-8 w-8 animate-spin text-primary" />
-            <p className="text-muted-foreground">Analyzing OI patterns...</p>
-          </div>
-        ) : oiAnalysis ? (
-          <div className="space-y-4">
-            {/* Status Badge */}
-            <div 
-              className="p-4 rounded-lg text-center"
-              style={{ 
-                backgroundColor: oiAnalysis.color + '20',
-                border: `2px solid ${oiAnalysis.color}`
-              }}
-            >
-              <p className="text-lg font-bold" style={{ color: oiAnalysis.color }}>
-                {oiAnalysis.status?.toUpperCase().replace(/_/g, ' ')}
-              </p>
-              <p className="text-sm font-medium mt-1">
-                {oiAnalysis.signal?.toUpperCase()}
-              </p>
-            </div>
-            
-            {/* Description */}
-            <div className="space-y-2">
-              <p className="font-medium">{oiAnalysis.description}</p>
-              {oiAnalysis.detailed && (
-                <p className="text-sm text-muted-foreground">{oiAnalysis.detailed}</p>
-              )}
-            </div>
-            
-            {/* Action & Tactic */}
-            <div className="bg-muted p-3 rounded-lg space-y-2">
-              <div className="flex items-center gap-2">
-                <span className="text-sm font-semibold">Action:</span>
-                <span className="text-sm">{oiAnalysis.action}</span>
-              </div>
-              {oiAnalysis.tactic && (
-                <div className="flex items-start gap-2">
-                  <span className="text-sm font-semibold">Tactic:</span>
-                  <span className="text-sm text-muted-foreground">{oiAnalysis.tactic}</span>
-                </div>
-              )}
-            </div>
-            
-            {/* Strength Indicator */}
-            <div className="flex items-center gap-2 text-sm">
-              <span className="font-medium">Signal Strength:</span>
-              <div className="flex gap-1">
-                {[...Array(5)].map((_, i) => (
-                  <div 
-                    key={i}
-                    className="w-4 h-4 rounded-sm"
-                    style={{ 
-                      backgroundColor: i < (oiAnalysis.strength || 0) ? oiAnalysis.color : '#e5e7eb'
-                    }}
-                  />
-                ))}
-              </div>
-              <span className="text-muted-foreground">({oiAnalysis.strength}/5)</span>
-            </div>
-          </div>
-        ) : (
-          <div className="text-center text-muted-foreground py-10">
-            Select a symbol to view OI analysis
-          </div>
-        )}
-      </CardContent>
-    </Card>
-  )
-}
+
 
 // Row 4: Entry Levels with distances
 function EntryLevelsCard({ data, loading }: { data: MarketData; loading: boolean }) {
@@ -942,11 +854,17 @@ export default function Dashboard() {
           <div className="lg:col-span-2">
             <ChartSection symbol={symbol} timeframe={timeframe} data={marketData} loading={loading} />
           </div>
-          <OIAnalysisCard 
-            symbol={symbol} 
-            oiAnalysis={oiAnalysis} 
-            loading={loading} 
-          />
+          <Card className="flex flex-col">
+            <CardHeader className="gap-2 pb-2">
+              <CardTitle>OI Analysis</CardTitle>
+              <CardDescription>
+                Open Interest + Price + Volume
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="flex-1 pt-0">
+              <OICompass analysis={oiAnalysis} loading={loading} />
+            </CardContent>
+          </Card>
         </div>
 
         {/* Row 4: Entry Levels + Liquidation Map */}
