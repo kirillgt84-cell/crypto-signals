@@ -94,30 +94,30 @@ function MetricCard({
   loading?: boolean
 }) {
   return (
-    <Card className="bg-gradient-to-t from-primary/5 to-card">
-      <CardHeader className="p-4 lg:p-3">
-        <div className="flex items-center gap-2">
-          <Icon className="h-3 w-3 text-muted-foreground" />
-          <CardDescription className="text-xs">{title}</CardDescription>
+    <Card className="bg-gradient-to-t from-primary/5 to-card h-full">
+      <CardHeader className="p-3">
+        <div className="flex items-center gap-1.5">
+          <Icon className="h-3.5 w-3.5 text-muted-foreground" />
+          <CardDescription className="text-[11px] font-medium">{title}</CardDescription>
         </div>
         {loading ? (
-          <div className="h-7 flex items-center">
-            <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+          <div className="h-8 flex items-center">
+            <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
           </div>
         ) : (
-          <CardTitle className="text-lg lg:text-base font-semibold tabular-nums">
+          <CardTitle className="text-xl font-bold tabular-nums tracking-tight">
             {value || "--"}
           </CardTitle>
         )}
         {subvalue && !loading && (
-          <p className="text-[10px] text-muted-foreground truncate">{subvalue}</p>
+          <p className="text-xs text-muted-foreground font-medium">{subvalue}</p>
         )}
-        <CardAction className="mt-1">
+        <CardAction>
           <Badge variant="outline" className={cn(
-            "gap-1 text-[10px] px-1.5 py-0.5",
+            "gap-1 text-[11px] px-2 py-0.5 font-medium",
             trendUp ? "text-emerald-500" : "text-red-500"
           )}>
-            {trendUp ? <TrendingUp className="h-2.5 w-2.5" /> : <TrendingDown className="h-2.5 w-2.5" />}
+            {trendUp ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
             {trend}
           </Badge>
         </CardAction>
@@ -132,7 +132,7 @@ function OIAnalysisCards({ data, loading, timeframe }: { data: MarketData; loadi
   const decimals = price < 1 ? 4 : price < 100 ? 2 : 0
   
   return (
-    <div className="grid grid-cols-1 gap-3 px-4 py-4 sm:grid-cols-2 lg:grid-cols-5 lg:px-6">
+    <div className="grid grid-cols-1 gap-4 px-4 py-4 sm:grid-cols-2 lg:grid-cols-5 lg:gap-3 lg:px-6">
       <MetricCard
         title="Price"
         value={price > 0 ? `$${price.toLocaleString(undefined, {maximumFractionDigits: decimals})}` : "--"}
