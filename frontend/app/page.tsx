@@ -98,8 +98,8 @@ function MetricCard({
       <CardHeader className="p-3 flex flex-row items-center justify-between">
         <div className="flex-1">
           <div className="flex items-center gap-1.5 mb-1">
-            <Icon className="h-3.5 w-3.5 text-muted-foreground" />
-            <CardDescription className="text-[11px] font-medium">{title}</CardDescription>
+            <Icon className="h-4 w-4 text-muted-foreground" />
+            <CardDescription className="text-xs font-bold uppercase tracking-wide">{title}</CardDescription>
           </div>
           {loading ? (
             <div className="h-8 flex items-center">
@@ -157,7 +157,7 @@ function OIAnalysisCards({ data, loading, timeframe }: { data: MarketData; loadi
         loading={loading}
       />
       <MetricCard
-        title="Volume"
+        title="Futures Volume"
         value={`$${((data?.volume || 0) * (data?.price || 0) / 1e9).toFixed(2)}B`}
         subvalue={data?.volume_change !== undefined && data?.volume_change !== 0 ? `${data.volume_change >= 0 ? "+" : ""}${data.volume_change.toFixed(2)}% (${timeframe === "15" ? "15m" : timeframe === "60" ? "1h" : timeframe === "240" ? "4h" : "1d"})` : `${timeframe === "15" ? "15m" : timeframe === "60" ? "1h" : timeframe === "240" ? "4h" : "1d"} volume`}
         trend={(data?.volume_change || 0) >= 0 ? "High" : "Low"}
