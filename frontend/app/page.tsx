@@ -142,7 +142,7 @@ function OIAnalysisCards({ data, loading, timeframe }: { data: MarketData; loadi
       <MetricCard
         title="Open Interest"
         value={`$${((data?.oi || 0) * (data?.price || 0) / 1e9).toFixed(2)}B`}
-        subvalue={data?.oi_change !== undefined && data?.oi_change !== 0 ? `${data.oi_change.toFixed(2)}% (24h)` : "24h change: N/A"}
+        subvalue={data?.oi_change !== undefined && data?.oi_change !== 0 ? `${data.oi_change.toFixed(2)}% (${timeframe === "15" ? "15m" : timeframe === "60" ? "1h" : timeframe === "240" ? "4h" : "1d"})` : `Change: N/A`}
         trend={(data?.oi_change || 0) >= 0 ? "Rising" : "Falling"}
         trendUp={(data?.oi_change || 0) >= 0}
         icon={Activity}

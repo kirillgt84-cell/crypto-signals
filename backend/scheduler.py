@@ -55,17 +55,17 @@ def start_scheduler():
     """Запускает планировщик"""
     scheduler = AsyncIOScheduler()
     
-    # Сохраняем OI каждые 15 минут
+    # Сохраняем OI каждые 5 минут для точности расчетов по таймфреймам
     scheduler.add_job(
         save_oi_snapshot,
         'interval',
-        minutes=15,
+        minutes=5,
         id='oi_snapshot',
         replace_existing=True
     )
     
     scheduler.start()
-    logger.info("[Scheduler] Started - OI snapshot every 15 minutes")
+    logger.info("[Scheduler] Started - OI snapshot every 5 minutes")
     return scheduler
 
 def stop_scheduler(scheduler):

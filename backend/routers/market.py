@@ -49,9 +49,10 @@ async def get_oi_analysis(
         # Получаем исторические данные для расчета изменения
         db = get_db()
         
-        # Ищем OI за 24 часа назад (для 1h) или соответственно
-        hours_map = {"1h": 24, "4h": 24, "1d": 7}
-        hours = hours_map.get(timeframe, 24)
+        # Ищем OI за соответствующий таймфрейм назад
+        # 1h -> 1 час назад, 4h -> 4 часа назад, 1d -> 24 часа назад
+        hours_map = {"1h": 1, "4h": 4, "1d": 24}
+        hours = hours_map.get(timeframe, 1)
         
         old_data = await db.query(
             """SELECT open_interest, price FROM oi_history 
