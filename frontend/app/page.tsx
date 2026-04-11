@@ -253,16 +253,18 @@ function ChecklistScoreCard({
   loading: boolean 
 }) {
   // Support both old format (items) and new format (checks)
-  const rawItems = checklist?.items || []
-  const checks = checklist?.checks || {}
+  const rawItems = Array.isArray(checklist?.items) ? checklist?.items : []
+  const checks = checklist?.checks && typeof checklist?.checks === 'object' ? checklist?.checks : {}
   
   // Convert checks object to items array if needed
-  const items: ChecklistItem[] = rawItems.length > 0 ? rawItems : 
-    Object.entries(checks).map(([name, check]) => ({
+  let items: ChecklistItem[] = rawItems
+  if (rawItems.length === 0 && Object.keys(checks).length > 0) {
+    items = Object.entries(checks).map(([name, check]) => ({
       name: name.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
-      passed: check.passed,
-      description: check.description
+      passed: check?.passed || false,
+      description: check?.description || ''
     }))
+  }
   
   const passedCount = items.filter((i: ChecklistItem) => i.passed).length
   const total = checklist?.total || checklist?.max_score || 7
@@ -515,7 +517,7 @@ function SecondaryIndicators({ data, timeframe, loading }: { data: MarketData; t
 
 // Liquidation Map Component
 function LiquidationMap({ liquidations, currentPrice, symbol, loading }: { liquidations: LiquidationLevel[]; currentPrice: number; symbol: string; loading: boolean }) {
-  const safeLiquidations = liquidations || []
+  const safeLiquidations = Array.isArray(liquidations) ? liquidations : []
   const sortedLiquidations = [...safeLiquidations].sort((a, b) => (a?.price || 0) - (b?.price || 0))
   const maxSize = Math.max(...safeLiquidations.map(l => l?.size || 0), 1)
   const price = currentPrice || 0
