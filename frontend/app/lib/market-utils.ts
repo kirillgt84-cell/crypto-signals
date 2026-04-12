@@ -13,22 +13,22 @@ export const getRSIInterpretation = (rsi: number, timeframe: string): { text: st
   
   if (rsi > tf.overbought) {
     return { 
-      text: `Overbought (${tfLabel})`, 
+      text: `Перекуплен (${tfLabel})`, 
       color: "text-red-500",
-      detail: timeframe === "15" ? " scalp short opportunity" : timeframe === "D" ? "swing reversal likely" : "consider taking profits"
+      detail: timeframe === "15" ? "скальп-шорт возможен" : timeframe === "D" ? "разворот тренда вероятен" : "рассмотреть фиксацию прибыли"
     }
   }
   if (rsi < tf.oversold) {
     return { 
-      text: `Oversold (${tfLabel})`, 
+      text: `Перепродан (${tfLabel})`, 
       color: "text-emerald-500",
-      detail: timeframe === "15" ? "scalp long opportunity" : timeframe === "D" ? "accumulation zone" : "bounce expected"
+      detail: timeframe === "15" ? "скальп-лонг возможен" : timeframe === "D" ? "зона аккумуляции" : "отскок ожидается"
     }
   }
   return { 
-    text: `Neutral (${tfLabel})`, 
+    text: `Нейтрально (${tfLabel})`, 
     color: "text-amber-500",
-    detail: timeframe === "15" ? "wait for breakout" : timeframe === "D" ? "trend continuation likely" : "momentum building"
+    detail: timeframe === "15" ? "ждать пробоя" : timeframe === "D" ? "вероятно продолжение тренда" : "импульс накапливается"
   }
 }
 
@@ -39,104 +39,104 @@ export const getMACDInterpretation = (macd: number, signal: number, timeframe: s
   
   if (isBullish && isPositive) {
     return { 
-      text: `Bullish (${tfLabel})`, 
+      text: `Бычий (${tfLabel})`, 
       color: "text-emerald-500",
-      detail: timeframe === "15" ? "momentum shift - quick scalp" : timeframe === "D" ? "strong uptrend confirmed" : "trend gaining strength"
+      detail: timeframe === "15" ? "сдвиг импульса - быстрый скальп" : timeframe === "D" ? "сильный восходящий тренд подтверждён" : "тренд набирает силу"
     }
   }
   if (!isBullish && !isPositive) {
     return { 
-      text: `Bearish (${tfLabel})`, 
+      text: `Медвежий (${tfLabel})`, 
       color: "text-red-500",
-      detail: timeframe === "15" ? "momentum down - quick short" : timeframe === "D" ? "downtrend established" : "selling pressure building"
+      detail: timeframe === "15" ? "импульс вниз - быстрый шорт" : timeframe === "D" ? "нисходящий тренд установлен" : "давление продавцов растёт"
     }
   }
   if (isBullish && !isPositive) {
     return { 
-      text: `Crossing Up (${tfLabel})`, 
+      text: `Пересечение вверх (${tfLabel})`, 
       color: "text-emerald-500",
-      detail: timeframe === "15" ? "early reversal signal" : timeframe === "D" ? "major trend reversal forming" : "potential bottom"
+      detail: timeframe === "15" ? "ранний сигнал разворота" : timeframe === "D" ? "формируется крупный разворот" : "возможное дно"
     }
   }
   return { 
-    text: `Crossing Down (${tfLabel})`, 
+    text: `Пересечение вниз (${tfLabel})`, 
     color: "text-red-500",
-    detail: timeframe === "15" ? "early weakness signal" : timeframe === "D" ? "major top forming" : "potential reversal"
+    detail: timeframe === "15" ? "ранний сигнал слабости" : timeframe === "D" ? "формируется крупная вершина" : "возможный разворот"
   }
 }
 
 export const getFundingInterpretation = (funding: number, timeframe: string): { text: string; color: string; detail: string } => {
-  const tfLabel = timeframe === "15" ? "Scalp" : timeframe === "60" ? "Intraday" : timeframe === "240" ? "Swing" : "Position"
+  const tfLabel = timeframe === "15" ? "Скальп" : timeframe === "60" ? "Внутри дня" : timeframe === "240" ? "Свинг" : "Позиция"
   
   if (funding > 0.03) {
     return { 
-      text: `Extreme Long Bias (${tfLabel})`, 
+      text: `Экстремальный лонг (${tfLabel})`, 
       color: "text-red-500",
-      detail: timeframe === "15" ? "short squeeze possible - scalp with caution" : timeframe === "D" ? "unsustainable - major correction coming" : "funding squeeze risk"
+      detail: timeframe === "15" ? "возможен сжим шортов - осторожно" : timeframe === "D" ? "недолговечно - крупная коррекция близка" : "риск сжима фандинга"
     }
   }
   if (funding > 0.01) {
     return { 
-      text: `Longs Pay (${tfLabel})`, 
+      text: `Лонги платят (${tfLabel})`, 
       color: "text-amber-500",
-      detail: timeframe === "15" ? "slight overhead - manageable for scalps" : timeframe === "D" ? "avoid longs - pay every 8h" : "reduce position size"
+      detail: timeframe === "15" ? "небольшие издержки - терпимо для скальпа" : timeframe === "D" ? "избегать лонгов - плати каждые 8ч" : "уменьшить размер позиции"
     }
   }
   if (funding < -0.03) {
     return { 
-      text: `Extreme Short Bias (${tfLabel})`, 
+      text: `Экстремальный шорт (${tfLabel})`, 
       color: "text-emerald-500",
-      detail: timeframe === "15" ? "long squeeze possible - quick bounces" : timeframe === "D" ? "capitulation - bottom forming" : "shorts getting squeezed"
+      detail: timeframe === "15" ? "возможен сжим лонгов - быстрые отскоки" : timeframe === "D" ? "капитуляция - дно формируется" : "шорты сжимаются"
     }
   }
   if (funding < -0.01) {
     return { 
-      text: `Shorts Pay (${tfLabel})`, 
+      text: `Шорты платят (${tfLabel})`, 
       color: "text-emerald-500",
-      detail: timeframe === "15" ? "paid to hold longs - scalp advantage" : timeframe === "D" ? "ideal for long swing positions" : "accumulation favored"
+      detail: timeframe === "15" ? "платят за лонги - преимущество скальпа" : timeframe === "D" ? "идеально для долгих позиций" : "аккумуляция выгодна"
     }
   }
   return { 
-    text: `Balanced (${tfLabel})`, 
+    text: `Сбалансировано (${tfLabel})`, 
     color: "text-muted-foreground",
-    detail: "no funding pressure either direction"
+    detail: "нет давления фандинга в любом направлении"
   }
 }
 
 export const getExchangeFlowInterpretation = (flow: number, timeframe: string): { text: string; trend: "up" | "down"; detail: string } => {
-  const tfLabel = timeframe === "15" ? "scalp" : timeframe === "60" ? "intraday" : timeframe === "240" ? "swing" : "position"
+  const tfLabel = timeframe === "15" ? "скальп" : timeframe === "60" ? "внутри дня" : timeframe === "240" ? "свинг" : "позиция"
   
   if (flow < -500) {
     return { 
-      text: "Heavy Outflow (Bullish)", 
+      text: "Сильный отток (Бычий)", 
       trend: "up",
-      detail: `strong accumulation for ${tfLabel} trades`
+      detail: `сильная аккумуляция для ${tfLabel} сделок`
     }
   }
   if (flow < 0) {
     return { 
-      text: "Outflow (Bullish)", 
+      text: "Отток (Бычий)", 
       trend: "up",
-      detail: `supply shock building - ${tfLabel} longs favored`
+      detail: `накапливается дефицит - ${tfLabel} лонги выгодны`
     }
   }
   if (flow > 500) {
     return { 
-      text: "Heavy Inflow (Bearish)", 
+      text: "Сильный приток (Медвежий)", 
       trend: "down",
-      detail: `profit taking for ${tfLabel} - caution advised`
+      detail: `фиксация прибыли для ${tfLabel} - осторожно`
     }
   }
   if (flow > 0) {
     return { 
-      text: "Inflow (Bearish)", 
+      text: "Приток (Медвежий)", 
       trend: "down",
-      detail: `selling pressure for ${tfLabel} trades`
+      detail: `давление продавцов для ${tfLabel} сделок`
     }
   }
   return { 
-    text: "Neutral", 
+    text: "Нейтрально", 
     trend: "up",
-    detail: "no significant flow activity"
+    detail: "нет значительной активности потоков"
   }
 }

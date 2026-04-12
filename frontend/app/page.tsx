@@ -541,10 +541,10 @@ export default function Dashboard() {
           vah: Number(profileData?.vah) || price * 1.02,
           val: Number(profileData?.val) || price * 0.98,
           atr: Number(levelsData?.atr) || price * 0.008,
-          funding: Number(oiData.funding_rate) || Number(oiData.funding) || 0,
+          funding: Number(oiData.funding_rate) || Number(oiData.funding) || Number(levelsData?.liquidation_levels?.funding_rate) || 0,
           rsi: Number(levelsData?.rsi) || Number(oiData.rsi) || 50,
-          macd: Number(levelsData?.macd) || 0,
-          macd_signal: Number(levelsData?.macd_signal) || 0,
+          macd: Number(levelsData?.macd) || Number(oiData.macd) || 0,
+          macd_signal: Number(levelsData?.macd_signal) || Number(oiData.macd_signal) || 0,
           exchange_flow: Number(oiData.exchange_flow) || 0,
         }
         
