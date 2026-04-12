@@ -62,35 +62,38 @@ async def get_oi_analysis(
             [symbol.upper(), timeframe]
         )
         
-        # Расчет изменения OI
+        # Сохраняем оригинальные значения из fetcher (уже содержат реальные изменения)
+        original_oi_change = data.get('oi_change_24h', 0)
+        original_volume_change = data.get('volume_change', 0)
+        original_price_change = data.get('price_change_24h', 0)
+        
+        # Расчет изменения OI из БД (если есть)
         if old_data and len(old_data) > 0:
             old_oi = old_data[0]['open_interest']
             current_oi = data.get('open_interest', 0)
             oi_change_pct = ((current_oi - old_oi) / old_oi * 100) if old_oi > 0 else 0
-            data['oi_change_24h'] = round(oi_change_pct, 2)
+            # Используем значение из БД только если оно не ноль, иначе оригинал
+            data['oi_change_24h'] = round(oi_change_pct, 2) if oi_change_pct != 0 else original_oi_change
             data['oi_change_value'] = round(current_oi - old_oi, 2)
             
             # Расчет изменения фьючерсного объема
             old_volume = old_data[0].get('volume', 0) or 0
             current_volume = data.get('volume_24h', 0)
             volume_change_pct = ((current_volume - old_volume) / old_volume * 100) if old_volume > 0 else 0
-            data['volume_change'] = round(volume_change_pct, 2)
+            data['volume_change'] = round(volume_change_pct, 2) if volume_change_pct != 0 else original_volume_change
             
             # Расчет изменения спотового объема
             old_spot_volume = old_data[0].get('spot_volume', 0) or 0
-            # Получаем текущий спотовый объем
             spot_data = await fetcher.get_spot_volume(symbol_upper, timeframe)
             current_spot_volume = spot_data.get('spot_volume', 0)
             spot_volume_change_pct = ((current_spot_volume - old_spot_volume) / old_spot_volume * 100) if old_spot_volume > 0 else 0
             data['spot_volume'] = current_spot_volume
             data['spot_volume_change'] = round(spot_volume_change_pct, 2)
         else:
-            # No historical data from DB, use fetcher values if available
-            if 'volume_change' not in data or data.get('volume_change') == 0:
-                data['volume_change'] = 0
-            data['oi_change_24h'] = 0
+            # Нет исторических данных - используем значения из fetcher
+            data['volume_change'] = original_volume_change
+            data['oi_change_24h'] = original_oi_change
             data['oi_change_value'] = 0
-            # Получаем текущий спотовый объем даже если нет истории
             spot_data = await fetcher.get_spot_volume(symbol_upper, timeframe)
             data['spot_volume'] = spot_data.get('spot_volume', 0)
             data['spot_volume_change'] = 0
