@@ -187,7 +187,7 @@ function OIAnalysisCards({ data, loading, timeframe }: { data: MarketData; loadi
       />
       <MetricCard
         title="CVD"
-        value={`${(data?.cvd || 0) > 0 ? "+" : ""}${((data?.cvd || 0) / 1e6).toFixed(2)} млн`}
+        value={`${(data?.cvd || 0) > 0 ? "+" : ""}${((data?.cvd || 0) / 1e6).toFixed(2)} mln`}
         subvalue={getCVDInterpretation(data?.cvd || 0, data?.cvd_change || 0).text}
         trend={(data?.cvd || 0) > 0 ? "Buying" : (data?.cvd || 0) < 0 ? "Selling" : "Neutral"}
         trendUp={(data?.cvd || 0) > 0}
