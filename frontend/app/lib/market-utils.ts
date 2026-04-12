@@ -103,6 +103,42 @@ export const getFundingInterpretation = (funding: number, timeframe: string): { 
   }
 }
 
+export const getCVDInterpretation = (cvd: number, cvdChange: number): { text: string; color: string; detail: string } => {
+  if (cvd > 1000000) {
+    return { 
+      text: "Сильный приток покупателей", 
+      color: "text-emerald-500",
+      detail: "агрессивные покупки - бычий импульс"
+    }
+  }
+  if (cvd > 0) {
+    return { 
+      text: "Покупатели доминируют", 
+      color: "text-emerald-500",
+      detail: "преобладание market buy ордеров"
+    }
+  }
+  if (cvd < -1000000) {
+    return { 
+      text: "Сильный приток продавцов", 
+      color: "text-red-500",
+      detail: "агрессивные продажи - медвежий импульс"
+    }
+  }
+  if (cvd < 0) {
+    return { 
+      text: "Продавцы доминируют", 
+      color: "text-red-500",
+      detail: "преобладание market sell ордеров"
+    }
+  }
+  return { 
+    text: "Нейтрально", 
+    color: "text-amber-500",
+    detail: "баланс между покупателями и продавцами"
+  }
+}
+
 export const getExchangeFlowInterpretation = (flow: number, timeframe: string): { text: string; trend: "up" | "down"; detail: string } => {
   const tfLabel = timeframe === "15" ? "скальп" : timeframe === "60" ? "внутри дня" : timeframe === "240" ? "свинг" : "позиция"
   

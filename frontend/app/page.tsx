@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react"
 import { TrendingUp, TrendingDown, Minus, Activity, BarChart3, Wallet, Target, Zap, Loader2 } from "lucide-react"
-import { getRSIInterpretation, getMACDInterpretation, getFundingInterpretation, getExchangeFlowInterpretation } from "./lib/market-utils"
+import { getRSIInterpretation, getMACDInterpretation, getFundingInterpretation, getExchangeFlowInterpretation, getCVDInterpretation } from "./lib/market-utils"
 import { Logo, LogoIcon } from "./components/Logo"
 import { ThemeToggle } from "./components/ThemeToggle"
 import { useTheme } from "next-themes"
@@ -186,8 +186,8 @@ function OIAnalysisCards({ data, loading, timeframe }: { data: MarketData; loadi
       />
       <MetricCard
         title="CVD"
-        value={`${(data?.cvd || 0) > 0 ? "+" : ""}${((data?.cvd || 0) / 1e6).toFixed(2)} mln`}
-        subvalue={data?.cvd_change !== 0 ? `${(data?.cvd_change || 0) > 0 ? "+" : ""}${(data?.cvd_change || 0).toFixed(2)}%` : "Delta"}
+        value={`${(data?.cvd || 0) > 0 ? "+" : ""}${((data?.cvd || 0) / 1e6).toFixed(2)} млн`}
+        subvalue={getCVDInterpretation(data?.cvd || 0, data?.cvd_change || 0).text}
         trend={(data?.cvd || 0) > 0 ? "Buying" : (data?.cvd || 0) < 0 ? "Selling" : "Neutral"}
         trendUp={(data?.cvd || 0) > 0}
         icon={Activity}
@@ -290,6 +290,7 @@ function SecondaryIndicators({ data, timeframe, loading }: { data: MarketData; t
   const macdInterp = getMACDInterpretation(macd, macdSignal, timeframe)
   const fundingInterp = getFundingInterpretation(funding, timeframe)
   const flowInterp = getExchangeFlowInterpretation(exchangeFlow, timeframe)
+  const cvdInterp = getCVDInterpretation(data.cvd, data.cvd_change)
   
   return (
     <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 px-4 pb-6 lg:px-6">
