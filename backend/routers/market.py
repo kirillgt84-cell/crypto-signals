@@ -62,6 +62,16 @@ async def get_oi_analysis(
             [symbol.upper(), timeframe]
         )
         
+        # Fallback: если предпоследней нет, ищем запись за 1 час назад
+        if not old_data or len(old_data) == 0:
+            old_data = await db.query(
+                """SELECT open_interest, price, volume, spot_volume FROM oi_history 
+                   WHERE symbol = $1 AND timeframe = $2 
+                   AND time < NOW() - INTERVAL '1 hour'
+                   ORDER BY time DESC LIMIT 1""",
+                [symbol.upper(), timeframe]
+            )
+        
         # Сохраняем оригинальные значения из fetcher (уже содержат реальные изменения)
         original_oi_change = data.get('oi_change_24h', 0)
         original_volume_change = data.get('volume_change', 0)
