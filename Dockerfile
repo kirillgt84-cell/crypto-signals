@@ -15,7 +15,5 @@ COPY backend/ .
 
 ENV PYTHONUNBUFFERED=1
 
-# Create startup script
-RUN echo '#!/bin/sh\nuvicorn main:app --host 0.0.0.0 --port ${PORT:-8000}' > /app/start.sh && chmod +x /app/start.sh
-
-CMD ["/bin/sh", "/app/start.sh"]
+# Use shell form to allow environment variable expansion
+CMD uvicorn main:app --host 0.0.0.0 --port ${PORT:-8000}
