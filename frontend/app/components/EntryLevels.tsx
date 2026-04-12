@@ -78,7 +78,7 @@ export function EntryLevels({ data, loading }: EntryLevelsProps) {
 
   const pricePosition = normalize(price)
 
-  // All levels with descriptions
+  // All levels with descriptions (PRICE removed - shown as marker on scales)
   const levels = [
     { 
       name: 'VAH', 
@@ -93,14 +93,6 @@ export function EntryLevels({ data, loading }: EntryLevelsProps) {
       type: 'neutral' as const, 
       label: 'Point of Control',
       desc: 'Точка контроля - уровень с максимальным объемом торгов. Самая "справедливая" цена по мнению рынка'
-    },
-    { 
-      name: 'PRICE', 
-      value: price, 
-      type: 'neutral' as const, 
-      label: 'Current Price',
-      desc: 'Текущая рыночная цена. Показывает где вы относительно ключевых уровней',
-      isCurrent: true
     },
     { 
       name: 'EMA20', 
@@ -160,7 +152,7 @@ export function EntryLevels({ data, loading }: EntryLevelsProps) {
         <div className="space-y-2">
           {levels.map((level, index) => {
             const distance = getDistance(level.value)
-            const color = level.isCurrent ? '#3b82f6' : getColor(level.type)
+            const color = getColor(level.type)
             const position = normalize(level.value)
             const isAbove = distance > 0
             
@@ -168,9 +160,7 @@ export function EntryLevels({ data, loading }: EntryLevelsProps) {
               <Tooltip key={level.name}>
                 <TooltipTrigger asChild>
                   <motion.div
-                    className={`flex items-center gap-3 p-2 rounded-lg cursor-help transition-colors ${
-                      level.isCurrent ? 'bg-blue-500/10 border border-blue-500/50' : 'hover:bg-white/5'
-                    }`}
+                    className="flex items-center gap-3 p-2 rounded-lg cursor-help transition-colors hover:bg-white/5"
                     initial={{ x: -20, opacity: 0 }}
                     animate={{ x: 0, opacity: 1 }}
                     transition={{ delay: index * 0.08 }}
@@ -231,7 +221,7 @@ export function EntryLevels({ data, loading }: EntryLevelsProps) {
                           left: `${position}%`,
                           transform: 'translateX(-50%) translateY(-50%)',
                           color: color,
-                          backgroundColor: level.isCurrent ? 'rgba(59, 130, 246, 0.2)' : 'rgba(0,0,0,0.7)',
+                          backgroundColor: 'rgba(0,0,0,0.7)',
                           textShadow: '0 0 4px rgba(0,0,0,0.8)'
                         }}
                       >
@@ -240,17 +230,13 @@ export function EntryLevels({ data, loading }: EntryLevelsProps) {
                     </div>
                     
                     {/* Distance */}
-                    <span 
-                      className={`text-xs w-14 text-right font-mono ${
-                        level.isCurrent ? 'text-blue-400 font-bold' : 'text-muted-foreground'
-                      }`}
-                    >
+                    <span className="text-xs w-14 text-right font-mono text-muted-foreground">
                       {distance > 0 ? '+' : ''}{distance.toFixed(1)}%
                     </span>
                     
                     {/* Indicator */}
                     <span className="text-lg shrink-0 w-6 text-center">
-                      {level.isCurrent ? '🎯' : level.type === 'resistance' ? '🔴' : level.type === 'support' ? '🟢' : '⚪'}
+                      {level.type === 'resistance' ? '🔴' : level.type === 'support' ? '🟢' : '⚪'}
                     </span>
                   </motion.div>
                 </TooltipTrigger>
@@ -261,11 +247,9 @@ export function EntryLevels({ data, loading }: EntryLevelsProps) {
                     </p>
                     <p className="text-xs text-muted-foreground">{level.desc}</p>
                     <p className="text-xs">
-                      {level.isCurrent 
-                        ? 'Текущая позиция' 
-                        : isAbove 
-                          ? `На ${distance.toFixed(1)}% выше текущей цены` 
-                          : `На ${Math.abs(distance).toFixed(1)}% ниже текущей цены`
+                      {isAbove 
+                        ? `На ${distance.toFixed(1)}% выше текущей цены` 
+                        : `На ${Math.abs(distance).toFixed(1)}% ниже текущей цены`
                       }
                     </p>
                   </div>
