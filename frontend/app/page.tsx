@@ -560,9 +560,24 @@ export default function Dashboard() {
         } : null
         setOiAnalysis(enrichedAnalysis)
         
-        // Set liquidations from levels data
-        if (levelsData.liquidation_levels || levelsData.liquidations) {
-          setLiquidations(levelsData.liquidation_levels || levelsData.liquidations || [])
+        // Set liquidations from levels data - convert to expected format
+        if (levelsData.liquidation_levels) {
+          const liqData = levelsData.liquidation_levels
+          const formattedLiquidations = [
+            ...(liqData.long_liquidations || []).map((l: any) => ({
+              price: l.price,
+              side: "Long" as const,
+              size: l.leverage === "20x" ? 150000000 : l.leverage === "10x" ? 100000000 : 80000000
+            })),
+            ...(liqData.short_liquidations || []).map((l: any) => ({
+              price: l.price,
+              side: "Short" as const,
+              size: l.leverage === "20x" ? 150000000 : l.leverage === "10x" ? 100000000 : 80000000
+            }))
+          ]
+          setLiquidations(formattedLiquidations)
+        } else if (levelsData.liquidations) {
+          setLiquidations(levelsData.liquidations)
         } else {
           // Fallback: generate from price
           setLiquidations([
