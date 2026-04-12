@@ -186,7 +186,7 @@ export default function LevelsPanel({ data }: { data: LevelsData }) {
       </div>
 
       {/* Funding Rate */}
-      <div className="p-3 rounded-xl bg-black/20 border border-white/5">
+      <div className="p-3 rounded-xl bg-muted/50 border border-border">
         <div className="flex items-center justify-between">
           <span className="text-xs text-gray-400 uppercase">Funding Rate</span>
           <span className={`font-mono font-bold ${

@@ -64,7 +64,7 @@ export default function OIPanel({ data }: { data: OIAnalysis }) {
       {/* Price & OI Grid */}
       <div className="grid grid-cols-2 gap-3 mb-5">
         {/* Price Card */}
-        <div className="bg-black/20 rounded-xl p-4 border border-white/5">
+        <div className="bg-muted/50 rounded-xl p-4 border border-border">
           <div className="flex items-center gap-2 text-gray-400 text-xs mb-2">
             <DollarSign className="w-3 h-3" />
             PRICE
@@ -85,7 +85,7 @@ export default function OIPanel({ data }: { data: OIAnalysis }) {
         </div>
 
         {/* OI Card */}
-        <div className="bg-black/20 rounded-xl p-4 border border-white/5">
+        <div className="bg-muted/50 rounded-xl p-4 border border-border">
           <div className="flex items-center gap-2 text-gray-400 text-xs mb-2">
             <BarChart2 className="w-3 h-3" />
             OPEN INTEREST

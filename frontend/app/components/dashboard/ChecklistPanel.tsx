@@ -231,7 +231,7 @@ export default function ChecklistPanel({ data }: { data: ChecklistData }) {
       </div>
 
       {/* Key Levels Summary */}
-      <div className="p-3 rounded-xl bg-black/20 border border-white/5 mb-4">
+      <div className="p-3 rounded-xl bg-muted/50 border border-border mb-4">
         <p className="text-xs text-gray-500 uppercase mb-2">Key Levels</p>
         <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-xs">
           <div className="flex justify-between">

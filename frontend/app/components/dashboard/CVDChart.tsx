@@ -141,7 +141,7 @@ export default function CVDChart({ data }: { data: CVDData }) {
       </div>
 
       {/* Net Delta */}
-      <div className="mt-4 p-3 rounded-xl bg-black/20 border border-white/5">
+      <div className="mt-4 p-3 rounded-xl bg-muted/50 border border-border">
         <div className="flex items-center justify-between">
           <span className="text-xs text-gray-400 uppercase">Net Delta</span>
           <span className={`font-mono font-bold ${

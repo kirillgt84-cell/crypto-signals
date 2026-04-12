@@ -86,7 +86,7 @@ export default function ClusterMap({ data }: { data: ClusterData }) {
             >
               <div className={`
                 flex items-center gap-3 p-2 rounded-lg
-                ${isPOC ? 'bg-yellow-500/10 border border-yellow-500/30' : 'hover:bg-white/5'}
+                ${isPOC ? 'bg-yellow-500/10 border border-yellow-500/30' : 'hover:bg-muted/50'}
                 ${isCurrentPrice ? 'border-l-2 border-l-blue-400' : ''}
               `}>
                 {/* Price */}
