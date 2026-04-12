@@ -43,7 +43,7 @@ async def get_oi_analysis(
         if not symbol_upper.endswith('USDT'):
             symbol_upper = f"{symbol_upper}USDT"
         
-        # Получаем текущие данные
+        # Получаем текущие данные (OI, цена, объем за период)
         data = await fetcher.get_oi_analysis(symbol_upper, timeframe)
         
         # Получаем исторические данные для расчета изменения
@@ -54,35 +54,32 @@ async def get_oi_analysis(
         hours_map = {"1h": 1, "4h": 4, "1d": 24}
         hours = hours_map.get(timeframe, 1)
         
-        # Ищем предыдущую запись (не самую свежую, а предпоследнюю)
+        # Ищем запись за период `hours` назад (с допуском ±30 мин)
         old_data = await db.query(
-            """SELECT open_interest, price, volume, spot_volume FROM oi_history 
+            """SELECT open_interest, price, volume, spot_volume, time FROM oi_history 
                WHERE symbol = $1 AND timeframe = $2 
-               ORDER BY time DESC LIMIT 1 OFFSET 1""",
+               AND time BETWEEN NOW() - INTERVAL '%s hours' - INTERVAL '30 minutes'
+                            AND NOW() - INTERVAL '%s hours' + INTERVAL '30 minutes'
+               ORDER BY ABS(EXTRACT(EPOCH FROM (time - (NOW() - INTERVAL '%s hours')))) ASC
+               LIMIT 1""" % (hours, hours, hours),
             [symbol.upper(), timeframe]
         )
         
-        # Fallback: если предпоследней нет, ищем запись за 1 час назад
+        # Fallback: если нет точного попадания, берем самую старую запись за сегодня
         if not old_data or len(old_data) == 0:
             old_data = await db.query(
-                """SELECT open_interest, price, volume, spot_volume FROM oi_history 
+                """SELECT open_interest, price, volume, spot_volume, time FROM oi_history 
                    WHERE symbol = $1 AND timeframe = $2 
-                   AND time < NOW() - INTERVAL '1 hour'
-                   ORDER BY time DESC LIMIT 1""",
+                   AND time > NOW() - INTERVAL '24 hours'
+                   ORDER BY time ASC LIMIT 1""",
                 [symbol.upper(), timeframe]
             )
         
-        # Сохраняем оригинальные значения из fetcher (уже содержат реальные изменения)
-        original_oi_change = data.get('oi_change_24h', 0)
-        original_volume_change = data.get('volume_change', 0)
-        original_price_change = data.get('price_change_24h', 0)
-        
-        # Расчет изменения OI из БД (если есть)
+        # Расчет изменения OI из БД (если есть история)
         if old_data and len(old_data) > 0:
             old_oi = old_data[0]['open_interest']
             current_oi = data.get('open_interest', 0)
             oi_change_pct = ((current_oi - old_oi) / old_oi * 100) if old_oi > 0 else 0
-            # Используем значение из БД (реальное изменение)
             data['oi_change_24h'] = round(oi_change_pct, 2)
             data['oi_change_value'] = round(current_oi - old_oi, 2)
             
@@ -100,10 +97,10 @@ async def get_oi_analysis(
             data['spot_volume'] = current_spot_volume
             data['spot_volume_change'] = round(spot_volume_change_pct, 2)
         else:
-            # Нет исторических данных - используем значения из fetcher
-            data['volume_change'] = original_volume_change
-            data['oi_change_24h'] = original_oi_change
+            # Нет исторических данных - оставляем 0
+            data['oi_change_24h'] = 0
             data['oi_change_value'] = 0
+            data['volume_change'] = data.get('volume_change', 0)
             spot_data = await fetcher.get_spot_volume(symbol_upper, timeframe)
             data['spot_volume'] = spot_data.get('spot_volume', 0)
             data['spot_volume_change'] = 0

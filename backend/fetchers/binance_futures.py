@@ -68,39 +68,10 @@ class BinanceFuturesFetcher:
                 volume_change_pct = 0
                 volume = 0
             
-            # Получаем исторический OI для расчета изменения
+            # OI change рассчитывается в router из истории БД (scheduler сохраняет OI каждые 5 мин)
+            # Здесь оставляем только текущее значение
             oi_change_pct = 0
             oi_change_value = 0
-            try:
-                # Пробуем получить исторические данные OI
-                # Период: 1 час назад для timeframe=1h, 4 часа для 4h, 24 часа для 1d
-                end_time = int(datetime.utcnow().timestamp() * 1000)
-                start_time = end_time - (hours * 60 * 60 * 1000)
-                
-                # Используем 15-минутки (соответствует минимальному таймфрейму M15)
-                async with session.get(
-                    f"{self.BASE_URL}/fapi/v1/openInterestHist",
-                    params={
-                        "symbol": symbol,
-                        "period": "15m",  # 15-минутные свечи
-                        "limit": 4,  # 4 * 15мин = 1 час истории
-                    },
-                    headers={"Accept": "application/json"}
-                ) as resp:
-                    oi_hist = await resp.json()
-                    print(f"DEBUG: OI Hist response: {oi_hist}")
-                    
-                    if isinstance(oi_hist, list) and len(oi_hist) >= 2:
-                        # Берем последнюю (самую свежую) и первую (час назад) точки
-                        current_oi_hist = float(oi_hist[-1]['sumOpenInterest'])
-                        prev_oi_hist = float(oi_hist[0]['sumOpenInterest'])
-                        oi_change_value = current_oi_hist - prev_oi_hist
-                        oi_change_pct = ((current_oi_hist - prev_oi_hist) / prev_oi_hist) * 100 if prev_oi_hist > 0 else 0
-                        print(f"DEBUG: OI Change from hist (15m): {oi_change_pct:.2f}%, points: {len(oi_hist)}")
-            except Exception as e:
-                print(f"DEBUG: Failed to get OI history: {e}")
-                oi_change_pct = 0
-                oi_change_value = 0
             
             # Get mark price as fallback if klines failed
             mark_price = None
