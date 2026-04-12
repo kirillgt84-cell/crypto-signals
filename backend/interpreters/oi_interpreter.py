@@ -177,7 +177,7 @@ def interpret_oi_advanced(
         "status": "neutral",
         "signal": "neutral",
         "strength": 1,
-        "description": "Нейтральная динамика.",
+        "description": "НЕЙТРАЛЬНАЯ ДИНАМИКA - DEPLOY TEST.",
         "detailed": "Недостаточно данных для четкой интерпретации. Рынок в неопределенности.",
         "action": "Не торговать",
         "tactic": "Ожидание формирования четкого паттерна OI + Price + Volume.",
