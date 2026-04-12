@@ -15,6 +15,7 @@ def interpret_oi_advanced(
     Returns:
         dict: status, signal, description, action_recommendation
     """
+    print(f"DEBUG interpret: oi={oi_change_pct}, price={price_change_pct}, vol={volume_change_pct}")
     
     # Определяем направления
     oi_up = oi_change_pct > 1.0
