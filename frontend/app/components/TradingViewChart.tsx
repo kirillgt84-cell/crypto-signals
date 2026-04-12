@@ -8,6 +8,7 @@ interface TradingViewChartProps {
   ema20?: number
   ema50?: number
   poc?: number
+  theme?: "light" | "dark"
 }
 
 // Map our timeframes to TradingView intervals
@@ -21,6 +22,7 @@ const timeframeToInterval: Record<string, string> = {
 export function TradingViewChart({ 
   symbol, 
   timeframe = "60",
+  theme = "dark"
 }: TradingViewChartProps) {
   
   const tvSymbol = useMemo(() => {
@@ -35,10 +37,10 @@ export function TradingViewChart({
     const params = new URLSearchParams({
       symbol: tvSymbol,
       interval: interval,
-      theme: "dark",
+      theme: theme,
       style: "1",
       locale: "en",
-      toolbar_bg: "#1a1a2e",
+      toolbar_bg: theme === "dark" ? "#1a1a2e" : "#f8f9fa",
       enable_publishing: "false",
       hide_legend: "false",
       save_image: "false",
@@ -57,7 +59,7 @@ export function TradingViewChart({
     })
     
     return `https://s.tradingview.com/widgetembed/?${params.toString()}`
-  }, [tvSymbol, interval])
+  }, [tvSymbol, interval, theme])
 
   return (
     <div className="relative w-full h-[500px] rounded-lg overflow-hidden bg-muted/30">

@@ -5,6 +5,7 @@ import { TrendingUp, TrendingDown, Activity, BarChart3, Wallet, Target, Zap, Loa
 import { getRSIInterpretation, getMACDInterpretation, getFundingInterpretation, getExchangeFlowInterpretation } from "./lib/market-utils"
 import { Logo, LogoIcon } from "./components/Logo"
 import { ThemeToggle } from "./components/ThemeToggle"
+import { useTheme } from "next-themes"
 import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -236,6 +237,7 @@ function ChartLegend({ data, loading }: { data: MarketData; loading: boolean }) 
 function ChartSection({ symbol, timeframe, data, loading }: { symbol: string; timeframe: string; data: MarketData; loading: boolean }) {
   const price = data?.price || 0
   const decimals = price < 1 ? 4 : price < 100 ? 2 : 0
+  const { theme } = useTheme()
   
   return (
     <Card className="flex flex-col">
@@ -251,7 +253,14 @@ function ChartSection({ symbol, timeframe, data, loading }: { symbol: string; ti
       </CardHeader>
       <CardContent className="flex-1 px-2 sm:px-6">
         <div className="mb-4">
-          <TradingViewChart symbol={symbol} timeframe={timeframe} ema20={data?.ema20} ema50={data?.ema50} poc={data?.poc} />
+          <TradingViewChart 
+            symbol={symbol} 
+            timeframe={timeframe} 
+            ema20={data?.ema20} 
+            ema50={data?.ema50} 
+            poc={data?.poc}
+            theme={theme === "light" ? "light" : "dark"}
+          />
         </div>
         <ChartLegend data={data} loading={loading} />
       </CardContent>

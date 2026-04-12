@@ -160,7 +160,7 @@ export function EntryLevels({ data, loading }: EntryLevelsProps) {
               <Tooltip key={level.name}>
                 <TooltipTrigger asChild>
                   <motion.div
-                    className="flex items-center gap-3 p-2 rounded-lg cursor-help transition-colors hover:bg-white/5"
+                    className="flex items-center gap-3 p-2 rounded-lg cursor-help transition-colors hover:bg-muted"
                     initial={{ x: -20, opacity: 0 }}
                     animate={{ x: 0, opacity: 1 }}
                     transition={{ delay: index * 0.08 }}
