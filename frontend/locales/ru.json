@@ -1,0 +1,46 @@
+{
+  "header": {
+    "title": "SignalStream OI Dashboard",
+    "subtitle": "Аналитика рынка"
+  },
+  "metrics": {
+    "price": "Цена",
+    "openInterest": "Открытый интерес",
+    "futuresVolume": "Объем фьючерсов",
+    "spotVolume": "Объем спота",
+    "cvd": "CVD",
+    "trend": {
+      "rising": "Рост",
+      "falling": "Падение",
+      "stable": "Стабильно",
+      "neutral": "Нейтрально"
+    }
+  },
+  "oiTerminal": {
+    "title": "СОСТОЯНИЕ РЫНКА",
+    "oi": "ОИ",
+    "price": "ЦЕНА",
+    "volume": "ОБЪЕМ",
+    "status": "СТАТУС",
+    "logic": "Логика:",
+    "tactic": "Тактика:"
+  },
+  "entryLevels": {
+    "title": "УРОВНИ ВХОДА",
+    "description": "Ключевые зоны поддержки и сопротивления",
+    "legend": {
+      "resistance": "Сопротивление",
+      "support": "Поддержка",
+      "neutral": "Нейтрально"
+    }
+  },
+  "liquidationMap": {
+    "title": "КАРТА ЛИКВИДАЦИЙ",
+    "tactic": "Тактика: Фиксировать прибыль до крупных кластеров"
+  },
+  "actions": {
+    "buy": "ПОКУПАТЬ",
+    "sell": "ПРОДАВАТЬ",
+    "wait": "ЖДАТЬ"
+  }
+}

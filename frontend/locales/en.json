@@ -1,0 +1,206 @@
+{
+  "header": {
+    "title": "SignalStream OI Dashboard",
+    "subtitle": "Market analytics"
+  },
+  "symbols": {
+    "BTC": "Bitcoin",
+    "ETH": "Ethereum", 
+    "SOL": "Solana",
+    "BNB": "BNB",
+    "XRP": "Ripple",
+    "DOGE": "Dogecoin",
+    "ADA": "Cardano",
+    "LINK": "Chainlink",
+    "AVAX": "Avalanche",
+    "MATIC": "Polygon"
+  },
+  "timeframes": {
+    "15": "M15",
+    "60": "1H",
+    "240": "4H",
+    "D": "1D"
+  },
+  "metrics": {
+    "price": "Price",
+    "openInterest": "Open Interest",
+    "futuresVolume": "Futures Volume",
+    "spotVolume": "Spot Volume",
+    "cvd": "CVD",
+    "change24h": "24h Change",
+    "trend": {
+      "rising": "Rising",
+      "falling": "Falling",
+      "stable": "Stable",
+      "high": "High",
+      "low": "Low",
+      "buying": "Buying",
+      "selling": "Selling",
+      "neutral": "Neutral"
+    }
+  },
+  "oiTerminal": {
+    "title": "MARKET STATE",
+    "oi": "OI",
+    "price": "PRICE",
+    "volume": "VOLUME",
+    "status": "STATUS",
+    "logic": "Logic:",
+    "tactic": "Tactic:",
+    "statusLabels": {
+      "long_buildup": "LONG BUILDUP",
+      "short_buildup": "SHORT BUILDUP",
+      "long_liquidation": "LONG LIQUIDATION",
+      "short_liquidation": "SHORT LIQUIDATION",
+      "neutral": "NEUTRAL",
+      "accumulation": "ACCUMULATION",
+      "distribution": "DISTRIBUTION"
+    },
+    "signals": {
+      "strong_bullish": "Strong Bullish",
+      "bullish": "Bullish",
+      "strong_bearish": "Strong Bearish",
+      "bearish": "Bearish",
+      "neutral": "Neutral"
+    }
+  },
+  "entryLevels": {
+    "title": "ENTRY LEVELS",
+    "description": "Key support and resistance zones",
+    "levels": {
+      "VAH": {
+        "name": "VAH",
+        "fullName": "Value Area High",
+        "desc": "Upper boundary of value area. Resistance zone where price is considered 'expensive' (top 15% of volume)"
+      },
+      "VAL": {
+        "name": "VAL",
+        "fullName": "Value Area Low",
+        "desc": "Lower boundary of value area. Support zone where price is considered 'cheap' (bottom 15% of volume)"
+      },
+      "POC": {
+        "name": "POC",
+        "fullName": "Point of Control",
+        "desc": "Highest volume node. The 'fairest' price according to the market"
+      },
+      "EMA20": {
+        "name": "EMA20",
+        "fullName": "EMA 20",
+        "desc": "Exponential Moving Average 20 periods. Dynamic support/resistance"
+      },
+      "EMA50": {
+        "name": "EMA50",
+        "fullName": "EMA 50",
+        "desc": "Exponential Moving Average 50 periods. Determines medium-term trend"
+      }
+    },
+    "legend": {
+      "resistance": "Resistance",
+      "support": "Support",
+      "neutral": "Neutral",
+      "currentPrice": "Current price on scale"
+    }
+  },
+  "liquidationMap": {
+    "title": "LIQUIDATION MAP",
+    "description": "Concentrated liquidation levels",
+    "longs": "Longs",
+    "shorts": "Shorts",
+    "zones": "zones",
+    "tactic": "Tactic: Take profit before large clusters, stop loss beyond nearest zone",
+    "tooltips": {
+      "longLiq": "Long Liquidation",
+      "shortLiq": "Short Liquidation",
+      "targetShorts": "🎯 Target for shorts",
+      "targetLongs": "🎯 Target for longs"
+    }
+  },
+  "secondaryIndicators": {
+    "fundingRate": {
+      "title": "Funding Rate (8h)",
+      "extremeLong": "Extreme Long Bias",
+      "longsPay": "Longs Pay",
+      "extremeShort": "Extreme Short Bias",
+      "shortsPay": "Shorts Pay",
+      "balanced": "Balanced",
+      "details": {
+        "extremeLong": "unsustainable - major correction coming",
+        "longsPay": "avoid longs - pay every 8h",
+        "extremeShort": "capitulation - bottom forming",
+        "shortsPay": "ideal for long swing positions",
+        "balanced": "no funding pressure either direction"
+      }
+    },
+    "rsi": {
+      "title": "RSI (14)",
+      "overbought": "Overbought",
+      "oversold": "Oversold",
+      "neutral": "Neutral",
+      "details": {
+        "overbought": "consider taking profits",
+        "oversold": "bounce expected",
+        "neutral": "momentum building"
+      }
+    },
+    "macd": {
+      "title": "MACD",
+      "bullish": "Bullish",
+      "bearish": "Bearish",
+      "crossingUp": "Crossing Up",
+      "crossingDown": "Crossing Down",
+      "details": {
+        "bullish": "trend gaining strength",
+        "bearish": "selling pressure building",
+        "crossingUp": "potential bottom",
+        "crossingDown": "potential reversal"
+      }
+    },
+    "exchangeFlows": {
+      "title": "Exchange Flows (24h)",
+      "heavyOutflow": "Heavy Outflow (Bullish)",
+      "outflow": "Outflow (Bullish)",
+      "heavyInflow": "Heavy Inflow (Bearish)",
+      "inflow": "Inflow (Bearish)",
+      "neutral": "Neutral",
+      "details": {
+        "heavyOutflow": "strong accumulation",
+        "outflow": "supply shock building",
+        "heavyInflow": "profit taking - caution",
+        "inflow": "selling pressure",
+        "neutral": "no significant flow activity"
+      }
+    },
+    "cvd": {
+      "title": "CVD",
+      "strongBuyers": "Strong buyer inflow",
+      "buyersDominant": "Buyers dominant",
+      "strongSellers": "Strong seller inflow",
+      "sellersDominant": "Sellers dominant",
+      "neutral": "Neutral",
+      "details": {
+        "strongBuyers": "aggressive buying - bullish momentum",
+        "buyersDominant": "market buy orders prevail",
+        "strongSellers": "aggressive selling - bearish momentum",
+        "sellersDominant": "market sell orders prevail",
+        "neutral": "balance between buyers and sellers"
+      }
+    }
+  },
+  "chart": {
+    "title": "Price Action & OI Analysis",
+    "description": "Real-time chart with POC, EMA levels for"
+  },
+  "actions": {
+    "buy": "BUY",
+    "sell": "SELL",
+    "wait": "WAIT",
+    "hold": "HOLD",
+    "close": "Close",
+    "refresh": "Refresh"
+  },
+  "errors": {
+    "apiError": "API error. Using demo data.",
+    "noData": "No data available",
+    "loading": "Loading..."
+  }
+}
