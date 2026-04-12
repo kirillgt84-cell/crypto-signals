@@ -2,6 +2,7 @@
 
 import { motion } from "framer-motion"
 import { Activity, BarChart3, DollarSign, Radio } from "lucide-react"
+import { useLanguage } from "../context/LanguageContext"
 
 interface OIAnalysis {
   status: string
@@ -29,12 +30,14 @@ const COLORS = {
 }
 
 export function OITerminal({ analysis, loading }: OITerminalProps) {
+  const { t } = useLanguage()
+
   if (loading) {
     return (
       <div className="w-full h-full border-2 border-primary/30 rounded-lg bg-card p-4 font-mono">
         <div className="flex items-center gap-2 text-primary mb-4">
           <Radio className="w-4 h-4 animate-pulse" />
-          <span className="text-base font-bold tracking-wider">MARKET STATE</span>
+          <span className="text-base font-bold tracking-wider">{t("oiTerminal.title")}</span>
         </div>
         <div className="space-y-3">
           {[1, 2, 3].map((i) => (

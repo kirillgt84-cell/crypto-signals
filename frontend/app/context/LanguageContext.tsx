@@ -10,18 +10,9 @@ interface LanguageContextType {
   t: (key: string) => string
 }
 
-// Hardcoded translations for testing
-const translations = {
-  en: {
-    "test": "Test",
-    "metrics.price": "Price",
-    "metrics.openInterest": "Open Interest"
-  },
-  ru: {
-    "test": "Тест",
-    "metrics.price": "Цена",
-    "metrics.openInterest": "Открытый интерес"
-  }
+const translations: Record<Language, any> = {
+  en: null,
+  ru: null
 }
 
 const LanguageContext = createContext<LanguageContextType>({
@@ -30,40 +21,56 @@ const LanguageContext = createContext<LanguageContextType>({
   t: (key) => key
 })
 
+async function loadTranslations(lang: Language) {
+  if (translations[lang]) return
+  try {
+    const response = await fetch(`/locales/${lang}.json`)
+    translations[lang] = await response.json()
+  } catch (e) {
+    console.error('Failed to load translations:', e)
+  }
+}
+
 export function LanguageProvider({ children }: { children: ReactNode }) {
   const [language, setLanguageState] = useState<Language>("ru")
-  const [mounted, setMounted] = useState(false)
+  const [loaded, setLoaded] = useState(false)
 
-  // Load from localStorage on mount
   useEffect(() => {
-    const saved = localStorage.getItem('language') as Language
-    if (saved === 'en' || saved === 'ru') {
-      setLanguageState(saved)
+    const init = async () => {
+      const saved = localStorage.getItem('language') as Language
+      const lang = saved === 'en' || saved === 'ru' ? saved : 'ru'
+      await loadTranslations(lang)
+      setLanguageState(lang)
+      setLoaded(true)
     }
-    setMounted(true)
+    init()
   }, [])
 
-  const setLanguage = useCallback((lang: Language) => {
-    console.log('Switching language to:', lang)
+  const setLanguage = useCallback(async (lang: Language) => {
+    await loadTranslations(lang)
     setLanguageState(lang)
     localStorage.setItem('language', lang)
   }, [])
 
   const t = useCallback(
     (key: string): string => {
-      const value = translations[language][key as keyof typeof translations.en]
-      return value || key
+      if (!translations[language]) return key
+      const keys = key.split(".")
+      let value: any = translations[language]
+      for (const k of keys) {
+        if (value && typeof value === "object" && k in value) {
+          value = value[k]
+        } else {
+          return key
+        }
+      }
+      return typeof value === 'string' ? value : key
     },
     [language]
   )
 
-  // Prevent hydration mismatch
-  if (!mounted) {
-    return (
-      <LanguageContext.Provider value={{ language: "ru", setLanguage: () => {}, t: (k) => k }}>
-        {children}
-      </LanguageContext.Provider>
-    )
+  if (!loaded) {
+    return <>{children}</>
   }
 
   return (
