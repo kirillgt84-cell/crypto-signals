@@ -456,10 +456,12 @@ class BinanceFuturesFetcher:
             df['close'] = df['close'].astype(float)
             
             # Расчет EMA
+            df['ema20'] = df['close'].ewm(span=20, adjust=False).mean()
             df['ema50'] = df['close'].ewm(span=50, adjust=False).mean()
             df['ema200'] = df['close'].ewm(span=200, adjust=False).mean()
             
             current_price = df['close'].iloc[-1]
+            ema20 = df['ema20'].iloc[-1]
             ema50 = df['ema50'].iloc[-1]
             ema200 = df['ema200'].iloc[-1]
             
@@ -469,12 +471,14 @@ class BinanceFuturesFetcher:
             
             return {
                 "current_price": float(round(current_price, 2)),
+                "ema20": float(round(ema20, 2)),
                 "ema50": float(round(ema50, 2)),
                 "ema200": float(round(ema200, 2)),
                 "trend": str(trend),
+                "distance_to_ema20_pct": float(round((current_price - ema20) / ema20 * 100, 2)),
                 "distance_to_ema50_pct": float(round((current_price - ema50) / ema50 * 100, 2)),
                 "distance_to_ema200_pct": float(round((current_price - ema200) / ema200 * 100, 2)),
-                "support_levels": [float(round(ema50, 2)), float(round(ema200, 2))],
+                "support_levels": [float(round(ema20, 2)), float(round(ema50, 2)), float(round(ema200, 2))],
                 "recommendation": "buy_dip" if trend == "bullish" and current_price > ema50 else \
                                 "wait" if trend == "mixed" else "caution"
             }
@@ -483,12 +487,14 @@ class BinanceFuturesFetcher:
             # Fallback значения
             return {
                 "current_price": 70000,
+                "ema20": 69500,
                 "ema50": 69000,
                 "ema200": 68000,
                 "trend": "bullish",
+                "distance_to_ema20_pct": 0.72,
                 "distance_to_ema50_pct": 1.45,
                 "distance_to_ema200_pct": 2.94,
-                "support_levels": [69000, 68000],
+                "support_levels": [69500, 69000, 68000],
                 "recommendation": "buy_dip",
                 "error": "Using fallback data"
             }
