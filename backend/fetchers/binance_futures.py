@@ -354,13 +354,16 @@ class BinanceFuturesFetcher:
             # Сортируем по цене для ответа
             sorted_clusters = sorted(clusters.items(), key=lambda x: x[0])
             
+            # Fix floating point precision for cheap assets
+            decimals = 6 if sample_price < 1 else 4
+            
             return {
                 "symbol": symbol,
-                "poc": round(poc_price, 4),
-                "vah": round(vah, 4),
-                "val": round(val, 4),
-                "total_volume": round(total_volume, 2),
-                "value_area_volume": round(accumulated, 2),
+                "poc": round(float(poc_price), decimals),
+                "vah": round(float(vah), decimals),
+                "val": round(float(val), decimals),
+                "total_volume": round(float(total_volume), 2),
+                "value_area_volume": round(float(accumulated), 2),
                 "clusters": [
                     {
                         "price": price,

@@ -551,6 +551,15 @@ export default function Dashboard() {
           exchange_flow: Number(oiData.exchange_flow) || 0,
         }
         
+        console.log(`DEBUG final values for ${symbol}:`, {
+          poc: combinedData.poc,
+          vah: combinedData.vah,
+          val: combinedData.val,
+          ema20: combinedData.ema20,
+          ema50: combinedData.ema50,
+          price: combinedData.price
+        })
+        
         setMarketData(combinedData)
         console.log(`MarketData set for ${symbol}:`, combinedData)
         // Use analysis directly - backend now includes change percentages
