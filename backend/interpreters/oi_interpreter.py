@@ -2,6 +2,8 @@
 Расширенная логика интерпретации OI с учетом объема
 """
 
+print("DEBUG: oi_interpreter loaded with change percentages support")
+
 def interpret_oi_advanced(
     oi_change_pct: float,
     price_change_pct: float,
