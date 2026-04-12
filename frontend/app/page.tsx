@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { TrendingUp, TrendingDown, Activity, BarChart3, Wallet, Target, Zap, Loader2 } from "lucide-react"
 import { getRSIInterpretation, getMACDInterpretation, getFundingInterpretation, getExchangeFlowInterpretation } from "./lib/market-utils"
 import { Logo, LogoIcon } from "./components/Logo"
@@ -530,6 +530,7 @@ function LiquidationMap({ liquidations, currentPrice, symbol, loading }: { liqui
 export default function Dashboard() {
   const [mounted, setMounted] = useState(false)
   const [sidebarCollapsed, setSidebarCollapsed] = useState(true)
+  const isFirstLoad = useRef(true)
   const [symbol, setSymbol] = useState("BTC")
   const [timeframe, setTimeframe] = useState("60")
   const [marketData, setMarketData] = useState<MarketData>({
@@ -581,7 +582,10 @@ export default function Dashboard() {
 
   useEffect(() => {
     async function fetchData() {
-      setLoading(true)
+      // Only show loading on first load, not on background refreshes
+      if (isFirstLoad.current) {
+        setLoading(true)
+      }
       setError(null)
       
       try {
@@ -774,6 +778,7 @@ export default function Dashboard() {
         ])
       } finally {
         setLoading(false)
+        isFirstLoad.current = false
       }
     }
 
