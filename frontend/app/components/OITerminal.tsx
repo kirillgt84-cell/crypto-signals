@@ -30,7 +30,10 @@ const COLORS = {
 }
 
 export function OITerminal({ analysis, loading }: OITerminalProps) {
-  const { t } = useLanguage()
+  const { t, language } = useLanguage()
+  
+  // Force re-render on language change
+  const _ = language
 
   if (loading) {
     return (
