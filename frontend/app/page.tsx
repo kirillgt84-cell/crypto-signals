@@ -500,13 +500,14 @@ export default function Dashboard() {
       try {
         const apiTf = getApiTimeframe(timeframe)
         
-        // Fetch all data in parallel with individual error handling
+        // Fetch all data in parallel with cache busting
+        const cacheBuster = Date.now()
         const results = await Promise.allSettled([
-          fetch(`${API_BASE_URL}/market/oi/${symbol}?timeframe=${apiTf}`),
-          fetch(`${API_BASE_URL}/market/levels/${symbol}?timeframe=${apiTf}`),
-          fetch(`${API_BASE_URL}/market/profile/${symbol}`),
-          fetch(`${API_BASE_URL}/market/spot-volume/${symbol}?timeframe=${apiTf}`),
-          fetch(`${API_BASE_URL}/market/cvd/${symbol}?timeframe=${apiTf}`),
+          fetch(`${API_BASE_URL}/market/oi/${symbol}?timeframe=${apiTf}&_cb=${cacheBuster}`, { cache: 'no-store' }),
+          fetch(`${API_BASE_URL}/market/levels/${symbol}?timeframe=${apiTf}&_cb=${cacheBuster}`, { cache: 'no-store' }),
+          fetch(`${API_BASE_URL}/market/profile/${symbol}?_cb=${cacheBuster}`, { cache: 'no-store' }),
+          fetch(`${API_BASE_URL}/market/spot-volume/${symbol}?timeframe=${apiTf}&_cb=${cacheBuster}`, { cache: 'no-store' }),
+          fetch(`${API_BASE_URL}/market/cvd/${symbol}?timeframe=${apiTf}&_cb=${cacheBuster}`, { cache: 'no-store' }),
         ])
         
         const oiRes = results[0].status === 'fulfilled' ? results[0].value : { ok: false, status: 'rejected' } as unknown as Response
