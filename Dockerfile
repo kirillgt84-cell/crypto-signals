@@ -1,7 +1,10 @@
 FROM python:3.11-slim
-# Trigger rebuild: 2026-04-10 - Fixed symbol handling
+# Trigger rebuild: $(date)
 
 WORKDIR /app
+
+# Invalidate cache
+ARG CACHEBUST=1
 
 RUN apt-get update && apt-get install -y gcc && rm -rf /var/lib/apt/lists/*
 
