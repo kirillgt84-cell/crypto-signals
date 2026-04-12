@@ -54,11 +54,11 @@ async def get_oi_analysis(
         hours_map = {"1h": 1, "4h": 4, "1d": 24}
         hours = hours_map.get(timeframe, 1)
         
+        # Ищем предыдущую запись (не самую свежую, а предпоследнюю)
         old_data = await db.query(
             """SELECT open_interest, price, volume, spot_volume FROM oi_history 
                WHERE symbol = $1 AND timeframe = $2 
-               AND time < NOW() - INTERVAL '%s hours'
-               ORDER BY time DESC LIMIT 1""" % hours,
+               ORDER BY time DESC LIMIT 1 OFFSET 1""",
             [symbol.upper(), timeframe]
         )
         
