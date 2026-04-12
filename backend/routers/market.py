@@ -57,13 +57,15 @@ async def get_oi_analysis(
         # Ищем запись за период `hours` назад (с допуском ±30 мин)
         print(f"DEBUG router: Looking for {symbol_upper} {timeframe}, hours={hours}")
         
+        # Используем минуты для корректного SQL (избегаем '1 hours' vs '1 hour')
+        minutes = hours * 60
         old_data = await db.query(
-            """SELECT open_interest, price, volume, spot_volume, time FROM oi_history 
+            f"""SELECT open_interest, price, volume, spot_volume, time FROM oi_history 
                WHERE symbol = $1 AND timeframe = $2 
-               AND time BETWEEN NOW() - INTERVAL '%s hours' - INTERVAL '30 minutes'
-                            AND NOW() - INTERVAL '%s hours' + INTERVAL '30 minutes'
-               ORDER BY ABS(EXTRACT(EPOCH FROM (time - (NOW() - INTERVAL '%s hours')))) ASC
-               LIMIT 1""" % (hours, hours, hours),
+               AND time BETWEEN NOW() - INTERVAL '{minutes} minutes' - INTERVAL '30 minutes'
+                            AND NOW() - INTERVAL '{minutes} minutes' + INTERVAL '30 minutes'
+               ORDER BY ABS(EXTRACT(EPOCH FROM (time - (NOW() - INTERVAL '{minutes} minutes')))) ASC
+               LIMIT 1""",
             [symbol_upper, timeframe]
         )
         
