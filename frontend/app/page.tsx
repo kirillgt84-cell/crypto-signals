@@ -555,10 +555,10 @@ export default function Dashboard() {
         // Use analysis directly - backend now includes change percentages
         const enrichedAnalysis = oiData?.analysis ? {
           ...oiData.analysis,
-          // Fallback to top-level fields if not in analysis
-          oi_change_pct: oiData.analysis.oi_change_pct ?? oiData.oi_change_24h ?? 0,
-          price_change_pct: oiData.analysis.price_change_pct ?? oiData.price_change_24h ?? 0,
-          volume_change_pct: oiData.analysis.volume_change_pct ?? oiData.volume_change ?? 0,
+          // Use calculated values from marketData (more accurate)
+          oi_change_pct: combinedData.oi_change,
+          price_change_pct: combinedData.change_24h,
+          volume_change_pct: combinedData.volume_change,
         } : null
         setOiAnalysis(enrichedAnalysis)
         
