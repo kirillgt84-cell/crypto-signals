@@ -7,6 +7,7 @@ import { Logo, LogoIcon } from "./components/Logo"
 import { ThemeToggle } from "./components/ThemeToggle"
 import { LanguageSwitcher } from "./components/LanguageSwitcher"
 import { useTheme } from "next-themes"
+import { useLanguage } from "./context/LanguageContext"
 import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -379,6 +380,7 @@ function SecondaryIndicators({ data, timeframe, loading }: { data: MarketData; t
 
 // Main Dashboard Component
 export default function Dashboard() {
+  const { language } = useLanguage()
   const [mounted, setMounted] = useState(false)
   const [sidebarCollapsed, setSidebarCollapsed] = useState(true)
   const isFirstLoad = useRef(true)
@@ -680,7 +682,7 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="flex min-h-screen">
+    <div key={language} className="flex min-h-screen">
       <Sidebar collapsed={sidebarCollapsed} onToggle={() => setSidebarCollapsed(!sidebarCollapsed)} />
       
       <main className={cn("flex-1 overflow-hidden transition-all duration-300", sidebarCollapsed ? "lg:ml-16" : "lg:ml-64")}>
