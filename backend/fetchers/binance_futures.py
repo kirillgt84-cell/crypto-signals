@@ -289,14 +289,27 @@ class BinanceFuturesFetcher:
                 logger.warning(f"Unexpected cluster data: {trades}")
                 return self._empty_clusters(symbol)
             
-            # Агрегируем по ценовым уровням (округляем до $100 для BTC)
+            # Определяем шаг округления на основе цены (берем первую сделку)
+            sample_price = float(trades[0]['p']) if trades else 50000
+            if sample_price > 10000:
+                step = 100  # BTC, ETH
+            elif sample_price > 1000:
+                step = 10   # ETH, BNB
+            elif sample_price > 100:
+                step = 1    # SOL, AVAX
+            elif sample_price > 1:
+                step = 0.01  # XRP, ADA
+            else:
+                step = 0.0001  # DOGE, SHIB
+            
+            # Агрегируем по ценовым уровням
             clusters = {}
             for trade in trades:
                 price = float(trade['p'])
                 qty = float(trade['q'])
                 
-                # Округляем цену для кластеризации
-                rounded_price = round(price / 100) * 100
+                # Округляем цену для кластеризации (динамический шаг)
+                rounded_price = round(price / step) * step
                 
                 if rounded_price not in clusters:
                     clusters[rounded_price] = {"buy": 0, "sell": 0, "total": 0}
@@ -308,22 +321,44 @@ class BinanceFuturesFetcher:
                 
                 clusters[rounded_price]["total"] += qty
             
-            # Находим POC (Point of Control)
+            # Находим POC (Point of Control) - уровень с максимальным объемом
             poc_price = max(clusters.items(), key=lambda x: x[1]["total"])[0] if clusters else 0
             
-            # Сортируем по цене
+            # Расчет VAH и VAL (Value Area High/Low) - 70% объема
+            total_volume = sum(c["total"] for c in clusters.values())
+            target_volume = total_volume * 0.7  # 70% объема
+            
+            # Сортируем кластеры по объему (от большего к меньшему)
+            sorted_by_volume = sorted(clusters.items(), key=lambda x: x[1]["total"], reverse=True)
+            
+            accumulated = 0
+            value_area_prices = []
+            for price, data in sorted_by_volume:
+                accumulated += data["total"]
+                value_area_prices.append(price)
+                if accumulated >= target_volume:
+                    break
+            
+            vah = max(value_area_prices) if value_area_prices else poc_price
+            val = min(value_area_prices) if value_area_prices else poc_price
+            
+            # Сортируем по цене для ответа
             sorted_clusters = sorted(clusters.items(), key=lambda x: x[0])
             
             return {
                 "symbol": symbol,
-                "poc": poc_price,
+                "poc": round(poc_price, 4),
+                "vah": round(vah, 4),
+                "val": round(val, 4),
+                "total_volume": round(total_volume, 2),
+                "value_area_volume": round(accumulated, 2),
                 "clusters": [
                     {
                         "price": price,
-                        "buy": data["buy"],
-                        "sell": data["sell"],
-                        "total": data["total"],
-                        "delta": data["buy"] - data["sell"]
+                        "buy": round(data["buy"], 4),
+                        "sell": round(data["sell"], 4),
+                        "total": round(data["total"], 4),
+                        "delta": round(data["buy"] - data["sell"], 4)
                     }
                     for price, data in sorted_clusters[-20:]  # Последние 20 уровней
                 ]
@@ -337,6 +372,10 @@ class BinanceFuturesFetcher:
         return {
             "symbol": symbol,
             "poc": 0,
+            "vah": 0,
+            "val": 0,
+            "total_volume": 0,
+            "value_area_volume": 0,
             "clusters": [],
             "error": "Data unavailable"
         }
