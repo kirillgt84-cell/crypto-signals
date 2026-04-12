@@ -305,7 +305,7 @@ class BinanceFuturesFetcher:
             elif sample_price > 100:
                 step = 1    # SOL, AVAX
             elif sample_price > 1:
-                step = 0.01  # XRP, ADA
+                step = 0.001  # XRP, ADA - finer granularity
             else:
                 step = 0.0001  # DOGE, SHIB
             
@@ -349,7 +349,9 @@ class BinanceFuturesFetcher:
             vah = max(value_area_prices) if value_area_prices else poc_price
             val = min(value_area_prices) if value_area_prices else poc_price
             
-            print(f"DEBUG cluster: {symbol} clusters={len(clusters)}, poc={poc_price}, vah={vah}, val={val}")
+            print(f"DEBUG cluster: {symbol} clusters={len(clusters)}, step={step}, poc={poc_price}, vah={vah}, val={val}")
+            if len(clusters) <= 3:
+                print(f"DEBUG cluster: {symbol} sample clusters: {list(clusters.keys())[:5]}")
             
             # Сортируем по цене для ответа
             sorted_clusters = sorted(clusters.items(), key=lambda x: x[0])
