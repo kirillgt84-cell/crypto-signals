@@ -576,7 +576,8 @@ export default function Dashboard() {
               size: l.distance === "+5%" ? 100 : l.distance === "+10%" ? 60 : 30
             }))
           ]
-          setLiquidations(formattedLiquidations) else if (levelsData.liquidations) {
+          setLiquidations(formattedLiquidations)
+        } else if (levelsData.liquidations) {
           setLiquidations(levelsData.liquidations)
         } else {
           // Fallback: generate from price
