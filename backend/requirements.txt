@@ -7,3 +7,4 @@ pandas>=2.0.0
 numpy>=1.24.0
 asyncpg>=0.29.0
 apscheduler>=3.10.0
+# Cache bust: Sun Apr 12 11:09:35 CEST 2026
