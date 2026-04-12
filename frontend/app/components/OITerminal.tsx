@@ -31,7 +31,7 @@ const COLORS = {
 export function OITerminal({ analysis, loading }: OITerminalProps) {
   if (loading) {
     return (
-      <div className="w-full h-full border-2 border-primary/30 rounded-lg bg-black/90 p-4 font-mono">
+      <div className="w-full h-full border-2 border-primary/30 rounded-lg bg-card p-4 font-mono">
         <div className="flex items-center gap-2 text-primary mb-4">
           <Radio className="w-4 h-4 animate-pulse" />
           <span className="text-base font-bold tracking-wider">MARKET STATE</span>
@@ -120,10 +120,9 @@ export function OITerminal({ analysis, loading }: OITerminalProps) {
 
   return (
     <motion.div 
-      className="w-full h-full border-2 rounded-xl bg-black/95 p-4 font-mono flex flex-col"
+      className="w-full h-full border-2 rounded-xl bg-card p-4 font-mono flex flex-col"
       style={{ 
-        borderColor: isNeutral ? "#4b5563" : signalColor + "60",
-        boxShadow: isNeutral ? "inset 0 0 15px rgba(75, 85, 99, 0.2)" : "none"
+        borderColor: isNeutral ? "hsl(var(--muted-foreground))" : signalColor + "60"
       }}
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}

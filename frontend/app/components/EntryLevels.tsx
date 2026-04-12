@@ -25,7 +25,7 @@ interface EntryLevelsProps {
 export function EntryLevels({ data, loading }: EntryLevelsProps) {
   if (loading) {
     return (
-      <div className="w-full h-full border-2 border-primary/30 rounded-lg bg-black/90 p-6 font-mono">
+      <div className="w-full h-full border-2 border-primary/30 rounded-lg bg-card p-6 font-mono">
         <div className="flex items-center gap-3 text-primary mb-6">
           <Target className="w-5 h-5 animate-pulse" />
           <span className="text-lg font-bold tracking-wider">ENTRY LEVELS</span>
@@ -43,7 +43,7 @@ export function EntryLevels({ data, loading }: EntryLevelsProps) {
   
   if (!price) {
     return (
-      <div className="w-full h-full border-2 border-muted rounded-lg bg-black/90 p-6 font-mono flex items-center justify-center">
+      <div className="w-full h-full border-2 border-muted rounded-lg bg-card p-6 font-mono flex items-center justify-center">
         <span className="text-muted-foreground">Select symbol to view levels...</span>
       </div>
     )
@@ -120,7 +120,7 @@ export function EntryLevels({ data, loading }: EntryLevelsProps) {
   return (
     <TooltipProvider delayDuration={100}>
       <motion.div 
-        className="w-full border-2 rounded-xl bg-black/95 p-4 font-mono"
+        className="w-full border-2 rounded-xl bg-card p-4 font-mono"
         style={{ borderColor: '#3b82f660' }}
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
