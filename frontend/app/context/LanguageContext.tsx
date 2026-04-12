@@ -54,16 +54,22 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
 
   const t = useCallback(
     (key: string): string => {
-      if (!translations[language]) return key
+      console.log('t() called with key:', key, 'language:', language, 'translations:', translations[language])
+      if (!translations[language]) {
+        console.log('No translations loaded for', language)
+        return key
+      }
       const keys = key.split(".")
       let value: any = translations[language]
       for (const k of keys) {
         if (value && typeof value === "object" && k in value) {
           value = value[k]
         } else {
+          console.log('Key not found:', k, 'in', value)
           return key
         }
       }
+      console.log('Found translation:', value)
       return typeof value === 'string' ? value : key
     },
     [language]
