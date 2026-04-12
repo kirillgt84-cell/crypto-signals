@@ -13,6 +13,7 @@ from contextlib import asynccontextmanager
 
 # Setup logging
 logging.basicConfig(level=logging.INFO)
+print("DEBUG: main.py loaded - version with change percentages")
 logger = logging.getLogger(__name__)
 
 # Импорт роутеров и scheduler
