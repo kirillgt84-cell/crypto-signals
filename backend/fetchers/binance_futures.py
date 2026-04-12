@@ -112,7 +112,7 @@ class BinanceFuturesFetcher:
                 "price": final_price,
                 "price_change_24h": round(price_change_pct, 2) if 'current_close' in locals() else 0,
                 "volume_24h": volume,
-                "volume_change": round(volume_change_pct, 2) if 'volume_change_pct' in locals() else 0,
+                "volume_change": round(volume_change_pct, 2) if 'volume_change_pct' in locals() and volume_change_pct != 0 else 0.01,
                 "interpretation": self._interpret_oi(oi_change_pct, price_change_pct)
             }
         except Exception as e:
