@@ -161,7 +161,7 @@ function OIAnalysisCards({ data, loading, timeframe }: { data: MarketData; loadi
       <MetricCard
         title="Open Interest"
         value={`$${((data?.oi || 0) * (data?.price || 0) / 1e9).toFixed(2)}B`}
-        subvalue={`${data?.oi_change?.toFixed(2) || "0.00"}%`}
+        subvalue={`${(data?.oi / 1e6)?.toFixed(2) || "0.00"}M contracts`}
         trend={data?.oi_change > 0 ? "Rising" : data?.oi_change < 0 ? "Falling" : "Stable"}
         trendUp={data?.oi_change >= 0}
         icon={Activity}
