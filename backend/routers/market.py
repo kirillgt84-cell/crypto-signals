@@ -55,6 +55,8 @@ async def get_oi_analysis(
         hours = hours_map.get(timeframe, 1)
         
         # Ищем запись за период `hours` назад (с допуском ±30 мин)
+        print(f"DEBUG router: Looking for {symbol_upper} {timeframe}, hours={hours}")
+        
         old_data = await db.query(
             """SELECT open_interest, price, volume, spot_volume, time FROM oi_history 
                WHERE symbol = $1 AND timeframe = $2 
@@ -62,8 +64,10 @@ async def get_oi_analysis(
                             AND NOW() - INTERVAL '%s hours' + INTERVAL '30 minutes'
                ORDER BY ABS(EXTRACT(EPOCH FROM (time - (NOW() - INTERVAL '%s hours')))) ASC
                LIMIT 1""" % (hours, hours, hours),
-            [symbol.upper(), timeframe]
+            [symbol_upper, timeframe]
         )
+        
+        print(f"DEBUG router: old_data (exact match) = {old_data}")
         
         # Fallback: если нет точного попадания, берем самую старую запись за сегодня
         if not old_data or len(old_data) == 0:
@@ -72,8 +76,18 @@ async def get_oi_analysis(
                    WHERE symbol = $1 AND timeframe = $2 
                    AND time > NOW() - INTERVAL '24 hours'
                    ORDER BY time ASC LIMIT 1""",
-                [symbol.upper(), timeframe]
+                [symbol_upper, timeframe]
             )
+            print(f"DEBUG router: old_data (fallback) = {old_data}")
+        
+        # Проверим последние записи вообще (без фильтра времени)
+        latest_data = await db.query(
+            """SELECT open_interest, price, volume, spot_volume, time FROM oi_history 
+               WHERE symbol = $1 AND timeframe = $2 
+               ORDER BY time DESC LIMIT 3""",
+            [symbol_upper, timeframe]
+        )
+        print(f"DEBUG router: latest 3 records = {latest_data}")
         
         # Расчет изменения OI из БД (если есть история)
         if old_data and len(old_data) > 0:
@@ -82,6 +96,7 @@ async def get_oi_analysis(
             oi_change_pct = ((current_oi - old_oi) / old_oi * 100) if old_oi > 0 else 0
             data['oi_change_24h'] = round(oi_change_pct, 2)
             data['oi_change_value'] = round(current_oi - old_oi, 2)
+            print(f"DEBUG router: OI calc - current={current_oi}, old={old_oi}, change={oi_change_pct:.2f}%")
             
             # Расчет изменения фьючерсного объема
             old_volume = old_data[0].get('volume', 0) or 0
