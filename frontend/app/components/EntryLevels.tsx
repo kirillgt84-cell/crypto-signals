@@ -130,7 +130,7 @@ export function EntryLevels({ data, loading }: EntryLevelsProps) {
       </div>
 
       {/* Levels */}
-      <div className="flex-1 space-y-3">
+      <div className="flex-1 space-y-3 overflow-y-auto">
         {levels.map((level, index) => {
           const distance = getDistance(level.value)
           const color = level.isCurrent ? '#3b82f6' : getColor(level.type)

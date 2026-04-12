@@ -784,15 +784,17 @@ export default function Dashboard() {
 
         {/* Row 4: Entry Levels + Liquidation Map */}
         <div className="grid grid-cols-1 gap-4 px-4 py-4 lg:grid-cols-2 lg:px-6">
-          <Card className="flex flex-col h-[400px]">
-            <CardHeader className="gap-2 pb-2">
-              <CardTitle>Entry Levels</CardTitle>
-              <CardDescription>Key support and resistance zones</CardDescription>
-            </CardHeader>
-            <CardContent className="flex-1 pt-0">
-              <EntryLevels data={marketData} loading={loading} />
-            </CardContent>
-          </Card>
+          <div className="h-[400px]">
+            <Card className="h-full flex flex-col">
+              <CardHeader className="gap-2 pb-2 shrink-0">
+                <CardTitle>Entry Levels</CardTitle>
+                <CardDescription>Key support and resistance zones</CardDescription>
+              </CardHeader>
+              <CardContent className="flex-1 pt-0 overflow-hidden">
+                <EntryLevels data={marketData} loading={loading} />
+              </CardContent>
+            </Card>
+          </div>
           <LiquidationMap liquidations={liquidations} currentPrice={marketData.price} symbol={symbol} loading={loading} />
         </div>
 
