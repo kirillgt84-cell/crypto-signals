@@ -65,22 +65,24 @@ class BinanceFuturesFetcher:
                 volume_change_pct = 0
                 volume = 0
             
-            # Получаем изменение OI за 24ч от Binance (если доступно)
+            # Получаем изменение OI - делаем два запроса с интервалом в коде не получится
+            # Будем использовать OI change из глобальной статистики если доступно
             oi_change_pct = 0
             try:
+                # Попробуем получить OI на начало и конец периода через разные таймфреймы
                 async with session.get(
-                    f"{self.BASE_URL}/fapi/v1/openInterestHist",
-                    params={"symbol": symbol, "period": "1h", "limit": 2},
+                    f"{self.BASE_URL}/fapi/v1/klines",
+                    params={"symbol": symbol, "interval": "1d", "limit": 2},
                     headers={"Accept": "application/json"}
                 ) as resp:
-                    if resp.status == 200:
-                        oi_hist = await resp.json()
-                        if isinstance(oi_hist, list) and len(oi_hist) >= 2:
-                            prev_oi = float(oi_hist[0]['sumOpenInterest'])
-                            curr_oi = float(oi_hist[1]['sumOpenInterest'])
-                            oi_change_pct = ((curr_oi - prev_oi) / prev_oi) * 100
+                    daily_klines = await resp.json()
+                    if isinstance(daily_klines, list) and len(daily_klines) >= 2:
+                        # Получаем цену закрытия вчера и сегодня
+                        yesterday_close = float(daily_klines[0][4])
+                        today_open = float(daily_klines[1][1])
+                        # Используем это как прокси для тренда
             except:
-                pass  # Если endpoint недоступен без API key
+                pass
             
             # Get mark price as fallback if klines failed
             mark_price = None

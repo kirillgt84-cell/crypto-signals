@@ -879,7 +879,7 @@ export default function Dashboard() {
                 Open Interest + Price + Volume
               </CardDescription>
             </CardHeader>
-            <CardContent className="flex-1 pt-0 min-h-[500px]">
+            <CardContent className="flex-1 pt-0 h-[500px]">
               <OITerminal analysis={oiAnalysis} loading={loading} />
             </CardContent>
           </Card>
