@@ -1,6 +1,8 @@
 [build]
 builder = "DOCKERFILE"
 dockerfilePath = "backend/Dockerfile"
+[build.args]
+CACHEBUST = "$(date +%s)"
 
 [deploy]
 restartPolicyType = "ON_FAILURE"
