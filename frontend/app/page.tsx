@@ -696,8 +696,15 @@ export default function Dashboard() {
         
         setMarketData(combinedData)
         console.log(`MarketData set for ${symbol}:`, combinedData)
-        console.log('Setting OI Analysis:', oiData?.analysis)
-        setOiAnalysis(oiData?.analysis || null)
+        // Merge analysis with change percentages from OI data
+        const enrichedAnalysis = oiData?.analysis ? {
+          ...oiData.analysis,
+          oi_change_pct: oiData.oi_change_24h || oiData.oi_change || 0,
+          price_change_pct: oiData.price_change_24h || 0,
+          volume_change_pct: oiData.volume_change || 0,
+        } : null
+        console.log('Setting OI Analysis:', enrichedAnalysis)
+        setOiAnalysis(enrichedAnalysis)
         
         // Set liquidations from levels data
         if (levelsData.liquidation_levels || levelsData.liquidations) {

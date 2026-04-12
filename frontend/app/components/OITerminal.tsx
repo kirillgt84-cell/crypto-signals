@@ -2,7 +2,7 @@
 
 import { motion } from "framer-motion"
 import { Activity, BarChart3, DollarSign, Radio } from "lucide-react"
-import { useEffect } from "react"
+import { useEffect, useState } from "react"
 
 interface OIAnalysis {
   status: string
@@ -13,6 +13,9 @@ interface OIAnalysis {
   tactic?: string
   color: string
   strength: number
+  oi_change_pct?: number
+  price_change_pct?: number
+  volume_change_pct?: number
 }
 
 interface OITerminalProps {
@@ -27,8 +30,12 @@ const COLORS = {
 }
 
 export function OITerminal({ analysis, loading }: OITerminalProps) {
+  const [lastUpdate, setLastUpdate] = useState<Date>(new Date())
+
   useEffect(() => {
-    console.log('OITerminal received analysis:', analysis)
+    if (analysis) {
+      setLastUpdate(new Date())
+    }
   }, [analysis])
 
   if (loading) {
@@ -54,15 +61,17 @@ export function OITerminal({ analysis, loading }: OITerminalProps) {
     const desc = analysis.description
     
     if (type === "oi") {
-      // OI↑ = up, OI↓ = down, OI→ = flat
-      if (desc.includes("OI↑") || desc.includes("растет")) return "up"
-      if (desc.includes("OI↓") || desc.includes("падает")) return "down"
+      // OI↑ = up, OI↓ = down, OI→ or OI↔ = flat
+      if (desc.includes("OI↑") || desc.includes("OI растет")) return "up"
+      if (desc.includes("OI↓") || desc.includes("OI падает")) return "down"
+      if (desc.includes("OI→") || desc.includes("OI↔") || desc.includes("флэт")) return "flat"
       return "flat"
     }
     if (type === "price") {
       // Цена↑ = up, Цена↓ = down, Цена→ or Цена↔ = flat
       if (desc.includes("Цена↑") || desc.includes("цена↑")) return "up"
       if (desc.includes("Цена↓") || desc.includes("цена↓")) return "down"
+      if (desc.includes("Цена→") || desc.includes("Цена↔") || desc.includes("цена→") || desc.includes("боковик")) return "flat"
       return "flat"
     }
     if (type === "volume") {
@@ -81,7 +90,7 @@ export function OITerminal({ analysis, loading }: OITerminalProps) {
   const getArrow = (dir: string) => {
     if (dir === "up") return "↑"
     if (dir === "down") return "↓"
-    return "="
+    return "→"
   }
 
   const getColor = (dir: string) => {
@@ -94,15 +103,32 @@ export function OITerminal({ analysis, loading }: OITerminalProps) {
   const isBullish = signalColor === COLORS.green || signalColor === "#22c55e"
   const isBearish = signalColor === COLORS.red || signalColor === "#ef4444"
 
-  // Progress bar (15 segments)
-  const ProgressBar = ({ dir }: { dir: "up" | "down" | "flat" }) => {
+  // Get change values from API or description
+  const getChangeValue = (type: "oi" | "price" | "volume"): number => {
+    if (!analysis) return 0
+    if (type === "oi") return analysis.oi_change_pct || 0
+    if (type === "price") return analysis.price_change_pct || 0
+    if (type === "volume") return analysis.volume_change_pct || 0
+    return 0
+  }
+
+  // Progress bar (15 segments) based on actual change magnitude
+  const ProgressBar = ({ dir, change }: { dir: "up" | "down" | "flat"; change: number }) => {
     const color = getColor(dir)
-    const filled = dir === "up" ? 12 : dir === "down" ? 3 : 7
+    // Fill based on absolute change (0-10% = 1-10 segments)
+    const absChange = Math.abs(change)
+    const fillLevel = Math.min(15, Math.max(3, Math.round(absChange * 1.5)))
+    const filled = dir === "up" ? fillLevel : dir === "down" ? fillLevel : 7
     return (
       <span className="text-base tracking-tighter font-bold" style={{ color }}>
         {"█".repeat(filled)}{"░".repeat(15 - filled)}
       </span>
     )
+  }
+
+  const formatChange = (val: number) => {
+    if (val === 0) return "0.00%"
+    return `${val > 0 ? "+" : ""}${val.toFixed(2)}%`
   }
 
   return (
@@ -112,7 +138,7 @@ export function OITerminal({ analysis, loading }: OITerminalProps) {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
     >
-      {/* Header */}
+      {/* Header with timestamp */}
       <div className="flex items-center gap-3 mb-6 pb-4 border-b-2" style={{ borderColor: signalColor + "40" }}>
         <motion.div
           animate={{ opacity: [1, 0.3, 1] }}
@@ -123,7 +149,9 @@ export function OITerminal({ analysis, loading }: OITerminalProps) {
         <span className="text-xl font-bold tracking-widest" style={{ color: signalColor }}>
           MARKET STATE
         </span>
-        <span className="ml-auto text-sm text-muted-foreground font-bold">[LIVE]</span>
+        <span className="ml-auto text-xs text-muted-foreground">
+          {lastUpdate.toLocaleTimeString()}
+        </span>
       </div>
 
       {analysis ? (
@@ -131,34 +159,61 @@ export function OITerminal({ analysis, loading }: OITerminalProps) {
           {/* Metrics */}
           <div className="space-y-4">
             {/* OI */}
-            <div className="flex items-center gap-4">
+            <motion.div 
+              className="flex items-center gap-4"
+              key={`oi-${oiDir}-${lastUpdate.getTime()}`}
+              initial={{ opacity: 0.5 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.3 }}
+            >
               <BarChart3 className="w-5 h-5 text-muted-foreground" />
               <span className="text-base text-muted-foreground w-20 font-bold">OI</span>
-              <ProgressBar dir={oiDir} />
+              <ProgressBar dir={oiDir} change={getChangeValue("oi")} />
               <span className="text-2xl font-bold" style={{ color: getColor(oiDir) }}>
                 {getArrow(oiDir)}
               </span>
-            </div>
+              <span className="text-xs text-muted-foreground w-16 text-right">
+                {formatChange(getChangeValue("oi"))}
+              </span>
+            </motion.div>
 
             {/* PRICE */}
-            <div className="flex items-center gap-4">
+            <motion.div 
+              className="flex items-center gap-4"
+              key={`price-${priceDir}-${lastUpdate.getTime()}`}
+              initial={{ opacity: 0.5 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.3, delay: 0.1 }}
+            >
               <DollarSign className="w-5 h-5 text-muted-foreground" />
               <span className="text-base text-muted-foreground w-20 font-bold">PRICE</span>
-              <ProgressBar dir={priceDir} />
+              <ProgressBar dir={priceDir} change={getChangeValue("price")} />
               <span className="text-2xl font-bold" style={{ color: getColor(priceDir) }}>
                 {getArrow(priceDir)}
               </span>
-            </div>
+              <span className="text-xs text-muted-foreground w-16 text-right">
+                {formatChange(getChangeValue("price"))}
+              </span>
+            </motion.div>
 
             {/* VOLUME */}
-            <div className="flex items-center gap-4">
+            <motion.div 
+              className="flex items-center gap-4"
+              key={`vol-${volumeDir}-${lastUpdate.getTime()}`}
+              initial={{ opacity: 0.5 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.3, delay: 0.2 }}
+            >
               <Activity className="w-5 h-5 text-muted-foreground" />
               <span className="text-base text-muted-foreground w-20 font-bold">VOLUME</span>
-              <ProgressBar dir={volumeDir} />
+              <ProgressBar dir={volumeDir} change={getChangeValue("volume")} />
               <span className="text-2xl font-bold" style={{ color: getColor(volumeDir) }}>
                 {getArrow(volumeDir)}
               </span>
-            </div>
+              <span className="text-xs text-muted-foreground w-16 text-right">
+                {volumeDir === "up" ? "HIGH" : volumeDir === "down" ? "LOW" : "NEUTRAL"}
+              </span>
+            </motion.div>
           </div>
 
           {/* Divider */}
@@ -167,25 +222,33 @@ export function OITerminal({ analysis, loading }: OITerminalProps) {
           {/* Status */}
           <div className="flex items-center gap-3">
             <span className="text-base text-muted-foreground font-bold">STATUS:</span>
-            <span 
+            <motion.span 
               className="text-lg font-bold tracking-wider px-4 py-1.5 rounded-lg"
               style={{ 
                 color: signalColor,
                 backgroundColor: signalColor + "20",
                 border: `2px solid ${signalColor}60`
               }}
+              key={analysis.status}
+              initial={{ scale: 0.9 }}
+              animate={{ scale: 1 }}
             >
               {isBullish ? "●" : isBearish ? "●" : "○"} {" "}
               {analysis.status?.replace(/_/g, " ").toUpperCase()}
-            </span>
+            </motion.span>
           </div>
 
           {/* Logic */}
           <div className="flex-1 space-y-2">
             <span className="text-sm text-muted-foreground uppercase tracking-wider font-bold">Logic:</span>
-            <p className="text-base leading-relaxed text-foreground/90 font-medium">
+            <motion.p 
+              className="text-base leading-relaxed text-foreground/90 font-medium"
+              key={analysis.description}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+            >
               {analysis.description || "Analyzing market data..."}
-            </p>
+            </motion.p>
             {analysis.detailed && (
               <p className="text-sm text-muted-foreground leading-relaxed">
                 {analysis.detailed}
@@ -209,6 +272,7 @@ export function OITerminal({ analysis, loading }: OITerminalProps) {
               border: `3px solid ${signalColor}`,
               color: signalColor
             }}
+            key={analysis.action}
             animate={{ 
               boxShadow: [
                 `0 0 0px ${signalColor}00`,
