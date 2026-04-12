@@ -1,8 +1,6 @@
 "use client"
 
 import { createContext, useContext, useState, useCallback, ReactNode, useEffect } from "react"
-import enTranslations from "@/locales/en.json"
-import ruTranslations from "@/locales/ru.json"
 
 type Language = "en" | "ru"
 
@@ -12,51 +10,61 @@ interface LanguageContextType {
   t: (key: string) => string
 }
 
+// Hardcoded translations for testing
 const translations = {
-  en: enTranslations,
-  ru: ruTranslations
+  en: {
+    "test": "Test",
+    "metrics.price": "Price",
+    "metrics.openInterest": "Open Interest"
+  },
+  ru: {
+    "test": "Тест",
+    "metrics.price": "Цена",
+    "metrics.openInterest": "Открытый интерес"
+  }
 }
 
-const LanguageContext = createContext<LanguageContextType | undefined>(undefined)
+const LanguageContext = createContext<LanguageContextType>({
+  language: "ru",
+  setLanguage: () => {},
+  t: (key) => key
+})
 
 export function LanguageProvider({ children }: { children: ReactNode }) {
   const [language, setLanguageState] = useState<Language>("ru")
+  const [mounted, setMounted] = useState(false)
 
-  const setLanguage = useCallback((lang: Language) => {
-    setLanguageState(lang)
-    // Save preference to localStorage
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('language', lang)
+  // Load from localStorage on mount
+  useEffect(() => {
+    const saved = localStorage.getItem('language') as Language
+    if (saved === 'en' || saved === 'ru') {
+      setLanguageState(saved)
     }
+    setMounted(true)
   }, [])
 
-  // Load saved preference on mount
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('language') as Language
-      if (saved && (saved === 'en' || saved === 'ru')) {
-        setLanguageState(saved)
-      }
-    }
+  const setLanguage = useCallback((lang: Language) => {
+    console.log('Switching language to:', lang)
+    setLanguageState(lang)
+    localStorage.setItem('language', lang)
   }, [])
 
   const t = useCallback(
     (key: string): string => {
-      const keys = key.split(".")
-      let value: any = translations[language]
-
-      for (const k of keys) {
-        if (value && typeof value === "object" && k in value) {
-          value = value[k]
-        } else {
-          return key
-        }
-      }
-
-      return typeof value === 'string' ? value : key
+      const value = translations[language][key as keyof typeof translations.en]
+      return value || key
     },
     [language]
   )
+
+  // Prevent hydration mismatch
+  if (!mounted) {
+    return (
+      <LanguageContext.Provider value={{ language: "ru", setLanguage: () => {}, t: (k) => k }}>
+        {children}
+      </LanguageContext.Provider>
+    )
+  }
 
   return (
     <LanguageContext.Provider value={{ language, setLanguage, t }}>
@@ -66,9 +74,5 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
 }
 
 export function useLanguage() {
-  const context = useContext(LanguageContext)
-  if (context === undefined) {
-    throw new Error("useLanguage must be used within a LanguageProvider")
-  }
-  return context
+  return useContext(LanguageContext)
 }
