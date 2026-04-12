@@ -696,6 +696,7 @@ export default function Dashboard() {
         
         setMarketData(combinedData)
         console.log(`MarketData set for ${symbol}:`, combinedData)
+        console.log('Setting OI Analysis:', oiData?.analysis)
         setOiAnalysis(oiData?.analysis || null)
         
         // Set liquidations from levels data

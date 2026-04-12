@@ -2,6 +2,7 @@
 
 import { motion } from "framer-motion"
 import { Activity, BarChart3, DollarSign, Radio } from "lucide-react"
+import { useEffect } from "react"
 
 interface OIAnalysis {
   status: string
@@ -12,9 +13,6 @@ interface OIAnalysis {
   tactic?: string
   color: string
   strength: number
-  oi_change_pct?: number
-  price_change_pct?: number
-  volume_change_pct?: number
 }
 
 interface OITerminalProps {
@@ -29,6 +27,10 @@ const COLORS = {
 }
 
 export function OITerminal({ analysis, loading }: OITerminalProps) {
+  useEffect(() => {
+    console.log('OITerminal received analysis:', analysis)
+  }, [analysis])
+
   if (loading) {
     return (
       <div className="w-full h-full border-2 border-primary/30 rounded-lg bg-black/90 p-6 font-mono">
@@ -45,27 +47,28 @@ export function OITerminal({ analysis, loading }: OITerminalProps) {
     )
   }
 
-  // Parse directions from description
-  const desc = analysis?.description?.toLowerCase() || ""
-  
-  // Extract direction from description symbols
+  // Get direction from description using Unicode arrows
   const getDirection = (type: "oi" | "price" | "volume"): "up" | "down" | "flat" => {
-    if (!analysis) return "flat"
+    if (!analysis?.description) return "flat"
     
-    // Check for arrows in description
+    const desc = analysis.description
+    
     if (type === "oi") {
-      if (desc.includes("oi↑") || desc.includes("растет")) return "up"
-      if (desc.includes("oi↓") || desc.includes("падает")) return "down"
+      // OI↑ = up, OI↓ = down, OI→ = flat
+      if (desc.includes("OI↑") || desc.includes("растет")) return "up"
+      if (desc.includes("OI↓") || desc.includes("падает")) return "down"
       return "flat"
     }
     if (type === "price") {
-      if (desc.includes("цена↑") || desc.includes("цена растет")) return "up"
-      if (desc.includes("цена↓") || desc.includes("цена падает")) return "down"
+      // Цена↑ = up, Цена↓ = down, Цена→ or Цена↔ = flat
+      if (desc.includes("Цена↑") || desc.includes("цена↑")) return "up"
+      if (desc.includes("Цена↓") || desc.includes("цена↓")) return "down"
       return "flat"
     }
     if (type === "volume") {
-      if (desc.includes("объем↑") || desc.includes("высокий")) return "up"
-      if (desc.includes("объем↓") || desc.includes("низкий")) return "down"
+      // Объем↑ = high/up, Объем↓ = low/down
+      if (desc.includes("Объем↑") || desc.includes("объем↑") || desc.includes("высокий")) return "up"
+      if (desc.includes("Объем↓") || desc.includes("объем↓") || desc.includes("низкий")) return "down"
       return "flat"
     }
     return "flat"
@@ -88,8 +91,8 @@ export function OITerminal({ analysis, loading }: OITerminalProps) {
   }
 
   const signalColor = analysis?.color || COLORS.gray
-  const isBullish = signalColor === COLORS.green
-  const isBearish = signalColor === COLORS.red
+  const isBullish = signalColor === COLORS.green || signalColor === "#22c55e"
+  const isBearish = signalColor === COLORS.red || signalColor === "#ef4444"
 
   // Progress bar (15 segments)
   const ProgressBar = ({ dir }: { dir: "up" | "down" | "flat" }) => {
@@ -181,7 +184,7 @@ export function OITerminal({ analysis, loading }: OITerminalProps) {
           <div className="flex-1 space-y-2">
             <span className="text-sm text-muted-foreground uppercase tracking-wider font-bold">Logic:</span>
             <p className="text-base leading-relaxed text-foreground/90 font-medium">
-              {analysis.description}
+              {analysis.description || "Analyzing market data..."}
             </p>
             {analysis.detailed && (
               <p className="text-sm text-muted-foreground leading-relaxed">
@@ -215,7 +218,7 @@ export function OITerminal({ analysis, loading }: OITerminalProps) {
             }}
             transition={{ duration: 2, repeat: Infinity }}
           >
-            ▓▓▓▓ {analysis.action.toUpperCase()} ▓▓▓▓
+            ▓▓▓▓ {(analysis.action || "WAIT").toUpperCase()} ▓▓▓▓
           </motion.div>
         </div>
       ) : (
