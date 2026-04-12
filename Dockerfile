@@ -1,16 +1,16 @@
 FROM python:3.11-slim
-# Trigger rebuild: $(date)
 
 WORKDIR /app
 
-# Invalidate cache
-ARG CACHEBUST=1
+# Invalidate Docker cache on each build
+RUN echo "Cache bust: $(date +%s)"
 
 RUN apt-get update && apt-get install -y gcc && rm -rf /var/lib/apt/lists/*
 
 COPY backend/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
+# Force copy of latest backend files
 COPY backend/ .
 
 ENV PYTHONUNBUFFERED=1
