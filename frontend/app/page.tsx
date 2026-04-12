@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button"
 import { TradingViewChart } from "./components/TradingViewChart"
 import { OITerminal } from "./components/OITerminal"
 import { EntryLevels } from "./components/EntryLevels"
+import { LiquidationMap } from "./components/LiquidationMap"
 import Sidebar from "./components/admin/Sidebar"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { cn } from "@/lib/utils"
@@ -364,76 +365,7 @@ function SecondaryIndicators({ data, timeframe, loading }: { data: MarketData; t
 }
 
 // Liquidation Map Component
-function LiquidationMap({ liquidations, currentPrice, symbol, loading }: { liquidations: LiquidationLevel[]; currentPrice: number; symbol: string; loading: boolean }) {
-  const safeLiquidations = Array.isArray(liquidations) ? liquidations : []
-  const sortedLiquidations = [...safeLiquidations].sort((a, b) => (a?.price || 0) - (b?.price || 0))
-  const maxSize = Math.max(...safeLiquidations.map(l => l?.size || 0), 1)
-  const price = currentPrice || 0
-  const decimals = price < 1 ? 4 : price < 100 ? 2 : 0
-  
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Liquidation Map</CardTitle>
-        <CardDescription>
-          Concentrated liquidation levels (Current: {loading ? <Loader2 className="inline h-3 w-3 animate-spin" /> : `$${price > 0 ? price.toLocaleString(undefined, {minimumFractionDigits: decimals, maximumFractionDigits: decimals}) : "--"}`})
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        {loading ? (
-          <div className="space-y-3">
-            {[1,2,3,4].map(i => (
-              <div key={i} className="h-12 flex items-center justify-center bg-muted rounded">
-                <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-              </div>
-            ))}
-          </div>
-        ) : (
-          <>
-            <div className="space-y-2">
-              {sortedLiquidations.map((level, i) => {
-                const levelPrice = level?.price || 0
-                const distance = price > 0 ? Math.abs((levelPrice - price) / price * 100) : 0
-                const width = Math.max(10, ((level?.size || 0) / maxSize * 100))
-                
-                return (
-                  <div key={i} className="relative">
-                    <div className="flex items-center justify-between text-sm mb-1">
-                      <span className={cn(
-                        "font-mono",
-                        level?.side === "Long" ? "text-red-500" : "text-emerald-500"
-                      )}>
-                        {level?.side || "Unknown"}s at ${levelPrice > 0 ? levelPrice.toLocaleString(undefined, {minimumFractionDigits: decimals, maximumFractionDigits: decimals}) : "--"}
-                      </span>
-                      <span className="text-muted-foreground">{distance.toFixed(1)}%</span>
-                    </div>
-                    <div className="h-2 bg-muted rounded-full overflow-hidden">
-                      <div 
-                        className={cn(
-                          "h-full rounded-full",
-                          level.side === "Long" ? "bg-red-500/70" : "bg-emerald-500/70"
-                        )}
-                        style={{ width: `${width}%` }}
-                      />
-                    </div>
-                    <p className="text-xs text-muted-foreground mt-0.5">
-                      Size: ${((level?.size || 0) / 1e6).toFixed(1)}M
-                    </p>
-                  </div>
-                )
-              })}
-            </div>
-            <div className="mt-4 p-3 bg-muted rounded-lg">
-              <p className="text-xs text-muted-foreground">
-                💡 <strong>Tactic:</strong> Set TP before liquidation clusters, SL beyond nearest zone
-              </p>
-            </div>
-          </>
-        )}
-      </CardContent>
-    </Card>
-  )
-}
+
 
 // Main Dashboard Component
 export default function Dashboard() {
