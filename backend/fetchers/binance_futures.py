@@ -454,16 +454,35 @@ class BinanceFuturesFetcher:
                 'taker_buy_quote', 'ignore'
             ])
             df['close'] = df['close'].astype(float)
+            df['high'] = df['high'].astype(float)
+            df['low'] = df['low'].astype(float)
             
             # Расчет EMA
             df['ema20'] = df['close'].ewm(span=20, adjust=False).mean()
             df['ema50'] = df['close'].ewm(span=50, adjust=False).mean()
             df['ema200'] = df['close'].ewm(span=200, adjust=False).mean()
             
+            # Расчет RSI
+            delta = df['close'].diff()
+            gain = (delta.where(delta > 0, 0)).rolling(window=14).mean()
+            loss = (-delta.where(delta < 0, 0)).rolling(window=14).mean()
+            rs = gain / loss
+            df['rsi'] = 100 - (100 / (1 + rs))
+            
+            # Расчет MACD
+            ema12 = df['close'].ewm(span=12, adjust=False).mean()
+            ema26 = df['close'].ewm(span=26, adjust=False).mean()
+            df['macd'] = ema12 - ema26
+            df['macd_signal'] = df['macd'].ewm(span=9, adjust=False).mean()
+            df['macd_histogram'] = df['macd'] - df['macd_signal']
+            
             current_price = df['close'].iloc[-1]
             ema20 = df['ema20'].iloc[-1]
             ema50 = df['ema50'].iloc[-1]
             ema200 = df['ema200'].iloc[-1]
+            rsi = df['rsi'].iloc[-1]
+            macd = df['macd'].iloc[-1]
+            macd_signal = df['macd_signal'].iloc[-1]
             
             # Определяем тренд
             trend = "bullish" if current_price > ema50 > ema200 else \
@@ -474,6 +493,9 @@ class BinanceFuturesFetcher:
                 "ema20": float(round(ema20, 2)),
                 "ema50": float(round(ema50, 2)),
                 "ema200": float(round(ema200, 2)),
+                "rsi": float(round(rsi, 1)),
+                "macd": float(round(macd, 2)),
+                "macd_signal": float(round(macd_signal, 2)),
                 "trend": str(trend),
                 "distance_to_ema20_pct": float(round((current_price - ema20) / ema20 * 100, 2)),
                 "distance_to_ema50_pct": float(round((current_price - ema50) / ema50 * 100, 2)),
@@ -490,6 +512,9 @@ class BinanceFuturesFetcher:
                 "ema20": 69500,
                 "ema50": 69000,
                 "ema200": 68000,
+                "rsi": 50,
+                "macd": 0,
+                "macd_signal": 0,
                 "trend": "bullish",
                 "distance_to_ema20_pct": 0.72,
                 "distance_to_ema50_pct": 1.45,
