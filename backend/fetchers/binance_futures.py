@@ -77,13 +77,13 @@ class BinanceFuturesFetcher:
                 end_time = int(datetime.utcnow().timestamp() * 1000)
                 start_time = end_time - (hours * 60 * 60 * 1000)
                 
-                # Используем 5-минутки для более частых обновлений
+                # Используем 15-минутки (соответствует минимальному таймфрейму M15)
                 async with session.get(
                     f"{self.BASE_URL}/fapi/v1/openInterestHist",
                     params={
                         "symbol": symbol,
-                        "period": "5m",  # 5-минутные свечи для актуальности
-                        "limit": 12,  # 12 * 5мин = 1 час
+                        "period": "15m",  # 15-минутные свечи
+                        "limit": 4,  # 4 * 15мин = 1 час истории
                     },
                     headers={"Accept": "application/json"}
                 ) as resp:
@@ -96,7 +96,7 @@ class BinanceFuturesFetcher:
                         prev_oi_hist = float(oi_hist[0]['sumOpenInterest'])
                         oi_change_value = current_oi_hist - prev_oi_hist
                         oi_change_pct = ((current_oi_hist - prev_oi_hist) / prev_oi_hist) * 100 if prev_oi_hist > 0 else 0
-                        print(f"DEBUG: OI Change from hist (5m): {oi_change_pct:.2f}%, points: {len(oi_hist)}")
+                        print(f"DEBUG: OI Change from hist (15m): {oi_change_pct:.2f}%, points: {len(oi_hist)}")
             except Exception as e:
                 print(f"DEBUG: Failed to get OI history: {e}")
                 oi_change_pct = 0
