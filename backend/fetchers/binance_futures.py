@@ -77,14 +77,13 @@ class BinanceFuturesFetcher:
                 end_time = int(datetime.utcnow().timestamp() * 1000)
                 start_time = end_time - (hours * 60 * 60 * 1000)
                 
+                # Используем 5-минутки для более частых обновлений
                 async with session.get(
                     f"{self.BASE_URL}/fapi/v1/openInterestHist",
                     params={
                         "symbol": symbol,
-                        "period": "1h",  # Период агрегации
-                        "limit": 2,  # Текущий и предыдущий
-                        "endTime": end_time,
-                        "startTime": start_time
+                        "period": "5m",  # 5-минутные свечи для актуальности
+                        "limit": 12,  # 12 * 5мин = 1 час
                     },
                     headers={"Accept": "application/json"}
                 ) as resp:
@@ -92,11 +91,12 @@ class BinanceFuturesFetcher:
                     print(f"DEBUG: OI Hist response: {oi_hist}")
                     
                     if isinstance(oi_hist, list) and len(oi_hist) >= 2:
-                        current_oi_hist = float(oi_hist[0]['sumOpenInterest'])
-                        prev_oi_hist = float(oi_hist[1]['sumOpenInterest'])
+                        # Берем последнюю (самую свежую) и первую (час назад) точки
+                        current_oi_hist = float(oi_hist[-1]['sumOpenInterest'])
+                        prev_oi_hist = float(oi_hist[0]['sumOpenInterest'])
                         oi_change_value = current_oi_hist - prev_oi_hist
                         oi_change_pct = ((current_oi_hist - prev_oi_hist) / prev_oi_hist) * 100 if prev_oi_hist > 0 else 0
-                        print(f"DEBUG: OI Change from hist: {oi_change_pct:.2f}%")
+                        print(f"DEBUG: OI Change from hist (5m): {oi_change_pct:.2f}%, points: {len(oi_hist)}")
             except Exception as e:
                 print(f"DEBUG: Failed to get OI history: {e}")
                 oi_change_pct = 0
