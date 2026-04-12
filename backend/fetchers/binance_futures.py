@@ -68,24 +68,39 @@ class BinanceFuturesFetcher:
                 volume_change_pct = 0
                 volume = 0
             
-            # Получаем изменение OI - делаем два запроса с интервалом в коде не получится
-            # Будем использовать OI change из глобальной статистики если доступно
+            # Получаем исторический OI для расчета изменения
             oi_change_pct = 0
+            oi_change_value = 0
             try:
-                # Попробуем получить OI на начало и конец периода через разные таймфреймы
+                # Пробуем получить исторические данные OI
+                # Период: 1 час назад для timeframe=1h, 4 часа для 4h, 24 часа для 1d
+                end_time = int(datetime.utcnow().timestamp() * 1000)
+                start_time = end_time - (hours * 60 * 60 * 1000)
+                
                 async with session.get(
-                    f"{self.BASE_URL}/fapi/v1/klines",
-                    params={"symbol": symbol, "interval": "1d", "limit": 2},
+                    f"{self.BASE_URL}/fapi/v1/openInterestHist",
+                    params={
+                        "symbol": symbol,
+                        "period": "1h",  # Период агрегации
+                        "limit": 2,  # Текущий и предыдущий
+                        "endTime": end_time,
+                        "startTime": start_time
+                    },
                     headers={"Accept": "application/json"}
                 ) as resp:
-                    daily_klines = await resp.json()
-                    if isinstance(daily_klines, list) and len(daily_klines) >= 2:
-                        # Получаем цену закрытия вчера и сегодня
-                        yesterday_close = float(daily_klines[0][4])
-                        today_open = float(daily_klines[1][1])
-                        # Используем это как прокси для тренда
-            except:
-                pass
+                    oi_hist = await resp.json()
+                    print(f"DEBUG: OI Hist response: {oi_hist}")
+                    
+                    if isinstance(oi_hist, list) and len(oi_hist) >= 2:
+                        current_oi_hist = float(oi_hist[0]['sumOpenInterest'])
+                        prev_oi_hist = float(oi_hist[1]['sumOpenInterest'])
+                        oi_change_value = current_oi_hist - prev_oi_hist
+                        oi_change_pct = ((current_oi_hist - prev_oi_hist) / prev_oi_hist) * 100 if prev_oi_hist > 0 else 0
+                        print(f"DEBUG: OI Change from hist: {oi_change_pct:.2f}%")
+            except Exception as e:
+                print(f"DEBUG: Failed to get OI history: {e}")
+                oi_change_pct = 0
+                oi_change_value = 0
             
             # Get mark price as fallback if klines failed
             mark_price = None
@@ -108,7 +123,7 @@ class BinanceFuturesFetcher:
                 "timestamp": datetime.utcnow().isoformat(),
                 "open_interest": current_oi,
                 "oi_change_24h": round(oi_change_pct, 2),
-                "oi_change_value": 0,
+                "oi_change_value": round(oi_change_value, 2),
                 "price": final_price,
                 "price_change_24h": round(price_change_pct, 2) if 'current_close' in locals() else 0,
                 "volume_24h": volume,
