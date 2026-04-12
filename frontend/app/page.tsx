@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { TradingViewChart } from "./components/TradingViewChart"
 import { OITerminal } from "./components/OITerminal"
+import { EntryLevels } from "./components/EntryLevels"
 import Sidebar from "./components/admin/Sidebar"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { cn } from "@/lib/utils"
@@ -259,111 +260,7 @@ function ChartSection({ symbol, timeframe, data, loading }: { symbol: string; ti
 }
 
 
-
-// Row 4: Entry Levels with distances
-function EntryLevelsCard({ data, loading }: { data: MarketData; loading: boolean }) {
-  const price = data?.price || 0
-  const decimals = price < 1 ? 4 : price < 100 ? 2 : 0
-  const distanceToEMA20 = price - (data?.ema20 || 0)
-  const distanceToEMA50 = price - (data?.ema50 || 0)
-  const distanceToPOC = price - (data?.poc || 0)
-  const distanceToVAH = price - (data?.vah || 0)
-  
-  return (
-    <Card>
-      <CardHeader className="gap-2">
-        <CardTitle>Entry Levels</CardTitle>
-        <CardDescription>
-          Key levels and distances from current price {loading ? (
-            <Loader2 className="inline h-3 w-3 animate-spin" />
-          ) : (
-            <span className="font-mono font-bold">${price > 0 ? price.toLocaleString(undefined, {minimumFractionDigits: decimals, maximumFractionDigits: decimals}) : "--"}</span>
-          )}
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        {loading ? (
-          <div className="space-y-3">
-            {[1,2,3,4,5].map(i => (
-              <div key={i} className="h-14 flex items-center justify-center bg-muted rounded-lg">
-                <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-              </div>
-            ))}
-          </div>
-        ) : (
-          <div className="space-y-3">
-            <div className="flex items-center justify-between rounded-lg bg-muted px-3 py-2">
-              <div>
-                <span className="text-sm font-medium">EMA 20</span>
-                <p className="text-xs text-muted-foreground">Dynamic support/resistance</p>
-              </div>
-              <div className="text-right">
-                <span className="font-mono font-medium">${data.ema20.toLocaleString(undefined, {minimumFractionDigits: decimals, maximumFractionDigits: decimals})}</span>
-                <p className={cn("text-xs", distanceToEMA20 >= 0 ? "text-emerald-500" : "text-red-500")}>
-                  {distanceToEMA20 >= 0 ? "+" : ""}${Math.abs(distanceToEMA20).toFixed(decimals)} ({(distanceToEMA20/data.price*100).toFixed(2)}%)
-                </p>
-              </div>
-            </div>
-            
-            <div className="flex items-center justify-between rounded-lg bg-muted px-3 py-2">
-              <div>
-                <span className="text-sm font-medium">EMA 50</span>
-                <p className="text-xs text-muted-foreground">Trend direction</p>
-              </div>
-              <div className="text-right">
-                <span className="font-mono font-medium">${data.ema50.toLocaleString(undefined, {minimumFractionDigits: decimals, maximumFractionDigits: decimals})}</span>
-                <p className={cn("text-xs", distanceToEMA50 >= 0 ? "text-emerald-500" : "text-red-500")}>
-                  {distanceToEMA50 >= 0 ? "+" : ""}${Math.abs(distanceToEMA50).toFixed(decimals)} ({(distanceToEMA50/data.price*100).toFixed(2)}%)
-                </p>
-              </div>
-            </div>
-            
-            <div className="flex items-center justify-between rounded-lg bg-muted px-3 py-2">
-              <div>
-                <span className="text-sm font-medium">POC</span>
-                <p className="text-xs text-muted-foreground">Point of Control - high volume node</p>
-              </div>
-              <div className="text-right">
-                <span className="font-mono font-medium">${data.poc.toLocaleString(undefined, {minimumFractionDigits: decimals, maximumFractionDigits: decimals})}</span>
-                <p className={cn("text-xs", distanceToPOC >= 0 ? "text-emerald-500" : "text-red-500")}>
-                  {distanceToPOC >= 0 ? "+" : ""}${Math.abs(distanceToPOC).toFixed(decimals)}
-                </p>
-              </div>
-            </div>
-            
-            <div className="flex items-center justify-between rounded-lg bg-muted px-3 py-2">
-              <div>
-                <span className="text-sm font-medium">VAH</span>
-                <p className="text-xs text-muted-foreground">Value Area High - resistance zone</p>
-              </div>
-              <div className="text-right">
-                <span className="font-mono font-medium">${data.vah.toLocaleString(undefined, {minimumFractionDigits: decimals, maximumFractionDigits: decimals})}</span>
-                <p className={cn("text-xs", distanceToVAH >= 0 ? "text-emerald-500" : "text-red-500")}>
-                  {distanceToVAH >= 0 ? "+" : ""}${Math.abs(distanceToVAH).toFixed(decimals)}
-                </p>
-              </div>
-            </div>
-            
-            <div className="flex items-center justify-between rounded-lg bg-primary/10 px-3 py-2 border border-primary/20">
-              <div>
-                <span className="text-sm font-medium">ATR (Volatility)</span>
-                <p className="text-xs text-muted-foreground">Average True Range - position sizing</p>
-              </div>
-              <div className="text-right">
-                <span className="font-mono font-medium">${data.atr.toFixed(decimals)}</span>
-                <p className="text-xs text-muted-foreground">
-                  Stop = 2×ATR = ${(data.atr * 2).toFixed(decimals)}
-                </p>
-              </div>
-            </div>
-          </div>
-        )}
-      </CardContent>
-    </Card>
-  )
-}
-
-// Row 5: Secondary Indicators
+// Row 3: Secondary Indicators
 function SecondaryIndicators({ data, timeframe, loading }: { data: MarketData; timeframe: string; loading: boolean }) {
   const rsi = data?.rsi || 50
   const macd = data?.macd || 0
@@ -887,7 +784,15 @@ export default function Dashboard() {
 
         {/* Row 4: Entry Levels + Liquidation Map */}
         <div className="grid grid-cols-1 gap-4 px-4 py-4 lg:grid-cols-2 lg:px-6">
-          <EntryLevelsCard data={marketData} loading={loading} />
+          <Card className="flex flex-col h-[400px]">
+            <CardHeader className="gap-2 pb-2">
+              <CardTitle>Entry Levels</CardTitle>
+              <CardDescription>Key support and resistance zones</CardDescription>
+            </CardHeader>
+            <CardContent className="flex-1 pt-0">
+              <EntryLevels data={marketData} loading={loading} />
+            </CardContent>
+          </Card>
           <LiquidationMap liquidations={liquidations} currentPrice={marketData.price} symbol={symbol} loading={loading} />
         </div>
 
