@@ -112,3 +112,5 @@ async def root():
             }
         }
     }
+
+# Force rebuild - Sun Apr 12 09:40:50 CEST 2026
