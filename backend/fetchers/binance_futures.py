@@ -49,6 +49,7 @@ class BinanceFuturesFetcher:
             current_oi = float(oi_data['openInterest'])
             
             # Расчет изменения цены и объема за период
+            print(f"DEBUG: klines type={type(klines)}, is_list={isinstance(klines, list)}")
             if isinstance(klines, list) and len(klines) >= 2:
                 prev_candle = klines[0]
                 current_candle = klines[1]
@@ -60,7 +61,9 @@ class BinanceFuturesFetcher:
                 price_change_pct = ((current_close - prev_close) / prev_close) * 100
                 volume_change_pct = ((current_volume - prev_volume) / prev_volume) * 100 if prev_volume > 0 else 0
                 volume = current_volume
+                print(f"DEBUG: volume_change_pct={volume_change_pct}, price_change_pct={price_change_pct}")
             else:
+                print(f"DEBUG: klines invalid, len={len(klines) if isinstance(klines, list) else 'N/A'}")
                 price_change_pct = 0
                 volume_change_pct = 0
                 volume = 0
