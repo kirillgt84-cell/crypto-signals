@@ -82,15 +82,15 @@ async def get_oi_analysis(
             old_oi = old_data[0]['open_interest']
             current_oi = data.get('open_interest', 0)
             oi_change_pct = ((current_oi - old_oi) / old_oi * 100) if old_oi > 0 else 0
-            # Используем значение из БД только если оно не ноль, иначе оригинал
-            data['oi_change_24h'] = round(oi_change_pct, 2) if oi_change_pct != 0 else original_oi_change
+            # Используем значение из БД (реальное изменение)
+            data['oi_change_24h'] = round(oi_change_pct, 2)
             data['oi_change_value'] = round(current_oi - old_oi, 2)
             
             # Расчет изменения фьючерсного объема
             old_volume = old_data[0].get('volume', 0) or 0
             current_volume = data.get('volume_24h', 0)
             volume_change_pct = ((current_volume - old_volume) / old_volume * 100) if old_volume > 0 else 0
-            data['volume_change'] = round(volume_change_pct, 2) if volume_change_pct != 0 else original_volume_change
+            data['volume_change'] = round(volume_change_pct, 2)
             
             # Расчет изменения спотового объема
             old_spot_volume = old_data[0].get('spot_volume', 0) or 0
