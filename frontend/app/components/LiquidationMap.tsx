@@ -276,7 +276,7 @@ export function LiquidationMap({
 
         {/* Tactic */}
         <div className="mt-2 p-2 bg-muted/50 rounded text-[10px] text-muted-foreground">
-          <strong>Tactic:</strong> Take profit before large clusters, stop loss beyond nearest zone
+          <strong>Тактика:</strong> Фиксировать прибыль до крупных кластеров, стоп за ближайшей зоной
         </div>
       </motion.div>
     </TooltipProvider>
