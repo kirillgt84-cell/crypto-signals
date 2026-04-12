@@ -155,13 +155,13 @@ export function LiquidationMap({
                         <div
                           className="h-5 rounded-r-md flex items-center justify-end pr-1 transition-all group-hover:brightness-110"
                           style={{
-                            width: `${Math.max(30, (level.size / maxSize) * 150)}px`,
+                            width: `${Math.max(40, (level.size / maxSize) * 120)}px`,
                             backgroundColor: `rgba(239, 68, 68, ${0.4 + intensity * 0.6})`,
                             boxShadow: distance < 2 ? `0 0 10px rgba(239, 68, 68, 0.5)` : 'none'
                           }}
                         >
                           <span className="text-[9px] text-white/90 font-bold whitespace-nowrap">
-                            ${(level.size / 1e6).toFixed(1)}M
+                            {distance.toFixed(0)}%
                           </span>
                         </div>
                         
@@ -175,7 +175,6 @@ export function LiquidationMap({
                       <div className="space-y-1">
                         <p className="font-bold text-red-400">Long Liquidation</p>
                         <p className="text-sm">Price: ${level.price.toLocaleString()}</p>
-                        <p className="text-sm">Size: ${(level.size / 1e6).toFixed(2)}M</p>
                         <p className="text-xs text-muted-foreground">
                           {distance.toFixed(1)}% above current price
                         </p>
@@ -219,13 +218,13 @@ export function LiquidationMap({
                         <div
                           className="h-5 rounded-l-md flex items-center pl-1 transition-all group-hover:brightness-110"
                           style={{
-                            width: `${Math.max(30, (level.size / maxSize) * 150)}px`,
+                            width: `${Math.max(40, (level.size / maxSize) * 120)}px`,
                             backgroundColor: `rgba(34, 197, 94, ${0.4 + intensity * 0.6})`,
                             boxShadow: distance < 2 ? `0 0 10px rgba(34, 197, 94, 0.5)` : 'none'
                           }}
                         >
                           <span className="text-[9px] text-white/90 font-bold whitespace-nowrap">
-                            ${(level.size / 1e6).toFixed(1)}M
+                            {distance.toFixed(0)}%
                           </span>
                         </div>
                       </motion.div>
@@ -234,7 +233,6 @@ export function LiquidationMap({
                       <div className="space-y-1">
                         <p className="font-bold text-emerald-400">Short Liquidation</p>
                         <p className="text-sm">Price: ${level.price.toLocaleString()}</p>
-                        <p className="text-sm">Size: ${(level.size / 1e6).toFixed(2)}M</p>
                         <p className="text-xs text-muted-foreground">
                           {distance.toFixed(1)}% below current price
                         </p>
@@ -268,11 +266,11 @@ export function LiquidationMap({
         <div className="mt-3 pt-3 border-t border-muted-foreground/20 grid grid-cols-2 gap-2 text-xs">
           <div className="flex items-center justify-between">
             <span className="text-red-400">🔴 Longs:</span>
-            <span className="font-mono">${(longLiquidations.reduce((a, b) => a + b.size, 0) / 1e6).toFixed(1)}M</span>
+            <span className="font-mono">{longLiquidations.length} zones</span>
           </div>
           <div className="flex items-center justify-between">
             <span className="text-emerald-400">🟢 Shorts:</span>
-            <span className="font-mono">${(shortLiquidations.reduce((a, b) => a + b.size, 0) / 1e6).toFixed(1)}M</span>
+            <span className="font-mono">{shortLiquidations.length} zones</span>
           </div>
         </div>
 

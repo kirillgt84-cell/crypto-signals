@@ -560,23 +560,23 @@ export default function Dashboard() {
         } : null
         setOiAnalysis(enrichedAnalysis)
         
-        // Set liquidations from levels data - convert to expected format
+        // Set liquidations from levels data - use relative sizes based on leverage importance
         if (levelsData.liquidation_levels) {
           const liqData = levelsData.liquidation_levels
           const formattedLiquidations = [
             ...(liqData.long_liquidations || []).map((l: any) => ({
               price: l.price,
               side: "Long" as const,
-              size: l.leverage === "20x" ? 150000000 : l.leverage === "10x" ? 100000000 : 80000000
+              // Relative size: closer to price = larger (more important)
+              size: l.distance === "-5%" ? 100 : l.distance === "-10%" ? 60 : 30
             })),
             ...(liqData.short_liquidations || []).map((l: any) => ({
               price: l.price,
               side: "Short" as const,
-              size: l.leverage === "20x" ? 150000000 : l.leverage === "10x" ? 100000000 : 80000000
+              size: l.distance === "+5%" ? 100 : l.distance === "+10%" ? 60 : 30
             }))
           ]
-          setLiquidations(formattedLiquidations)
-        } else if (levelsData.liquidations) {
+          setLiquidations(formattedLiquidations) else if (levelsData.liquidations) {
           setLiquidations(levelsData.liquidations)
         } else {
           // Fallback: generate from price
