@@ -488,6 +488,7 @@ export default function Dashboard() {
         
         if (profileRes.ok) {
           profileData = await profileRes.json()
+          console.log(`Profile data for ${symbol}:`, profileData)
         } else {
           console.error("Profile API error:", profileRes.status)
           hasApiError = true
