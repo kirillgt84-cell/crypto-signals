@@ -1,44 +1,47 @@
 "use client"
 
-import { createContext, useContext, useState, useCallback, ReactNode } from "react"
+import { createContext, useContext, useState, useCallback, ReactNode, useEffect } from "react"
+import enTranslations from "@/locales/en.json"
+import ruTranslations from "@/locales/ru.json"
 
 type Language = "en" | "ru"
 
 interface LanguageContextType {
   language: Language
   setLanguage: (lang: Language) => void
-  t: (key: string) => string | Record<string, string>
+  t: (key: string) => string
 }
 
-const translations: Record<Language, any> = {
-  en: {},
-  ru: {}
-}
-
-// Load translations
-async function loadTranslations(lang: Language) {
-  try {
-    const module = await import(`@/locales/${lang}.json`)
-    translations[lang] = module.default || module
-  } catch (e) {
-    console.error(`Failed to load translations for ${lang}:`, e)
-  }
+const translations = {
+  en: enTranslations,
+  ru: ruTranslations
 }
 
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined)
 
 export function LanguageProvider({ children }: { children: ReactNode }) {
   const [language, setLanguageState] = useState<Language>("ru")
-  const [loaded, setLoaded] = useState(false)
 
-  const setLanguage = useCallback(async (lang: Language) => {
-    await loadTranslations(lang)
+  const setLanguage = useCallback((lang: Language) => {
     setLanguageState(lang)
-    setLoaded(true)
+    // Save preference to localStorage
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('language', lang)
+    }
+  }, [])
+
+  // Load saved preference on mount
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('language') as Language
+      if (saved && (saved === 'en' || saved === 'ru')) {
+        setLanguageState(saved)
+      }
+    }
   }, [])
 
   const t = useCallback(
-    (key: string): string | Record<string, string> => {
+    (key: string): string => {
       const keys = key.split(".")
       let value: any = translations[language]
 
@@ -50,15 +53,10 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
         }
       }
 
-      return value || key
+      return typeof value === 'string' ? value : key
     },
     [language]
   )
-
-  // Load initial language
-  if (!loaded) {
-    loadTranslations(language).then(() => setLoaded(true))
-  }
 
   return (
     <LanguageContext.Provider value={{ language, setLanguage, t }}>
