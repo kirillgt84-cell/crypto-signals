@@ -285,12 +285,19 @@ class BinanceFuturesFetcher:
             ) as resp:
                 trades = await resp.json()
             
+            print(f"DEBUG cluster: {symbol} trades count={len(trades) if isinstance(trades, list) else 'N/A'}, type={type(trades)}")
+            
             if not isinstance(trades, list):
                 logger.warning(f"Unexpected cluster data: {trades}")
                 return self._empty_clusters(symbol)
             
+            if len(trades) == 0:
+                print(f"DEBUG cluster: {symbol} - empty trades list")
+                return self._empty_clusters(symbol)
+            
             # Определяем шаг округления на основе цены (берем первую сделку)
             sample_price = float(trades[0]['p']) if trades else 50000
+            print(f"DEBUG cluster: {symbol} sample_price={sample_price}")
             if sample_price > 10000:
                 step = 100  # BTC, ETH
             elif sample_price > 1000:
@@ -341,6 +348,8 @@ class BinanceFuturesFetcher:
             
             vah = max(value_area_prices) if value_area_prices else poc_price
             val = min(value_area_prices) if value_area_prices else poc_price
+            
+            print(f"DEBUG cluster: {symbol} clusters={len(clusters)}, poc={poc_price}, vah={vah}, val={val}")
             
             # Сортируем по цене для ответа
             sorted_clusters = sorted(clusters.items(), key=lambda x: x[0])
