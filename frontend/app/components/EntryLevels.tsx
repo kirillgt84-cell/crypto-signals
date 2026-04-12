@@ -116,13 +116,13 @@ export function EntryLevels({ data, loading }: EntryLevelsProps) {
 
   return (
     <motion.div 
-      className="w-full h-full border-2 rounded-xl bg-black/95 p-5 font-mono flex flex-col"
+      className="w-full border-2 rounded-xl bg-black/95 p-5 font-mono"
       style={{ borderColor: '#3b82f660' }}
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
     >
       {/* Header */}
-      <div className="flex items-center gap-3 mb-5 pb-3 border-b-2 border-blue-500/40">
+      <div className="flex items-center gap-3 mb-4 pb-3 border-b-2 border-blue-500/40">
         <Target className="w-5 h-5 text-blue-500" />
         <span className="text-xl font-bold tracking-widest text-blue-500">
           ENTRY LEVELS
@@ -130,7 +130,7 @@ export function EntryLevels({ data, loading }: EntryLevelsProps) {
       </div>
 
       {/* Levels */}
-      <div className="flex-1 space-y-3 overflow-y-auto">
+      <div className="space-y-3">
         {levels.map((level, index) => {
           const distance = getDistance(level.value)
           const color = level.isCurrent ? '#3b82f6' : getColor(level.type)
