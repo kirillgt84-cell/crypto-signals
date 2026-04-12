@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useRef, useState } from "react"
-import { TrendingUp, TrendingDown, Activity, BarChart3, Wallet, Target, Zap, Loader2 } from "lucide-react"
+import { TrendingUp, TrendingDown, Minus, Activity, BarChart3, Wallet, Target, Zap, Loader2 } from "lucide-react"
 import { getRSIInterpretation, getMACDInterpretation, getFundingInterpretation, getExchangeFlowInterpretation } from "./lib/market-utils"
 import { Logo, LogoIcon } from "./components/Logo"
 import { ThemeToggle } from "./components/ThemeToggle"
@@ -120,12 +120,20 @@ function MetricCard({
         <CardAction className="ml-3">
           <div className={cn(
             "flex flex-col items-center justify-center gap-2 px-3 py-4 rounded-md border min-h-[80px] min-w-[70px]",
-            trendUp 
+            trend === "Rising" || trend === "High" || trend === "Buying"
               ? "text-emerald-700 bg-emerald-100 border-emerald-300 dark:bg-emerald-900/40 dark:border-emerald-700" 
-              : "text-red-700 bg-red-100 border-red-300 dark:bg-red-900/40 dark:border-red-700"
+              : trend === "Falling" || trend === "Low" || trend === "Selling"
+              ? "text-red-700 bg-red-100 border-red-300 dark:bg-red-900/40 dark:border-red-700"
+              : "text-amber-700 bg-amber-100 border-amber-300 dark:bg-amber-900/40 dark:border-amber-700"
           )}>
             <span className="text-sm font-bold">{trend}</span>
-            {trendUp ? <TrendingUp className="h-6 w-6" /> : <TrendingDown className="h-6 w-6" />}
+            {trend === "Rising" || trend === "High" || trend === "Buying" ? (
+              <TrendingUp className="h-6 w-6" />
+            ) : trend === "Falling" || trend === "Low" || trend === "Selling" ? (
+              <TrendingDown className="h-6 w-6" />
+            ) : (
+              <Minus className="h-6 w-6" />
+            )}
           </div>
         </CardAction>
       </CardHeader>
@@ -152,9 +160,9 @@ function OIAnalysisCards({ data, loading, timeframe }: { data: MarketData; loadi
       <MetricCard
         title="Open Interest"
         value={`$${((data?.oi || 0) * (data?.price || 0) / 1e9).toFixed(2)}B`}
-        subvalue={data?.oi_change !== undefined && data?.oi_change !== 0 ? `${data.oi_change.toFixed(2)}% (${timeframe === "15" ? "15m" : timeframe === "60" ? "1h" : timeframe === "240" ? "4h" : "1d"})` : `Change: N/A`}
-        trend={(data?.oi_change || 0) >= 0 ? "Rising" : "Falling"}
-        trendUp={(data?.oi_change || 0) >= 0}
+        subvalue={data?.oi_change !== undefined && data?.oi_change !== null ? `${data.oi_change >= 0 ? "+" : ""}${data.oi_change.toFixed(2)}% (${timeframe === "15" ? "15m" : timeframe === "60" ? "1h" : timeframe === "240" ? "4h" : "1d"})` : `Change: N/A`}
+        trend={data?.oi_change > 0 ? "Rising" : data?.oi_change < 0 ? "Falling" : "Stable"}
+        trendUp={data?.oi_change >= 0}
         icon={Activity}
         loading={loading}
       />
@@ -162,8 +170,8 @@ function OIAnalysisCards({ data, loading, timeframe }: { data: MarketData; loadi
         title="Futures Volume"
         value={`$${((data?.volume || 0) * (data?.price || 0) / 1e9).toFixed(2)}B`}
         subvalue={data?.volume_change !== undefined && data?.volume_change !== 0 ? `${data.volume_change >= 0 ? "+" : ""}${data.volume_change.toFixed(2)}% (${timeframe === "15" ? "15m" : timeframe === "60" ? "1h" : timeframe === "240" ? "4h" : "1d"})` : `${timeframe === "15" ? "15m" : timeframe === "60" ? "1h" : timeframe === "240" ? "4h" : "1d"} volume`}
-        trend={(data?.volume_change || 0) >= 0 ? "High" : "Low"}
-        trendUp={(data?.volume_change || 0) >= 0}
+        trend={data?.volume_change > 0 ? "Rising" : data?.volume_change < 0 ? "Falling" : "Stable"}
+        trendUp={data?.volume_change >= 0}
         icon={BarChart3}
         loading={loading}
       />
@@ -171,8 +179,8 @@ function OIAnalysisCards({ data, loading, timeframe }: { data: MarketData; loadi
         title="Spot Volume"
         value={`$${((data?.spot_volume || 0) * (data?.price || 0) / 1e9).toFixed(2)}B`}
         subvalue={data?.spot_volume_change !== undefined && data?.spot_volume_change !== 0 ? `${data.spot_volume_change >= 0 ? "+" : ""}${data.spot_volume_change.toFixed(2)}% (${timeframe === "15" ? "15m" : timeframe === "60" ? "1h" : timeframe === "240" ? "4h" : "1d"})` : `${timeframe === "15" ? "15m" : timeframe === "60" ? "1h" : timeframe === "240" ? "4h" : "1d"} volume`}
-        trend={(data?.spot_volume_change || 0) >= 0 ? "Rising" : "Falling"}
-        trendUp={(data?.spot_volume_change || 0) >= 0}
+        trend={data?.spot_volume_change > 0 ? "Rising" : data?.spot_volume_change < 0 ? "Falling" : "Stable"}
+        trendUp={data?.spot_volume_change >= 0}
         icon={BarChart3}
         loading={loading}
       />
