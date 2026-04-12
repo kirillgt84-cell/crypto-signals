@@ -189,7 +189,7 @@ export function EntryLevels({ data, loading }: EntryLevelsProps) {
                           x="0" y="3" width={position} height="4" 
                           rx="2"
                           fill={color}
-                          opacity={level.isCurrent ? 0.3 : 0.6}
+                          opacity={0.6}
                         />
                         
                         {/* Price marker line for all levels */}
@@ -207,10 +207,8 @@ export function EntryLevels({ data, loading }: EntryLevelsProps) {
                         <circle 
                           cx={position} 
                           cy="5" 
-                          r={level.isCurrent ? 3 : 2.5} 
+                          r={2.5} 
                           fill={color}
-                          stroke={level.isCurrent ? '#fbbf24' : 'none'}
-                          strokeWidth={level.isCurrent ? 1 : 0}
                         />
                       </svg>
                       
