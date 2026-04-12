@@ -214,7 +214,7 @@ export function EntryLevels({ data, loading }: EntryLevelsProps) {
                       
                       {/* Price label positioned on scale */}
                       <div 
-                        className="absolute top-1/2 -translate-y-1/2 text-[10px] font-mono font-bold px-1 rounded"
+                        className="absolute top-1/2 -translate-y-1/2 text-[10px] font-mono font-bold px-1 rounded whitespace-nowrap"
                         style={{ 
                           left: `${position}%`,
                           transform: 'translateX(-50%) translateY(-50%)',
@@ -223,7 +223,14 @@ export function EntryLevels({ data, loading }: EntryLevelsProps) {
                           textShadow: '0 0 4px rgba(0,0,0,0.8)'
                         }}
                       >
-                        ${(level.value / 1000).toFixed(1)}k
+                        {/* Dynamic formatting based on price magnitude */}
+                        {(() => {
+                          const v = level.value
+                          if (v >= 1000) return `$${(v / 1000).toFixed(1)}k`
+                          if (v >= 1) return `$${v.toFixed(2)}`
+                          if (v >= 0.01) return `$${v.toFixed(4)}`
+                          return `$${v.toFixed(6)}`
+                        })()}
                       </div>
                     </div>
                     
@@ -241,7 +248,13 @@ export function EntryLevels({ data, loading }: EntryLevelsProps) {
                 <TooltipContent side="right" className="max-w-xs">
                   <div className="space-y-1">
                     <p className="font-bold text-sm" style={{ color }}>
-                      {level.label}: ${level.value.toLocaleString()}
+                      {level.label}: {(() => {
+                        const v = level.value
+                        if (v >= 1000) return `$${v.toLocaleString(undefined, {maximumFractionDigits: 0})}`
+                        if (v >= 1) return `$${v.toFixed(2)}`
+                        if (v >= 0.01) return `$${v.toFixed(4)}`
+                        return `$${v.toFixed(6)}`
+                      })()}
                     </p>
                     <p className="text-xs text-muted-foreground">{level.desc}</p>
                     <p className="text-xs">
