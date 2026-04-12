@@ -2,8 +2,6 @@
 
 import { motion } from "framer-motion"
 import { Activity, BarChart3, DollarSign, Radio } from "lucide-react"
-import { useEffect, useState } from "react"
-
 interface OIAnalysis {
   status: string
   signal: string
@@ -30,13 +28,6 @@ const COLORS = {
 }
 
 export function OITerminal({ analysis, loading }: OITerminalProps) {
-  const [lastUpdate, setLastUpdate] = useState<Date>(new Date())
-
-  useEffect(() => {
-    if (analysis) {
-      setLastUpdate(new Date())
-    }
-  }, [analysis])
 
   if (loading) {
     return (
@@ -61,23 +52,18 @@ export function OITerminal({ analysis, loading }: OITerminalProps) {
     const desc = analysis.description
     
     if (type === "oi") {
-      // OI↑ = up, OI↓ = down, OI→ or OI↔ = flat
       if (desc.includes("OI↑") || desc.includes("OI растет")) return "up"
       if (desc.includes("OI↓") || desc.includes("OI падает")) return "down"
-      if (desc.includes("OI→") || desc.includes("OI↔") || desc.includes("флэт")) return "flat"
       return "flat"
     }
     if (type === "price") {
-      // Цена↑ = up, Цена↓ = down, Цена→ or Цена↔ = flat
       if (desc.includes("Цена↑") || desc.includes("цена↑")) return "up"
       if (desc.includes("Цена↓") || desc.includes("цена↓")) return "down"
-      if (desc.includes("Цена→") || desc.includes("Цена↔") || desc.includes("цена→") || desc.includes("боковик")) return "flat"
       return "flat"
     }
     if (type === "volume") {
-      // Объем↑ = high/up, Объем↓ = low/down
-      if (desc.includes("Объем↑") || desc.includes("объем↑") || desc.includes("высокий")) return "up"
-      if (desc.includes("Объем↓") || desc.includes("объем↓") || desc.includes("низкий")) return "down"
+      if (desc.includes("Объем↑") || desc.includes("высокий") || desc.includes("повышенный")) return "up"
+      if (desc.includes("Объем↓") || desc.includes("низкий")) return "down"
       return "flat"
     }
     return "flat"
@@ -103,22 +89,24 @@ export function OITerminal({ analysis, loading }: OITerminalProps) {
   const isBullish = signalColor === COLORS.green || signalColor === "#22c55e"
   const isBearish = signalColor === COLORS.red || signalColor === "#ef4444"
 
-  // Get change values from API or description
-  const getChangeValue = (type: "oi" | "price" | "volume"): number => {
-    if (!analysis) return 0
-    if (type === "oi") return analysis.oi_change_pct || 0
-    if (type === "price") return analysis.price_change_pct || 0
-    if (type === "volume") return analysis.volume_change_pct || 0
-    return 0
+  // Get change values from analysis - these now come from backend calculations
+  const getChangeValue = (type: "oi" | "price" | "volume"): number | null => {
+    if (!analysis) return null
+    const val = type === "oi" ? analysis.oi_change_pct : 
+                type === "price" ? analysis.price_change_pct : 
+                analysis.volume_change_pct
+    // Return null if undefined/null/0 (no real data)
+    return (val !== undefined && val !== null) ? val : null
   }
 
-  // Progress bar (15 segments) based on actual change magnitude
-  const ProgressBar = ({ dir, change }: { dir: "up" | "down" | "flat"; change: number }) => {
+  // Progress bar based on actual percentage magnitude
+  const ProgressBar = ({ value, dir }: { value: number | null; dir: "up" | "down" | "flat" }) => {
     const color = getColor(dir)
-    // Fill based on absolute change (0-10% = 1-10 segments)
-    const absChange = Math.abs(change)
-    const fillLevel = Math.min(15, Math.max(3, Math.round(absChange * 1.5)))
-    const filled = dir === "up" ? fillLevel : dir === "down" ? fillLevel : 7
+    // Scale: 0-5% = 3-8 segments, 5-10% = 8-12 segments, >10% = 12-15 segments
+    const absVal = Math.abs(value || 0)
+    let filled = 7 // neutral default
+    if (dir === "up") filled = Math.min(15, Math.max(8, Math.round(absVal * 1.5) + 5))
+    if (dir === "down") filled = Math.min(15, Math.max(8, Math.round(absVal * 1.5) + 5))
     return (
       <span className="text-base tracking-tighter font-bold" style={{ color }}>
         {"█".repeat(filled)}{"░".repeat(15 - filled)}
@@ -126,10 +114,15 @@ export function OITerminal({ analysis, loading }: OITerminalProps) {
     )
   }
 
-  const formatChange = (val: number) => {
+  const formatChange = (val: number | null): string => {
+    if (val === null || val === undefined) return "—"
     if (val === 0) return "0.00%"
     return `${val > 0 ? "+" : ""}${val.toFixed(2)}%`
   }
+
+  const oiChange = getChangeValue("oi")
+  const priceChange = getChangeValue("price")
+  const volumeChange = getChangeValue("volume")
 
   return (
     <motion.div 
@@ -150,7 +143,7 @@ export function OITerminal({ analysis, loading }: OITerminalProps) {
           MARKET STATE
         </span>
         <span className="ml-auto text-xs text-muted-foreground">
-          {lastUpdate.toLocaleTimeString()}
+          {new Date().toLocaleTimeString()}
         </span>
       </div>
 
@@ -161,57 +154,57 @@ export function OITerminal({ analysis, loading }: OITerminalProps) {
             {/* OI */}
             <motion.div 
               className="flex items-center gap-4"
-              key={`oi-${oiDir}-${lastUpdate.getTime()}`}
+              key={`oi-${oiDir}-${oiChange}`}
               initial={{ opacity: 0.5 }}
               animate={{ opacity: 1 }}
               transition={{ duration: 0.3 }}
             >
               <BarChart3 className="w-5 h-5 text-muted-foreground" />
               <span className="text-base text-muted-foreground w-20 font-bold">OI</span>
-              <ProgressBar dir={oiDir} change={getChangeValue("oi")} />
+              <ProgressBar value={oiChange} dir={oiDir} />
               <span className="text-2xl font-bold" style={{ color: getColor(oiDir) }}>
                 {getArrow(oiDir)}
               </span>
-              <span className="text-xs text-muted-foreground w-16 text-right">
-                {formatChange(getChangeValue("oi"))}
+              <span className="text-xs text-muted-foreground w-16 text-right font-mono">
+                {formatChange(oiChange)}
               </span>
             </motion.div>
 
             {/* PRICE */}
             <motion.div 
               className="flex items-center gap-4"
-              key={`price-${priceDir}-${lastUpdate.getTime()}`}
+              key={`price-${priceDir}-${priceChange}`}
               initial={{ opacity: 0.5 }}
               animate={{ opacity: 1 }}
               transition={{ duration: 0.3, delay: 0.1 }}
             >
               <DollarSign className="w-5 h-5 text-muted-foreground" />
               <span className="text-base text-muted-foreground w-20 font-bold">PRICE</span>
-              <ProgressBar dir={priceDir} change={getChangeValue("price")} />
+              <ProgressBar value={priceChange} dir={priceDir} />
               <span className="text-2xl font-bold" style={{ color: getColor(priceDir) }}>
                 {getArrow(priceDir)}
               </span>
-              <span className="text-xs text-muted-foreground w-16 text-right">
-                {formatChange(getChangeValue("price"))}
+              <span className="text-xs text-muted-foreground w-16 text-right font-mono">
+                {formatChange(priceChange)}
               </span>
             </motion.div>
 
             {/* VOLUME */}
             <motion.div 
               className="flex items-center gap-4"
-              key={`vol-${volumeDir}-${lastUpdate.getTime()}`}
+              key={`vol-${volumeDir}-${volumeChange}`}
               initial={{ opacity: 0.5 }}
               animate={{ opacity: 1 }}
               transition={{ duration: 0.3, delay: 0.2 }}
             >
               <Activity className="w-5 h-5 text-muted-foreground" />
               <span className="text-base text-muted-foreground w-20 font-bold">VOLUME</span>
-              <ProgressBar dir={volumeDir} change={getChangeValue("volume")} />
+              <ProgressBar value={volumeChange} dir={volumeDir} />
               <span className="text-2xl font-bold" style={{ color: getColor(volumeDir) }}>
                 {getArrow(volumeDir)}
               </span>
-              <span className="text-xs text-muted-foreground w-16 text-right">
-                {volumeDir === "up" ? "HIGH" : volumeDir === "down" ? "LOW" : "NEUTRAL"}
+              <span className="text-xs text-muted-foreground w-16 text-right font-mono">
+                {volumeChange !== null ? formatChange(volumeChange) : (volumeDir === "up" ? "HIGH" : volumeDir === "down" ? "LOW" : "NEUTRAL")}
               </span>
             </motion.div>
           </div>

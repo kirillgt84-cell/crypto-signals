@@ -63,6 +63,9 @@ interface OIAnalysis {
   tactic?: string
   color: string
   strength: number
+  oi_change_pct?: number
+  price_change_pct?: number
+  volume_change_pct?: number
 }
 
 interface LiquidationLevel {
@@ -700,14 +703,14 @@ export default function Dashboard() {
         
         setMarketData(combinedData)
         console.log(`MarketData set for ${symbol}:`, combinedData)
-        // Merge analysis with change percentages from OI data
+        // Use analysis directly - backend now includes change percentages
         const enrichedAnalysis = oiData?.analysis ? {
           ...oiData.analysis,
-          oi_change_pct: oiData.oi_change_24h || oiData.oi_change || 0,
-          price_change_pct: oiData.price_change_24h || 0,
-          volume_change_pct: oiData.volume_change || 0,
+          // Fallback to top-level fields if not in analysis
+          oi_change_pct: oiData.analysis.oi_change_pct ?? oiData.oi_change_24h ?? 0,
+          price_change_pct: oiData.analysis.price_change_pct ?? oiData.price_change_24h ?? 0,
+          volume_change_pct: oiData.analysis.volume_change_pct ?? oiData.volume_change ?? 0,
         } : null
-        console.log('Setting OI Analysis:', enrichedAnalysis)
         setOiAnalysis(enrichedAnalysis)
         
         // Set liquidations from levels data

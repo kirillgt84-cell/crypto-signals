@@ -97,7 +97,7 @@ async def get_oi_analysis(
         advanced = interpret_oi_advanced(
             data.get('oi_change_24h', 0),
             data.get('price_change_24h', 0),
-            15  # volume change placeholder
+            data.get('volume_change', 15)
         )
         
         data["analysis"] = advanced

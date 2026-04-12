@@ -36,7 +36,10 @@ def interpret_oi_advanced(
             "detailed": "Рано или поздно толпа будет закрывать шорты по стопам, что будет провоцировать дальнейший рост цены. Устойчивый восходящий тренд, сильный рынок.",
             "action": "Рассматривать покупки (лонг)",
             "tactic": "Не входить против тренда. Ждать откаты к EMA20/50 для входа в лонг.",
-            "color": "#22c55e"  # green-500
+            "color": "#22c55e",  # green-500
+            "oi_change_pct": oi_change_pct,
+            "price_change_pct": price_change_pct,
+            "volume_change_pct": volume_change_pct
         }
     
     # 2. OI растет, цена падает, объем растет (или на месте)
@@ -49,7 +52,10 @@ def interpret_oi_advanced(
             "detailed": "Толпа покупает, но скоро они будут закрываться по стопам, что толкнет цену вниз еще больше. Устойчивый нисходящий тренд, сильный рынок.",
             "action": "Рассматривать продажи (шорт)",
             "tactic": "Входить в шорт на отскоки к сопротивлению. Не ловить падающий нож.",
-            "color": "#ef4444"  # red-500
+            "color": "#ef4444",  # red-500
+            "oi_change_pct": oi_change_pct,
+            "price_change_pct": price_change_pct,
+            "volume_change_pct": volume_change_pct
         }
     
     # 3. OI падает, цена растет (разгрузка) - Вариант А и Б
@@ -64,7 +70,10 @@ def interpret_oi_advanced(
                 "detailed": "Умные деньги фиксируют прибыль по предыдущим шортам, толпа кроет убыток. Разворот по OI совпадает с началом коррекции.",
                 "action": "Рассматривать покупки (лонг)",
                 "tactic": "Ожидается продолжение коррекции или разворот. Входить после подтверждения пробоя.",
-                "color": "#eab308"  # yellow-500
+                "color": "#eab308",  # yellow-500
+                "oi_change_pct": oi_change_pct,
+                "price_change_pct": price_change_pct,
+                "volume_change_pct": volume_change_pct
             }
         else:
             # Вариант А: Разгрузка в конце восходящего движения
@@ -76,7 +85,10 @@ def interpret_oi_advanced(
                 "detailed": "Крупные игроки фиксируют прибыль, закрывая лонги. Толпа закрывает продажи по стопам. Слабый рынок.",
                 "action": "Рассматривать продажи (шорт)",
                 "tactic": "Ожидается падение. Не входить в лонг на этой фазе.",
-                "color": "#f97316"  # orange-500
+                "color": "#f97316",  # orange-500
+                "oi_change_pct": oi_change_pct,
+                "price_change_pct": price_change_pct,
+                "volume_change_pct": volume_change_pct
             }
     
     # 4. OI падает, цена падает - Вариант А и Б
@@ -91,7 +103,10 @@ def interpret_oi_advanced(
                 "detailed": "Крупные игроки фиксируют прибыль, закрывая шорты. Толпа закрывает покупки по стопам. Слабый рынок, ожидается рост.",
                 "action": "Рассматривать покупки (лонг)",
                 "tactic": "Ждать признаков разворота. Входить после формирования дна.",
-                "color": "#22c55e"  # green-500 (потенциальное дно)
+                "color": "#22c55e",  # green-500 (потенциальное дно)
+                "oi_change_pct": oi_change_pct,
+                "price_change_pct": price_change_pct,
+                "volume_change_pct": volume_change_pct
             }
         else:
             # Вариант Б: Разгрузка предыдущего растущего тренда
@@ -103,7 +118,10 @@ def interpret_oi_advanced(
                 "detailed": "Разворот по OI совпадает с началом коррекции. Умные деньги фиксируют прибыль по предыдущим лонгам, толпа кроет убыток.",
                 "action": "Рассматривать продажи (шорт)",
                 "tactic": "Ожидается продолжение коррекции или разворот. Не покупать на падении.",
-                "color": "#ef4444"  # red-500
+                "color": "#ef4444",  # red-500
+                "oi_change_pct": oi_change_pct,
+                "price_change_pct": price_change_pct,
+                "volume_change_pct": volume_change_pct
             }
     
     # 5. OI не меняется
@@ -116,7 +134,10 @@ def interpret_oi_advanced(
             "detailed": "OI стагнирует. Дальнейший ход цены под вопросом. Не анализируем.",
             "action": "Не торговать",
             "tactic": "Ждать движения OI и цены для формирования сигнала.",
-            "color": "#9ca3af"  # gray-400
+            "color": "#9ca3af",  # gray-400
+            "oi_change_pct": oi_change_pct,
+            "price_change_pct": price_change_pct,
+            "volume_change_pct": volume_change_pct
         }
     
     # 6. OI растет, цена боковик (накопление)
@@ -129,7 +150,10 @@ def interpret_oi_advanced(
             "detailed": "Крупные игроки накапливают позицию пока цена в боковике. Конфликт между быками и медведями.",
             "action": "Ждать пробоя диапазона",
             "tactic": "Ждем пробой на повышенном объеме и торгуем в его сторону. Если накопление в тренде - торгуем продолжение. Диапазон станет зоной поддержки/сопротивления.",
-            "color": "#3b82f6"  # blue-500
+            "color": "#3b82f6",  # blue-500
+            "oi_change_pct": oi_change_pct,
+            "price_change_pct": price_change_pct,
+            "volume_change_pct": volume_change_pct
         }
     
     # 7. OI падает, цена боковик (распределение)
@@ -142,7 +166,10 @@ def interpret_oi_advanced(
             "detailed": "Крупные игроки распределяют позиции пока цена в боковике. Перетекание позиций от профи к толпе.",
             "action": "Ждать пробоя границ диапазона",
             "tactic": "Предпочтительнее торговать в разворот тренда. Диапазон станет зоной поддержки/сопротивления после выхода цены.",
-            "color": "#8b5cf6"  # violet-500
+            "color": "#8b5cf6",  # violet-500
+            "oi_change_pct": oi_change_pct,
+            "price_change_pct": price_change_pct,
+            "volume_change_pct": volume_change_pct
         }
     
     # По умолчанию
@@ -154,5 +181,8 @@ def interpret_oi_advanced(
         "detailed": "Недостаточно данных для четкой интерпретации. Рынок в неопределенности.",
         "action": "Не торговать",
         "tactic": "Ожидание формирования четкого паттерна OI + Price + Volume.",
-        "color": "#9ca3af"  # gray-400
+        "color": "#9ca3af",  # gray-400
+        "oi_change_pct": oi_change_pct,
+        "price_change_pct": price_change_pct,
+        "volume_change_pct": volume_change_pct
     }

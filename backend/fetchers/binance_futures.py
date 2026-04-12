@@ -48,18 +48,39 @@ class BinanceFuturesFetcher:
             
             current_oi = float(oi_data['openInterest'])
             
-            # Расчет изменения цены за период
+            # Расчет изменения цены и объема за период
             if isinstance(klines, list) and len(klines) >= 2:
-                prev_close = float(klines[0][4])
-                current_close = float(klines[1][4])
+                prev_candle = klines[0]
+                current_candle = klines[1]
+                prev_close = float(prev_candle[4])
+                current_close = float(current_candle[4])
+                prev_volume = float(prev_candle[5])
+                current_volume = float(current_candle[5])
+                
                 price_change_pct = ((current_close - prev_close) / prev_close) * 100
-                volume = float(klines[1][5])
+                volume_change_pct = ((current_volume - prev_volume) / prev_volume) * 100 if prev_volume > 0 else 0
+                volume = current_volume
             else:
                 price_change_pct = 0
+                volume_change_pct = 0
                 volume = 0
             
-            # OI change пока 0 (нужен кэш или история)
+            # Получаем изменение OI за 24ч от Binance (если доступно)
             oi_change_pct = 0
+            try:
+                async with session.get(
+                    f"{self.BASE_URL}/fapi/v1/openInterestHist",
+                    params={"symbol": symbol, "period": "1h", "limit": 2},
+                    headers={"Accept": "application/json"}
+                ) as resp:
+                    if resp.status == 200:
+                        oi_hist = await resp.json()
+                        if isinstance(oi_hist, list) and len(oi_hist) >= 2:
+                            prev_oi = float(oi_hist[0]['sumOpenInterest'])
+                            curr_oi = float(oi_hist[1]['sumOpenInterest'])
+                            oi_change_pct = ((curr_oi - prev_oi) / prev_oi) * 100
+            except:
+                pass  # Если endpoint недоступен без API key
             
             # Get mark price as fallback if klines failed
             mark_price = None
@@ -86,6 +107,7 @@ class BinanceFuturesFetcher:
                 "price": final_price,
                 "price_change_24h": round(price_change_pct, 2) if 'current_close' in locals() else 0,
                 "volume_24h": volume,
+                "volume_change": round(volume_change_pct, 2) if 'volume_change_pct' in locals() else 0,
                 "interpretation": self._interpret_oi(oi_change_pct, price_change_pct)
             }
         except Exception as e:
