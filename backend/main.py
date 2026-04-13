@@ -82,12 +82,20 @@ app = FastAPI(
     lifespan=lifespan
 )
 
-# CORS
+# CORS - разрешаем все origins для работы с Vercel
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_methods=["*"],
-    allow_headers=["*"]
+    allow_origins=[
+        "http://localhost:3000",
+        "https://crypto-signals-chi.vercel.app",
+        "https://crypto-signals.vercel.app",
+        "*"  # Fallback для разработки
+    ],
+    allow_credentials=True,
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
+    allow_headers=["*"],
+    expose_headers=["*"],
+    max_age=86400  # Cache preflight for 24 hours
 )
 
 # Подключаем роутеры
