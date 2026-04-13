@@ -767,17 +767,25 @@ export default function Dashboard() {
         </div>
 
         {/* Row 4: Order Book + Liquidation Map */}
-        <div className="grid grid-cols-1 gap-4 px-4 py-4 lg:grid-cols-2 lg:px-6">
+        <div className="grid grid-cols-1 gap-4 px-4 py-4 lg:grid-cols-2 lg:px-6 items-stretch">
           <Card className="flex flex-col">
             <CardHeader className="gap-2 pb-2">
               <CardTitle>Order Book</CardTitle>
               <CardDescription>Large orders & whale walls visualization</CardDescription>
             </CardHeader>
-            <CardContent className="pt-0">
+            <CardContent className="pt-0 flex-1">
               <OrderBook symbol={symbol} loading={loading} />
             </CardContent>
           </Card>
-          <LiquidationMap liquidations={liquidations} currentPrice={marketData.price} symbol={symbol} loading={loading} />
+          <Card className="flex flex-col">
+            <CardHeader className="gap-2 pb-2">
+              <CardTitle>Liquidation Map</CardTitle>
+              <CardDescription>Estimated liquidation clusters by price</CardDescription>
+            </CardHeader>
+            <CardContent className="pt-0 flex-1">
+              <LiquidationMap liquidations={liquidations} currentPrice={marketData.price} symbol={symbol} loading={loading} />
+            </CardContent>
+          </Card>
         </div>
 
         {/* Row 5: Entry Levels */}

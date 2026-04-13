@@ -19,7 +19,9 @@ type Level = {
   side: "bid" | "ask"
 }
 
-const LEVELS_COUNT = 10
+export const ORDER_BOOK_LEVELS = 40
+const ROW_HEIGHT = 8 // px (was 20)
+const MID_HEIGHT = 20 // px
 
 function padLevels(
   levels: Level[],
@@ -137,8 +139,8 @@ export function OrderBook({ symbol, loading: parentLoading }: OrderBookProps) {
     const ba = askRows[0]?.price || 0
     const mp = (ba + bb) / 2
 
-    const asksPadded = padLevels(askRows, "ask", selectedStep, LEVELS_COUNT)
-    const bidsPadded = padLevels(bidRows, "bid", selectedStep, LEVELS_COUNT)
+    const asksPadded = padLevels(askRows, "ask", selectedStep, ORDER_BOOK_LEVELS)
+    const bidsPadded = padLevels(bidRows, "bid", selectedStep, ORDER_BOOK_LEVELS)
 
     const visibleAsks = [...asksPadded].reverse()
     const visibleBids = bidsPadded
@@ -163,14 +165,14 @@ export function OrderBook({ symbol, loading: parentLoading }: OrderBookProps) {
 
   if (isLoading) {
     return (
-      <div className="w-full h-[520px] border-2 border-primary/30 rounded-xl bg-[#0b0f19] p-4 font-mono">
+      <div className="w-full border-2 border-primary/30 rounded-xl bg-[#0b0f19] p-4 font-mono">
         <div className="flex items-center gap-2 text-primary mb-4">
           <BookOpen className="w-4 h-4 animate-pulse" />
           <span className="text-sm font-bold tracking-wider">ORDER DEPTH</span>
         </div>
-        <div className="space-y-1">
-          {[...Array(10)].map((_, i) => (
-            <div key={i} className="h-5 bg-primary/10 rounded animate-pulse" />
+        <div className="space-y-0.5">
+          {[...Array(ORDER_BOOK_LEVELS)].map((_, i) => (
+            <div key={i} className="h-2 bg-primary/10 rounded animate-pulse" />
           ))}
         </div>
       </div>
@@ -179,7 +181,7 @@ export function OrderBook({ symbol, loading: parentLoading }: OrderBookProps) {
 
   if (error || !rawData) {
     return (
-      <div className="w-full h-[520px] border-2 border-muted rounded-xl bg-[#0b0f19] p-4 font-mono flex flex-col items-center justify-center text-muted-foreground">
+      <div className="w-full min-h-[500px] border-2 border-muted rounded-xl bg-[#0b0f19] p-4 font-mono flex flex-col items-center justify-center text-muted-foreground">
         <AlertCircle className="w-8 h-8 mb-2" />
         <p className="text-sm">{error || "No order book data"}</p>
       </div>
@@ -244,7 +246,7 @@ export function OrderBook({ symbol, loading: parentLoading }: OrderBookProps) {
         </div>
       </div>
 
-      {/* Depth rows - asks */}
+      {/* Asks */}
       <div className="flex flex-col">
         {visibleAsks.map((ask, i) => {
           const barWidth = (ask.total / maxTotal) * 100
@@ -254,18 +256,16 @@ export function OrderBook({ symbol, loading: parentLoading }: OrderBookProps) {
               key={`ask-${ask.price}-${i}`}
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              transition={{ duration: 0.1, delay: i * 0.02 }}
-              className="grid grid-cols-[72px_1fr] items-center h-5 relative"
+              transition={{ duration: 0.05, delay: i * 0.005 }}
+              className="grid grid-cols-[72px_1fr] items-center relative"
+              style={{ height: ROW_HEIGHT }}
             >
-              {/* Price label */}
               <div className={cn(
-                "text-right pr-3 text-[11px] font-mono",
+                "text-right pr-3 text-[10px] font-mono leading-none",
                 isEmpty ? "text-rose-400/40" : "text-rose-400/90"
               )}>
                 {formatPrice(ask.price)}
               </div>
-
-              {/* Bar area with grid lines background */}
               <div className="relative h-full">
                 <div className="absolute inset-0 flex justify-between pointer-events-none">
                   {[1, 2, 3].map((k) => (
@@ -284,17 +284,17 @@ export function OrderBook({ symbol, loading: parentLoading }: OrderBookProps) {
         })}
       </div>
 
-      {/* Mid price row */}
-      <div className="grid grid-cols-[72px_1fr] items-center h-6 shrink-0 border-y border-blue-500/40 bg-blue-500/10 my-0.5">
-        <div className="text-right pr-3 text-xs font-bold font-mono text-blue-400">
+      {/* Mid price */}
+      <div className="grid grid-cols-[72px_1fr] items-center shrink-0 border-y border-blue-500/40 bg-blue-500/10 my-0.5" style={{ height: MID_HEIGHT }}>
+        <div className="text-right pr-3 text-[11px] font-bold font-mono text-blue-400 leading-none">
           {formatPrice(midPrice)}
         </div>
-        <div className="text-center text-[10px] text-slate-400">
+        <div className="text-center text-[10px] text-slate-400 leading-none">
           Spread {(bestAsk - bestBid).toFixed(bestAsk >= 1 ? 2 : 4)}
         </div>
       </div>
 
-      {/* Depth rows - bids */}
+      {/* Bids */}
       <div className="flex flex-col">
         {visibleBids.map((bid, i) => {
           const barWidth = (bid.total / maxTotal) * 100
@@ -304,18 +304,16 @@ export function OrderBook({ symbol, loading: parentLoading }: OrderBookProps) {
               key={`bid-${bid.price}-${i}`}
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              transition={{ duration: 0.1, delay: i * 0.02 }}
-              className="grid grid-cols-[72px_1fr] items-center h-5 relative"
+              transition={{ duration: 0.05, delay: i * 0.005 }}
+              className="grid grid-cols-[72px_1fr] items-center relative"
+              style={{ height: ROW_HEIGHT }}
             >
-              {/* Price label */}
               <div className={cn(
-                "text-right pr-3 text-[11px] font-mono",
+                "text-right pr-3 text-[10px] font-mono leading-none",
                 isEmpty ? "text-emerald-400/40" : "text-emerald-400/90"
               )}>
                 {formatPrice(bid.price)}
               </div>
-
-              {/* Bar area with grid lines background */}
               <div className="relative h-full">
                 <div className="absolute inset-0 flex justify-between pointer-events-none">
                   {[1, 2, 3].map((k) => (
@@ -334,11 +332,11 @@ export function OrderBook({ symbol, loading: parentLoading }: OrderBookProps) {
         })}
       </div>
 
-      {/* Footer stats */}
-      <div className="mt-3 pt-2 border-t border-slate-800 flex items-center justify-between text-[10px] text-slate-400">
-        <span>Asks: <span className="text-rose-400 font-bold">{LEVELS_COUNT}</span></span>
+      {/* Footer */}
+      <div className="mt-2 pt-2 border-t border-slate-800 flex items-center justify-between text-[10px] text-slate-400">
+        <span>Asks: <span className="text-rose-400 font-bold">{ORDER_BOOK_LEVELS}</span></span>
         <span>Max: <span className="text-blue-400 font-bold">{formatTotal(maxTotal)}</span></span>
-        <span>Bids: <span className="text-emerald-400 font-bold">{LEVELS_COUNT}</span></span>
+        <span>Bids: <span className="text-emerald-400 font-bold">{ORDER_BOOK_LEVELS}</span></span>
       </div>
     </motion.div>
   )
