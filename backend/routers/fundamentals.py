@@ -55,6 +55,12 @@ async def api_check():
             results["bgeometrics_nupl"] = {"error": str(e)}
         
         try:
+            r = await client.get("https://bitcoin-data.com/api/v1/mvrv/last", timeout=10)
+            results["bgeometrics_mvrv"] = {"status": r.status_code, "data": r.json() if r.status_code == 200 else r.text[:200]}
+        except Exception as e:
+            results["bgeometrics_mvrv"] = {"error": str(e)}
+        
+        try:
             r = await client.get("https://api.coingecko.com/api/v3/coins/bitcoin?localization=false&tickers=false&community_data=false&developer_data=false", timeout=10)
             results["coingecko"] = {"status": r.status_code, "has_market_data": "market_data" in r.json() if r.status_code == 200 else False}
         except Exception as e:
