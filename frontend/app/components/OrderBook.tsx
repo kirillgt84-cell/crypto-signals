@@ -146,8 +146,8 @@ export function OrderBook({ symbol, loading: parentLoading }: OrderBookProps) {
     const visibleBids = bidsPadded
 
     const mt = Math.max(
-      ...visibleAsks.map((a) => a.total),
-      ...visibleBids.map((b) => b.total),
+      ...visibleAsks.map((a) => a.quantity),
+      ...visibleBids.map((b) => b.quantity),
       1
     )
 
@@ -194,14 +194,14 @@ export function OrderBook({ symbol, loading: parentLoading }: OrderBookProps) {
     return p.toLocaleString(undefined, { minimumFractionDigits: 4, maximumFractionDigits: 4 })
   }
 
-  const formatTotal = (v: number) => {
+  const formatQty = (v: number) => {
     if (v >= 1_000_000) return `${(v / 1_000_000).toFixed(2)}M`
     if (v >= 1_000) return `${(v / 1_000).toFixed(1)}K`
     return v.toFixed(1)
   }
 
   const scaleMarkers = [0, 0.25, 0.5, 0.75, 1].map((ratio) =>
-    formatTotal(maxTotal * ratio)
+    formatQty(maxTotal * ratio)
   )
 
   return (
@@ -249,7 +249,7 @@ export function OrderBook({ symbol, loading: parentLoading }: OrderBookProps) {
       {/* Asks */}
       <div className="flex flex-col">
         {visibleAsks.map((ask, i) => {
-          const barWidth = (ask.total / maxTotal) * 100
+          const barWidth = (ask.quantity / maxTotal) * 100
           const isEmpty = ask.quantity === 0
           return (
             <motion.div
@@ -297,7 +297,7 @@ export function OrderBook({ symbol, loading: parentLoading }: OrderBookProps) {
       {/* Bids */}
       <div className="flex flex-col">
         {visibleBids.map((bid, i) => {
-          const barWidth = (bid.total / maxTotal) * 100
+          const barWidth = (bid.quantity / maxTotal) * 100
           const isEmpty = bid.quantity === 0
           return (
             <motion.div
@@ -335,7 +335,7 @@ export function OrderBook({ symbol, loading: parentLoading }: OrderBookProps) {
       {/* Footer */}
       <div className="mt-2 pt-2 border-t border-slate-800 flex items-center justify-between text-[10px] text-slate-400">
         <span>Asks: <span className="text-rose-400 font-bold">{ORDER_BOOK_LEVELS}</span></span>
-        <span>Max: <span className="text-blue-400 font-bold">{formatTotal(maxTotal)}</span></span>
+        <span>Max: <span className="text-blue-400 font-bold">{formatQty(maxTotal)}</span></span>
         <span>Bids: <span className="text-emerald-400 font-bold">{ORDER_BOOK_LEVELS}</span></span>
       </div>
     </motion.div>
