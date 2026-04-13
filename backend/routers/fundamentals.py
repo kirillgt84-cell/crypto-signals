@@ -15,8 +15,8 @@ async def trigger_fundamentals_collection():
         import asyncio
         from daily_fundamentals import collect_fundamentals
         # Run with timeout to avoid Railway killing the request
-        await asyncio.wait_for(collect_fundamentals(), timeout=25)
-        return {"status": "ok", "message": "Fundamentals collection completed"}
+        results = await asyncio.wait_for(collect_fundamentals(), timeout=25)
+        return {"status": "ok", "message": "Fundamentals collection completed", "results": results}
     except Exception as e:
         import traceback
         raise HTTPException(status_code=500, detail=f"Collection failed: {str(e)}\n{traceback.format_exc()}")

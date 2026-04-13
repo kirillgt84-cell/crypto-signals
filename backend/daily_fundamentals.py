@@ -111,13 +111,16 @@ async def save_metric(db, symbol: str, name: str, value: float, raw_data: dict):
             [symbol, name, value, raw_data]
         )
         logger.info(f"[Fundamentals] Saved {symbol}/{name} = {value}")
+        return {"saved": True, "symbol": symbol, "metric": name, "value": value}
     except Exception as e:
         logger.error(f"[Fundamentals] Failed to save {symbol}/{name}: {e}")
+        return {"saved": False, "symbol": symbol, "metric": name, "error": str(e)}
 
 async def collect_fundamentals():
     db = get_db()
     await db.connect()
     logger.info("[Fundamentals] Collection started")
+    results = []
     
     async with httpx.AsyncClient() as client:
         for symbol, config in ASSETS.items():
@@ -128,7 +131,6 @@ async def collect_fundamentals():
             funding = await fetch_binance_funding(client, symbol)
             
             if source == "bgeometrics":
-                # BTC: use BGeometrics free API (only nupl + mvrv needed)
                 nupl_data = await fetch_bgeometrics_last(client, "nupl")
                 mvrv_data = await fetch_bgeometrics_last(client, "mvrv")
                 
@@ -136,44 +138,45 @@ async def collect_fundamentals():
                     nupl_val = float(nupl_data.get("nupl", 0))
                     mvrv_val = float(mvrv_data.get("mvrv", 0))
                     
-                    await save_metric(db, symbol, "mvrv", mvrv_val, {
+                    results.append(await save_metric(db, symbol, "mvrv", mvrv_val, {
                         "interpretation": interpret_mvrv(mvrv_val)[0],
                         "description": interpret_mvrv(mvrv_val)[1],
-                    })
+                    }))
                     
-                    await save_metric(db, symbol, "nupl", nupl_val, {
+                    results.append(await save_metric(db, symbol, "nupl", nupl_val, {
                         "interpretation": interpret_nupl(nupl_val)[0],
                         "description": interpret_nupl(nupl_val)[1],
-                    })
+                    }))
                 else:
                     logger.warning(f"[Fundamentals] {symbol} BGeometrics incomplete, falling back to CoinGecko")
                     cg = await fetch_coingecko_data(client, coin_id)
                     if cg:
-                        await save_metric(db, symbol, "market_momentum", cg["price_change_24h_pct"] / 100, {
+                        results.append(await save_metric(db, symbol, "market_momentum", cg["price_change_24h_pct"] / 100, {
                             "price": cg["price"],
                             "market_cap": cg["market_cap"],
                             "supply": cg["supply"],
                             "price_change_24h_pct": cg["price_change_24h_pct"],
-                        })
+                        }))
             else:
                 cg = await fetch_coingecko_data(client, coin_id)
                 if cg:
-                    await save_metric(db, symbol, "market_momentum", cg["price_change_24h_pct"] / 100, {
+                    results.append(await save_metric(db, symbol, "market_momentum", cg["price_change_24h_pct"] / 100, {
                         "price": cg["price"],
                         "market_cap": cg["market_cap"],
                         "supply": cg["supply"],
                         "price_change_24h_pct": cg["price_change_24h_pct"],
-                    })
+                    }))
             
             if funding is not None:
-                await save_metric(db, symbol, "funding_rate", funding, {
+                results.append(await save_metric(db, symbol, "funding_rate", funding, {
                     "rate_pct": funding * 100,
                     "interpretation": interpret_funding(funding)[0],
                     "description": interpret_funding(funding)[1],
-                })
+                }))
     
     await db.close()
     logger.info("[Fundamentals] Collection finished")
+    return results
 
 if __name__ == "__main__":
     asyncio.run(collect_fundamentals())
