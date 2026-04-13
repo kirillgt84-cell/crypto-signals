@@ -14,12 +14,29 @@ CREATE TABLE IF NOT EXISTS users (
 );
 
 -- Ensure all columns exist (migration safety for existing tables)
-ALTER TABLE users ADD COLUMN IF NOT EXISTS username VARCHAR(50) UNIQUE;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS email VARCHAR(255);
+ALTER TABLE users ADD COLUMN IF NOT EXISTS password_hash VARCHAR(255);
+ALTER TABLE users ADD COLUMN IF NOT EXISTS username VARCHAR(50);
 ALTER TABLE users ADD COLUMN IF NOT EXISTS avatar_url TEXT;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS is_email_verified BOOLEAN DEFAULT FALSE;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS is_active BOOLEAN DEFAULT TRUE;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP;
+
+-- Add constraints separately (safe for existing columns)
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_constraint WHERE conname = 'users_email_key'
+    ) THEN
+        ALTER TABLE users ADD CONSTRAINT users_email_key UNIQUE (email);
+    END IF;
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_constraint WHERE conname = 'users_username_key'
+    ) THEN
+        ALTER TABLE users ADD CONSTRAINT users_username_key UNIQUE (username);
+    END IF;
+END $$;
 
 -- OAuth accounts (one user can have multiple OAuth providers)
 CREATE TABLE IF NOT EXISTS oauth_accounts (
