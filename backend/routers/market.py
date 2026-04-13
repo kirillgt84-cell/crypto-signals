@@ -4,6 +4,7 @@ Router для market data (OI, CVD, Clusters, Checklist)
 from datetime import datetime, timedelta
 from fastapi import APIRouter, HTTPException, Query
 from fetchers.binance_futures import BinanceFuturesFetcher
+from fetchers.okx import OKXFetcher
 from interpreters.oi_interpreter import interpret_oi_advanced
 from database import get_db
 import numpy as np
@@ -11,6 +12,44 @@ import numpy as np
 router = APIRouter(prefix="/api/v1/market", tags=["market"])
 
 fetcher = BinanceFuturesFetcher()
+okx_fetcher = OKXFetcher()
+
+async def get_liquidation_levels_enriched(symbol: str) -> Dict:
+    """Реальные данные ликвидаций из OKX + funding/цена из Binance"""
+    base_data = await fetcher.get_liquidation_levels(symbol)
+    okx_items = await okx_fetcher.get_liquidation_data(symbol)
+    
+    if not okx_items:
+        return base_data
+    
+    current_price = base_data.get("current_price", 0)
+    
+    longs = [x for x in okx_items if x["side"] == "Long"]
+    shorts = [x for x in okx_items if x["side"] == "Short"]
+    
+    closest_long = current_price
+    closest_short = current_price
+    
+    if longs:
+        # ближайшая long-ликвидация ниже текущей цены
+        below = [l["price"] for l in longs if l["price"] < current_price]
+        closest_long = max(below) if below else min(l["price"] for l in longs)
+    
+    if shorts:
+        # ближайшая short-ликвидация выше текущей цены
+        above = [s["price"] for s in shorts if s["price"] > current_price]
+        closest_short = min(above) if above else max(s["price"] for s in shorts)
+    
+    return {
+        "current_price": current_price,
+        "funding_rate": base_data.get("funding_rate", 0),
+        "long_liquidations": longs,
+        "short_liquidations": shorts,
+        "closest_long": round(closest_long, 2),
+        "closest_short": round(closest_short, 2),
+        "funding_signal": base_data.get("funding_signal", "neutral"),
+        "source": "okx"
+    }
 
 def clean_json(obj):
     """Convert numpy types to Python native types for JSON serialization"""
@@ -171,7 +210,7 @@ async def get_checklist(
         cvd_data = await fetcher.get_cvd(symbol_upper)
         clusters_data = await fetcher.get_cluster_data(symbol_upper)
         levels_data = await fetcher.get_ema_levels(symbol_upper, timeframe)
-        liq_data = await fetcher.get_liquidation_levels(symbol_upper)
+        liq_data = await get_liquidation_levels_enriched(symbol_upper)
         
         # Расчет изменения OI из базы
         db = get_db()
@@ -346,7 +385,7 @@ async def get_levels(
         if not symbol_upper.endswith('USDT'):
             symbol_upper = f"{symbol_upper}USDT"
         
-        liquidation = await fetcher.get_liquidation_levels(symbol_upper)
+        liquidation = await get_liquidation_levels_enriched(symbol_upper)
         ema = await fetcher.get_ema_levels(symbol_upper, timeframe)
         
         return {
