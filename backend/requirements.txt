@@ -11,4 +11,5 @@ requests>=2.31.0
 # Auth dependencies
 bcrypt>=4.1.0
 PyJWT>=2.8.0
+httpx>=0.27.0
 # Cache bust: Sun Apr 12 11:09:35 CEST 2026

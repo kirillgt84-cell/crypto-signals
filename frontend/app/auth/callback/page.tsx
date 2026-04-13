@@ -1,10 +1,11 @@
 "use client"
 
+import { Suspense } from "react"
 import { useEffect } from "react"
 import { useSearchParams } from "next/navigation"
 
-// This page handles OAuth callbacks in popup window
-export default function OAuthCallbackPage() {
+// This component uses useSearchParams and must be wrapped in Suspense
+function OAuthCallbackHandler() {
   const searchParams = useSearchParams()
   
   useEffect(() => {
@@ -14,7 +15,6 @@ export default function OAuthCallbackPage() {
     const provider = window.location.pathname.split("/").pop()
     
     if (error) {
-      // Send error to parent window
       window.opener?.postMessage(
         { type: "OAUTH_ERROR", error },
         window.location.origin
@@ -50,7 +50,6 @@ export default function OAuthCallbackPage() {
         
         const data = await res.json()
         
-        // Send success to parent window
         window.opener?.postMessage(
           {
             type: "OAUTH_SUCCESS",
@@ -81,5 +80,21 @@ export default function OAuthCallbackPage() {
         <p className="text-muted-foreground">Completing authentication...</p>
       </div>
     </div>
+  )
+}
+
+// Main page component with Suspense wrapper
+export default function OAuthCallbackPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4" />
+          <p className="text-muted-foreground">Loading...</p>
+        </div>
+      </div>
+    }>
+      <OAuthCallbackHandler />
+    </Suspense>
   )
 }
