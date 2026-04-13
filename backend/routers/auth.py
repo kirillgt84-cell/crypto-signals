@@ -1,6 +1,8 @@
 """
 Auth router: JWT + OAuth (Google, Telegram, Twitter/X, Discord)
 """
+import os
+import asyncio
 from datetime import datetime, timedelta
 from typing import Optional
 from fastapi import APIRouter, HTTPException, Depends, Request, Response
@@ -14,11 +16,11 @@ from database import get_db
 
 router = APIRouter(prefix="/api/v1/auth", tags=["auth"])
 
-# Config (move to env vars in production)
-JWT_SECRET = "your-secret-key-change-in-production"
+# Config from env vars
+JWT_SECRET = os.getenv("JWT_SECRET", "default-secret-change-in-production")
 JWT_ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE = 15  # minutes
-REFRESH_TOKEN_EXPIRE = 7  # days
+ACCESS_TOKEN_EXPIRE = int(os.getenv("JWT_ACCESS_EXPIRE", "15"))  # minutes
+REFRESH_TOKEN_EXPIRE = int(os.getenv("JWT_REFRESH_EXPIRE", "7"))  # days
 
 # OAuth Config
 OAUTH_CONFIG = {
@@ -553,5 +555,3 @@ async def update_me(
     )
     
     return {"message": "Profile updated"}
-
-import asyncio  # for async db calls
