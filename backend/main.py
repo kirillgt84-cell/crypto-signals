@@ -18,6 +18,7 @@ logger = logging.getLogger(__name__)
 
 # Импорт роутеров и scheduler
 from routers import market
+from routers.auth import router as auth_router
 from scheduler import start_scheduler, stop_scheduler
 
 # Глобальная переменная для scheduler
@@ -84,6 +85,7 @@ app.add_middleware(
 
 # Подключаем роутеры
 app.include_router(market.router)
+app.include_router(auth_router)
 
 # ============= Health Check =============
 @app.get("/health")

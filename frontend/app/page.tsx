@@ -2,6 +2,8 @@
 
 import { useEffect, useRef, useState } from "react"
 import { TrendingUp, TrendingDown, Minus, Activity, BarChart3, Wallet, Target, Zap, Loader2 } from "lucide-react"
+import { UserMenu } from "./components/UserMenu"
+import { AuthModal } from "./components/AuthModal"
 import { getRSIInterpretation, getMACDInterpretation, getFundingInterpretation, getExchangeFlowInterpretation, getCVDInterpretation } from "./lib/market-utils"
 import { Logo, LogoIcon } from "./components/Logo"
 import { ThemeToggle } from "./components/ThemeToggle"
@@ -381,6 +383,7 @@ function SecondaryIndicators({ data, timeframe, loading }: { data: MarketData; t
 export default function Dashboard() {
   const [mounted, setMounted] = useState(false)
   const [sidebarCollapsed, setSidebarCollapsed] = useState(true)
+  const [authOpen, setAuthOpen] = useState(false)
   const isFirstLoad = useRef(true)
   const [symbol, setSymbol] = useState("BTC")
   const [timeframe, setTimeframe] = useState("60")
@@ -719,6 +722,7 @@ export default function Dashboard() {
               </SelectContent>
             </Select>
             {loading && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />}
+            <UserMenu onOpenAuth={() => setAuthOpen(true)} />
           </div>
           <div className="flex items-center gap-2">
             <LanguageSwitcher />
@@ -777,6 +781,9 @@ export default function Dashboard() {
 
         {/* Row 5: Secondary Indicators */}
         <SecondaryIndicators data={marketData} timeframe={timeframe} loading={loading} />
+        
+        {/* Auth Modal */}
+        <AuthModal isOpen={authOpen} onClose={() => setAuthOpen(false)} />
       </main>
     </div>
   )
