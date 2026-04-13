@@ -766,7 +766,6 @@ export default function Dashboard() {
                 <OITerminal analysis={oiAnalysis} loading={loading} />
               </CardContent>
             </Card>
-            <FundamentalsCard symbol={symbol} loading={loading} />
           </div>
         </div>
 
@@ -792,17 +791,18 @@ export default function Dashboard() {
           </Card>
         </div>
 
-        {/* Row 5: Entry Levels */}
-        <div className="px-4 py-4 lg:px-6">
+        {/* Row 5: Entry Levels + Fundamentals */}
+        <div className="grid grid-cols-1 gap-4 px-4 py-4 lg:grid-cols-2 lg:px-6 items-stretch">
           <Card className="flex flex-col">
             <CardHeader className="gap-2 pb-2">
               <CardTitle>Entry Levels</CardTitle>
               <CardDescription>Key support and resistance zones</CardDescription>
             </CardHeader>
-            <CardContent className="pt-0">
+            <CardContent className="pt-0 flex-1">
               <EntryLevels data={marketData} loading={loading} />
             </CardContent>
           </Card>
+          <FundamentalsCard symbol={symbol} loading={loading} />
         </div>
 
         {/* Row 6: Secondary Indicators */}

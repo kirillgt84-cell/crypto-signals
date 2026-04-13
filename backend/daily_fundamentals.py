@@ -6,8 +6,11 @@ Run via cron: python daily_fundamentals.py
 import os
 import asyncio
 import httpx
+import logging
 from datetime import datetime, timedelta
 from database import get_db
+
+logger = logging.getLogger(__name__)
 
 COINGECKO_URL = "https://api.coingecko.com/api/v3"
 BGEOMETRICS_URL = "https://bitcoin-data.com/api/v1"
@@ -27,10 +30,13 @@ async def fetch_bgeometrics_last(client: httpx.AsyncClient, metric: str):
     """Fetch latest metric from BGeometrics free API (BTC only)"""
     try:
         r = await client.get(f"{BGEOMETRICS_URL}/{metric}/last", timeout=30)
+        logger.info(f"[BGeometrics] {metric} status={r.status_code}")
         if r.status_code == 200:
             return r.json()
+        else:
+            logger.warning(f"[BGeometrics] {metric} returned {r.status_code}: {r.text[:200]}")
     except Exception as e:
-        print(f"[Fundamentals] BGeometrics {metric} error: {e}")
+        logger.error(f"[BGeometrics] {metric} error: {e}")
     return None
 
 async def fetch_coingecko_data(client: httpx.AsyncClient, coin_id: str):
@@ -50,7 +56,7 @@ async def fetch_coingecko_data(client: httpx.AsyncClient, coin_id: str):
                 "price_change_24h_pct": data["market_data"].get("price_change_percentage_24h", 0),
             }
     except Exception as e:
-        print(f"[Fundamentals] CoinGecko error: {e}")
+        logger.error(f"[Fundamentals] CoinGecko error: {e}")
     return None
 
 async def fetch_binance_funding(client: httpx.AsyncClient, symbol: str):
@@ -65,7 +71,7 @@ async def fetch_binance_funding(client: httpx.AsyncClient, symbol: str):
             if data and len(data) > 0:
                 return float(data[0]["fundingRate"])
     except Exception as e:
-        print(f"[Fundamentals] Binance funding error: {e}")
+        logger.error(f"[Fundamentals] Binance funding error: {e}")
     return None
 
 def interpret_mvrv(mvrv: float):
@@ -96,34 +102,35 @@ def interpret_funding(rate: float):
     return "NEUTRAL", "Нейтрально"
 
 async def save_metric(db, symbol: str, name: str, value: float, raw_data: dict):
-    await db.execute(
-        """INSERT INTO fundamental_metrics (symbol, metric_name, value, raw_data)
-           VALUES ($1, $2, $3, $4)
-           ON CONFLICT (symbol, metric_name, computed_at) DO UPDATE
-           SET value = EXCLUDED.value, raw_data = EXCLUDED.raw_data""",
-        [symbol, name, value, raw_data]
-    )
+    try:
+        await db.execute(
+            """INSERT INTO fundamental_metrics (symbol, metric_name, value, raw_data)
+               VALUES ($1, $2, $3, $4)
+               ON CONFLICT (symbol, metric_name, computed_at) DO UPDATE
+               SET value = EXCLUDED.value, raw_data = EXCLUDED.raw_data""",
+            [symbol, name, value, raw_data]
+        )
+        logger.info(f"[Fundamentals] Saved {symbol}/{name} = {value}")
+    except Exception as e:
+        logger.error(f"[Fundamentals] Failed to save {symbol}/{name}: {e}")
 
 async def collect_fundamentals():
     db = get_db()
     await db.connect()
+    logger.info("[Fundamentals] Collection started")
     
     async with httpx.AsyncClient() as client:
         for symbol, config in ASSETS.items():
-            print(f"[Fundamentals] Collecting {symbol}...")
+            logger.info(f"[Fundamentals] Collecting {symbol}...")
             source = config["source"]
             coin_id = config["coin_id"]
             
             funding = await fetch_binance_funding(client, symbol)
             
             if source == "bgeometrics":
-                # BTC: use BGeometrics free API
                 nupl_data = await fetch_bgeometrics_last(client, "nupl")
-                await asyncio.sleep(0.5)
                 mvrv_data = await fetch_bgeometrics_last(client, "mvrv")
-                await asyncio.sleep(0.5)
                 realized_data = await fetch_bgeometrics_last(client, "realized-cap")
-                await asyncio.sleep(0.5)
                 market_cap_data = await fetch_bgeometrics_last(client, "market-cap")
                 
                 if nupl_data and mvrv_data:
@@ -145,10 +152,8 @@ async def collect_fundamentals():
                         "interpretation": interpret_nupl(nupl_val)[0],
                         "description": interpret_nupl(nupl_val)[1],
                     })
-                    
-                    print(f"[Fundamentals] {symbol} MVRV={mvrv_val:.3f}, NUPL={nupl_val:.3f}")
                 else:
-                    print(f"[Fundamentals] {symbol} BGeometrics data incomplete, falling back to CoinGecko momentum")
+                    logger.warning(f"[Fundamentals] {symbol} BGeometrics incomplete, falling back to CoinGecko")
                     cg = await fetch_coingecko_data(client, coin_id)
                     if cg:
                         await save_metric(db, symbol, "market_momentum", cg["price_change_24h_pct"] / 100, {
@@ -157,9 +162,7 @@ async def collect_fundamentals():
                             "supply": cg["supply"],
                             "price_change_24h_pct": cg["price_change_24h_pct"],
                         })
-                        print(f"[Fundamentals] {symbol} Market momentum={cg['price_change_24h_pct']:.2f}%")
             else:
-                # ETH: fallback to CoinGecko for market data
                 cg = await fetch_coingecko_data(client, coin_id)
                 if cg:
                     await save_metric(db, symbol, "market_momentum", cg["price_change_24h_pct"] / 100, {
@@ -168,9 +171,6 @@ async def collect_fundamentals():
                         "supply": cg["supply"],
                         "price_change_24h_pct": cg["price_change_24h_pct"],
                     })
-                    print(f"[Fundamentals] {symbol} Market momentum={cg['price_change_24h_pct']:.2f}%")
-                else:
-                    print(f"[Fundamentals] {symbol} CoinGecko data unavailable")
             
             if funding is not None:
                 await save_metric(db, symbol, "funding_rate", funding, {
@@ -178,10 +178,9 @@ async def collect_fundamentals():
                     "interpretation": interpret_funding(funding)[0],
                     "description": interpret_funding(funding)[1],
                 })
-                print(f"[Fundamentals] {symbol} Funding={funding:.4f}")
     
     await db.close()
-    print("[Fundamentals] Done.")
+    logger.info("[Fundamentals] Collection finished")
 
 if __name__ == "__main__":
     asyncio.run(collect_fundamentals())
