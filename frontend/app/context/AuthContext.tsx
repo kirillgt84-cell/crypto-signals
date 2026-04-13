@@ -81,6 +81,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [accessToken])
 
   const login = async (email: string, password: string) => {
+    console.log(`[Auth] Login attempt for ${email}`)
     const res = await fetch(`${API_BASE_URL}/auth/login`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -89,6 +90,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     
     if (!res.ok) {
       const error = await res.json()
+      console.error(`[Auth] Login failed:`, error)
       throw new Error(error.detail || "Login failed")
     }
     
@@ -102,6 +104,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   const register = async (email: string, password: string, username?: string) => {
+    console.log(`[Auth] Register attempt for ${email}`)
     const res = await fetch(`${API_BASE_URL}/auth/register`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -110,6 +113,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     
     if (!res.ok) {
       const error = await res.json()
+      console.error(`[Auth] Register failed:`, error)
       throw new Error(error.detail || "Registration failed")
     }
     
