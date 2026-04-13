@@ -2,6 +2,7 @@
 Router для market data (OI, CVD, Clusters, Checklist)
 """
 from datetime import datetime, timedelta
+from typing import Dict
 from fastapi import APIRouter, HTTPException, Query
 from fetchers.binance_futures import BinanceFuturesFetcher
 from fetchers.okx import OKXFetcher
