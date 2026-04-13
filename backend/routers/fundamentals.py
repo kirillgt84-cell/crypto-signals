@@ -3,8 +3,19 @@ Fundamental metrics router
 MVRV, NUPL, Funding Rate, Composite Index
 """
 from fastapi import APIRouter, HTTPException
-from typing import Optional
+from typing import Optional, Any
+import json
 from database import get_db
+
+def _parse_raw_data(raw_data: Any) -> dict:
+    if isinstance(raw_data, str):
+        try:
+            return json.loads(raw_data)
+        except Exception:
+            return {}
+    if isinstance(raw_data, dict):
+        return raw_data
+    return {}
 
 router = APIRouter(prefix="/api/v1/fundamentals", tags=["fundamentals"])
 
@@ -86,7 +97,9 @@ async def get_mvrv(symbol: str):
     )
     if not row:
         raise HTTPException(status_code=404, detail="MVRV data not available yet")
-    return row[0]
+    data = dict(row[0])
+    data["raw_data"] = _parse_raw_data(data.get("raw_data"))
+    return data
 
 @router.get("/{symbol}/nupl")
 async def get_nupl(symbol: str):
@@ -101,7 +114,9 @@ async def get_nupl(symbol: str):
     )
     if not row:
         raise HTTPException(status_code=404, detail="NUPL data not available yet")
-    return row[0]
+    data = dict(row[0])
+    data["raw_data"] = _parse_raw_data(data.get("raw_data"))
+    return data
 
 @router.get("/{symbol}/funding")
 async def get_funding(symbol: str):
@@ -116,7 +131,9 @@ async def get_funding(symbol: str):
     )
     if not row:
         raise HTTPException(status_code=404, detail="Funding rate data not available yet")
-    return row[0]
+    data = dict(row[0])
+    data["raw_data"] = _parse_raw_data(data.get("raw_data"))
+    return data
 
 @router.get("/{symbol}/composite")
 async def get_composite(symbol: str):
@@ -136,7 +153,9 @@ async def get_composite(symbol: str):
     latest = {}
     for r in rows:
         if r["metric_name"] not in latest:
-            latest[r["metric_name"]] = r
+            rec = dict(r)
+            rec["raw_data"] = _parse_raw_data(rec.get("raw_data"))
+            latest[r["metric_name"]] = rec
     
     components = {}
     values = []
