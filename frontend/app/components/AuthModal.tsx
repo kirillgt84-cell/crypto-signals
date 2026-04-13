@@ -46,9 +46,11 @@ export function AuthModal({ isOpen, onClose, defaultTab = "login" }: AuthModalPr
       } else {
         await register(email, password, username || undefined)
       }
+      console.log(`[AuthModal] Auth success, closing modal`)
       onClose()
     } catch (err: any) {
-      setError(err.message)
+      console.error(`[AuthModal] Auth error:`, err)
+      setError(err.message || "Unknown error")
     } finally {
       setIsLoading(false)
     }

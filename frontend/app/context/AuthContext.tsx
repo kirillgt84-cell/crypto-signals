@@ -99,12 +99,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
     
     const data = await res.json()
+    console.log(`[Auth] Register success:`, data)
     
     localStorage.setItem("access_token", data.access_token)
     localStorage.setItem("refresh_token", data.refresh_token)
     
     setAccessToken(data.access_token)
     setUser(data.user)
+    console.log(`[Auth] User state updated:`, data.user)
   }
 
   const register = async (email: string, password: string, username?: string) => {
