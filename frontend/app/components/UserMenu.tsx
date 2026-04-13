@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { User, LogOut, Settings, Wallet } from "lucide-react"
+import { User, LogOut, Settings, Wallet, LayoutDashboard } from "lucide-react"
 import { useAuth } from "../context/AuthContext"
 import { Button } from "@/components/ui/button"
 import {
@@ -62,12 +62,17 @@ export function UserMenu({ onOpenAuth }: UserMenuProps) {
         
         <DropdownMenuSeparator />
         
+        <DropdownMenuItem onClick={() => window.location.href = "/dashboard"}>
+          <LayoutDashboard className="mr-2 h-4 w-4" />
+          <span>Dashboard</span>
+        </DropdownMenuItem>
+        
         <DropdownMenuItem>
           <Wallet className="mr-2 h-4 w-4" />
           <span>My Trades</span>
         </DropdownMenuItem>
         
-        <DropdownMenuItem>
+        <DropdownMenuItem onClick={() => window.location.href = "/dashboard"}>
           <Settings className="mr-2 h-4 w-4" />
           <span>Settings</span>
         </DropdownMenuItem>
