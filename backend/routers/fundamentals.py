@@ -135,85 +135,93 @@ async def get_funding(symbol: str):
     data["raw_data"] = _parse_raw_data(data.get("raw_data"))
     return data
 
+@router.get("/{symbol}/composite-debug")
+async def get_composite_debug(symbol: str):
+    db = get_db()
+    rows = await db.query(
+        """SELECT metric_name, value, raw_data 
+           FROM fundamental_metrics 
+           WHERE symbol = $1 AND metric_name IN ('mvrv', 'nupl', 'funding_rate', 'market_momentum')
+           ORDER BY computed_at DESC""",
+        [symbol.upper()]
+    )
+    return {"rows": rows}
+
 @router.get("/{symbol}/composite")
 async def get_composite(symbol: str):
     """Get composite fundamental health score"""
-    import traceback
-    try:
-        db = get_db()
-        rows = await db.query(
-            """SELECT metric_name, value, raw_data 
-               FROM fundamental_metrics 
-               WHERE symbol = $1 AND metric_name IN ('mvrv', 'nupl', 'funding_rate', 'market_momentum')
-               ORDER BY computed_at DESC""",
-            [symbol.upper()]
-        )
-        if not rows:
-            raise HTTPException(status_code=404, detail="Fundamental data not available yet")
-        
-        # Take latest of each metric
-        latest = {}
-        for r in rows:
-            if r["metric_name"] not in latest:
-                rec = dict(r)
-                rec["raw_data"] = _parse_raw_data(rec.get("raw_data"))
-                latest[r["metric_name"]] = rec
-        
-        components = {}
-        values = []
-        weights = []
-        interpretation = {}
-        
-        if "mvrv" in latest:
-            mvrv = latest["mvrv"]["value"]
-            mvrv_norm = max(-1, min(1, (mvrv - 2.0) / 2.0))  # 0->-1, 4->+1
-            components["mvrv"] = {"value": mvrv, "normalized": round(mvrv_norm, 3), "weight": 0.35}
-            values.append(mvrv_norm)
-            weights.append(0.35)
-            interpretation["mvrv"] = latest["mvrv"].get("raw_data", {}).get("description", "")
-        
-        if "nupl" in latest:
-            nupl = latest["nupl"]["value"]
-            nupl_norm = max(-1, min(1, (nupl - 0.25) / 0.5))  # -0.25->-1, 0.75->+1
-            components["nupl"] = {"value": nupl, "normalized": round(nupl_norm, 3), "weight": 0.35}
-            values.append(nupl_norm)
-            weights.append(0.35)
-            interpretation["nupl"] = latest["nupl"].get("raw_data", {}).get("description", "")
-        
-        if "funding_rate" in latest:
-            funding = latest["funding_rate"]["value"]
-            funding_norm = max(-1, min(1, funding / 0.001))    # -0.001->-1, 0.001->+1
-            components["funding"] = {"value": funding, "normalized": round(funding_norm, 3), "weight": 0.30}
-            values.append(funding_norm)
-            weights.append(0.30)
-            interpretation["funding"] = latest["funding_rate"].get("raw_data", {}).get("description", "")
-        
-        if "market_momentum" in latest:
-            momentum = latest["market_momentum"]["value"]
-            momentum_norm = max(-1, min(1, momentum / 0.30))  # -30%->-1, +30%->+1
-            components["market_momentum"] = {
-                "value": momentum,
-                "normalized": round(momentum_norm, 3),
-                "weight": 0.30
-            }
-            values.append(momentum_norm)
-            weights.append(0.30)
-            interpretation["market_momentum"] = "Рыночный импульс 24ч"
-        
-        if not weights:
-            raise HTTPException(status_code=404, detail="Fundamental data not available yet")
-        
-        total_weight = sum(weights)
-        score = sum(v * w for v, w in zip(values, weights)) / total_weight
-        
-        sentiment = "BULLISH" if score > 0.5 else "BEARISH" if score < -0.5 else "NEUTRAL"
-        
-        return {
-            "symbol": symbol.upper(),
-            "score": round(score, 3),
-            "sentiment": sentiment,
-            "components": components,
-            "interpretation": interpretation
+    db = get_db()
+    rows = await db.query(
+        """SELECT metric_name, value, raw_data 
+           FROM fundamental_metrics 
+           WHERE symbol = $1 AND metric_name IN ('mvrv', 'nupl', 'funding_rate', 'market_momentum')
+           ORDER BY computed_at DESC""",
+        [symbol.upper()]
+    )
+    if not rows:
+        raise HTTPException(status_code=404, detail="Fundamental data not available yet")
+    
+    # Take latest of each metric
+    latest = {}
+    for r in rows:
+        if r["metric_name"] not in latest:
+            rec = dict(r)
+            rec["raw_data"] = _parse_raw_data(rec.get("raw_data"))
+            latest[r["metric_name"]] = rec
+    
+    components = {}
+    values = []
+    weights = []
+    interpretation = {}
+    
+    if "mvrv" in latest:
+        mvrv = latest["mvrv"]["value"]
+        mvrv_norm = max(-1, min(1, (mvrv - 2.0) / 2.0))  # 0->-1, 4->+1
+        components["mvrv"] = {"value": mvrv, "normalized": round(mvrv_norm, 3), "weight": 0.35}
+        values.append(mvrv_norm)
+        weights.append(0.35)
+        interpretation["mvrv"] = latest["mvrv"].get("raw_data", {}).get("description", "")
+    
+    if "nupl" in latest:
+        nupl = latest["nupl"]["value"]
+        nupl_norm = max(-1, min(1, (nupl - 0.25) / 0.5))  # -0.25->-1, 0.75->+1
+        components["nupl"] = {"value": nupl, "normalized": round(nupl_norm, 3), "weight": 0.35}
+        values.append(nupl_norm)
+        weights.append(0.35)
+        interpretation["nupl"] = latest["nupl"].get("raw_data", {}).get("description", "")
+    
+    if "funding_rate" in latest:
+        funding = latest["funding_rate"]["value"]
+        funding_norm = max(-1, min(1, funding / 0.001))    # -0.001->-1, 0.001->+1
+        components["funding"] = {"value": funding, "normalized": round(funding_norm, 3), "weight": 0.30}
+        values.append(funding_norm)
+        weights.append(0.30)
+        interpretation["funding"] = latest["funding_rate"].get("raw_data", {}).get("description", "")
+    
+    if "market_momentum" in latest:
+        momentum = latest["market_momentum"]["value"]
+        momentum_norm = max(-1, min(1, momentum / 0.30))  # -30%->-1, +30%->+1
+        components["market_momentum"] = {
+            "value": momentum,
+            "normalized": round(momentum_norm, 3),
+            "weight": 0.30
         }
-    except Exception as e:
-        return {"error": str(e), "traceback": traceback.format_exc()}
+        values.append(momentum_norm)
+        weights.append(0.30)
+        interpretation["market_momentum"] = "Рыночный импульс 24ч"
+    
+    if not weights:
+        raise HTTPException(status_code=404, detail="Fundamental data not available yet")
+    
+    total_weight = sum(weights)
+    score = sum(v * w for v, w in zip(values, weights)) / total_weight
+    
+    sentiment = "BULLISH" if score > 0.5 else "BEARISH" if score < -0.5 else "NEUTRAL"
+    
+    return {
+        "symbol": symbol.upper(),
+        "score": round(score, 3),
+        "sentiment": sentiment,
+        "components": components,
+        "interpretation": interpretation
+    }
