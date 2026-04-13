@@ -8,6 +8,16 @@ from database import get_db
 
 router = APIRouter(prefix="/api/v1/fundamentals", tags=["fundamentals"])
 
+@router.post("/trigger")
+async def trigger_fundamentals_collection():
+    """Manually trigger fundamentals collection"""
+    try:
+        from scheduler import save_fundamentals_snapshot
+        await save_fundamentals_snapshot()
+        return {"status": "ok", "message": "Fundamentals collection triggered"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Collection failed: {e}")
+
 @router.get("/{symbol}/mvrv")
 async def get_mvrv(symbol: str):
     """Get latest MVRV ratio for symbol"""

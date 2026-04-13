@@ -148,8 +148,16 @@ async def collect_fundamentals():
                     
                     print(f"[Fundamentals] {symbol} MVRV={mvrv_val:.3f}, NUPL={nupl_val:.3f}")
                 else:
-                    print(f"[Fundamentals] {symbol} BGeometrics data incomplete")
-                    
+                    print(f"[Fundamentals] {symbol} BGeometrics data incomplete, falling back to CoinGecko momentum")
+                    cg = await fetch_coingecko_data(client, coin_id)
+                    if cg:
+                        await save_metric(db, symbol, "market_momentum", cg["price_change_24h_pct"] / 100, {
+                            "price": cg["price"],
+                            "market_cap": cg["market_cap"],
+                            "supply": cg["supply"],
+                            "price_change_24h_pct": cg["price_change_24h_pct"],
+                        })
+                        print(f"[Fundamentals] {symbol} Market momentum={cg['price_change_24h_pct']:.2f}%")
             else:
                 # ETH: fallback to CoinGecko for market data
                 cg = await fetch_coingecko_data(client, coin_id)
