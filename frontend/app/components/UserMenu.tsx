@@ -21,6 +21,7 @@ interface UserMenuProps {
 export function UserMenu({ onOpenAuth }: UserMenuProps) {
   const { user, isAuthenticated, logout } = useAuth()
   const [isLoggingOut, setIsLoggingOut] = useState(false)
+  const [menuOpen, setMenuOpen] = useState(false)
   
   const handleLogout = async () => {
     setIsLoggingOut(true)
@@ -38,10 +39,14 @@ export function UserMenu({ onOpenAuth }: UserMenuProps) {
   }
   
   return (
-    <DropdownMenu>
+    <DropdownMenu open={menuOpen} onOpenChange={setMenuOpen}>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" className="relative h-8 w-8 rounded-full">
-          <Avatar className="h-8 w-8">
+        <Button 
+          variant="ghost" 
+          className="relative h-8 w-8 rounded-full p-0"
+          onClick={() => console.log(`[UserMenu] Trigger clicked, current open:`, menuOpen)}
+        >
+          <Avatar className="h-8 w-8 cursor-pointer">
             <AvatarImage src={user?.avatar_url || ""} alt={user?.username} />
             <AvatarFallback>
               {user?.username?.slice(0, 2).toUpperCase() || "U"}
@@ -50,7 +55,7 @@ export function UserMenu({ onOpenAuth }: UserMenuProps) {
         </Button>
       </DropdownMenuTrigger>
       
-      <DropdownMenuContent className="w-56" align="end" forceMount>
+      <DropdownMenuContent className="w-56" align="end">
         <DropdownMenuLabel className="font-normal">
           <div className="flex flex-col space-y-1">
             <p className="text-sm font-medium leading-none">{user?.username}</p>
