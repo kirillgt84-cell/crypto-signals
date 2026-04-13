@@ -26,60 +26,8 @@ type MapLevel = {
   side: "Long" | "Short"
 }
 
-const ROW_HEIGHT = 8 // px
-const MID_HEIGHT = 20 // px
-
-function generateLiquidationLevels(
-  price: number,
-  inputLevels: LiquidationLevel[]
-): { longs: MapLevel[]; shorts: MapLevel[] } {
-  if (!price) return { longs: [], shorts: [] }
-
-  // Use input levels as seeds, then interpolate/generate to fill 40 each
-  const rawLongs = inputLevels.filter((l) => l.side === "Long").sort((a, b) => a.price - b.price)
-  const rawShorts = inputLevels.filter((l) => l.side === "Short").sort((a, b) => b.price - a.price)
-
-  const buildSide = (side: "Long" | "Short", seeds: LiquidationLevel[]): MapLevel[] => {
-    const isLong = side === "Long"
-    const result: MapLevel[] = []
-
-    // If we have real seeds, place them and fill gaps; otherwise generate synthetic
-    const seedMap = new Map<number, number>()
-    seeds.forEach((s) => {
-      const bucket = Math.round(s.price / (price * 0.005)) * (price * 0.005)
-      seedMap.set(bucket, (seedMap.get(bucket) || 0) + s.size)
-    })
-
-    const step = price * (isLong ? 0.005 : -0.005) // ~0.5% steps
-    const startPrice = price + (isLong ? Math.abs(step) : -Math.abs(step))
-
-    let cumulative = 0
-    for (let i = 0; i < ORDER_BOOK_LEVELS; i++) {
-      const levelPrice = startPrice + step * i
-      const seedSize = seedMap.get(Math.round(levelPrice / Math.abs(step)) * Math.abs(step)) || 0
-      // Synthetic decay curve: closer to price = larger
-      const distance = Math.abs(levelPrice - price) / price
-      const syntheticSize = Math.max(0, (1 - distance / (isLong ? 0.25 : 0.25)) * 100000000)
-      const size = seedSize > 0 ? seedSize * 1.5 : syntheticSize * 0.3
-      const finalSize = Math.max(size, syntheticSize * 0.1)
-
-      cumulative += finalSize
-      result.push({
-        price: levelPrice,
-        size: finalSize,
-        total: cumulative,
-        side,
-      })
-    }
-
-    return isLong ? result : result
-  }
-
-  const longs = buildSide("Long", rawLongs)
-  const shorts = buildSide("Short", rawShorts)
-
-  return { longs, shorts }
-}
+const ROW_HEIGHT = 10 // px
+const MID_HEIGHT = 22 // px
 
 export function LiquidationMap({
   liquidations,
@@ -87,23 +35,67 @@ export function LiquidationMap({
   symbol,
   loading,
 }: LiquidationMapProps) {
-  const { visibleLongs, visibleShorts, maxTotal, midPrice } = useMemo(() => {
+  const { visibleLongs, visibleShorts, maxSize, midPrice } = useMemo(() => {
     if (!currentPrice || loading) {
-      return { visibleLongs: [] as MapLevel[], visibleShorts: [] as MapLevel[], maxTotal: 1, midPrice: 0 }
+      return { visibleLongs: [] as MapLevel[], visibleShorts: [] as MapLevel[], maxSize: 1, midPrice: 0 }
     }
 
-    const { longs, shorts } = generateLiquidationLevels(currentPrice, Array.isArray(liquidations) ? liquidations : [])
+    const safeLiqs = Array.isArray(liquidations) ? liquidations : []
+    const step = currentPrice * 0.01 // 1% price step
 
-    const mt = Math.max(
-      ...longs.map((l) => l.total),
-      ...shorts.map((s) => s.total),
-      1
-    )
+    const buildSide = (side: "Long" | "Short"): MapLevel[] => {
+      const isLong = side === "Long"
+      const levels: MapLevel[] = []
+
+      for (let i = 1; i <= ORDER_BOOK_LEVELS; i++) {
+        const price = isLong
+          ? currentPrice + step * i
+          : currentPrice - step * i
+
+        // Sum liquidations that fall into this bucket
+        const bucketSize = safeLiqs
+          .filter((l) => l.side === side)
+          .reduce((sum, l) => {
+            const bucketCenter = Math.round(l.price / step) * step
+            const thisBucketCenter = Math.round(price / step) * step
+            return bucketCenter === thisBucketCenter ? sum + l.size : sum
+          }, 0)
+
+        levels.push({
+          price,
+          size: bucketSize,
+          total: 0, // will compute after
+          side,
+        })
+      }
+
+      // Cumulative from outer edge inward
+      let cumulative = 0
+      if (isLong) {
+        for (let i = levels.length - 1; i >= 0; i--) {
+          cumulative += levels[i].size
+          levels[i].total = cumulative
+        }
+      } else {
+        for (let i = levels.length - 1; i >= 0; i--) {
+          cumulative += levels[i].size
+          levels[i].total = cumulative
+        }
+      }
+
+      return levels
+    }
+
+    const longs = buildSide("Long")
+    const shorts = buildSide("Short")
+
+    const allSizes = [...longs, ...shorts].map((l) => l.size)
+    const ms = Math.max(...allSizes, 1)
 
     return {
-      visibleLongs: [...longs].reverse(), // expensive at top
-      visibleShorts: shorts,
-      maxTotal: mt,
+      visibleLongs: [...longs].reverse(), // farthest at top
+      visibleShorts: shorts, // closest at top
+      maxSize: ms,
       midPrice: currentPrice,
     }
   }, [liquidations, currentPrice, loading])
@@ -122,7 +114,7 @@ export function LiquidationMap({
   }
 
   const scaleMarkers = [0, 0.25, 0.5, 0.75, 1].map((ratio) =>
-    formatTotal(maxTotal * ratio)
+    formatTotal(maxSize * ratio)
   )
 
   if (loading) {
@@ -171,7 +163,8 @@ export function LiquidationMap({
       {/* Longs */}
       <div className="flex flex-col">
         {visibleLongs.map((level, i) => {
-          const barWidth = (level.total / maxTotal) * 100
+          const barWidth = (level.size / maxSize) * 100
+          const isEmpty = level.size === 0
           return (
             <motion.div
               key={`long-${level.price}-${i}`}
@@ -181,7 +174,10 @@ export function LiquidationMap({
               className="grid grid-cols-[72px_1fr] items-center relative"
               style={{ height: ROW_HEIGHT }}
             >
-              <div className="text-right pr-3 text-[10px] font-mono text-rose-400/90 leading-none">
+              <div className={cn(
+                "text-right pr-3 text-[10px] font-mono leading-none",
+                isEmpty ? "text-white/30" : "text-white"
+              )}>
                 {formatPrice(level.price)}
               </div>
               <div className="relative h-full">
@@ -190,10 +186,12 @@ export function LiquidationMap({
                     <div key={k} className="h-full w-px bg-slate-800/40" style={{ marginLeft: `${k * 25}%` }} />
                   ))}
                 </div>
-                <div
-                  className="absolute left-0 top-0 h-full bg-gradient-to-r from-rose-600/80 to-rose-500/20"
-                  style={{ width: `${barWidth}%` }}
-                />
+                {!isEmpty && (
+                  <div
+                    className="absolute left-0 top-0 h-full bg-gradient-to-r from-rose-600/90 to-rose-500/30"
+                    style={{ width: `${barWidth}%` }}
+                  />
+                )}
               </div>
             </motion.div>
           )
@@ -217,7 +215,8 @@ export function LiquidationMap({
       {/* Shorts */}
       <div className="flex flex-col">
         {visibleShorts.map((level, i) => {
-          const barWidth = (level.total / maxTotal) * 100
+          const barWidth = (level.size / maxSize) * 100
+          const isEmpty = level.size === 0
           return (
             <motion.div
               key={`short-${level.price}-${i}`}
@@ -227,7 +226,10 @@ export function LiquidationMap({
               className="grid grid-cols-[72px_1fr] items-center relative"
               style={{ height: ROW_HEIGHT }}
             >
-              <div className="text-right pr-3 text-[10px] font-mono text-emerald-400/90 leading-none">
+              <div className={cn(
+                "text-right pr-3 text-[10px] font-mono leading-none",
+                isEmpty ? "text-white/30" : "text-white"
+              )}>
                 {formatPrice(level.price)}
               </div>
               <div className="relative h-full">
@@ -236,10 +238,12 @@ export function LiquidationMap({
                     <div key={k} className="h-full w-px bg-slate-800/40" style={{ marginLeft: `${k * 25}%` }} />
                   ))}
                 </div>
-                <div
-                  className="absolute left-0 top-0 h-full bg-gradient-to-r from-emerald-600/80 to-emerald-500/20"
-                  style={{ width: `${barWidth}%` }}
-                />
+                {!isEmpty && (
+                  <div
+                    className="absolute left-0 top-0 h-full bg-gradient-to-r from-emerald-600/90 to-emerald-500/30"
+                    style={{ width: `${barWidth}%` }}
+                  />
+                )}
               </div>
             </motion.div>
           )
@@ -249,7 +253,7 @@ export function LiquidationMap({
       {/* Footer */}
       <div className="mt-2 pt-2 border-t border-slate-800 flex items-center justify-between text-[10px] text-slate-400">
         <span>Longs: <span className="text-rose-400 font-bold">{ORDER_BOOK_LEVELS}</span></span>
-        <span>Max: <span className="text-amber-400 font-bold">{formatTotal(maxTotal)}</span></span>
+        <span>Max: <span className="text-amber-400 font-bold">{formatTotal(maxSize)}</span></span>
         <span>Shorts: <span className="text-emerald-400 font-bold">{ORDER_BOOK_LEVELS}</span></span>
       </div>
     </motion.div>

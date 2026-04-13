@@ -19,9 +19,9 @@ type Level = {
   side: "bid" | "ask"
 }
 
-export const ORDER_BOOK_LEVELS = 40
-const ROW_HEIGHT = 8 // px (was 20)
-const MID_HEIGHT = 20 // px
+export const ORDER_BOOK_LEVELS = 30
+const ROW_HEIGHT = 10 // px
+const MID_HEIGHT = 22 // px
 
 function padLevels(
   levels: Level[],
@@ -262,7 +262,7 @@ export function OrderBook({ symbol, loading: parentLoading }: OrderBookProps) {
             >
               <div className={cn(
                 "text-right pr-3 text-[10px] font-mono leading-none",
-                isEmpty ? "text-rose-400/40" : "text-rose-400/90"
+                isEmpty ? "text-white/30" : "text-white"
               )}>
                 {formatPrice(ask.price)}
               </div>
@@ -310,7 +310,7 @@ export function OrderBook({ symbol, loading: parentLoading }: OrderBookProps) {
             >
               <div className={cn(
                 "text-right pr-3 text-[10px] font-mono leading-none",
-                isEmpty ? "text-emerald-400/40" : "text-emerald-400/90"
+                isEmpty ? "text-white/30" : "text-white"
               )}>
                 {formatPrice(bid.price)}
               </div>
