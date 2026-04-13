@@ -42,6 +42,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // Validate token and get user info
         try {
           const res = await fetch(`${API_BASE_URL}/auth/me`, {
+            cache: 'no-store',
             headers: { Authorization: `Bearer ${storedToken}` }
           })
           
@@ -84,6 +85,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     console.log(`[Auth] Login attempt for ${email}`)
     const res = await fetch(`${API_BASE_URL}/auth/login`, {
       method: "POST",
+      cache: 'no-store',
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email, password })
     })
@@ -107,6 +109,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     console.log(`[Auth] Register attempt for ${email}`)
     const res = await fetch(`${API_BASE_URL}/auth/register`, {
       method: "POST",
+      cache: 'no-store',
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email, password, username })
     })
@@ -131,6 +134,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       try {
         await fetch(`${API_BASE_URL}/auth/logout`, {
           method: "POST",
+          cache: 'no-store',
           headers: { Authorization: `Bearer ${accessToken}` }
         })
       } catch {
@@ -147,7 +151,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const loginWithOAuth = (provider: string) => {
     // Get OAuth URL from backend
-    fetch(`${API_BASE_URL}/auth/oauth/${provider}`)
+    fetch(`${API_BASE_URL}/auth/oauth/${provider}`, { cache: 'no-store' })
       .then(res => res.json())
       .then(data => {
         if (data.auth_url) {
@@ -175,6 +179,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const loginWithTelegram = async (telegramUser: any) => {
     const res = await fetch(`${API_BASE_URL}/auth/telegram`, {
       method: "POST",
+      cache: 'no-store',
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(telegramUser)
     })
@@ -200,6 +205,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const res = await fetch(`${API_BASE_URL}/auth/refresh`, {
         method: "POST",
+        cache: 'no-store',
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ refresh_token: refresh })
       })
