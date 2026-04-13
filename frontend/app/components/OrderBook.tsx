@@ -64,7 +64,7 @@ export function OrderBook({ symbol, loading: parentLoading }: OrderBookProps) {
 
   const { rows, bestBid, bestAsk, maxTotal, midPrice } = useMemo(() => {
     if (!rawData) {
-      return { rows: [], bestBid: 0, bestAsk: 0, maxTotal: 1, midPrice: 0 }
+      return { rows: { bids: [] as any[], asks: [] as any[] }, bestBid: 0, bestAsk: 0, maxTotal: 1, midPrice: 0 }
     }
 
     const aggregate = (
