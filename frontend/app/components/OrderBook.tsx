@@ -3,6 +3,7 @@
 import { useEffect, useState, useMemo } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { BookOpen, AlertCircle } from "lucide-react"
+import { cn } from "@/lib/utils"
 
 interface OrderBookLevel {
   price: number
@@ -22,10 +23,21 @@ interface OrderBookProps {
   loading?: boolean
 }
 
+type StepOption = { label: string; value: number }
+
 export function OrderBook({ symbol, loading: parentLoading }: OrderBookProps) {
-  const [data, setData] = useState<OrderBookData | null>(null)
+  const [rawData, setRawData] = useState<{ bids: { price: number; quantity: number }[]; asks: { price: number; quantity: number }[] } | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [step, setStep] = useState<number>(0)
+
+  const stepOptions: StepOption[] = useMemo(() => {
+    const price = symbol === "BTC" ? 70000 : symbol === "ETH" ? 3500 : 100
+    if (price >= 20000) return [{ label: "Raw", value: 0 }, { label: "$50", value: 50 }, { label: "$100", value: 100 }]
+    if (price >= 1000) return [{ label: "Raw", value: 0 }, { label: "$1", value: 1 }, { label: "$5", value: 5 }, { label: "$10", value: 10 }]
+    if (price >= 100) return [{ label: "Raw", value: 0 }, { label: "$0.1", value: 0.1 }, { label: "$0.5", value: 0.5 }, { label: "$1", value: 1 }]
+    return [{ label: "Raw", value: 0 }, { label: "$0.01", value: 0.01 }, { label: "$0.05", value: 0.05 }, { label: "$0.1", value: 0.1 }]
+  }, [symbol])
 
   useEffect(() => {
     if (!symbol) return
@@ -33,47 +45,23 @@ export function OrderBook({ symbol, loading: parentLoading }: OrderBookProps) {
     const fetchOrderBook = async () => {
       try {
         const res = await fetch(
-          `https://api.binance.com/api/v3/depth?symbol=${symbol}USDT&limit=100`,
+          `https://api.binance.com/api/v3/depth?symbol=${symbol}USDT&limit=500`,
           { cache: "no-store" }
         )
         if (!res.ok) throw new Error("Failed to fetch order book")
 
         const json = await res.json()
 
-        // Parse raw data
-        const rawBids = json.bids.slice(0, 50).map(([p, q]: [string, string]) => ({
+        const rawBids = json.bids.map(([p, q]: [string, string]) => ({
           price: parseFloat(p),
           quantity: parseFloat(q),
         }))
-        const rawAsks = json.asks.slice(0, 50).map(([p, q]: [string, string]) => ({
+        const rawAsks = json.asks.map(([p, q]: [string, string]) => ({
           price: parseFloat(p),
           quantity: parseFloat(q),
         }))
 
-        // Calculate cumulative totals and detect walls
-        const processSide = (raw: { price: number; quantity: number }[], isBid: boolean) => {
-          const avgQty = raw.reduce((sum, r) => sum + r.quantity, 0) / raw.length
-          const wallThreshold = avgQty * 2.5
-
-          let cumulative = 0
-          const processed = raw.map((r) => {
-            cumulative += r.quantity
-            return {
-              price: r.price,
-              quantity: r.quantity,
-              total: cumulative,
-              isWall: r.quantity >= wallThreshold,
-            }
-          })
-
-          // Return top 10 levels, bids descending price, asks ascending price
-          return isBid ? processed.slice(0, 10) : processed.slice(0, 10)
-        }
-
-        const bids = processSide(rawBids, true)
-        const asks = processSide(rawAsks, false)
-
-        setData({ bids, asks, lastUpdateId: json.lastUpdateId })
+        setRawData({ bids: rawBids, asks: rawAsks })
         setError(null)
       } catch (err) {
         setError("Order book unavailable")
@@ -86,6 +74,69 @@ export function OrderBook({ symbol, loading: parentLoading }: OrderBookProps) {
     const interval = setInterval(fetchOrderBook, 3000)
     return () => clearInterval(interval)
   }, [symbol])
+
+  const data: OrderBookData | null = useMemo(() => {
+    if (!rawData) return null
+
+    const aggregate = (
+      raw: { price: number; quantity: number }[],
+      isBid: boolean,
+      aggStep: number
+    ): OrderBookLevel[] => {
+      if (aggStep <= 0) {
+        const avgQty = raw.reduce((sum, r) => sum + r.quantity, 0) / (raw.length || 1)
+        const wallThreshold = avgQty * 2.5
+        let cumulative = 0
+        return raw.map((r) => {
+          cumulative += r.quantity
+          return {
+            price: r.price,
+            quantity: r.quantity,
+            total: cumulative,
+            isWall: r.quantity >= wallThreshold,
+          }
+        }).slice(0, 10)
+      }
+
+      const buckets = new Map<number, number>()
+
+      raw.forEach((r) => {
+        const bucketPrice = isBid
+          ? Math.floor(r.price / aggStep) * aggStep
+          : Math.ceil(r.price / aggStep) * aggStep
+        buckets.set(bucketPrice, (buckets.get(bucketPrice) || 0) + r.quantity)
+      })
+
+      const arr = Array.from(buckets.entries()).map(([price, quantity]) => ({
+        price,
+        quantity,
+      }))
+
+      const sorted = isBid
+        ? arr.sort((a, b) => b.price - a.price)
+        : arr.sort((a, b) => a.price - b.price)
+
+      const avgQty = sorted.reduce((sum, r) => sum + r.quantity, 0) / (sorted.length || 1)
+      const wallThreshold = avgQty * 2.5
+
+      let cumulative = 0
+      return sorted.map((r) => {
+        cumulative += r.quantity
+        return {
+          price: r.price,
+          quantity: r.quantity,
+          total: cumulative,
+          isWall: r.quantity >= wallThreshold,
+        }
+      }).slice(0, 10)
+    }
+
+    return {
+      bids: aggregate(rawData.bids, true, step),
+      asks: aggregate(rawData.asks, false, step),
+      lastUpdateId: Date.now(),
+    }
+  }, [rawData, step])
 
   const { bestBid, bestAsk, spread, spreadPct, maxBidQty, maxAskQty } = useMemo(() => {
     if (!data) {
@@ -158,9 +209,22 @@ export function OrderBook({ symbol, loading: parentLoading }: OrderBookProps) {
           <BookOpen className="w-4 h-4 text-blue-500" />
           <span className="text-sm font-bold tracking-widest text-blue-500">ORDER BOOK</span>
         </div>
-        <span className="text-[10px] text-muted-foreground">
-          {symbol}/USDT • Live
-        </span>
+        <div className="flex items-center gap-1">
+          {stepOptions.map((opt) => (
+            <button
+              key={opt.value}
+              onClick={() => setStep(opt.value)}
+              className={cn(
+                "px-2 py-0.5 text-[10px] font-bold rounded transition-colors border",
+                step === opt.value
+                  ? "bg-blue-500 text-white border-blue-500"
+                  : "bg-card text-muted-foreground border-muted hover:border-blue-500/50 hover:text-foreground"
+              )}
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Column labels */}
@@ -188,9 +252,10 @@ export function OrderBook({ symbol, loading: parentLoading }: OrderBookProps) {
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0 }}
                 transition={{ duration: 0.15, delay: i * 0.02 }}
-                className={`relative flex items-center justify-between h-8 px-1 rounded-sm overflow-hidden cursor-default ${
-                  bid.isWall ? "bg-emerald-500/10" : ""
-                }`}
+                className={cn(
+                  "relative flex items-center justify-between h-8 px-1 rounded-sm overflow-hidden cursor-default",
+                  bid.isWall && "bg-emerald-500/10"
+                )}
               >
                 {/* Background bar */}
                 <div
@@ -226,9 +291,10 @@ export function OrderBook({ symbol, loading: parentLoading }: OrderBookProps) {
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0 }}
                 transition={{ duration: 0.15, delay: i * 0.02 }}
-                className={`relative flex items-center justify-between h-8 px-1 rounded-sm overflow-hidden cursor-default ${
-                  ask.isWall ? "bg-rose-500/10" : ""
-                }`}
+                className={cn(
+                  "relative flex items-center justify-between h-8 px-1 rounded-sm overflow-hidden cursor-default",
+                  ask.isWall && "bg-rose-500/10"
+                )}
               >
                 {/* Background bar */}
                 <div
