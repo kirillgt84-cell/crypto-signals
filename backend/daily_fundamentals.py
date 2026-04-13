@@ -7,6 +7,7 @@ import os
 import asyncio
 import httpx
 import logging
+import json
 from datetime import datetime, timedelta
 from database import get_db
 
@@ -108,7 +109,7 @@ async def save_metric(db, symbol: str, name: str, value: float, raw_data: dict):
                VALUES ($1, $2, $3, $4)
                ON CONFLICT (symbol, metric_name, computed_at) DO UPDATE
                SET value = EXCLUDED.value, raw_data = EXCLUDED.raw_data""",
-            [symbol, name, value, raw_data]
+            [symbol, name, value, json.dumps(raw_data)]
         )
         logger.info(f"[Fundamentals] Saved {symbol}/{name} = {value}")
         return {"saved": True, "symbol": symbol, "metric": name, "value": value}
