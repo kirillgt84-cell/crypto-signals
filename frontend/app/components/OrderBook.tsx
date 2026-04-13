@@ -46,6 +46,47 @@ function padLevels(
   return padded.slice(0, count)
 }
 
+function interpolateLevels(levels: Level[]): Level[] {
+  const result = [...levels]
+  let lastFilled = -1
+
+  for (let i = 0; i < result.length; i++) {
+    if (result[i].quantity > 0) {
+      if (lastFilled !== -1 && i - lastFilled > 1) {
+        const startQty = result[lastFilled].quantity
+        const endQty = result[i].quantity
+        const steps = i - lastFilled
+        for (let j = 1; j < steps; j++) {
+          const ratio = j / steps
+          result[lastFilled + j].quantity = startQty * (1 - ratio) + endQty * ratio
+        }
+      }
+      lastFilled = i
+    }
+  }
+
+  // Interpolate trailing empty levels from last known
+  if (lastFilled !== -1 && lastFilled < result.length - 1) {
+    const startQty = result[lastFilled].quantity
+    for (let i = lastFilled + 1; i < result.length; i++) {
+      const ratio = (i - lastFilled) / (result.length - lastFilled)
+      result[i].quantity = startQty * (1 - ratio)
+    }
+  }
+
+  // Interpolate leading empty levels to first known
+  const firstFilled = result.findIndex((l) => l.quantity > 0)
+  if (firstFilled > 0) {
+    const endQty = result[firstFilled].quantity
+    for (let i = 0; i < firstFilled; i++) {
+      const ratio = i / firstFilled
+      result[i].quantity = endQty * ratio
+    }
+  }
+
+  return result
+}
+
 export function OrderBook({ symbol, loading: parentLoading }: OrderBookProps) {
   const [rawData, setRawData] = useState<{ bids: { price: number; quantity: number }[]; asks: { price: number; quantity: number }[] } | null>(null)
   const [loading, setLoading] = useState(true)
@@ -139,8 +180,8 @@ export function OrderBook({ symbol, loading: parentLoading }: OrderBookProps) {
     const ba = askRows[0]?.price || 0
     const mp = (ba + bb) / 2
 
-    const asksPadded = padLevels(askRows, "ask", selectedStep, ORDER_BOOK_LEVELS)
-    const bidsPadded = padLevels(bidRows, "bid", selectedStep, ORDER_BOOK_LEVELS)
+    const asksPadded = interpolateLevels(padLevels(askRows, "ask", selectedStep, ORDER_BOOK_LEVELS))
+    const bidsPadded = interpolateLevels(padLevels(bidRows, "bid", selectedStep, ORDER_BOOK_LEVELS))
 
     const visibleAsks = [...asksPadded].reverse()
     const visibleBids = bidsPadded
@@ -250,7 +291,6 @@ export function OrderBook({ symbol, loading: parentLoading }: OrderBookProps) {
       <div className="flex flex-col">
         {visibleAsks.map((ask, i) => {
           const barWidth = (ask.quantity / maxTotal) * 100
-          const isEmpty = ask.quantity === 0
           return (
             <motion.div
               key={`ask-${ask.price}-${i}`}
@@ -260,10 +300,7 @@ export function OrderBook({ symbol, loading: parentLoading }: OrderBookProps) {
               className="grid grid-cols-[72px_1fr] items-center relative"
               style={{ height: ROW_HEIGHT }}
             >
-              <div className={cn(
-                "text-right pr-3 text-[10px] font-mono leading-none",
-                isEmpty ? "text-white/30" : "text-white"
-              )}>
+              <div className="text-right pr-3 text-[10px] font-mono leading-none text-white">
                 {formatPrice(ask.price)}
               </div>
               <div className="relative h-full">
@@ -272,12 +309,10 @@ export function OrderBook({ symbol, loading: parentLoading }: OrderBookProps) {
                     <div key={k} className="h-full w-px bg-slate-800/40" style={{ marginLeft: `${k * 25}%` }} />
                   ))}
                 </div>
-                {!isEmpty && (
-                  <div
-                    className="absolute left-0 top-0 h-full bg-gradient-to-r from-rose-600/80 to-rose-500/20"
-                    style={{ width: `${barWidth}%` }}
-                  />
-                )}
+                <div
+                  className="absolute left-0 top-0 h-full bg-gradient-to-r from-rose-600/80 to-rose-500/20"
+                  style={{ width: `${barWidth}%` }}
+                />
               </div>
             </motion.div>
           )
@@ -298,7 +333,6 @@ export function OrderBook({ symbol, loading: parentLoading }: OrderBookProps) {
       <div className="flex flex-col">
         {visibleBids.map((bid, i) => {
           const barWidth = (bid.quantity / maxTotal) * 100
-          const isEmpty = bid.quantity === 0
           return (
             <motion.div
               key={`bid-${bid.price}-${i}`}
@@ -308,10 +342,7 @@ export function OrderBook({ symbol, loading: parentLoading }: OrderBookProps) {
               className="grid grid-cols-[72px_1fr] items-center relative"
               style={{ height: ROW_HEIGHT }}
             >
-              <div className={cn(
-                "text-right pr-3 text-[10px] font-mono leading-none",
-                isEmpty ? "text-white/30" : "text-white"
-              )}>
+              <div className="text-right pr-3 text-[10px] font-mono leading-none text-white">
                 {formatPrice(bid.price)}
               </div>
               <div className="relative h-full">
@@ -320,12 +351,10 @@ export function OrderBook({ symbol, loading: parentLoading }: OrderBookProps) {
                     <div key={k} className="h-full w-px bg-slate-800/40" style={{ marginLeft: `${k * 25}%` }} />
                   ))}
                 </div>
-                {!isEmpty && (
-                  <div
-                    className="absolute left-0 top-0 h-full bg-gradient-to-r from-emerald-600/80 to-emerald-500/20"
-                    style={{ width: `${barWidth}%` }}
-                  />
-                )}
+                <div
+                  className="absolute left-0 top-0 h-full bg-gradient-to-r from-emerald-600/80 to-emerald-500/20"
+                  style={{ width: `${barWidth}%` }}
+                />
               </div>
             </motion.div>
           )
