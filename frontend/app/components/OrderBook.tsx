@@ -12,7 +12,37 @@ interface OrderBookProps {
 
 type StepOption = { label: string; value: number }
 
+type Level = {
+  price: number
+  quantity: number
+  total: number
+  side: "bid" | "ask"
+}
+
 const LEVELS_COUNT = 10
+
+function padLevels(
+  levels: Level[],
+  side: "bid" | "ask",
+  step: number,
+  count: number
+): Level[] {
+  const padded = [...levels]
+  if (step <= 0) return padded.slice(0, count)
+  while (padded.length < count) {
+    const last = padded[padded.length - 1]
+    const nextPrice = side === "bid"
+      ? (last ? last.price - step : 0)
+      : (last ? last.price + step : 0)
+    padded.push({
+      price: nextPrice,
+      quantity: 0,
+      total: last ? last.total : 0,
+      side,
+    })
+  }
+  return padded.slice(0, count)
+}
 
 export function OrderBook({ symbol, loading: parentLoading }: OrderBookProps) {
   const [rawData, setRawData] = useState<{ bids: { price: number; quantity: number }[]; asks: { price: number; quantity: number }[] } | null>(null)
@@ -34,7 +64,7 @@ export function OrderBook({ symbol, loading: parentLoading }: OrderBookProps) {
     const fetchOrderBook = async () => {
       try {
         const res = await fetch(
-          `https://api.binance.com/api/v3/depth?symbol=${symbol}USDT&limit=1000`,
+          `https://api.binance.com/api/v3/depth?symbol=${symbol}USDT&limit=5000`,
           { cache: "no-store" }
         )
         if (!res.ok) throw new Error("Failed to fetch order book")
@@ -64,16 +94,16 @@ export function OrderBook({ symbol, loading: parentLoading }: OrderBookProps) {
     return () => clearInterval(interval)
   }, [symbol])
 
-  const { rows, bestBid, bestAsk, maxTotal, midPrice } = useMemo(() => {
+  const { visibleAsks, visibleBids, bestBid, bestAsk, maxTotal, midPrice } = useMemo(() => {
     if (!rawData) {
-      return { rows: { bids: [] as any[], asks: [] as any[] }, bestBid: 0, bestAsk: 0, maxTotal: 1, midPrice: 0 }
+      return { visibleAsks: [] as Level[], visibleBids: [] as Level[], bestBid: 0, bestAsk: 0, maxTotal: 1, midPrice: 0 }
     }
 
     const aggregate = (
       raw: { price: number; quantity: number }[],
       isBid: boolean,
       aggStep: number
-    ) => {
+    ): Level[] => {
       let processed: { price: number; quantity: number }[]
 
       if (aggStep <= 0) {
@@ -96,7 +126,7 @@ export function OrderBook({ symbol, loading: parentLoading }: OrderBookProps) {
       let cumulative = 0
       return sorted.map((r) => {
         cumulative += r.quantity
-        return { ...r, total: cumulative, side: isBid ? "bid" : "ask" }
+        return { price: r.price, quantity: r.quantity, total: cumulative, side: isBid ? "bid" : "ask" }
       })
     }
 
@@ -107,13 +137,21 @@ export function OrderBook({ symbol, loading: parentLoading }: OrderBookProps) {
     const ba = askRows[0]?.price || 0
     const mp = (ba + bb) / 2
 
-    // maxTotal among visible 10 levels
-    const visibleBidTotals = bidRows.slice(0, LEVELS_COUNT).map((b) => b.total)
-    const visibleAskTotals = askRows.slice(0, LEVELS_COUNT).map((a) => a.total)
-    const mt = Math.max(...visibleBidTotals, ...visibleAskTotals, 1)
+    const asksPadded = padLevels(askRows, "ask", selectedStep, LEVELS_COUNT)
+    const bidsPadded = padLevels(bidRows, "bid", selectedStep, LEVELS_COUNT)
+
+    const visibleAsks = [...asksPadded].reverse()
+    const visibleBids = bidsPadded
+
+    const mt = Math.max(
+      ...visibleAsks.map((a) => a.total),
+      ...visibleBids.map((b) => b.total),
+      1
+    )
 
     return {
-      rows: { bids: bidRows, asks: askRows },
+      visibleAsks,
+      visibleBids,
       bestBid: bb,
       bestAsk: ba,
       maxTotal: mt,
@@ -148,9 +186,6 @@ export function OrderBook({ symbol, loading: parentLoading }: OrderBookProps) {
     )
   }
 
-  const visibleAsks = [...rows.asks].reverse().slice(0, LEVELS_COUNT)
-  const visibleBids = rows.bids.slice(0, LEVELS_COUNT)
-
   const formatPrice = (p: number) => {
     if (p >= 1000) return p.toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 })
     if (p >= 1) return p.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
@@ -163,7 +198,6 @@ export function OrderBook({ symbol, loading: parentLoading }: OrderBookProps) {
     return v.toFixed(1)
   }
 
-  // 5 scale markers evenly distributed
   const scaleMarkers = [0, 0.25, 0.5, 0.75, 1].map((ratio) =>
     formatTotal(maxTotal * ratio)
   )
@@ -214,32 +248,36 @@ export function OrderBook({ symbol, loading: parentLoading }: OrderBookProps) {
       <div className="flex flex-col">
         {visibleAsks.map((ask, i) => {
           const barWidth = (ask.total / maxTotal) * 100
+          const isEmpty = ask.quantity === 0
           return (
             <motion.div
-              key={`ask-${ask.price}`}
+              key={`ask-${ask.price}-${i}`}
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ duration: 0.1, delay: i * 0.02 }}
               className="grid grid-cols-[72px_1fr] items-center h-5 relative"
             >
               {/* Price label */}
-              <div className="text-right pr-3 text-[11px] font-mono text-rose-400/90">
+              <div className={cn(
+                "text-right pr-3 text-[11px] font-mono",
+                isEmpty ? "text-rose-400/40" : "text-rose-400/90"
+              )}>
                 {formatPrice(ask.price)}
               </div>
 
               {/* Bar area with grid lines background */}
               <div className="relative h-full">
-                {/* Grid lines */}
                 <div className="absolute inset-0 flex justify-between pointer-events-none">
                   {[1, 2, 3].map((k) => (
                     <div key={k} className="h-full w-px bg-slate-800/40" style={{ marginLeft: `${k * 25}%` }} />
                   ))}
                 </div>
-                {/* Cumulative bar */}
-                <div
-                  className="absolute left-0 top-0 h-full bg-gradient-to-r from-rose-600/80 to-rose-500/20"
-                  style={{ width: `${barWidth}%` }}
-                />
+                {!isEmpty && (
+                  <div
+                    className="absolute left-0 top-0 h-full bg-gradient-to-r from-rose-600/80 to-rose-500/20"
+                    style={{ width: `${barWidth}%` }}
+                  />
+                )}
               </div>
             </motion.div>
           )
@@ -260,32 +298,36 @@ export function OrderBook({ symbol, loading: parentLoading }: OrderBookProps) {
       <div className="flex flex-col">
         {visibleBids.map((bid, i) => {
           const barWidth = (bid.total / maxTotal) * 100
+          const isEmpty = bid.quantity === 0
           return (
             <motion.div
-              key={`bid-${bid.price}`}
+              key={`bid-${bid.price}-${i}`}
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ duration: 0.1, delay: i * 0.02 }}
               className="grid grid-cols-[72px_1fr] items-center h-5 relative"
             >
               {/* Price label */}
-              <div className="text-right pr-3 text-[11px] font-mono text-emerald-400/90">
+              <div className={cn(
+                "text-right pr-3 text-[11px] font-mono",
+                isEmpty ? "text-emerald-400/40" : "text-emerald-400/90"
+              )}>
                 {formatPrice(bid.price)}
               </div>
 
               {/* Bar area with grid lines background */}
               <div className="relative h-full">
-                {/* Grid lines */}
                 <div className="absolute inset-0 flex justify-between pointer-events-none">
                   {[1, 2, 3].map((k) => (
                     <div key={k} className="h-full w-px bg-slate-800/40" style={{ marginLeft: `${k * 25}%` }} />
                   ))}
                 </div>
-                {/* Cumulative bar */}
-                <div
-                  className="absolute left-0 top-0 h-full bg-gradient-to-r from-emerald-600/80 to-emerald-500/20"
-                  style={{ width: `${barWidth}%` }}
-                />
+                {!isEmpty && (
+                  <div
+                    className="absolute left-0 top-0 h-full bg-gradient-to-r from-emerald-600/80 to-emerald-500/20"
+                    style={{ width: `${barWidth}%` }}
+                  />
+                )}
               </div>
             </motion.div>
           )
