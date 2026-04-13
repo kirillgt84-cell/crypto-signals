@@ -20,6 +20,27 @@ async def trigger_fundamentals_collection():
         import traceback
         raise HTTPException(status_code=500, detail=f"Collection failed: {str(e)}\n{traceback.format_exc()}")
 
+@router.get("/raw-check/{symbol}")
+async def raw_check(symbol: str):
+    """Debug endpoint: insert a test row and return it"""
+    db = get_db()
+    try:
+        await db.execute(
+            """INSERT INTO fundamental_metrics (symbol, metric_name, value, raw_data)
+               VALUES ($1, 'mvrv', 1.5, '{\"test\": true}')
+               ON CONFLICT (symbol, metric_name, computed_at) DO UPDATE
+               SET value = EXCLUDED.value, raw_data = EXCLUDED.raw_data""",
+            [symbol.upper()]
+        )
+        row = await db.query(
+            "SELECT * FROM fundamental_metrics WHERE symbol = $1 AND metric_name = 'mvrv' ORDER BY computed_at DESC LIMIT 1",
+            [symbol.upper()]
+        )
+        return {"inserted": True, "row": row[0] if row else None}
+    except Exception as e:
+        import traceback
+        raise HTTPException(status_code=500, detail=f"DB error: {str(e)}\n{traceback.format_exc()}")
+
 @router.get("/{symbol}/mvrv")
 async def get_mvrv(symbol: str):
     """Get latest MVRV ratio for symbol"""
