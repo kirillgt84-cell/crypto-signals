@@ -38,7 +38,7 @@ export function LiquidationMap({
     }
 
     const safeLiqs = Array.isArray(liquidations) ? liquidations : []
-    const step = currentPrice * 0.01 // 1% step
+    const step = symbol === "BTC" ? 100 : symbol === "ETH" ? 5 : currentPrice * 0.01
 
     // Shorts are ABOVE current price (liquidated when price goes up)
     const shorts: MapLevel[] = []

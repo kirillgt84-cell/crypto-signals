@@ -580,16 +580,17 @@ export default function Dashboard() {
         // Set liquidations from levels data - use real sizes from OKX if available
         if (levelsData.liquidation_levels) {
           const liqData = levelsData.liquidation_levels
+          const isRealData = liqData.source === "okx"
           const formattedLiquidations = [
             ...(liqData.long_liquidations || []).map((l: any) => ({
               price: l.price,
               side: "Long" as const,
-              size: l.size != null ? l.size : (l.distance === "-5%" ? 100 : l.distance === "-10%" ? 60 : 30)
+              size: l.size != null ? (isRealData ? l.size * combinedData.price : l.size) : (l.distance === "-5%" ? 100 : l.distance === "-10%" ? 60 : 30)
             })),
             ...(liqData.short_liquidations || []).map((l: any) => ({
               price: l.price,
               side: "Short" as const,
-              size: l.size != null ? l.size : (l.distance === "+5%" ? 100 : l.distance === "+10%" ? 60 : 30)
+              size: l.size != null ? (isRealData ? l.size * combinedData.price : l.size) : (l.distance === "+5%" ? 100 : l.distance === "+10%" ? 60 : 30)
             }))
           ]
           setLiquidations(formattedLiquidations)
