@@ -10,11 +10,12 @@ router = APIRouter(prefix="/api/v1/fundamentals", tags=["fundamentals"])
 
 @router.post("/trigger")
 async def trigger_fundamentals_collection():
-    """Manually trigger fundamentals collection"""
+    """Manually trigger fundamentals collection in background"""
     try:
+        import asyncio
         from daily_fundamentals import collect_fundamentals
-        await collect_fundamentals()
-        return {"status": "ok", "message": "Fundamentals collection completed"}
+        asyncio.create_task(collect_fundamentals())
+        return {"status": "ok", "message": "Fundamentals collection started in background"}
     except Exception as e:
         import traceback
         raise HTTPException(status_code=500, detail=f"Collection failed: {str(e)}\n{traceback.format_exc()}")

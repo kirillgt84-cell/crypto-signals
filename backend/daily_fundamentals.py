@@ -29,7 +29,7 @@ ASSETS = {
 async def fetch_bgeometrics_last(client: httpx.AsyncClient, metric: str):
     """Fetch latest metric from BGeometrics free API (BTC only)"""
     try:
-        r = await client.get(f"{BGEOMETRICS_URL}/{metric}/last", timeout=30)
+        r = await client.get(f"{BGEOMETRICS_URL}/{metric}/last", timeout=10)
         logger.info(f"[BGeometrics] {metric} status={r.status_code}")
         if r.status_code == 200:
             return r.json()
@@ -45,7 +45,7 @@ async def fetch_coingecko_data(client: httpx.AsyncClient, coin_id: str):
         r = await client.get(
             f"{COINGECKO_URL}/coins/{coin_id}",
             params={"localization": "false", "tickers": "false", "community_data": "false", "developer_data": "false"},
-            timeout=30,
+            timeout=10,
         )
         if r.status_code == 200:
             data = r.json()
@@ -64,7 +64,7 @@ async def fetch_binance_funding(client: httpx.AsyncClient, symbol: str):
     try:
         r = await client.get(
             f"https://fapi.binance.com/fapi/v1/fundingRate?symbol={symbol}USDT&limit=1",
-            timeout=30,
+            timeout=10,
         )
         if r.status_code == 200:
             data = r.json()
@@ -128,27 +128,20 @@ async def collect_fundamentals():
             funding = await fetch_binance_funding(client, symbol)
             
             if source == "bgeometrics":
+                # BTC: use BGeometrics free API (only nupl + mvrv needed)
                 nupl_data = await fetch_bgeometrics_last(client, "nupl")
                 mvrv_data = await fetch_bgeometrics_last(client, "mvrv")
-                realized_data = await fetch_bgeometrics_last(client, "realized-cap")
-                market_cap_data = await fetch_bgeometrics_last(client, "market-cap")
                 
                 if nupl_data and mvrv_data:
                     nupl_val = float(nupl_data.get("nupl", 0))
                     mvrv_val = float(mvrv_data.get("mvrv", 0))
-                    realized_cap = float(realized_data.get("realizedCap", 0)) if realized_data else None
-                    market_cap = float(market_cap_data.get("marketCap", 0)) if market_cap_data else None
                     
                     await save_metric(db, symbol, "mvrv", mvrv_val, {
-                        "market_cap": market_cap,
-                        "realized_cap": realized_cap,
                         "interpretation": interpret_mvrv(mvrv_val)[0],
                         "description": interpret_mvrv(mvrv_val)[1],
                     })
                     
                     await save_metric(db, symbol, "nupl", nupl_val, {
-                        "market_cap": market_cap,
-                        "realized_cap": realized_cap,
                         "interpretation": interpret_nupl(nupl_val)[0],
                         "description": interpret_nupl(nupl_val)[1],
                     })
