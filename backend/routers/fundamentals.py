@@ -175,7 +175,7 @@ async def get_composite(symbol: str):
     interpretation = {}
     
     if "mvrv" in latest:
-        mvrv = latest["mvrv"]["value"]
+        mvrv = float(latest["mvrv"]["value"])
         mvrv_norm = max(-1, min(1, (mvrv - 2.0) / 2.0))  # 0->-1, 4->+1
         components["mvrv"] = {"value": mvrv, "normalized": round(mvrv_norm, 3), "weight": 0.35}
         values.append(mvrv_norm)
@@ -183,7 +183,7 @@ async def get_composite(symbol: str):
         interpretation["mvrv"] = latest["mvrv"].get("raw_data", {}).get("description", "")
     
     if "nupl" in latest:
-        nupl = latest["nupl"]["value"]
+        nupl = float(latest["nupl"]["value"])
         nupl_norm = max(-1, min(1, (nupl - 0.25) / 0.5))  # -0.25->-1, 0.75->+1
         components["nupl"] = {"value": nupl, "normalized": round(nupl_norm, 3), "weight": 0.35}
         values.append(nupl_norm)
@@ -191,7 +191,7 @@ async def get_composite(symbol: str):
         interpretation["nupl"] = latest["nupl"].get("raw_data", {}).get("description", "")
     
     if "funding_rate" in latest:
-        funding = latest["funding_rate"]["value"]
+        funding = float(latest["funding_rate"]["value"])
         funding_norm = max(-1, min(1, funding / 0.001))    # -0.001->-1, 0.001->+1
         components["funding"] = {"value": funding, "normalized": round(funding_norm, 3), "weight": 0.30}
         values.append(funding_norm)
@@ -199,7 +199,7 @@ async def get_composite(symbol: str):
         interpretation["funding"] = latest["funding_rate"].get("raw_data", {}).get("description", "")
     
     if "market_momentum" in latest:
-        momentum = latest["market_momentum"]["value"]
+        momentum = float(latest["market_momentum"]["value"])
         momentum_norm = max(-1, min(1, momentum / 0.30))  # -30%->-1, +30%->+1
         components["market_momentum"] = {
             "value": momentum,
