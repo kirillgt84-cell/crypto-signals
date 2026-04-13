@@ -26,6 +26,8 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
 const API_BASE_URL = "https://crypto-signals-production-ff4c.up.railway.app/api/v1"
 
+const authUrl = (path: string) => `${API_BASE_URL}/auth${path}?_cb=${Date.now()}`
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [isLoading, setIsLoading] = useState(true)
@@ -41,7 +43,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setAccessToken(storedToken)
         // Validate token and get user info
         try {
-          const res = await fetch(`${API_BASE_URL}/auth/me`, {
+          const res = await fetch(authUrl('/me'), {
             cache: 'no-store',
             headers: { Authorization: `Bearer ${storedToken}` }
           })
@@ -83,7 +85,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = async (email: string, password: string) => {
     console.log(`[Auth] Login attempt for ${email}`)
-    const res = await fetch(`${API_BASE_URL}/auth/login`, {
+    const res = await fetch(authUrl('/login'), {
       method: "POST",
       cache: 'no-store',
       headers: { "Content-Type": "application/json" },
@@ -107,7 +109,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const register = async (email: string, password: string, username?: string) => {
     console.log(`[Auth] Register attempt for ${email}`)
-    const res = await fetch(`${API_BASE_URL}/auth/register`, {
+    const res = await fetch(authUrl('/register'), {
       method: "POST",
       cache: 'no-store',
       headers: { "Content-Type": "application/json" },
@@ -132,7 +134,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logout = async () => {
     if (accessToken) {
       try {
-        await fetch(`${API_BASE_URL}/auth/logout`, {
+        await fetch(authUrl('/logout'), {
           method: "POST",
           cache: 'no-store',
           headers: { Authorization: `Bearer ${accessToken}` }
@@ -151,7 +153,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const loginWithOAuth = (provider: string) => {
     // Get OAuth URL from backend
-    fetch(`${API_BASE_URL}/auth/oauth/${provider}`, { cache: 'no-store' })
+    fetch(authUrl(`/oauth/${provider}`), { cache: 'no-store' })
       .then(res => res.json())
       .then(data => {
         if (data.auth_url) {
@@ -177,7 +179,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   const loginWithTelegram = async (telegramUser: any) => {
-    const res = await fetch(`${API_BASE_URL}/auth/telegram`, {
+    const res = await fetch(authUrl('/telegram'), {
       method: "POST",
       cache: 'no-store',
       headers: { "Content-Type": "application/json" },
@@ -203,7 +205,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!refresh) return false
     
     try {
-      const res = await fetch(`${API_BASE_URL}/auth/refresh`, {
+      const res = await fetch(authUrl('/refresh'), {
         method: "POST",
         cache: 'no-store',
         headers: { "Content-Type": "application/json" },
