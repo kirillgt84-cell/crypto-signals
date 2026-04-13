@@ -147,7 +147,7 @@ function DashboardContent() {
           </CardHeader>
           <CardContent>
             <div className="space-y-2">
-              {user?.connected_oauth?.map((provider: string) => (
+              {(user as any)?.connected_oauth?.map((provider: string) => (
                 <div key={provider} className="flex items-center justify-between p-3 border rounded-lg">
                   <span className="capitalize font-medium">{provider}</span>
                   <span className="text-sm text-green-500">Connected</span>
