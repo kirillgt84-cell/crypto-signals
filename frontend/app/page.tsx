@@ -773,7 +773,7 @@ export default function Dashboard() {
               <CardTitle>Order Book</CardTitle>
               <CardDescription>Large orders & whale walls visualization</CardDescription>
             </CardHeader>
-            <CardContent className="pt-0 h-[540px]">
+            <CardContent className="pt-0 h-[720px]">
               <OrderBook symbol={symbol} loading={loading} />
             </CardContent>
           </Card>
