@@ -53,6 +53,26 @@ async def save_oi_snapshot():
     except Exception as e:
         logger.error(f"[Scheduler] Critical error: {e}")
 
+async def save_fundamentals_snapshot():
+    """Собирает фундаментальные метрики MVRV, NUPL, Funding"""
+    try:
+        from daily_fundamentals import collect_fundamentals
+        await collect_fundamentals()
+        logger.info("[Scheduler] Fundamentals collection completed")
+    except Exception as e:
+        logger.error(f"[Scheduler] Fundamentals collection failed: {e}")
+
+async def should_run_fundamentals() -> bool:
+    """Проверяет, есть ли свежие данные фундаменталок в БД"""
+    try:
+        db = get_db()
+        row = await db.query(
+            "SELECT 1 FROM fundamental_metrics WHERE computed_at > NOW() - INTERVAL '25 hours' LIMIT 1"
+        )
+        return not row
+    except Exception:
+        return True
+
 def start_scheduler():
     """Запускает планировщик"""
     scheduler = AsyncIOScheduler()
@@ -66,8 +86,18 @@ def start_scheduler():
         replace_existing=True
     )
     
+    # Собираем фундаментальные метрики раз в день
+    scheduler.add_job(
+        save_fundamentals_snapshot,
+        'cron',
+        hour=2,
+        minute=30,
+        id='fundamentals_snapshot',
+        replace_existing=True
+    )
+    
     scheduler.start()
-    logger.info("[Scheduler] Started - OI snapshot every 5 minutes")
+    logger.info("[Scheduler] Started - OI snapshot every 5 minutes, Fundamentals daily at 02:30")
     return scheduler
 
 def stop_scheduler(scheduler):

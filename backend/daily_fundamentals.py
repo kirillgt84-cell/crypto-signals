@@ -9,36 +9,28 @@ import httpx
 from datetime import datetime, timedelta
 from database import get_db
 
-GLASSNODE_KEY = os.getenv("GLASSNODE_API_KEY", "")
 COINGECKO_URL = "https://api.coingecko.com/api/v3"
+BGEOMETRICS_URL = "https://bitcoin-data.com/api/v1"
 
 ASSETS = {
-    "BTC": "bitcoin",
-    "ETH": "ethereum",
+    "BTC": {
+        "source": "bgeometrics",
+        "coin_id": "bitcoin",
+    },
+    "ETH": {
+        "source": "coingecko",
+        "coin_id": "ethereum",
+    },
 }
 
-async def fetch_glassnode_metric(client: httpx.AsyncClient, metric: str, asset: str = "BTC"):
-    """Fetch metric from Glassnode free tier"""
-    if not GLASSNODE_KEY:
-        return None
-    url = f"https://api.glassnode.com/v1/metrics/market/{metric}"
-    end = int(datetime.utcnow().timestamp())
-    start = int((datetime.utcnow() - timedelta(days=30)).timestamp())
-    params = {
-        "a": asset,
-        "api_key": GLASSNODE_KEY,
-        "s": start,
-        "u": end,
-        "i": "24h",
-    }
+async def fetch_bgeometrics_last(client: httpx.AsyncClient, metric: str):
+    """Fetch latest metric from BGeometrics free API (BTC only)"""
     try:
-        r = await client.get(url, params=params, timeout=30)
+        r = await client.get(f"{BGEOMETRICS_URL}/{metric}/last", timeout=30)
         if r.status_code == 200:
-            data = r.json()
-            if data and len(data) > 0:
-                return float(data[-1]["v"])
+            return r.json()
     except Exception as e:
-        print(f"[Fundamentals] Glassnode {metric} error: {e}")
+        print(f"[Fundamentals] BGeometrics {metric} error: {e}")
     return None
 
 async def fetch_coingecko_data(client: httpx.AsyncClient, coin_id: str):
@@ -55,6 +47,7 @@ async def fetch_coingecko_data(client: httpx.AsyncClient, coin_id: str):
                 "market_cap": data["market_data"]["market_cap"]["usd"],
                 "price": data["market_data"]["current_price"]["usd"],
                 "supply": data["market_data"]["circulating_supply"],
+                "price_change_24h_pct": data["market_data"].get("price_change_percentage_24h", 0),
             }
     except Exception as e:
         print(f"[Fundamentals] CoinGecko error: {e}")
@@ -116,40 +109,60 @@ async def collect_fundamentals():
     await db.connect()
     
     async with httpx.AsyncClient() as client:
-        for symbol, coin_id in ASSETS.items():
+        for symbol, config in ASSETS.items():
             print(f"[Fundamentals] Collecting {symbol}...")
+            source = config["source"]
+            coin_id = config["coin_id"]
             
-            # CoinGecko data
-            cg = await fetch_coingecko_data(client, coin_id)
-            
-            # Glassnode realized cap
-            realized_cap = await fetch_glassnode_metric(client, "realized_cap_usd", symbol)
-            
-            # Binance funding
             funding = await fetch_binance_funding(client, symbol)
             
-            if cg and realized_cap:
-                market_cap = cg["market_cap"]
-                mvrv = market_cap / realized_cap
-                nupl = (market_cap - realized_cap) / market_cap
+            if source == "bgeometrics":
+                # BTC: use BGeometrics free API
+                nupl_data = await fetch_bgeometrics_last(client, "nupl")
+                await asyncio.sleep(0.5)
+                mvrv_data = await fetch_bgeometrics_last(client, "mvrv")
+                await asyncio.sleep(0.5)
+                realized_data = await fetch_bgeometrics_last(client, "realized-cap")
+                await asyncio.sleep(0.5)
+                market_cap_data = await fetch_bgeometrics_last(client, "market-cap")
                 
-                await save_metric(db, symbol, "mvrv", mvrv, {
-                    "market_cap": market_cap,
-                    "realized_cap": realized_cap,
-                    "price": cg["price"],
-                    "supply": cg["supply"],
-                    "interpretation": interpret_mvrv(mvrv)[0],
-                    "description": interpret_mvrv(mvrv)[1],
-                })
-                
-                await save_metric(db, symbol, "nupl", nupl, {
-                    "market_cap": market_cap,
-                    "realized_cap": realized_cap,
-                    "interpretation": interpret_nupl(nupl)[0],
-                    "description": interpret_nupl(nupl)[1],
-                })
-                
-                print(f"[Fundamentals] {symbol} MVRV={mvrv:.3f}, NUPL={nupl:.3f}")
+                if nupl_data and mvrv_data:
+                    nupl_val = float(nupl_data.get("nupl", 0))
+                    mvrv_val = float(mvrv_data.get("mvrv", 0))
+                    realized_cap = float(realized_data.get("realizedCap", 0)) if realized_data else None
+                    market_cap = float(market_cap_data.get("marketCap", 0)) if market_cap_data else None
+                    
+                    await save_metric(db, symbol, "mvrv", mvrv_val, {
+                        "market_cap": market_cap,
+                        "realized_cap": realized_cap,
+                        "interpretation": interpret_mvrv(mvrv_val)[0],
+                        "description": interpret_mvrv(mvrv_val)[1],
+                    })
+                    
+                    await save_metric(db, symbol, "nupl", nupl_val, {
+                        "market_cap": market_cap,
+                        "realized_cap": realized_cap,
+                        "interpretation": interpret_nupl(nupl_val)[0],
+                        "description": interpret_nupl(nupl_val)[1],
+                    })
+                    
+                    print(f"[Fundamentals] {symbol} MVRV={mvrv_val:.3f}, NUPL={nupl_val:.3f}")
+                else:
+                    print(f"[Fundamentals] {symbol} BGeometrics data incomplete")
+                    
+            else:
+                # ETH: fallback to CoinGecko for market data
+                cg = await fetch_coingecko_data(client, coin_id)
+                if cg:
+                    await save_metric(db, symbol, "market_momentum", cg["price_change_24h_pct"] / 100, {
+                        "price": cg["price"],
+                        "market_cap": cg["market_cap"],
+                        "supply": cg["supply"],
+                        "price_change_24h_pct": cg["price_change_24h_pct"],
+                    })
+                    print(f"[Fundamentals] {symbol} Market momentum={cg['price_change_24h_pct']:.2f}%")
+                else:
+                    print(f"[Fundamentals] {symbol} CoinGecko data unavailable")
             
             if funding is not None:
                 await save_metric(db, symbol, "funding_rate", funding, {

@@ -60,7 +60,7 @@ async def get_composite(symbol: str):
     rows = await db.query(
         """SELECT metric_name, value, raw_data 
            FROM fundamental_metrics 
-           WHERE symbol = $1 AND metric_name IN ('mvrv', 'nupl', 'funding_rate')
+           WHERE symbol = $1 AND metric_name IN ('mvrv', 'nupl', 'funding_rate', 'market_momentum')
            ORDER BY computed_at DESC""",
         [symbol.upper()]
     )
@@ -73,20 +73,52 @@ async def get_composite(symbol: str):
         if r["metric_name"] not in latest:
             latest[r["metric_name"]] = r
     
-    mvrv = latest.get("mvrv", {}).get("value", 0)
-    nupl = latest.get("nupl", {}).get("value", 0)
-    funding = latest.get("funding_rate", {}).get("value", 0)
+    components = {}
+    values = []
+    weights = []
+    interpretation = {}
     
-    # Normalize each metric to -1..+1
-    mvrv_norm = max(-1, min(1, (mvrv - 2.0) / 2.0))  # 0->-1, 4->+1
-    nupl_norm = max(-1, min(1, (nupl - 0.25) / 0.5))  # -0.25->-1, 0.75->+1
-    funding_norm = max(-1, min(1, funding / 0.001))    # -0.001->-1, 0.001->+1
+    if "mvrv" in latest:
+        mvrv = latest["mvrv"]["value"]
+        mvrv_norm = max(-1, min(1, (mvrv - 2.0) / 2.0))  # 0->-1, 4->+1
+        components["mvrv"] = {"value": mvrv, "normalized": round(mvrv_norm, 3), "weight": 0.35}
+        values.append(mvrv_norm)
+        weights.append(0.35)
+        interpretation["mvrv"] = latest["mvrv"].get("raw_data", {}).get("description", "")
     
-    score = (
-        mvrv_norm * 0.35 +
-        nupl_norm * 0.35 +
-        funding_norm * 0.30
-    )
+    if "nupl" in latest:
+        nupl = latest["nupl"]["value"]
+        nupl_norm = max(-1, min(1, (nupl - 0.25) / 0.5))  # -0.25->-1, 0.75->+1
+        components["nupl"] = {"value": nupl, "normalized": round(nupl_norm, 3), "weight": 0.35}
+        values.append(nupl_norm)
+        weights.append(0.35)
+        interpretation["nupl"] = latest["nupl"].get("raw_data", {}).get("description", "")
+    
+    if "funding_rate" in latest:
+        funding = latest["funding_rate"]["value"]
+        funding_norm = max(-1, min(1, funding / 0.001))    # -0.001->-1, 0.001->+1
+        components["funding"] = {"value": funding, "normalized": round(funding_norm, 3), "weight": 0.30}
+        values.append(funding_norm)
+        weights.append(0.30)
+        interpretation["funding"] = latest["funding_rate"].get("raw_data", {}).get("description", "")
+    
+    if "market_momentum" in latest:
+        momentum = latest["market_momentum"]["value"]
+        momentum_norm = max(-1, min(1, momentum / 0.30))  # -30%->-1, +30%->+1
+        components["market_momentum"] = {
+            "value": momentum,
+            "normalized": round(momentum_norm, 3),
+            "weight": 0.30
+        }
+        values.append(momentum_norm)
+        weights.append(0.30)
+        interpretation["market_momentum"] = "Рыночный импульс 24ч"
+    
+    if not weights:
+        raise HTTPException(status_code=404, detail="Fundamental data not available yet")
+    
+    total_weight = sum(weights)
+    score = sum(v * w for v, w in zip(values, weights)) / total_weight
     
     sentiment = "BULLISH" if score > 0.5 else "BEARISH" if score < -0.5 else "NEUTRAL"
     
@@ -94,14 +126,6 @@ async def get_composite(symbol: str):
         "symbol": symbol.upper(),
         "score": round(score, 3),
         "sentiment": sentiment,
-        "components": {
-            "mvrv": {"value": mvrv, "normalized": round(mvrv_norm, 3), "weight": 0.35},
-            "nupl": {"value": nupl, "normalized": round(nupl_norm, 3), "weight": 0.35},
-            "funding": {"value": funding, "normalized": round(funding_norm, 3), "weight": 0.30},
-        },
-        "interpretation": {
-            "mvrv": latest.get("mvrv", {}).get("raw_data", {}).get("description", ""),
-            "nupl": latest.get("nupl", {}).get("raw_data", {}).get("description", ""),
-            "funding": latest.get("funding_rate", {}).get("raw_data", {}).get("description", ""),
-        }
+        "components": components,
+        "interpretation": interpretation
     }

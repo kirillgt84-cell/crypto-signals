@@ -21,13 +21,12 @@ interface LiquidationMapProps {
 type MapLevel = {
   price: number
   size: number
-  side: "Long" | "Short"
 }
 
 const ROW_HEIGHT = 10 // px
 const MID_HEIGHT = 22 // px
 
-function interpolateMapLevels(levels: MapLevel[]): MapLevel[] {
+function interpolateLevels(levels: MapLevel[]): MapLevel[] {
   const result = [...levels]
   let lastFilled = -1
 
@@ -72,49 +71,54 @@ export function LiquidationMap({
   symbol,
   loading,
 }: LiquidationMapProps) {
-  const { visibleLongs, visibleShorts, maxSize, midPrice } = useMemo(() => {
+  const { shortsAbove, longsBelow, maxSize, midPrice } = useMemo(() => {
     if (!currentPrice || loading) {
-      return { visibleLongs: [] as MapLevel[], visibleShorts: [] as MapLevel[], maxSize: 1, midPrice: 0 }
+      return { shortsAbove: [] as MapLevel[], longsBelow: [] as MapLevel[], maxSize: 1, midPrice: 0 }
     }
 
     const safeLiqs = Array.isArray(liquidations) ? liquidations : []
-    const step = currentPrice * 0.01 // 1% price step
+    const step = currentPrice * 0.01 // 1% step
 
-    const buildSide = (side: "Long" | "Short"): MapLevel[] => {
-      const isLong = side === "Long"
-      const levels: MapLevel[] = []
-
-      for (let i = 1; i <= ORDER_BOOK_LEVELS; i++) {
-        const price = isLong
-          ? currentPrice + step * i
-          : currentPrice - step * i
-
-        const bucketCenter = Math.round(price / step) * step
-        const bucketSize = safeLiqs
-          .filter((l) => l.side === side)
-          .reduce((sum, l) => {
-            const lCenter = Math.round(l.price / step) * step
-            return lCenter === bucketCenter ? sum + l.size : sum
-          }, 0)
-
-        levels.push({ price, size: bucketSize, side })
-      }
-
-      return interpolateMapLevels(levels)
+    // Shorts are ABOVE current price (liquidated when price goes up)
+    const shorts: MapLevel[] = []
+    for (let i = ORDER_BOOK_LEVELS; i >= 1; i--) {
+      const price = currentPrice + step * i // farther first
+      const bucketCenter = Math.round(price / step) * step
+      const size = safeLiqs
+        .filter((l) => l.side === "Short")
+        .reduce((sum, l) => {
+          const lCenter = Math.round(l.price / step) * step
+          return lCenter === bucketCenter ? sum + l.size : sum
+        }, 0)
+      shorts.push({ price, size })
     }
 
-    const longs = buildSide("Long")
-    const shorts = buildSide("Short")
+    // Longs are BELOW current price (liquidated when price goes down)
+    const longs: MapLevel[] = []
+    for (let i = 1; i <= ORDER_BOOK_LEVELS; i++) {
+      const price = currentPrice - step * i // closest first
+      const bucketCenter = Math.round(price / step) * step
+      const size = safeLiqs
+        .filter((l) => l.side === "Long")
+        .reduce((sum, l) => {
+          const lCenter = Math.round(l.price / step) * step
+          return lCenter === bucketCenter ? sum + l.size : sum
+        }, 0)
+      longs.push({ price, size })
+    }
+
+    const shortsFinal = interpolateLevels(shorts)
+    const longsFinal = interpolateLevels(longs)
 
     const ms = Math.max(
-      ...longs.map((l) => l.size),
-      ...shorts.map((s) => s.size),
+      ...shortsFinal.map((s) => s.size),
+      ...longsFinal.map((l) => l.size),
       1
     )
 
     return {
-      visibleLongs: [...longs].reverse(),
-      visibleShorts: shorts,
+      shortsAbove: shortsFinal, // already ordered: farthest at top, closest at bottom
+      longsBelow: longsFinal,   // already ordered: closest at top, farthest at bottom
       maxSize: ms,
       midPrice: currentPrice,
     }
@@ -180,13 +184,13 @@ export function LiquidationMap({
         </div>
       </div>
 
-      {/* Longs */}
+      {/* Shorts - above price (red/rose) */}
       <div className="flex flex-col">
-        {visibleLongs.map((level, i) => {
+        {shortsAbove.map((level, i) => {
           const barWidth = (level.size / maxSize) * 100
           return (
             <motion.div
-              key={`long-${level.price}-${i}`}
+              key={`short-${level.price}-${i}`}
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ duration: 0.05, delay: i * 0.005 }}
@@ -226,13 +230,13 @@ export function LiquidationMap({
         </div>
       </div>
 
-      {/* Shorts */}
+      {/* Longs - below price (green/emerald) */}
       <div className="flex flex-col">
-        {visibleShorts.map((level, i) => {
+        {longsBelow.map((level, i) => {
           const barWidth = (level.size / maxSize) * 100
           return (
             <motion.div
-              key={`short-${level.price}-${i}`}
+              key={`long-${level.price}-${i}`}
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ duration: 0.05, delay: i * 0.005 }}
@@ -260,9 +264,9 @@ export function LiquidationMap({
 
       {/* Footer */}
       <div className="mt-2 pt-2 border-t border-slate-800 flex items-center justify-between text-[10px] text-slate-400">
-        <span>Longs: <span className="text-rose-400 font-bold">{ORDER_BOOK_LEVELS}</span></span>
+        <span>Shorts: <span className="text-rose-400 font-bold">{ORDER_BOOK_LEVELS}</span></span>
         <span>Max: <span className="text-amber-400 font-bold">{formatSize(maxSize)}</span></span>
-        <span>Shorts: <span className="text-emerald-400 font-bold">{ORDER_BOOK_LEVELS}</span></span>
+        <span>Longs: <span className="text-emerald-400 font-bold">{ORDER_BOOK_LEVELS}</span></span>
       </div>
     </motion.div>
   )

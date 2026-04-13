@@ -75,8 +75,18 @@ async def lifespan(app: FastAPI):
     scheduler = start_scheduler()
     
     # Первоначальное сохранение OI
-    from scheduler import save_oi_snapshot
+    from scheduler import save_oi_snapshot, should_run_fundamentals, save_fundamentals_snapshot
     await save_oi_snapshot()
+    
+    # Первоначальный сбор фундаменталок (если данных нет или они устарели)
+    try:
+        if await should_run_fundamentals():
+            logger.info("No recent fundamentals data found, triggering initial collection...")
+            await save_fundamentals_snapshot()
+        else:
+            logger.info("Recent fundamentals data already available")
+    except Exception as e:
+        logger.error(f"Failed to check/run fundamentals on startup: {e}")
     
     yield
     
