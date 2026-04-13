@@ -17,6 +17,7 @@ import { OITerminal } from "./components/OITerminal"
 import { EntryLevels } from "./components/EntryLevels"
 import { LiquidationMap } from "./components/LiquidationMap"
 import { OrderBook } from "./components/OrderBook"
+import { FundamentalsCard } from "./components/FundamentalsCard"
 import Sidebar from "./components/admin/Sidebar"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { cn } from "@/lib/utils"
@@ -748,22 +749,25 @@ export default function Dashboard() {
         {/* Row 1: OI Analysis Cards */}
         <OIAnalysisCards data={marketData} loading={loading} timeframe={timeframe} />
 
-        {/* Row 2: TradingView Chart + OI Analysis */}
+        {/* Row 2: TradingView Chart + OI Analysis + Fundamentals */}
         <div className="grid grid-cols-1 gap-4 px-4 py-4 lg:grid-cols-3 lg:px-6">
           <div className="lg:col-span-2">
             <ChartSection symbol={symbol} timeframe={timeframe} data={marketData} loading={loading} />
           </div>
-          <Card className="flex flex-col">
-            <CardHeader className="gap-2 pb-2">
-              <CardTitle>OI Analysis</CardTitle>
-              <CardDescription>
-                Open Interest + Price + Volume
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="flex-1 pt-0 h-[380px]">
-              <OITerminal analysis={oiAnalysis} loading={loading} />
-            </CardContent>
-          </Card>
+          <div className="flex flex-col gap-4">
+            <Card className="flex flex-col">
+              <CardHeader className="gap-2 pb-2">
+                <CardTitle>OI Analysis</CardTitle>
+                <CardDescription>
+                  Open Interest + Price + Volume
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="flex-1 pt-0 h-[280px]">
+                <OITerminal analysis={oiAnalysis} loading={loading} />
+              </CardContent>
+            </Card>
+            <FundamentalsCard symbol={symbol} loading={loading} />
+          </div>
         </div>
 
         {/* Row 4: Order Book + Liquidation Map */}

@@ -19,6 +19,7 @@ logger = logging.getLogger(__name__)
 # Импорт роутеров и scheduler
 from routers import market
 from routers.auth import router as auth_router
+from routers.fundamentals import router as fundamentals_router
 from scheduler import start_scheduler, stop_scheduler
 
 # Глобальная переменная для scheduler
@@ -47,6 +48,14 @@ async def init_database():
                 auth_schema_sql = f.read()
             await db._pool.execute(auth_schema_sql)
             logger.info("Auth database schema initialized")
+        
+        # Read and execute fundamentals schema
+        fundamentals_schema_path = os.path.join(os.path.dirname(__file__), 'schema_fundamentals.sql')
+        if os.path.exists(fundamentals_schema_path):
+            with open(fundamentals_schema_path, 'r') as f:
+                fundamentals_schema_sql = f.read()
+            await db._pool.execute(fundamentals_schema_sql)
+            logger.info("Fundamentals database schema initialized")
         
         await db.close()
         logger.info("Database schema initialized successfully")
@@ -101,6 +110,7 @@ app.add_middleware(
 # Подключаем роутеры
 app.include_router(market.router)
 app.include_router(auth_router)
+app.include_router(fundamentals_router)
 
 # ============= Health Check =============
 @app.get("/health")
