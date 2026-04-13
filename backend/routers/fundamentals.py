@@ -41,6 +41,31 @@ async def raw_check(symbol: str):
         import traceback
         raise HTTPException(status_code=500, detail=f"DB error: {str(e)}\n{traceback.format_exc()}")
 
+@router.get("/api-check")
+async def api_check():
+    """Debug endpoint: test external APIs from Railway"""
+    import httpx
+    results = {}
+    async with httpx.AsyncClient() as client:
+        try:
+            r = await client.get("https://bitcoin-data.com/api/v1/nupl/last", timeout=10)
+            results["bgeometrics_nupl"] = {"status": r.status_code, "data": r.json() if r.status_code == 200 else r.text[:200]}
+        except Exception as e:
+            results["bgeometrics_nupl"] = {"error": str(e)}
+        
+        try:
+            r = await client.get("https://api.coingecko.com/api/v3/coins/bitcoin?localization=false&tickers=false&community_data=false&developer_data=false", timeout=10)
+            results["coingecko"] = {"status": r.status_code, "has_market_data": "market_data" in r.json() if r.status_code == 200 else False}
+        except Exception as e:
+            results["coingecko"] = {"error": str(e)}
+        
+        try:
+            r = await client.get("https://fapi.binance.com/fapi/v1/fundingRate?symbol=BTCUSDT&limit=1", timeout=10)
+            results["binance_funding"] = {"status": r.status_code, "data": r.json() if r.status_code == 200 else r.text[:200]}
+        except Exception as e:
+            results["binance_funding"] = {"error": str(e)}
+    return results
+
 @router.get("/{symbol}/mvrv")
 async def get_mvrv(symbol: str):
     """Get latest MVRV ratio for symbol"""
