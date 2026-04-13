@@ -16,6 +16,7 @@ import { TradingViewChart } from "./components/TradingViewChart"
 import { OITerminal } from "./components/OITerminal"
 import { EntryLevels } from "./components/EntryLevels"
 import { LiquidationMap } from "./components/LiquidationMap"
+import { OrderBook } from "./components/OrderBook"
 import Sidebar from "./components/admin/Sidebar"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { cn } from "@/lib/utils"
@@ -765,8 +766,22 @@ export default function Dashboard() {
           </Card>
         </div>
 
-        {/* Row 4: Entry Levels + Liquidation Map */}
+        {/* Row 4: Order Book + Liquidation Map */}
         <div className="grid grid-cols-1 gap-4 px-4 py-4 lg:grid-cols-2 lg:px-6">
+          <Card className="flex flex-col">
+            <CardHeader className="gap-2 pb-2">
+              <CardTitle>Order Book</CardTitle>
+              <CardDescription>Large orders & whale walls visualization</CardDescription>
+            </CardHeader>
+            <CardContent className="pt-0 h-[420px]">
+              <OrderBook symbol={symbol} loading={loading} />
+            </CardContent>
+          </Card>
+          <LiquidationMap liquidations={liquidations} currentPrice={marketData.price} symbol={symbol} loading={loading} />
+        </div>
+
+        {/* Row 5: Entry Levels */}
+        <div className="px-4 py-4 lg:px-6">
           <Card className="flex flex-col">
             <CardHeader className="gap-2 pb-2">
               <CardTitle>Entry Levels</CardTitle>
@@ -776,10 +791,9 @@ export default function Dashboard() {
               <EntryLevels data={marketData} loading={loading} />
             </CardContent>
           </Card>
-          <LiquidationMap liquidations={liquidations} currentPrice={marketData.price} symbol={symbol} loading={loading} />
         </div>
 
-        {/* Row 5: Secondary Indicators */}
+        {/* Row 6: Secondary Indicators */}
         <SecondaryIndicators data={marketData} timeframe={timeframe} loading={loading} />
         
         {/* Auth Modal */}
