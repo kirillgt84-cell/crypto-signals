@@ -26,6 +26,45 @@ type MapLevel = {
 const ROW_HEIGHT = 10 // px
 const MID_HEIGHT = 22 // px
 
+function interpolateLevels(levels: MapLevel[]): MapLevel[] {
+  const result = [...levels]
+  let lastFilled = -1
+
+  for (let i = 0; i < result.length; i++) {
+    if (result[i].size > 0) {
+      if (lastFilled !== -1 && i - lastFilled > 1) {
+        const startSize = result[lastFilled].size
+        const endSize = result[i].size
+        const steps = i - lastFilled
+        for (let j = 1; j < steps; j++) {
+          const ratio = j / steps
+          result[lastFilled + j].size = startSize * (1 - ratio) + endSize * ratio
+        }
+      }
+      lastFilled = i
+    }
+  }
+
+  if (lastFilled !== -1 && lastFilled < result.length - 1) {
+    const startSize = result[lastFilled].size
+    for (let i = lastFilled + 1; i < result.length; i++) {
+      const ratio = (i - lastFilled) / (result.length - lastFilled)
+      result[i].size = startSize * (1 - ratio)
+    }
+  }
+
+  const firstFilled = result.findIndex((l) => l.size > 0)
+  if (firstFilled > 0) {
+    const endSize = result[firstFilled].size
+    for (let i = 0; i < firstFilled; i++) {
+      const ratio = i / firstFilled
+      result[i].size = endSize * ratio
+    }
+  }
+
+  return result
+}
+
 export function LiquidationMap({
   liquidations,
   currentPrice,
@@ -68,15 +107,18 @@ export function LiquidationMap({
       longs.push({ price, size })
     }
 
+    const shortsFinal = interpolateLevels(shorts)
+    const longsFinal = interpolateLevels(longs)
+
     const ms = Math.max(
-      ...shorts.map((s) => s.size),
-      ...longs.map((l) => l.size),
+      ...shortsFinal.map((s) => s.size),
+      ...longsFinal.map((l) => l.size),
       1
     )
 
     return {
-      shortsAbove: shorts, // already ordered: farthest at top, closest at bottom
-      longsBelow: longs,   // already ordered: closest at top, farthest at bottom
+      shortsAbove: shortsFinal, // already ordered: farthest at top, closest at bottom
+      longsBelow: longsFinal,   // already ordered: closest at top, farthest at bottom
       maxSize: ms,
       midPrice: currentPrice,
     }

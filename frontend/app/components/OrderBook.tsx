@@ -46,6 +46,45 @@ function padLevels(
   return padded.slice(0, count)
 }
 
+function interpolateLevels(levels: Level[]): Level[] {
+  const result = [...levels]
+  let lastFilled = -1
+
+  for (let i = 0; i < result.length; i++) {
+    if (result[i].quantity > 0) {
+      if (lastFilled !== -1 && i - lastFilled > 1) {
+        const startQty = result[lastFilled].quantity
+        const endQty = result[i].quantity
+        const steps = i - lastFilled
+        for (let j = 1; j < steps; j++) {
+          const ratio = j / steps
+          result[lastFilled + j].quantity = startQty * (1 - ratio) + endQty * ratio
+        }
+      }
+      lastFilled = i
+    }
+  }
+
+  if (lastFilled !== -1 && lastFilled < result.length - 1) {
+    const startQty = result[lastFilled].quantity
+    for (let i = lastFilled + 1; i < result.length; i++) {
+      const ratio = (i - lastFilled) / (result.length - lastFilled)
+      result[i].quantity = startQty * (1 - ratio)
+    }
+  }
+
+  const firstFilled = result.findIndex((l) => l.quantity > 0)
+  if (firstFilled > 0) {
+    const endQty = result[firstFilled].quantity
+    for (let i = 0; i < firstFilled; i++) {
+      const ratio = i / firstFilled
+      result[i].quantity = endQty * ratio
+    }
+  }
+
+  return result
+}
+
 export function OrderBook({ symbol, loading: parentLoading }: OrderBookProps) {
   const [rawData, setRawData] = useState<{ bids: { price: number; quantity: number }[]; asks: { price: number; quantity: number }[] } | null>(null)
   const [loading, setLoading] = useState(true)
@@ -139,8 +178,8 @@ export function OrderBook({ symbol, loading: parentLoading }: OrderBookProps) {
     const ba = askRows[0]?.price || 0
     const mp = (ba + bb) / 2
 
-    const asksPadded = padLevels(askRows, "ask", selectedStep, ORDER_BOOK_LEVELS)
-    const bidsPadded = padLevels(bidRows, "bid", selectedStep, ORDER_BOOK_LEVELS)
+    const asksPadded = interpolateLevels(padLevels(askRows, "ask", selectedStep, ORDER_BOOK_LEVELS))
+    const bidsPadded = interpolateLevels(padLevels(bidRows, "bid", selectedStep, ORDER_BOOK_LEVELS))
 
     const visibleAsks = [...asksPadded].reverse()
     const visibleBids = bidsPadded
