@@ -23,7 +23,7 @@ export const ORDER_BOOK_LEVELS = 30
 const ROW_HEIGHT = 10 // px
 const MID_HEIGHT = 22 // px
 
-function padLevels(
+export function padLevels(
   levels: Level[],
   side: "bid" | "ask",
   step: number,
@@ -46,7 +46,7 @@ function padLevels(
   return padded.slice(0, count)
 }
 
-function interpolateLevels(levels: Level[]): Level[] {
+export function interpolateLevels(levels: Level[]): Level[] {
   const result = [...levels]
   let lastFilled = -1
 

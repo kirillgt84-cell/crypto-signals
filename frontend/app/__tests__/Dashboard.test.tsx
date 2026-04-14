@@ -1,5 +1,21 @@
+import React from 'react'
 import { render, screen, waitFor, fireEvent } from '@testing-library/react'
 import Dashboard from '../page'
+
+jest.mock('../context/AuthContext', () => ({
+  useAuth: () => ({
+    user: null,
+    isLoading: false,
+    isAuthenticated: false,
+    login: jest.fn(),
+    register: jest.fn(),
+    logout: jest.fn(),
+    loginWithOAuth: jest.fn(),
+    loginWithTelegram: jest.fn(),
+    refreshToken: jest.fn(),
+  }),
+  AuthProvider: ({ children }: { children: React.ReactNode }) => children,
+}))
 
 // Mock fetch
 global.fetch = jest.fn()
@@ -52,7 +68,8 @@ describe('Dashboard Integration', () => {
   it('renders loading state initially', () => {
     render(<Dashboard />)
     
-    expect(screen.getByText(/loading/i)).toBeInTheDocument()
+    // Loading is indicated by spinner icon, not text
+    expect(document.querySelector('.animate-spin')).toBeInTheDocument()
   })
 
   it('renders dashboard with data after fetch', async () => {
@@ -63,16 +80,28 @@ describe('Dashboard Integration', () => {
           json: () => Promise.resolve(mockMarketData),
         })
       }
-      if (url.includes('/market/checklist/')) {
-        return Promise.resolve({
-          ok: true,
-          json: () => Promise.resolve(mockChecklist),
-        })
-      }
       if (url.includes('/market/levels/')) {
         return Promise.resolve({
           ok: true,
           json: () => Promise.resolve(mockLevels),
+        })
+      }
+      if (url.includes('/market/profile/')) {
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve({ poc: 69800, vah: 71000, val: 68500 }),
+        })
+      }
+      if (url.includes('/market/spot-volume/')) {
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve({ spot_volume: 25000000000, spot_volume_change: 2 }),
+        })
+      }
+      if (url.includes('/market/cvd/')) {
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve({ cvd_value: 2450000 }),
         })
       }
       return Promise.resolve({ ok: false })
@@ -81,34 +110,45 @@ describe('Dashboard Integration', () => {
     render(<Dashboard />)
 
     await waitFor(() => {
-      expect(screen.getByText('Dashboard')).toBeInTheDocument()
+      // Dashboard has no "Dashboard" heading, check for main content instead
+      expect(screen.getByText('ORDER DEPTH')).toBeInTheDocument()
     }, { timeout: 3000 })
   })
 
   it('displays symbol selector', async () => {
-    ;(global.fetch as jest.Mock).mockResolvedValue({
-      ok: true,
-      json: () => Promise.resolve(mockMarketData),
+    ;(global.fetch as jest.Mock).mockImplementation((url: string) => {
+      if (url.includes('/market/')) {
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve(mockMarketData),
+        })
+      }
+      return Promise.resolve({ ok: false })
     })
 
     render(<Dashboard />)
 
     await waitFor(() => {
       expect(screen.getByText('BTC')).toBeInTheDocument()
-    })
+    }, { timeout: 3000 })
   })
 
   it('displays timeframe selector', async () => {
-    ;(global.fetch as jest.Mock).mockResolvedValue({
-      ok: true,
-      json: () => Promise.resolve(mockMarketData),
+    ;(global.fetch as jest.Mock).mockImplementation((url: string) => {
+      if (url.includes('/market/')) {
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve(mockMarketData),
+        })
+      }
+      return Promise.resolve({ ok: false })
     })
 
     render(<Dashboard />)
 
     await waitFor(() => {
       expect(screen.getByText('1H')).toBeInTheDocument()
-    })
+    }, { timeout: 3000 })
   })
 })
 

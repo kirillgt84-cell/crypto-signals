@@ -20,6 +20,8 @@ jest.mock('next-themes', () => ({
   ThemeProvider: ({ children }) => children,
 }))
 
+
+
 // Mock fetch globally
 global.fetch = jest.fn()
 

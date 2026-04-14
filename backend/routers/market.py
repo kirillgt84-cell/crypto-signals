@@ -58,7 +58,7 @@ def clean_json(obj):
         return {k: clean_json(v) for k, v in obj.items()}
     elif isinstance(obj, list):
         return [clean_json(v) for v in obj]
-    elif isinstance(obj, (np.bool_, np.bool)):
+    elif isinstance(obj, (np.bool_, bool)):
         return bool(obj)
     elif isinstance(obj, (np.integer, np.int64, np.int32)):
         return int(obj)
