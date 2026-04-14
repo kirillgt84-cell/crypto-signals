@@ -166,37 +166,5 @@ describe("OrderBook", () => {
     expect(screen.getByText("Order book unavailable")).toBeInTheDocument()
   })
 
-  it("zooms out on wheel scroll down", async () => {
-    ;(global.fetch as jest.Mock).mockResolvedValueOnce({
-      ok: true,
-      json: () => Promise.resolve({ bids: [["70000", "1"]], asks: [["70100", "1"]] }),
-    })
-    render(<OrderBook symbol="BTC" loading={false} />)
-    await waitFor(() => {
-      expect(screen.getByText(/Scroll to zoom/)).toBeInTheDocument()
-    })
 
-    const container = screen.getByText(/Scroll to zoom/).closest("div")
-    if (!container) throw new Error("Container not found")
-
-    fireEvent.wheel(container, { deltaY: 10 })
-    expect(screen.getByText(/35 rows/)).toBeInTheDocument()
-  })
-
-  it("zooms in on wheel scroll up", async () => {
-    ;(global.fetch as jest.Mock).mockResolvedValueOnce({
-      ok: true,
-      json: () => Promise.resolve({ bids: [["70000", "1"]], asks: [["70100", "1"]] }),
-    })
-    render(<OrderBook symbol="BTC" loading={false} />)
-    await waitFor(() => {
-      expect(screen.getByText(/Scroll to zoom/)).toBeInTheDocument()
-    })
-
-    const container = screen.getByText(/Scroll to zoom/).closest("div")
-    if (!container) throw new Error("Container not found")
-
-    fireEvent.wheel(container, { deltaY: -10 })
-    expect(screen.getByText(/25 rows/)).toBeInTheDocument()
-  })
 })

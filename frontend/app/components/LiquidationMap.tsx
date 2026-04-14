@@ -75,7 +75,7 @@ export function LiquidationMap({
   loading,
 }: LiquidationMapProps) {
   const [selectedStep, setSelectedStep] = useState<number>(symbol === "BTC" ? 100 : symbol === "ETH" ? 5 : 1)
-  const [levelCount, setLevelCount] = useState<number>(ORDER_BOOK_LEVELS)
+  const levelCount = ORDER_BOOK_LEVELS
 
   const stepOptions: StepOption[] = useMemo(() => {
     const price = symbol === "BTC" ? 70000 : symbol === "ETH" ? 3500 : currentPrice || 100
@@ -84,12 +84,6 @@ export function LiquidationMap({
     if (price >= 100) return [{ label: "$0.1", value: 0.1 }, { label: "$0.5", value: 0.5 }, { label: "$1", value: 1 }]
     return [{ label: "$0.01", value: 0.01 }, { label: "$0.05", value: 0.05 }, { label: "$0.1", value: 0.1 }]
   }, [symbol, currentPrice])
-
-  const handleWheel = (e: React.WheelEvent) => {
-    e.preventDefault()
-    const delta = e.deltaY > 0 ? 5 : -5
-    setLevelCount((prev) => Math.min(100, Math.max(10, prev + delta)))
-  }
 
   const rowHeight = Math.max(2, Math.floor((CHART_HEIGHT - MID_HEIGHT) / (levelCount * 2)))
 
@@ -184,7 +178,6 @@ export function LiquidationMap({
       className="w-full border-2 border-amber-500/30 rounded-xl bg-[#0b0f19] p-3 font-mono flex flex-col"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      onWheel={handleWheel}
     >
       {/* Header */}
       <div className="flex items-center justify-between mb-2 pb-2 border-b border-amber-500/20">
@@ -209,11 +202,6 @@ export function LiquidationMap({
             </button>
           ))}
         </div>
-      </div>
-
-      {/* Zoom hint */}
-      <div className="text-[10px] text-slate-500 mb-1 text-right">
-        Scroll to zoom · {levelCount} rows
       </div>
 
       {/* Top scale */}
@@ -308,9 +296,9 @@ export function LiquidationMap({
 
       {/* Footer */}
       <div className="mt-2 pt-2 border-t border-slate-800 flex items-center justify-between text-[10px] text-slate-400">
-        <span>Shorts: <span className="text-rose-400 font-bold">{levelCount}</span></span>
+        <span>Shorts: <span className="text-rose-400 font-bold">{ORDER_BOOK_LEVELS}</span></span>
         <span>Max: <span className="text-amber-400 font-bold">{formatSize(maxSize)}</span></span>
-        <span>Longs: <span className="text-emerald-400 font-bold">{levelCount}</span></span>
+        <span>Longs: <span className="text-emerald-400 font-bold">{ORDER_BOOK_LEVELS}</span></span>
       </div>
     </motion.div>
   )

@@ -90,14 +90,7 @@ export function OrderBook({ symbol, loading: parentLoading }: OrderBookProps) {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [selectedStep, setSelectedStep] = useState<number>(50)
-  const [levelCount, setLevelCount] = useState<number>(ORDER_BOOK_LEVELS)
-
-  const handleWheel = (e: React.WheelEvent) => {
-    e.preventDefault()
-    const delta = e.deltaY > 0 ? 5 : -5
-    setLevelCount((prev) => Math.min(100, Math.max(10, prev + delta)))
-  }
-
+  const levelCount = ORDER_BOOK_LEVELS
   const rowHeight = Math.max(2, Math.floor((CHART_HEIGHT - MID_HEIGHT) / (levelCount * 2)))
 
   const stepOptions: StepOption[] = useMemo(() => {
@@ -257,7 +250,6 @@ export function OrderBook({ symbol, loading: parentLoading }: OrderBookProps) {
       className="w-full border-2 border-blue-500/30 rounded-xl bg-[#0b0f19] p-3 font-mono flex flex-col"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      onWheel={handleWheel}
     >
       {/* Header */}
       <div className="flex items-center justify-between mb-2 pb-2 border-b border-blue-500/20">
@@ -281,11 +273,6 @@ export function OrderBook({ symbol, loading: parentLoading }: OrderBookProps) {
             </button>
           ))}
         </div>
-      </div>
-
-      {/* Zoom hint */}
-      <div className="text-[10px] text-slate-500 mb-1 text-right">
-        Scroll to zoom · {levelCount} rows
       </div>
 
       {/* Top scale */}
@@ -376,9 +363,9 @@ export function OrderBook({ symbol, loading: parentLoading }: OrderBookProps) {
 
       {/* Footer */}
       <div className="mt-2 pt-2 border-t border-slate-800 flex items-center justify-between text-[10px] text-slate-400">
-        <span>Asks: <span className="text-rose-400 font-bold">{levelCount}</span></span>
+        <span>Asks: <span className="text-rose-400 font-bold">{ORDER_BOOK_LEVELS}</span></span>
         <span>Max: <span className="text-blue-400 font-bold">{formatQty(maxTotal)}</span></span>
-        <span>Bids: <span className="text-emerald-400 font-bold">{levelCount}</span></span>
+        <span>Bids: <span className="text-emerald-400 font-bold">{ORDER_BOOK_LEVELS}</span></span>
       </div>
     </motion.div>
   )

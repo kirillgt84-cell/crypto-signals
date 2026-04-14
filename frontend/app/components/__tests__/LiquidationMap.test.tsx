@@ -136,38 +136,5 @@ describe("LiquidationMap", () => {
     expect(screen.getByText("$50")).toBeInTheDocument()
   })
 
-  it("zooms out on wheel scroll down", () => {
-    render(
-      <LiquidationMap
-        liquidations={mockLiquidations}
-        currentPrice={50000}
-        symbol="BTC"
-        loading={false}
-      />
-    )
-    const container = screen.getByText("LIQUIDATION MAP").closest("div")?.parentElement
-    if (!container) throw new Error("Container not found")
 
-    const zoomText = screen.getByText(/Scroll to zoom/)
-    expect(zoomText).toBeInTheDocument()
-
-    fireEvent.wheel(container, { deltaY: 10 })
-    expect(screen.getByText(/35 rows/)).toBeInTheDocument()
-  })
-
-  it("zooms in on wheel scroll up", () => {
-    render(
-      <LiquidationMap
-        liquidations={mockLiquidations}
-        currentPrice={50000}
-        symbol="BTC"
-        loading={false}
-      />
-    )
-    const container = screen.getByText("LIQUIDATION MAP").closest("div")?.parentElement
-    if (!container) throw new Error("Container not found")
-
-    fireEvent.wheel(container, { deltaY: -10 })
-    expect(screen.getByText(/25 rows/)).toBeInTheDocument()
-  })
 })
