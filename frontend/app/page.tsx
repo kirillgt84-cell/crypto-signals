@@ -82,6 +82,14 @@ interface LiquidationLevel {
   size: number
 }
 
+function formatVolumeUSD(value: number): string {
+  const abs = Math.abs(value)
+  if (abs >= 1e9) return `$${(value / 1e9).toFixed(2)}B`
+  if (abs >= 1e6) return `$${(value / 1e6).toFixed(2)}M`
+  if (abs >= 1e3) return `$${(value / 1e3).toFixed(2)}K`
+  return `$${value.toFixed(2)}`
+}
+
 // Section Card Component
 function MetricCard({
   title,
@@ -164,7 +172,7 @@ function OIAnalysisCards({ data, loading, timeframe }: { data: MarketData; loadi
       />
       <MetricCard
         title="Open Interest"
-        value={`$${((data?.oi || 0) * (data?.price || 0) / 1e9).toFixed(2)}B`}
+        value={formatVolumeUSD((data?.oi || 0) * (data?.price || 0))}
         subvalue={`${(data?.oi / 1e6)?.toFixed(2) || "0.00"}M contracts`}
         trend={data?.oi_change > 0 ? "Rising" : data?.oi_change < 0 ? "Falling" : "Stable"}
         trendUp={data?.oi_change >= 0}
@@ -173,7 +181,7 @@ function OIAnalysisCards({ data, loading, timeframe }: { data: MarketData; loadi
       />
       <MetricCard
         title="Futures Volume"
-        value={`$${((data?.volume || 0) * (data?.price || 0) / 1e9).toFixed(2)}B`}
+        value={formatVolumeUSD((data?.volume || 0) * (data?.price || 0))}
         subvalue={data?.volume_change !== undefined && data?.volume_change !== 0 ? `${data.volume_change >= 0 ? "+" : ""}${data.volume_change.toFixed(2)}% (${timeframe === "15" ? "15m" : timeframe === "60" ? "1h" : timeframe === "240" ? "4h" : "1d"})` : `${timeframe === "15" ? "15m" : timeframe === "60" ? "1h" : timeframe === "240" ? "4h" : "1d"} volume`}
         trend={data?.volume_change > 0 ? "Rising" : data?.volume_change < 0 ? "Falling" : "Stable"}
         trendUp={data?.volume_change >= 0}
@@ -182,7 +190,7 @@ function OIAnalysisCards({ data, loading, timeframe }: { data: MarketData; loadi
       />
       <MetricCard
         title="Spot Volume"
-        value={`$${((data?.spot_volume || 0) * (data?.price || 0) / 1e9).toFixed(2)}B`}
+        value={formatVolumeUSD((data?.spot_volume || 0) * (data?.price || 0))}
         subvalue={data?.spot_volume_change !== undefined && data?.spot_volume_change !== 0 ? `${data.spot_volume_change >= 0 ? "+" : ""}${data.spot_volume_change.toFixed(2)}% (${timeframe === "15" ? "15m" : timeframe === "60" ? "1h" : timeframe === "240" ? "4h" : "1d"})` : `${timeframe === "15" ? "15m" : timeframe === "60" ? "1h" : timeframe === "240" ? "4h" : "1d"} volume`}
         trend={data?.spot_volume_change > 0 ? "Rising" : data?.spot_volume_change < 0 ? "Falling" : "Stable"}
         trendUp={data?.spot_volume_change >= 0}
@@ -229,7 +237,7 @@ function ChartLegend({ data, loading }: { data: MarketData; loading: boolean }) 
       </div>
       <div>
         <p className="text-xs text-muted-foreground">OI Value</p>
-        <p className="font-mono font-medium">${((data?.oi || 0) * (data?.price || 0) / 1e9).toFixed(2)}B</p>
+        <p className="font-mono font-medium">{formatVolumeUSD((data?.oi || 0) * (data?.price || 0))}</p>
       </div>
       <div>
         <p className="text-xs text-muted-foreground">To EMA 20</p>

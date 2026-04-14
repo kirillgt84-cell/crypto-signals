@@ -10,7 +10,7 @@ from daily_fundamentals import (
     save_metric,
     collect_fundamentals,
     fetch_bgeometrics_last,
-    fetch_coingecko_data,
+    fetch_binance_24hr,
     fetch_binance_funding,
 )
 
@@ -169,42 +169,20 @@ class TestFetchBGeometrics:
 
 
 @pytest.mark.asyncio
-class TestFetchCoinGecko:
+class TestFetchBinance24hr:
     async def test_success(self):
         mock_response = Mock()
         mock_response.status_code = 200
         mock_response.json.return_value = {
-            "market_data": {
-                "market_cap": {"usd": 1000000000000},
-                "current_price": {"usd": 50000},
-                "circulating_supply": 19000000,
-                "price_change_percentage_24h": 2.5,
-            }
+            "lastPrice": "75000.50",
+            "priceChangePercent": "2.5",
         }
         mock_client = AsyncMock()
         mock_client.get.return_value = mock_response
 
-        result = await fetch_coingecko_data(mock_client, "bitcoin")
-        assert result["market_cap"] == 1000000000000
-        assert result["price"] == 50000
-        assert result["supply"] == 19000000
+        result = await fetch_binance_24hr(mock_client, "BTC")
+        assert result["price"] == 75000.50
         assert result["price_change_24h_pct"] == 2.5
-
-    async def test_missing_price_change(self):
-        mock_response = Mock()
-        mock_response.status_code = 200
-        mock_response.json.return_value = {
-            "market_data": {
-                "market_cap": {"usd": 1000000000000},
-                "current_price": {"usd": 50000},
-                "circulating_supply": 19000000,
-            }
-        }
-        mock_client = AsyncMock()
-        mock_client.get.return_value = mock_response
-
-        result = await fetch_coingecko_data(mock_client, "bitcoin")
-        assert result["price_change_24h_pct"] == 0
 
     async def test_failure(self):
         mock_response = Mock()
@@ -212,7 +190,14 @@ class TestFetchCoinGecko:
         mock_client = AsyncMock()
         mock_client.get.return_value = mock_response
 
-        result = await fetch_coingecko_data(mock_client, "bitcoin")
+        result = await fetch_binance_24hr(mock_client, "BTC")
+        assert result is None
+
+    async def test_exception(self):
+        mock_client = AsyncMock()
+        mock_client.get.side_effect = Exception("Connection timeout")
+
+        result = await fetch_binance_24hr(mock_client, "BTC")
         assert result is None
 
 
@@ -254,10 +239,10 @@ class TestFetchBinanceFunding:
 class TestCollectFundamentals:
     @patch("daily_fundamentals.fetch_binance_funding", new_callable=AsyncMock)
     @patch("daily_fundamentals.fetch_bgeometrics_last", new_callable=AsyncMock)
-    @patch("daily_fundamentals.fetch_coingecko_data", new_callable=AsyncMock)
+    @patch("daily_fundamentals.fetch_binance_24hr", new_callable=AsyncMock)
     @patch("daily_fundamentals.get_db")
     async def test_collect_btc_bgeometrics_success(
-        self, mock_get_db, mock_cg, mock_bg, mock_funding
+        self, mock_get_db, mock_bn24, mock_bg, mock_funding
     ):
         mock_db = mock_get_db.return_value
         mock_db.connect = AsyncMock()
@@ -269,56 +254,53 @@ class TestCollectFundamentals:
             {"mvrv": "1.5", "d": "2026-04-14"},   # BTC mvrv
         ]
         mock_funding.return_value = 0.0001
-        mock_cg.return_value = None
+        mock_bn24.return_value = {"price": 75000.0, "price_change_24h_pct": 1.5}
 
         results = await collect_fundamentals()
 
         assert all(r["saved"] for r in results)
         btc_results = [r for r in results if r["symbol"] == "BTC"]
-        assert len(btc_results) == 3
+        # BTC: mvrv, nupl, market_momentum, funding_rate
+        assert len(btc_results) == 4
         assert btc_results[0]["metric"] == "mvrv"
         assert btc_results[1]["metric"] == "nupl"
-        assert btc_results[2]["metric"] == "funding_rate"
-        # All other assets get at least funding_rate (no CoinGecko data in this mock)
+        assert btc_results[2]["metric"] == "market_momentum"
+        assert btc_results[3]["metric"] == "funding_rate"
+
         eth_results = [r for r in results if r["symbol"] == "ETH"]
-        assert len(eth_results) == 1
-        assert eth_results[0]["metric"] == "funding_rate"
+        assert len(eth_results) == 2
+        assert eth_results[0]["metric"] == "market_momentum"
+        assert eth_results[1]["metric"] == "funding_rate"
 
     @patch("daily_fundamentals.fetch_binance_funding", new_callable=AsyncMock)
     @patch("daily_fundamentals.fetch_bgeometrics_last", new_callable=AsyncMock)
-    @patch("daily_fundamentals.fetch_coingecko_data", new_callable=AsyncMock)
+    @patch("daily_fundamentals.fetch_binance_24hr", new_callable=AsyncMock)
     @patch("daily_fundamentals.get_db")
-    async def test_collect_btc_fallback_to_coingecko(
-        self, mock_get_db, mock_cg, mock_bg, mock_funding
+    async def test_collect_btc_fallback_to_binance(
+        self, mock_get_db, mock_bn24, mock_bg, mock_funding
     ):
         mock_db = mock_get_db.return_value
         mock_db.connect = AsyncMock()
         mock_db.close = AsyncMock()
         mock_db.execute = AsyncMock()
 
-        # BGeometrics returns None -> fallback to CoinGecko
+        # BGeometrics returns None -> fallback to Binance 24h for BTC
         mock_bg.return_value = None
         mock_funding.return_value = 0.0001
-        mock_cg.return_value = {
-            "market_cap": 1000000000000,
-            "price": 50000,
-            "supply": 19000000,
-            "price_change_24h_pct": 2.5,
-        }
+        mock_bn24.return_value = {"price": 50000.0, "price_change_24h_pct": 2.5}
 
         results = await collect_fundamentals()
 
-        # BTC: market_momentum + funding, ETH: market_momentum + funding
         metrics = [r["metric"] for r in results]
         assert "market_momentum" in metrics
         assert "funding_rate" in metrics
 
     @patch("daily_fundamentals.fetch_binance_funding", new_callable=AsyncMock)
     @patch("daily_fundamentals.fetch_bgeometrics_last", new_callable=AsyncMock)
-    @patch("daily_fundamentals.fetch_coingecko_data", new_callable=AsyncMock)
+    @patch("daily_fundamentals.fetch_binance_24hr", new_callable=AsyncMock)
     @patch("daily_fundamentals.get_db")
     async def test_collect_no_funding(
-        self, mock_get_db, mock_cg, mock_bg, mock_funding
+        self, mock_get_db, mock_bn24, mock_bg, mock_funding
     ):
         mock_db = mock_get_db.return_value
         mock_db.connect = AsyncMock()
@@ -330,7 +312,7 @@ class TestCollectFundamentals:
             {"mvrv": "1.5"},
         ]
         mock_funding.return_value = None  # No funding data
-        mock_cg.return_value = None
+        mock_bn24.return_value = None
 
         results = await collect_fundamentals()
 

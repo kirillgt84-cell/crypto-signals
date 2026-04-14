@@ -176,11 +176,16 @@ class TestProfileEndpoint:
             "vah": 71000,
             "val": 68500,
         })
+        mock_fetcher.get_ema_levels = AsyncMock(return_value={
+            "ema20": 69500, "ema50": 69000
+        })
 
         result = await get_profile("BTC")
 
         assert result["poc"] == 69800
+        assert result["ema20"] == 69500
         mock_fetcher.get_cluster_data.assert_called_once_with("BTCUSDT")
+        mock_fetcher.get_ema_levels.assert_called_once_with("BTCUSDT", "1h")
 
 
 @pytest.mark.asyncio

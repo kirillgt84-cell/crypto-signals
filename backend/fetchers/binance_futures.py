@@ -2,6 +2,7 @@
 Fetcher для Binance Futures данных
 """
 import aiohttp
+import math
 import pandas as pd
 from datetime import datetime, timedelta
 from typing import Dict, List, Optional
@@ -295,19 +296,39 @@ class BinanceFuturesFetcher:
                 print(f"DEBUG cluster: {symbol} - empty trades list")
                 return self._empty_clusters(symbol)
             
-            # Определяем шаг округления на основе цены (берем первую сделку)
-            sample_price = float(trades[0]['p']) if trades else 50000
-            print(f"DEBUG cluster: {symbol} sample_price={sample_price}")
-            if sample_price > 10000:
-                step = 100  # BTC, ETH
-            elif sample_price > 1000:
-                step = 10   # ETH, BNB
-            elif sample_price > 100:
-                step = 1    # SOL, AVAX
-            elif sample_price > 1:
-                step = 0.001  # XRP, ADA - finer granularity
+            # Адаптивный шаг на основе реального разброса цен в trades
+            prices = [float(t['p']) for t in trades]
+            min_p = min(prices)
+            max_p = max(prices)
+            sample_price = prices[0]
+            price_range = max_p - min_p
+            
+            if price_range > 0:
+                rough_step = price_range / 25
+                magnitude = 10 ** math.floor(math.log10(rough_step))
+                normalized = rough_step / magnitude
+                if normalized < 1.5:
+                    step = magnitude
+                elif normalized < 3.5:
+                    step = 2 * magnitude
+                elif normalized < 7.5:
+                    step = 5 * magnitude
+                else:
+                    step = 10 * magnitude
             else:
-                step = 0.0001  # DOGE, SHIB
+                # Fallback по цене актива если все сделки по одной цене
+                if sample_price > 10000:
+                    step = 100
+                elif sample_price > 1000:
+                    step = 10
+                elif sample_price > 100:
+                    step = 1
+                elif sample_price > 1:
+                    step = 0.001
+                else:
+                    step = 0.0001
+            
+            print(f"DEBUG cluster: {symbol} price_range={price_range}, step={step}, min={min_p}, max={max_p}")
             
             # Агрегируем по ценовым уровням
             clusters = {}

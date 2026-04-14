@@ -3,60 +3,27 @@ Daily fundamentals collector
 Gathers MVRV, NUPL, Funding Rate from free APIs
 Run via cron: python daily_fundamentals.py
 """
-import os
 import asyncio
 import httpx
 import logging
 import json
-from datetime import datetime, timedelta
 from database import get_db
 
 logger = logging.getLogger(__name__)
 
-COINGECKO_URL = "https://api.coingecko.com/api/v3"
 BGEOMETRICS_URL = "https://bitcoin-data.com/api/v1"
 
 ASSETS = {
-    "BTC": {
-        "source": "bgeometrics",
-        "coin_id": "bitcoin",
-    },
-    "ETH": {
-        "source": "coingecko",
-        "coin_id": "ethereum",
-    },
-    "SOL": {
-        "source": "coingecko",
-        "coin_id": "solana",
-    },
-    "BNB": {
-        "source": "coingecko",
-        "coin_id": "binancecoin",
-    },
-    "XRP": {
-        "source": "coingecko",
-        "coin_id": "ripple",
-    },
-    "DOGE": {
-        "source": "coingecko",
-        "coin_id": "dogecoin",
-    },
-    "ADA": {
-        "source": "coingecko",
-        "coin_id": "cardano",
-    },
-    "LINK": {
-        "source": "coingecko",
-        "coin_id": "chainlink",
-    },
-    "AVAX": {
-        "source": "coingecko",
-        "coin_id": "avalanche-2",
-    },
-    "POL": {
-        "source": "coingecko",
-        "coin_id": "polygon-ecosystem-token",
-    },
+    "BTC": {"source": "bgeometrics"},
+    "ETH": {"source": "binance"},
+    "SOL": {"source": "binance"},
+    "BNB": {"source": "binance"},
+    "XRP": {"source": "binance"},
+    "DOGE": {"source": "binance"},
+    "ADA": {"source": "binance"},
+    "LINK": {"source": "binance"},
+    "AVAX": {"source": "binance"},
+    "POL": {"source": "binance"},
 }
 
 async def fetch_bgeometrics_last(client: httpx.AsyncClient, metric: str):
@@ -72,28 +39,23 @@ async def fetch_bgeometrics_last(client: httpx.AsyncClient, metric: str):
         logger.error(f"[BGeometrics] {metric} error: {e}")
     return None
 
-async def fetch_coingecko_data(client: httpx.AsyncClient, coin_id: str):
-    """Fetch market cap and price from CoinGecko"""
+async def fetch_binance_24hr(client: httpx.AsyncClient, symbol: str):
+    """Fetch 24h price change percent from Binance (no rate limits, no API key)"""
     try:
         r = await client.get(
-            f"{COINGECKO_URL}/coins/{coin_id}",
-            params={"localization": "false", "tickers": "false", "community_data": "false", "developer_data": "false"},
+            f"https://api.binance.com/api/v3/ticker/24hr?symbol={symbol}USDT",
             timeout=10,
         )
         if r.status_code == 200:
             data = r.json()
-            await asyncio.sleep(1.5)  # Rate limit guard
             return {
-                "market_cap": data["market_data"]["market_cap"]["usd"],
-                "price": data["market_data"]["current_price"]["usd"],
-                "supply": data["market_data"]["circulating_supply"],
-                "price_change_24h_pct": data["market_data"].get("price_change_percentage_24h", 0),
+                "price": float(data.get("lastPrice", 0)),
+                "price_change_24h_pct": float(data.get("priceChangePercent", 0)),
             }
         else:
-            logger.warning(f"[Fundamentals] CoinGecko {coin_id} status {r.status_code}: {r.text[:200]}")
+            logger.warning(f"[Fundamentals] Binance 24hr {symbol} status {r.status_code}: {r.text[:200]}")
     except Exception as e:
-        logger.error(f"[Fundamentals] CoinGecko error: {e}")
-    await asyncio.sleep(1.5)
+        logger.error(f"[Fundamentals] Binance 24hr {symbol} error: {e}")
     return None
 
 async def fetch_binance_funding(client: httpx.AsyncClient, symbol: str):
@@ -163,7 +125,6 @@ async def collect_fundamentals():
         for symbol, config in ASSETS.items():
             logger.info(f"[Fundamentals] Collecting {symbol}...")
             source = config["source"]
-            coin_id = config["coin_id"]
             
             funding = await fetch_binance_funding(client, symbol)
             
@@ -185,23 +146,27 @@ async def collect_fundamentals():
                         "description": interpret_nupl(nupl_val)[1],
                     }))
                 else:
-                    logger.warning(f"[Fundamentals] {symbol} BGeometrics incomplete, falling back to CoinGecko")
-                    cg = await fetch_coingecko_data(client, coin_id)
-                    if cg:
-                        results.append(await save_metric(db, symbol, "market_momentum", cg["price_change_24h_pct"] / 100, {
-                            "price": cg["price"],
-                            "market_cap": cg["market_cap"],
-                            "supply": cg["supply"],
-                            "price_change_24h_pct": cg["price_change_24h_pct"],
+                    logger.warning(f"[Fundamentals] {symbol} BGeometrics incomplete, using Binance 24h")
+                    bn = await fetch_binance_24hr(client, symbol)
+                    if bn:
+                        results.append(await save_metric(db, symbol, "market_momentum", bn["price_change_24h_pct"] / 100, {
+                            "price": bn["price"],
+                            "price_change_24h_pct": bn["price_change_24h_pct"],
                         }))
+                
+                # Also save market_momentum for BTC from Binance
+                bn = await fetch_binance_24hr(client, symbol)
+                if bn:
+                    results.append(await save_metric(db, symbol, "market_momentum", bn["price_change_24h_pct"] / 100, {
+                        "price": bn["price"],
+                        "price_change_24h_pct": bn["price_change_24h_pct"],
+                    }))
             else:
-                cg = await fetch_coingecko_data(client, coin_id)
-                if cg:
-                    results.append(await save_metric(db, symbol, "market_momentum", cg["price_change_24h_pct"] / 100, {
-                        "price": cg["price"],
-                        "market_cap": cg["market_cap"],
-                        "supply": cg["supply"],
-                        "price_change_24h_pct": cg["price_change_24h_pct"],
+                bn = await fetch_binance_24hr(client, symbol)
+                if bn:
+                    results.append(await save_metric(db, symbol, "market_momentum", bn["price_change_24h_pct"] / 100, {
+                        "price": bn["price"],
+                        "price_change_24h_pct": bn["price_change_24h_pct"],
                     }))
             
             if funding is not None:

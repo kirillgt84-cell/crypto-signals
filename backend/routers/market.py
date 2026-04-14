@@ -362,15 +362,20 @@ async def get_cvd(
 
 @router.get("/profile/{symbol}")
 async def get_profile(symbol: str):
-    """Volume Profile (POC, VAH, VAL)"""
+    """Volume Profile (POC, VAH, VAL) + EMA levels"""
     try:
-        # Добавляем USDT к символу если его нет
         symbol_upper = symbol.upper()
         if not symbol_upper.endswith('USDT'):
             symbol_upper = f"{symbol_upper}USDT"
         
-        data = await fetcher.get_cluster_data(symbol_upper)
-        return data
+        cluster_data = await fetcher.get_cluster_data(symbol_upper)
+        ema_data = await fetcher.get_ema_levels(symbol_upper, "1h")
+        
+        return {
+            **cluster_data,
+            "ema20": ema_data.get("ema20"),
+            "ema50": ema_data.get("ema50"),
+        }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
