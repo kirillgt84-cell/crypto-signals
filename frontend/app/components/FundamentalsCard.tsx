@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { motion } from "framer-motion"
-import { TrendingUp, TrendingDown, Activity, Wallet, AlertCircle, Loader2, Zap } from "lucide-react"
+import { TrendingUp, TrendingDown, Activity, Wallet, AlertCircle, Loader2, Info } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { cn } from "@/lib/utils"
 
@@ -39,6 +39,72 @@ interface FundamentalsData {
 interface FundamentalsCardProps {
   symbol: string
   loading?: boolean
+}
+
+const METRIC_INFO: Record<string, string> = {
+  mvrv: "Market Value to Realized Value — отношение рыночной капитализации к реализованной. Показывает, насколько актив переоценён или недооценён.",
+  nupl: "Net Unrealized Profit/Loss — доля нераспределённой прибыли/убытка. Отражает эмоциональное состояние рынка.",
+  funding: "Плата за удержание маржинальных позиций. Положительная = переплата лонгистов, отрицательная = шортистов.",
+  market_momentum: "Изменение цены за 24 часа. Отражает краткосрочный рыночный импульс.",
+}
+
+function ZoneCard({
+  title,
+  valueFormatted,
+  description,
+  infoKey,
+  children,
+}: {
+  title: string
+  valueFormatted: string
+  description: string
+  infoKey: string
+  children: React.ReactNode
+}) {
+  return (
+    <div className="space-y-1.5 p-2.5 rounded-lg bg-slate-900/40 border border-slate-800">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-1.5">
+          <span className="text-[10px] text-slate-400 uppercase tracking-wider font-semibold">{title}</span>
+          <div className="group relative">
+            <Info className="w-3 h-3 text-slate-600 cursor-help hover:text-slate-400 transition-colors" />
+            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 w-44 p-2 bg-slate-900 border border-slate-700 rounded-md text-[9px] text-slate-300 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-20 shadow-xl">
+              {METRIC_INFO[infoKey]}
+            </div>
+          </div>
+        </div>
+        <span className="text-xs font-bold font-mono text-white">{valueFormatted}</span>
+      </div>
+
+      {children}
+
+      <p className="text-[10px] font-medium text-slate-400 leading-tight">{description}</p>
+    </div>
+  )
+}
+
+function ZoneBar({
+  segments,
+  indicatorPosition,
+}: {
+  segments: { color: string }[]
+  indicatorPosition: number
+}) {
+  return (
+    <div className="space-y-0.5">
+      <div className="relative h-2 rounded-full overflow-hidden flex">
+        {segments.map((seg, i) => (
+          <div key={i} className={cn("h-full flex-1 first:rounded-l-full last:rounded-r-full", seg.color, i > 0 && "ml-px")} />
+        ))}
+      </div>
+      <div className="relative h-1">
+        <div
+          className="absolute top-0 w-0 h-0 border-l-[4px] border-l-transparent border-r-[4px] border-r-transparent border-b-[5px] border-b-white -translate-x-1/2 transition-all duration-500"
+          style={{ left: `${Math.max(2, Math.min(98, indicatorPosition))}%` }}
+        />
+      </div>
+    </div>
+  )
 }
 
 export function FundamentalsCard({ symbol, loading: parentLoading }: FundamentalsCardProps) {
@@ -126,6 +192,12 @@ export function FundamentalsCard({ symbol, loading: parentLoading }: Fundamental
     return "bg-amber-500/10 border-amber-500/30"
   }
 
+  const getSentimentEmoji = (s: string) => {
+    if (s === "BULLISH") return "🚀"
+    if (s === "BEARISH") return "🐻"
+    return "⚖️"
+  }
+
   const comps = data.composite?.components || {}
 
   return (
@@ -143,128 +215,139 @@ export function FundamentalsCard({ symbol, loading: parentLoading }: Fundamental
         {/* Composite Score */}
         <motion.div
           className={cn(
-            "flex items-center justify-between p-2 rounded border",
+            "flex items-center justify-between p-3 rounded-lg border",
             getSentimentBg(sentiment)
           )}
           initial={{ opacity: 0, y: 5 }}
           animate={{ opacity: 1, y: 0 }}
         >
-          <div className="flex items-center gap-2">
-            {sentiment === "BULLISH" ? (
-              <TrendingUp className={cn("w-4 h-4", getSentimentColor(sentiment))} />
-            ) : sentiment === "BEARISH" ? (
-              <TrendingDown className={cn("w-4 h-4", getSentimentColor(sentiment))} />
-            ) : (
-              <Wallet className={cn("w-4 h-4", getSentimentColor(sentiment))} />
-            )}
-            <span className={cn("text-xs font-bold", getSentimentColor(sentiment))}>
-              {sentiment}
+          <div className="flex items-center gap-3">
+            <span className="text-2xl leading-none">{getSentimentEmoji(sentiment)}</span>
+            <div>
+              <div className={cn("text-sm font-bold", getSentimentColor(sentiment))}>{sentiment}</div>
+              <div className="text-[10px] text-slate-500">Composite score</div>
+            </div>
+          </div>
+          <div className="text-right">
+            <span className={cn("text-xl font-mono font-bold", getSentimentColor(sentiment))}>
+              {score > 0 ? "+" : ""}{score.toFixed(2)}
             </span>
           </div>
-          <span className={cn("text-sm font-mono font-bold", getSentimentColor(sentiment))}>
-            {score > 0 ? "+" : ""}{score.toFixed(2)}
-          </span>
         </motion.div>
 
         {/* MVRV */}
         {data.mvrv && (
           <motion.div
-            className="space-y-1"
             initial={{ opacity: 0, x: -10 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.1 }}
           >
-            <div className="flex items-center justify-between text-[10px] text-slate-400 uppercase tracking-wider">
-              <span>MVRV</span>
-              <span className={cn(
-                "font-bold",
-                data.mvrv.value < 1.0 ? "text-emerald-500" :
-                data.mvrv.value < 2.0 ? "text-blue-400" :
-                data.mvrv.value < 3.5 ? "text-amber-500" : "text-rose-500"
-              )}>
-                {data.mvrv.value.toFixed(2)}
-              </span>
-            </div>
-            <div className="h-1.5 bg-slate-800 rounded-full overflow-hidden">
-              <div
-                className={cn(
-                  "h-full rounded-full transition-all duration-500",
-                  data.mvrv.value < 1.0 ? "bg-emerald-500" :
-                  data.mvrv.value < 2.0 ? "bg-blue-400" :
-                  data.mvrv.value < 3.5 ? "bg-amber-500" : "bg-rose-500"
-                )}
-                style={{ width: `${Math.min(100, (data.mvrv.value / 5) * 100)}%` }}
+            <ZoneCard
+              title="MVRV"
+              valueFormatted={data.mvrv.value.toFixed(2)}
+              description={data.mvrv.raw_data?.description || ""}
+              infoKey="mvrv"
+            >
+              <ZoneBar
+                segments={[
+                  { color: "bg-emerald-500" },
+                  { color: "bg-blue-400" },
+                  { color: "bg-amber-500" },
+                  { color: "bg-rose-500" },
+                ]}
+                indicatorPosition={Math.min(100, (data.mvrv.value / 5) * 100)}
               />
-            </div>
-            <p className="text-[10px] text-slate-500">{data.mvrv.raw_data?.description}</p>
+            </ZoneCard>
           </motion.div>
         )}
 
         {/* NUPL */}
         {data.nupl && (
           <motion.div
-            className="space-y-1"
-            initial={{ opacity: 0, x: -10 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.2 }}
-          >
-            <div className="flex items-center justify-between text-[10px] text-slate-400 uppercase tracking-wider">
-              <span>NUPL</span>
-              <span className={cn(
-                "font-bold",
-                data.nupl.value > 0.75 ? "text-rose-500" :
-                data.nupl.value > 0.50 ? "text-amber-500" :
-                data.nupl.value > 0.25 ? "text-yellow-400" :
-                data.nupl.value > 0 ? "text-emerald-500" : "text-blue-400"
-              )}>
-                {data.nupl.value > 0 ? "+" : ""}{data.nupl.value.toFixed(2)}
-              </span>
-            </div>
-            <div className="h-1.5 bg-slate-800 rounded-full overflow-hidden">
-              <div
-                className={cn(
-                  "h-full rounded-full transition-all duration-500",
-                  data.nupl.value > 0.75 ? "bg-rose-500" :
-                  data.nupl.value > 0.50 ? "bg-amber-500" :
-                  data.nupl.value > 0.25 ? "bg-yellow-400" :
-                  data.nupl.value > 0 ? "bg-emerald-500" : "bg-blue-400"
-                )}
-                style={{ width: `${Math.min(100, Math.max(0, (data.nupl.value + 0.5) / 1.25) * 100)}%` }}
-              />
-            </div>
-            <p className="text-[10px] text-slate-500">{data.nupl.raw_data?.description}</p>
-          </motion.div>
-        )}
-
-        {/* Market Momentum (ETH fallback) */}
-        {comps.market_momentum && !data.mvrv && (
-          <motion.div
-            className="space-y-1"
             initial={{ opacity: 0, x: -10 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.15 }}
           >
-            <div className="flex items-center justify-between text-[10px] text-slate-400 uppercase tracking-wider">
-              <span>24h Momentum</span>
-              <span className={cn(
-                "font-bold",
-                comps.market_momentum.value > 0.10 ? "text-emerald-500" :
-                comps.market_momentum.value < -0.10 ? "text-rose-500" : "text-amber-500"
-              )}>
-                {(comps.market_momentum.value * 100).toFixed(1)}%
-              </span>
-            </div>
-            <div className="h-1.5 bg-slate-800 rounded-full overflow-hidden">
-              <div
-                className={cn(
-                  "h-full rounded-full transition-all duration-500",
-                  comps.market_momentum.value > 0.10 ? "bg-emerald-500" :
-                  comps.market_momentum.value < -0.10 ? "bg-rose-500" : "bg-amber-500"
-                )}
-                style={{ width: `${Math.min(100, Math.max(0, (comps.market_momentum.value + 0.5) / 1.0) * 100)}%` }}
+            <ZoneCard
+              title="NUPL"
+              valueFormatted={`${data.nupl.value > 0 ? "+" : ""}${data.nupl.value.toFixed(2)}`}
+              description={data.nupl.raw_data?.description || ""}
+              infoKey="nupl"
+            >
+              <ZoneBar
+                segments={[
+                  { color: "bg-blue-400" },
+                  { color: "bg-emerald-500" },
+                  { color: "bg-yellow-400" },
+                  { color: "bg-amber-500" },
+                  { color: "bg-rose-500" },
+                ]}
+                indicatorPosition={Math.min(100, Math.max(0, ((data.nupl.value + 0.5) / 1.5) * 100))}
               />
-            </div>
-            <p className="text-[10px] text-slate-500">Рыночный импульс за 24ч</p>
+            </ZoneCard>
+          </motion.div>
+        )}
+
+        {/* Market Momentum (alt fallback) */}
+        {comps.market_momentum && !data.mvrv && (
+          <motion.div
+            initial={{ opacity: 0, x: -10 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.12 }}
+          >
+            <ZoneCard
+              title="24h Momentum"
+              valueFormatted={`${(comps.market_momentum.value * 100).toFixed(1)}%`}
+              description={
+                comps.market_momentum.value > 0.10
+                  ? "Сильный бычий импульс"
+                  : comps.market_momentum.value < -0.10
+                  ? "Сильный медвежий импульс"
+                  : "Умеренный рыночный импульс"
+              }
+              infoKey="market_momentum"
+            >
+              <ZoneBar
+                segments={[
+                  { color: "bg-rose-500" },
+                  { color: "bg-orange-400" },
+                  { color: "bg-emerald-500" },
+                  { color: "bg-emerald-400" },
+                ]}
+                indicatorPosition={Math.min(100, Math.max(0, ((comps.market_momentum.value + 0.3) / 0.6) * 100))}
+              />
+            </ZoneCard>
+          </motion.div>
+        )}
+
+        {/* Funding Rate */}
+        {comps.funding && (
+          <motion.div
+            initial={{ opacity: 0, x: -10 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.18 }}
+          >
+            <ZoneCard
+              title="Funding Rate"
+              valueFormatted={`${(comps.funding.value * 100).toFixed(3)}%`}
+              description={
+                comps.funding.value > 0.001
+                  ? "Лонги перегреты"
+                  : comps.funding.value < -0.001
+                  ? "Шорты перегреты"
+                  : "Нейтрально"
+              }
+              infoKey="funding"
+            >
+              <ZoneBar
+                segments={[
+                  { color: "bg-emerald-500" },
+                  { color: "bg-slate-500" },
+                  { color: "bg-rose-500" },
+                ]}
+                indicatorPosition={Math.min(100, Math.max(0, ((comps.funding.value + 0.002) / 0.004) * 100))}
+              />
+            </ZoneCard>
           </motion.div>
         )}
 
@@ -273,7 +356,7 @@ export function FundamentalsCard({ symbol, loading: parentLoading }: Fundamental
           <motion.div
             className={cn(
               "grid gap-2 pt-2 border-t border-slate-800",
-              Object.keys(comps).length === 2 ? "grid-cols-2" : "grid-cols-3"
+              Object.keys(comps).length <= 2 ? "grid-cols-2" : Object.keys(comps).length === 3 ? "grid-cols-3" : "grid-cols-4"
             )}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}

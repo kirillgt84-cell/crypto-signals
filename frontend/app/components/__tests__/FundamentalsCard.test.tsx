@@ -119,7 +119,7 @@ describe("FundamentalsCard", () => {
     })
 
     expect(screen.getByText("24h Momentum")).toBeInTheDocument()
-    expect(screen.getByText("Рыночный импульс за 24ч")).toBeInTheDocument()
+    expect(screen.getByText("Умеренный рыночный импульс")).toBeInTheDocument()
   })
 
   it("shows bullish sentiment in green", async () => {
