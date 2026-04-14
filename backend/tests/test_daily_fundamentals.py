@@ -273,12 +273,16 @@ class TestCollectFundamentals:
 
         results = await collect_fundamentals()
 
-        assert len(results) == 4  # BTC: mvrv, nupl, funding + ETH: funding
         assert all(r["saved"] for r in results)
         btc_results = [r for r in results if r["symbol"] == "BTC"]
+        assert len(btc_results) == 3
         assert btc_results[0]["metric"] == "mvrv"
         assert btc_results[1]["metric"] == "nupl"
         assert btc_results[2]["metric"] == "funding_rate"
+        # All other assets get at least funding_rate (no CoinGecko data in this mock)
+        eth_results = [r for r in results if r["symbol"] == "ETH"]
+        assert len(eth_results) == 1
+        assert eth_results[0]["metric"] == "funding_rate"
 
     @patch("daily_fundamentals.fetch_binance_funding", new_callable=AsyncMock)
     @patch("daily_fundamentals.fetch_bgeometrics_last", new_callable=AsyncMock)

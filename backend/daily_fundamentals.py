@@ -25,6 +25,38 @@ ASSETS = {
         "source": "coingecko",
         "coin_id": "ethereum",
     },
+    "SOL": {
+        "source": "coingecko",
+        "coin_id": "solana",
+    },
+    "BNB": {
+        "source": "coingecko",
+        "coin_id": "binancecoin",
+    },
+    "XRP": {
+        "source": "coingecko",
+        "coin_id": "ripple",
+    },
+    "DOGE": {
+        "source": "coingecko",
+        "coin_id": "dogecoin",
+    },
+    "ADA": {
+        "source": "coingecko",
+        "coin_id": "cardano",
+    },
+    "LINK": {
+        "source": "coingecko",
+        "coin_id": "chainlink",
+    },
+    "AVAX": {
+        "source": "coingecko",
+        "coin_id": "avalanche-2",
+    },
+    "POL": {
+        "source": "coingecko",
+        "coin_id": "polygon-ecosystem-token",
+    },
 }
 
 async def fetch_bgeometrics_last(client: httpx.AsyncClient, metric: str):

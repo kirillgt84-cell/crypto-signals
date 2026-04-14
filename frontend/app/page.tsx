@@ -25,7 +25,7 @@ import { cn } from "@/lib/utils"
 // API Base URL - hardcoded to ensure correct path (updated)
 const API_BASE_URL = "https://crypto-signals-production-ff4c.up.railway.app/api/v1"
 
-const symbols = ["BTC", "ETH", "SOL", "BNB", "XRP", "DOGE", "ADA", "LINK", "AVAX", "MATIC"]
+const symbols = ["BTC", "ETH", "SOL", "BNB", "XRP", "DOGE", "ADA", "LINK", "AVAX", "POL"]
 
 const timeframes = [
   { value: "15", label: "M15", api: "1h" },  // Map to backend timeframe
