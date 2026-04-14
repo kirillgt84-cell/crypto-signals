@@ -1,5 +1,5 @@
 import React from "react"
-import { render, screen } from "@testing-library/react"
+import { render, screen, fireEvent } from "@testing-library/react"
 import { LiquidationMap } from "../LiquidationMap"
 
 jest.mock("framer-motion", () => ({
@@ -106,5 +106,68 @@ describe("LiquidationMap", () => {
     expect(screen.getByText(/Shorts:/)).toBeInTheDocument()
     expect(screen.getByText(/Longs:/)).toBeInTheDocument()
     expect(screen.getByText(/Max:/)).toBeInTheDocument()
+  })
+
+  it("renders step toggle buttons", () => {
+    render(
+      <LiquidationMap
+        liquidations={mockLiquidations}
+        currentPrice={50000}
+        symbol="BTC"
+        loading={false}
+      />
+    )
+    expect(screen.getByText("$10")).toBeInTheDocument()
+    expect(screen.getByText("$50")).toBeInTheDocument()
+    expect(screen.getByText("$100")).toBeInTheDocument()
+  })
+
+  it("changes step on toggle click", () => {
+    render(
+      <LiquidationMap
+        liquidations={mockLiquidations}
+        currentPrice={50000}
+        symbol="BTC"
+        loading={false}
+      />
+    )
+    fireEvent.click(screen.getByText("$50"))
+    // Step button should remain visible after click
+    expect(screen.getByText("$50")).toBeInTheDocument()
+  })
+
+  it("zooms out on wheel scroll down", () => {
+    render(
+      <LiquidationMap
+        liquidations={mockLiquidations}
+        currentPrice={50000}
+        symbol="BTC"
+        loading={false}
+      />
+    )
+    const container = screen.getByText("LIQUIDATION MAP").closest("div")?.parentElement
+    if (!container) throw new Error("Container not found")
+
+    const zoomText = screen.getByText(/Scroll to zoom/)
+    expect(zoomText).toBeInTheDocument()
+
+    fireEvent.wheel(container, { deltaY: 10 })
+    expect(screen.getByText(/35 rows/)).toBeInTheDocument()
+  })
+
+  it("zooms in on wheel scroll up", () => {
+    render(
+      <LiquidationMap
+        liquidations={mockLiquidations}
+        currentPrice={50000}
+        symbol="BTC"
+        loading={false}
+      />
+    )
+    const container = screen.getByText("LIQUIDATION MAP").closest("div")?.parentElement
+    if (!container) throw new Error("Container not found")
+
+    fireEvent.wheel(container, { deltaY: -10 })
+    expect(screen.getByText(/25 rows/)).toBeInTheDocument()
   })
 })

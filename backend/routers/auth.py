@@ -257,6 +257,8 @@ async def refresh_token(refresh_token: str):
 @router.post("/logout")
 async def logout(credentials: HTTPAuthorizationCredentials = Depends(security)):
     """Logout - revoke refresh tokens"""
+    if not credentials:
+        return {"message": "Logged out"}
     user_id = verify_token(credentials.credentials)
     if user_id:
         db = get_db()

@@ -1,9 +1,10 @@
 "use client"
 
-import { useMemo } from "react"
+import { useMemo, useState } from "react"
 import { motion } from "framer-motion"
 import { Target, AlertTriangle } from "lucide-react"
 import { ORDER_BOOK_LEVELS } from "./OrderBook"
+import { cn } from "@/lib/utils"
 
 interface LiquidationLevel {
   price: number
@@ -23,8 +24,49 @@ type MapLevel = {
   size: number
 }
 
+type StepOption = { label: string; value: number }
+
 const ROW_HEIGHT = 10 // px
 const MID_HEIGHT = 22 // px
+
+function interpolateMapLevels(levels: MapLevel[]): MapLevel[] {
+  const result = [...levels]
+  let lastFilled = -1
+
+  for (let i = 0; i < result.length; i++) {
+    if (result[i].size > 0) {
+      if (lastFilled !== -1 && i - lastFilled > 1) {
+        const startSize = result[lastFilled].size
+        const endSize = result[i].size
+        const steps = i - lastFilled
+        for (let j = 1; j < steps; j++) {
+          const ratio = j / steps
+          result[lastFilled + j].size = startSize * (1 - ratio) + endSize * ratio
+        }
+      }
+      lastFilled = i
+    }
+  }
+
+  if (lastFilled !== -1 && lastFilled < result.length - 1) {
+    const startSize = result[lastFilled].size
+    for (let i = lastFilled + 1; i < result.length; i++) {
+      const ratio = (i - lastFilled) / (result.length - lastFilled)
+      result[i].size = startSize * (1 - ratio)
+    }
+  }
+
+  const firstFilled = result.findIndex((l) => l.size > 0)
+  if (firstFilled > 0) {
+    const endSize = result[firstFilled].size
+    for (let i = 0; i < firstFilled; i++) {
+      const ratio = i / firstFilled
+      result[i].size = endSize * ratio
+    }
+  }
+
+  return result
+}
 
 export function LiquidationMap({
   liquidations,
@@ -32,17 +74,34 @@ export function LiquidationMap({
   symbol,
   loading,
 }: LiquidationMapProps) {
+  const [selectedStep, setSelectedStep] = useState<number>(symbol === "BTC" ? 100 : symbol === "ETH" ? 5 : 1)
+  const [levelCount, setLevelCount] = useState<number>(ORDER_BOOK_LEVELS)
+
+  const stepOptions: StepOption[] = useMemo(() => {
+    const price = symbol === "BTC" ? 70000 : symbol === "ETH" ? 3500 : currentPrice || 100
+    if (price >= 20000) return [{ label: "$10", value: 10 }, { label: "$50", value: 50 }, { label: "$100", value: 100 }]
+    if (price >= 1000) return [{ label: "$1", value: 1 }, { label: "$5", value: 5 }, { label: "$10", value: 10 }]
+    if (price >= 100) return [{ label: "$0.1", value: 0.1 }, { label: "$0.5", value: 0.5 }, { label: "$1", value: 1 }]
+    return [{ label: "$0.01", value: 0.01 }, { label: "$0.05", value: 0.05 }, { label: "$0.1", value: 0.1 }]
+  }, [symbol, currentPrice])
+
+  const handleWheel = (e: React.WheelEvent) => {
+    e.preventDefault()
+    const delta = e.deltaY > 0 ? 5 : -5
+    setLevelCount((prev) => Math.min(100, Math.max(10, prev + delta)))
+  }
+
   const { shortsAbove, longsBelow, maxSize, midPrice } = useMemo(() => {
     if (!currentPrice || loading) {
       return { shortsAbove: [] as MapLevel[], longsBelow: [] as MapLevel[], maxSize: 1, midPrice: 0 }
     }
 
     const safeLiqs = Array.isArray(liquidations) ? liquidations : []
-    const step = symbol === "BTC" ? 100 : symbol === "ETH" ? 5 : currentPrice * 0.01
+    const step = selectedStep > 0 ? selectedStep : 1
 
     // Shorts are ABOVE current price (liquidated when price goes up)
     const shorts: MapLevel[] = []
-    for (let i = ORDER_BOOK_LEVELS; i >= 1; i--) {
+    for (let i = levelCount; i >= 1; i--) {
       const price = currentPrice + step * i // farther first
       const bucketCenter = Math.round(price / step) * step
       const size = safeLiqs
@@ -56,7 +115,7 @@ export function LiquidationMap({
 
     // Longs are BELOW current price (liquidated when price goes down)
     const longs: MapLevel[] = []
-    for (let i = 1; i <= ORDER_BOOK_LEVELS; i++) {
+    for (let i = 1; i <= levelCount; i++) {
       const price = currentPrice - step * i // closest first
       const bucketCenter = Math.round(price / step) * step
       const size = safeLiqs
@@ -68,19 +127,22 @@ export function LiquidationMap({
       longs.push({ price, size })
     }
 
+    const shortsInterp = interpolateMapLevels(shorts)
+    const longsInterp = interpolateMapLevels(longs)
+
     const ms = Math.max(
-      ...shorts.map((s) => s.size),
-      ...longs.map((l) => l.size),
+      ...shortsInterp.map((s) => s.size),
+      ...longsInterp.map((l) => l.size),
       1
     )
 
     return {
-      shortsAbove: shorts, // already ordered: farthest at top, closest at bottom
-      longsBelow: longs,   // already ordered: closest at top, farthest at bottom
+      shortsAbove: shortsInterp, // already ordered: farthest at top, closest at bottom
+      longsBelow: longsInterp,   // already ordered: closest at top, farthest at bottom
       maxSize: ms,
       midPrice: currentPrice,
     }
-  }, [liquidations, currentPrice, loading])
+  }, [liquidations, currentPrice, loading, selectedStep, levelCount])
 
   const formatPrice = (p: number) => {
     if (p >= 1000) return p.toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 })
@@ -107,7 +169,7 @@ export function LiquidationMap({
           <span className="text-sm font-bold tracking-wider">LIQUIDATION MAP</span>
         </div>
         <div className="space-y-0.5">
-          {[...Array(ORDER_BOOK_LEVELS)].map((_, i) => (
+          {[...Array(levelCount)].map((_, i) => (
             <div key={i} className="h-2 bg-primary/10 rounded animate-pulse" />
           ))}
         </div>
@@ -120,14 +182,36 @@ export function LiquidationMap({
       className="w-full border-2 border-amber-500/30 rounded-xl bg-[#0b0f19] p-3 font-mono flex flex-col"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
+      onWheel={handleWheel}
     >
       {/* Header */}
       <div className="flex items-center justify-between mb-2 pb-2 border-b border-amber-500/20">
         <div className="flex items-center gap-2">
           <AlertTriangle className="w-4 h-4 text-amber-500" />
           <span className="text-sm font-bold tracking-widest text-amber-500">LIQUIDATION MAP</span>
+          <span className="text-[10px] text-muted-foreground">{symbol}/USDT</span>
         </div>
-        <span className="text-[10px] text-muted-foreground">{symbol}/USDT</span>
+        <div className="flex items-center gap-1">
+          {stepOptions.map((opt) => (
+            <button
+              key={opt.value}
+              onClick={() => setSelectedStep(opt.value)}
+              className={cn(
+                "px-2 py-0.5 text-[10px] font-bold rounded transition-colors border",
+                selectedStep === opt.value
+                  ? "bg-amber-500 text-white border-amber-500"
+                  : "bg-[#0b0f19] text-muted-foreground border-slate-700 hover:border-amber-500/50 hover:text-foreground"
+              )}
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Zoom hint */}
+      <div className="text-[10px] text-slate-500 mb-1 text-right">
+        Scroll to zoom · {levelCount} rows
       </div>
 
       {/* Top scale */}
@@ -222,9 +306,9 @@ export function LiquidationMap({
 
       {/* Footer */}
       <div className="mt-2 pt-2 border-t border-slate-800 flex items-center justify-between text-[10px] text-slate-400">
-        <span>Shorts: <span className="text-rose-400 font-bold">{ORDER_BOOK_LEVELS}</span></span>
+        <span>Shorts: <span className="text-rose-400 font-bold">{levelCount}</span></span>
         <span>Max: <span className="text-amber-400 font-bold">{formatSize(maxSize)}</span></span>
-        <span>Longs: <span className="text-emerald-400 font-bold">{ORDER_BOOK_LEVELS}</span></span>
+        <span>Longs: <span className="text-emerald-400 font-bold">{levelCount}</span></span>
       </div>
     </motion.div>
   )
