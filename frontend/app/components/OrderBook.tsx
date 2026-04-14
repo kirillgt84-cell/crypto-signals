@@ -20,8 +20,8 @@ type Level = {
 }
 
 export const ORDER_BOOK_LEVELS = 30
-const ROW_HEIGHT = 10 // px
 const MID_HEIGHT = 22 // px
+const CHART_HEIGHT = 622 // px — fixed total height for asks + mid + bids
 
 export function padLevels(
   levels: Level[],
@@ -97,6 +97,8 @@ export function OrderBook({ symbol, loading: parentLoading }: OrderBookProps) {
     const delta = e.deltaY > 0 ? 5 : -5
     setLevelCount((prev) => Math.min(100, Math.max(10, prev + delta)))
   }
+
+  const rowHeight = Math.max(2, Math.floor((CHART_HEIGHT - MID_HEIGHT) / (levelCount * 2)))
 
   const stepOptions: StepOption[] = useMemo(() => {
     const price = symbol === "BTC" ? 70000 : symbol === "ETH" ? 3500 : 100
@@ -216,9 +218,9 @@ export function OrderBook({ symbol, loading: parentLoading }: OrderBookProps) {
           <BookOpen className="w-4 h-4 animate-pulse" />
           <span className="text-sm font-bold tracking-wider">ORDER DEPTH</span>
         </div>
-        <div className="space-y-0.5">
+        <div className="space-y-0">
           {[...Array(levelCount)].map((_, i) => (
-            <div key={i} className="h-2 bg-primary/10 rounded animate-pulse" />
+            <div key={i} className="bg-primary/10 rounded animate-pulse" style={{ height: rowHeight }} />
           ))}
         </div>
       </div>
@@ -309,7 +311,7 @@ export function OrderBook({ symbol, loading: parentLoading }: OrderBookProps) {
               animate={{ opacity: 1 }}
               transition={{ duration: 0.05, delay: i * 0.005 }}
               className="grid grid-cols-[72px_1fr] items-center relative"
-              style={{ height: ROW_HEIGHT }}
+              style={{ height: rowHeight }}
             >
               <div className="text-right pr-3 text-[10px] font-mono leading-none text-white">
                 {formatPrice(ask.price)}
@@ -351,7 +353,7 @@ export function OrderBook({ symbol, loading: parentLoading }: OrderBookProps) {
               animate={{ opacity: 1 }}
               transition={{ duration: 0.05, delay: i * 0.005 }}
               className="grid grid-cols-[72px_1fr] items-center relative"
-              style={{ height: ROW_HEIGHT }}
+              style={{ height: rowHeight }}
             >
               <div className="text-right pr-3 text-[10px] font-mono leading-none text-white">
                 {formatPrice(bid.price)}
