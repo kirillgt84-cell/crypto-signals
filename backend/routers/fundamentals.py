@@ -135,18 +135,6 @@ async def get_funding(symbol: str):
     data["raw_data"] = _parse_raw_data(data.get("raw_data"))
     return data
 
-@router.get("/{symbol}/composite-debug")
-async def get_composite_debug(symbol: str):
-    db = get_db()
-    rows = await db.query(
-        """SELECT metric_name, value, raw_data 
-           FROM fundamental_metrics 
-           WHERE symbol = $1 AND metric_name IN ('mvrv', 'nupl', 'funding_rate', 'market_momentum')
-           ORDER BY computed_at DESC""",
-        [symbol.upper()]
-    )
-    return {"rows": rows}
-
 @router.get("/{symbol}/composite")
 async def get_composite(symbol: str):
     """Get composite fundamental health score"""
