@@ -82,14 +82,18 @@ async def fetch_coingecko_data(client: httpx.AsyncClient, coin_id: str):
         )
         if r.status_code == 200:
             data = r.json()
+            await asyncio.sleep(1.5)  # Rate limit guard
             return {
                 "market_cap": data["market_data"]["market_cap"]["usd"],
                 "price": data["market_data"]["current_price"]["usd"],
                 "supply": data["market_data"]["circulating_supply"],
                 "price_change_24h_pct": data["market_data"].get("price_change_percentage_24h", 0),
             }
+        else:
+            logger.warning(f"[Fundamentals] CoinGecko {coin_id} status {r.status_code}: {r.text[:200]}")
     except Exception as e:
         logger.error(f"[Fundamentals] CoinGecko error: {e}")
+    await asyncio.sleep(1.5)
     return None
 
 async def fetch_binance_funding(client: httpx.AsyncClient, symbol: str):
