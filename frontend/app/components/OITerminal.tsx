@@ -126,9 +126,10 @@ export function OITerminal({ analysis, loading }: OITerminalProps) {
 
   return (
     <motion.div 
-      className="w-full h-full border-2 rounded-xl bg-card p-4 font-mono flex flex-col"
+      className="w-full h-full border rounded-xl bg-slate-900/60 p-4 font-mono flex flex-col"
       style={{ 
-        borderColor: isNeutral ? "hsl(var(--muted-foreground))" : signalColor + "60"
+        borderLeftWidth: 4,
+        borderColor: isNeutral ? "#6b7280" : signalColor,
       }}
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
