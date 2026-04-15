@@ -262,7 +262,7 @@ function ChartSection({ symbol, timeframe, data, loading, className }: { symbol:
   const { theme } = useTheme()
   
   return (
-    <Card className={cn("flex flex-col h-full", className)}>
+    <Card className={cn("flex flex-col", className)}>
       <CardHeader className="gap-2 shrink-0">
         <CardTitle>Price Action & OI Analysis</CardTitle>
         <CardDescription>
@@ -274,7 +274,7 @@ function ChartSection({ symbol, timeframe, data, loading, className }: { symbol:
         </CardDescription>
       </CardHeader>
       <CardContent className="flex-1 min-h-0 px-2 sm:px-6">
-        <div className="mb-4 h-[500px]">
+        <div className="mb-4 min-h-[300px] flex-1">
           <TradingViewChart 
             symbol={symbol} 
             timeframe={timeframe} 
@@ -758,19 +758,23 @@ export default function Dashboard() {
         <OIAnalysisCards data={marketData} loading={loading} timeframe={timeframe} />
 
         {/* Row 2: TradingView Chart + OI Analysis + Fundamentals */}
-        <div className="grid grid-cols-1 gap-4 px-4 py-4 lg:grid-cols-3 lg:px-6 items-stretch">
-          <ChartSection className="lg:col-span-2" symbol={symbol} timeframe={timeframe} data={marketData} loading={loading} />
-          <Card className="flex flex-col h-full">
-            <CardHeader className="gap-2 pb-2 shrink-0">
-              <CardTitle>OI Analysis</CardTitle>
-              <CardDescription>
-                Open Interest + Price + Volume
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="flex-1 pt-0 min-h-0">
-              <OITerminal analysis={oiAnalysis} loading={loading} />
-            </CardContent>
-          </Card>
+        <div className="flex flex-col lg:flex-row gap-4 px-4 py-4 lg:px-6">
+          <div className="lg:w-2/3 flex flex-col">
+            <ChartSection className="flex-1" symbol={symbol} timeframe={timeframe} data={marketData} loading={loading} />
+          </div>
+          <div className="lg:w-1/3 flex flex-col">
+            <Card className="flex flex-col flex-1">
+              <CardHeader className="gap-2 pb-2 shrink-0">
+                <CardTitle>OI Analysis</CardTitle>
+                <CardDescription>
+                  Open Interest + Price + Volume
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="flex-1 pt-0 min-h-0">
+                <OITerminal analysis={oiAnalysis} loading={loading} />
+              </CardContent>
+            </Card>
+          </div>
         </div>
 
         {/* Row 4: Order Book + Liquidation Map */}
