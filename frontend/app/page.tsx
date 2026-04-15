@@ -273,7 +273,7 @@ function ChartSection({ symbol, timeframe, data, loading, className }: { symbol:
           )}
         </CardDescription>
       </CardHeader>
-      <CardContent className="flex-1 min-h-0 px-2 sm:px-6">
+      <CardContent className="flex-1 min-h-0 px-2 sm:px-6 flex flex-col">
         <div className="mb-4 min-h-[300px] flex-1">
           <TradingViewChart 
             symbol={symbol} 
@@ -770,7 +770,7 @@ export default function Dashboard() {
                   Open Interest + Price + Volume
                 </CardDescription>
               </CardHeader>
-              <CardContent className="flex-1 pt-0 min-h-0">
+              <CardContent className="flex-1 pt-0 min-h-0 flex flex-col">
                 <OITerminal analysis={oiAnalysis} loading={loading} />
               </CardContent>
             </Card>
