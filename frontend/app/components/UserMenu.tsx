@@ -70,7 +70,7 @@ export function UserMenu({ onOpenAuth }: UserMenuProps) {
           <span>My Trades</span>
         </DropdownMenuItem>
         
-        <DropdownMenuItem onClick={() => window.location.href = "/dashboard"}>
+        <DropdownMenuItem onClick={() => window.location.href = "/profile"}>
           <Settings className="mr-2 h-4 w-4" />
           <span>Settings</span>
         </DropdownMenuItem>

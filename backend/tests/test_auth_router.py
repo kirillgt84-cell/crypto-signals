@@ -25,6 +25,7 @@ with patch("routers.auth.get_db") as mock_get_db:
         logout,
         update_me,
         get_me,
+        change_password,
     )
 
 
@@ -413,3 +414,58 @@ class TestUserEndpoints:
     async def test_logout_no_creds(self):
         result = await logout(None)
         assert result["message"] == "Logged out"
+
+
+@pytest.mark.asyncio
+class TestChangePassword:
+    @patch("routers.auth.get_db")
+    async def test_change_password_success(self, mock_get_db):
+        mock_db = mock_get_db.return_value
+        mock_db.query = AsyncMock(return_value=[{"password_hash": bcrypt.hashpw("oldpass".encode(), bcrypt.gensalt()).decode()}])
+        mock_db.execute = AsyncMock()
+
+        from routers.auth import PasswordChangeRequest
+        req = PasswordChangeRequest(old_password="oldpass", new_password="newpass123")
+        current_user = {"id": 42}
+
+        result = await change_password(req, current_user)
+        assert result["message"] == "Password updated successfully"
+
+    @patch("routers.auth.get_db")
+    async def test_change_password_wrong_old(self, mock_get_db):
+        mock_db = mock_get_db.return_value
+        mock_db.query = AsyncMock(return_value=[{"password_hash": bcrypt.hashpw("oldpass".encode(), bcrypt.gensalt()).decode()}])
+
+        from routers.auth import PasswordChangeRequest
+        req = PasswordChangeRequest(old_password="wrongpass", new_password="newpass123")
+        current_user = {"id": 42}
+
+        with pytest.raises(HTTPException) as exc_info:
+            await change_password(req, current_user)
+        assert exc_info.value.status_code == 401
+
+    @patch("routers.auth.get_db")
+    async def test_change_password_oauth_only(self, mock_get_db):
+        mock_db = mock_get_db.return_value
+        mock_db.query = AsyncMock(return_value=[{"password_hash": None}])
+
+        from routers.auth import PasswordChangeRequest
+        req = PasswordChangeRequest(old_password="oldpass", new_password="newpass123")
+        current_user = {"id": 42}
+
+        with pytest.raises(HTTPException) as exc_info:
+            await change_password(req, current_user)
+        assert exc_info.value.status_code == 400
+
+    @patch("routers.auth.get_db")
+    async def test_change_password_too_short(self, mock_get_db):
+        mock_db = mock_get_db.return_value
+        mock_db.query = AsyncMock(return_value=[{"password_hash": bcrypt.hashpw("oldpass".encode(), bcrypt.gensalt()).decode()}])
+
+        from routers.auth import PasswordChangeRequest
+        req = PasswordChangeRequest(old_password="oldpass", new_password="short")
+        current_user = {"id": 42}
+
+        with pytest.raises(HTTPException) as exc_info:
+            await change_password(req, current_user)
+        assert exc_info.value.status_code == 400

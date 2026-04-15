@@ -4,6 +4,8 @@ import { useEffect, useRef, useState } from "react"
 import { TrendingUp, TrendingDown, Minus, Activity, BarChart3, Wallet, Target, Zap, Loader2 } from "lucide-react"
 import { UserMenu } from "./components/UserMenu"
 import { AuthModal } from "./components/AuthModal"
+import { ProBlurOverlay } from "./components/ProBlurOverlay"
+import { useAuth } from "./context/AuthContext"
 import { getRSIInterpretation, getMACDInterpretation, getFundingInterpretation, getExchangeFlowInterpretation, getCVDInterpretation } from "./lib/market-utils"
 import { Logo, LogoIcon } from "./components/Logo"
 import { ThemeToggle } from "./components/ThemeToggle"
@@ -395,6 +397,13 @@ export default function Dashboard() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(true)
   const [authOpen, setAuthOpen] = useState(false)
   const isFirstLoad = useRef(true)
+  const { isAuthenticated } = useAuth()
+
+  useEffect(() => {
+    const handler = () => setAuthOpen(true)
+    window.addEventListener("open-auth-modal", handler)
+    return () => window.removeEventListener("open-auth-modal", handler)
+  }, [])
   const [symbol, setSymbol] = useState("BTC")
   const [timeframe, setTimeframe] = useState("60")
   const [marketData, setMarketData] = useState<MarketData>({
@@ -771,7 +780,9 @@ export default function Dashboard() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="flex-1 pt-0 min-h-0 flex flex-col">
-                <OITerminal analysis={oiAnalysis} loading={loading} />
+                <ProBlurOverlay title="Pro Analysis" description="See full OI interpretation, market state, and actionable signals.">
+                  <OITerminal analysis={oiAnalysis} loading={loading} />
+                </ProBlurOverlay>
               </CardContent>
             </Card>
           </div>
@@ -807,10 +818,14 @@ export default function Dashboard() {
               <CardDescription>Key support and resistance zones</CardDescription>
             </CardHeader>
             <CardContent className="pt-0 flex-1">
-              <EntryLevels data={marketData} loading={loading} />
+              <ProBlurOverlay title="Pro Levels" description="Get exact entry, stop, and take-profit levels with scenario planning.">
+                <EntryLevels data={marketData} loading={loading} />
+              </ProBlurOverlay>
             </CardContent>
           </Card>
-          <FundamentalsCard symbol={symbol} loading={loading} />
+          <ProBlurOverlay title="Pro Fundamentals" description="MVRV, NUPL, and funding context with trading interpretation.">
+            <FundamentalsCard symbol={symbol} loading={loading} />
+          </ProBlurOverlay>
         </div>
 
         {/* Row 6: Secondary Indicators */}

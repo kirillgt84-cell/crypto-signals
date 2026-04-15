@@ -22,6 +22,7 @@ ALTER TABLE users ADD COLUMN IF NOT EXISTS is_email_verified BOOLEAN DEFAULT FAL
 ALTER TABLE users ADD COLUMN IF NOT EXISTS is_active BOOLEAN DEFAULT TRUE;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS subscription_tier VARCHAR(20) DEFAULT 'free';
 
 -- Add constraints separately (safe for existing columns)
 DO $$
@@ -66,6 +67,9 @@ CREATE TABLE IF NOT EXISTS user_preferences (
     language VARCHAR(10) DEFAULT 'en',
     timezone VARCHAR(50) DEFAULT 'UTC',
     notifications_enabled BOOLEAN DEFAULT TRUE,
+    daily_report BOOLEAN DEFAULT FALSE,
+    weekly_report BOOLEAN DEFAULT FALSE,
+    telegram_alerts BOOLEAN DEFAULT FALSE,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 

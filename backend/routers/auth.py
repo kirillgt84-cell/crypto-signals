@@ -173,8 +173,8 @@ async def register(req: RegisterRequest):
     
     # Create user
     result = await db.query(
-        """INSERT INTO users (email, password_hash, username)
-           VALUES ($1, $2, $3) RETURNING id, email, username""",
+        """INSERT INTO users (email, password_hash, username, subscription_tier)
+           VALUES ($1, $2, $3, 'free') RETURNING id, email, username, subscription_tier""",
         [req.email, password_hash, username]
     )
     
@@ -381,8 +381,8 @@ async def oauth_callback(provider: str, req: OAuthCallbackRequest):
                 username = f"{username}_{secrets.token_hex(4)}"
             
             result = await db.query(
-                """INSERT INTO users (email, username, avatar_url, is_email_verified)
-                   VALUES ($1, $2, $3, $4) RETURNING id""",
+                """INSERT INTO users (email, username, avatar_url, is_email_verified, subscription_tier)
+                   VALUES ($1, $2, $3, $4, 'free') RETURNING id""",
                 [email, username, avatar, True]  # OAuth emails are verified
             )
             user_id = result[0]["id"]
@@ -474,8 +474,8 @@ async def telegram_auth(req: TelegramAuthRequest):
             username = f"{username}_{secrets.token_hex(4)}"
         
         result = await db.query(
-            """INSERT INTO users (username, avatar_url, is_email_verified)
-               VALUES ($1, $2, TRUE) RETURNING id""",
+            """INSERT INTO users (username, avatar_url, is_email_verified, subscription_tier)
+               VALUES ($1, $2, TRUE, 'free') RETURNING id""",
             [username, req.photo_url]
         )
         user_id = result[0]["id"]
@@ -517,7 +517,7 @@ async def get_me(current_user: dict = Depends(get_current_user)):
     
     # Get preferences
     prefs = await db.query(
-        "SELECT * FROM user_preferences WHERE user_id = $1",
+        "SELECT theme, language, timezone, notifications_enabled, daily_report, weekly_report, telegram_alerts FROM user_preferences WHERE user_id = $1",
         [current_user["id"]]
     )
     
@@ -533,27 +533,71 @@ async def get_me(current_user: dict = Depends(get_current_user)):
         "connected_oauth": [o["provider"] for o in oauth]
     }
 
+class PasswordChangeRequest(BaseModel):
+    old_password: str
+    new_password: str
+
+@router.patch("/me/password")
+async def change_password(
+    req: PasswordChangeRequest,
+    current_user: dict = Depends(get_current_user)
+):
+    """Change password with old password verification"""
+    db = get_db()
+    
+    user = await db.query(
+        "SELECT password_hash FROM users WHERE id = $1",
+        [current_user["id"]]
+    )
+    
+    if not user or not user[0].get("password_hash"):
+        raise HTTPException(status_code=400, detail="Password change not available for OAuth-only accounts")
+    
+    if not bcrypt.checkpw(req.old_password.encode(), user[0]["password_hash"].encode()):
+        raise HTTPException(status_code=401, detail="Incorrect old password")
+    
+    if len(req.new_password) < 8:
+        raise HTTPException(status_code=400, detail="Password must be at least 8 characters")
+    
+    new_hash = bcrypt.hashpw(req.new_password.encode(), bcrypt.gensalt()).decode()
+    await db.execute(
+        "UPDATE users SET password_hash = $1, updated_at = NOW() WHERE id = $2",
+        [new_hash, current_user["id"]]
+    )
+    
+    return {"message": "Password updated successfully"}
+
 @router.patch("/me")
 async def update_me(
     updates: dict,
     current_user: dict = Depends(get_current_user)
 ):
-    """Update user profile"""
+    """Update user profile and preferences"""
     db = get_db()
     
-    allowed_fields = ["username", "avatar_url"]
-    updates = {k: v for k, v in updates.items() if k in allowed_fields}
+    user_fields = ["username", "avatar_url"]
+    pref_fields = ["theme", "language", "timezone", "notifications_enabled", "daily_report", "weekly_report", "telegram_alerts"]
     
-    if not updates:
+    user_updates = {k: v for k, v in updates.items() if k in user_fields}
+    pref_updates = {k: v for k, v in updates.items() if k in pref_fields}
+    
+    if not user_updates and not pref_updates:
         raise HTTPException(status_code=400, detail="No valid fields to update")
     
-    # Build query
-    set_clause = ", ".join(f"{k} = ${i+2}" for i, k in enumerate(updates.keys()))
-    values = list(updates.values()) + [current_user["id"]]
+    if user_updates:
+        set_clause = ", ".join(f"{k} = ${i+2}" for i, k in enumerate(user_updates.keys()))
+        await db.execute(
+            f"UPDATE users SET {set_clause}, updated_at = NOW() WHERE id = $1",
+            [current_user["id"]] + list(user_updates.values())
+        )
     
-    await db.execute(
-        f"UPDATE users SET {set_clause}, updated_at = NOW() WHERE id = $1",
-        [current_user["id"]] + list(updates.values())
-    )
+    if pref_updates:
+        set_clause = ", ".join(f"{k} = ${i+2}" for i, k in enumerate(pref_updates.keys()))
+        await db.execute(
+            f"""INSERT INTO user_preferences (user_id, {', '.join(pref_updates.keys())}, updated_at)
+                VALUES ($1, {', '.join([f'${i+2}' for i in range(len(pref_updates))])}, NOW())
+                ON CONFLICT (user_id) DO UPDATE SET {set_clause}, updated_at = NOW()""",
+            [current_user["id"]] + list(pref_updates.values())
+        )
     
     return {"message": "Profile updated"}
