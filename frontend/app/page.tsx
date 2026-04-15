@@ -762,9 +762,9 @@ export default function Dashboard() {
           <div className="lg:col-span-2">
             <ChartSection symbol={symbol} timeframe={timeframe} data={marketData} loading={loading} />
           </div>
-          <div className="flex flex-col gap-4">
-            <Card className="flex flex-col">
-              <CardHeader className="gap-2 pb-2">
+          <div className="flex flex-col gap-4 h-full">
+            <Card className="flex flex-col h-full">
+              <CardHeader className="gap-2 pb-2 shrink-0">
                 <CardTitle>OI Analysis</CardTitle>
                 <CardDescription>
                   Open Interest + Price + Volume
