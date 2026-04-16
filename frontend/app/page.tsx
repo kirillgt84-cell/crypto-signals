@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react"
 import Link from "next/link"
-import { TrendingUp, TrendingDown, Minus, Activity, BarChart3, Wallet, Target, Zap, Loader2 } from "lucide-react"
+import { TrendingUp, TrendingDown, Minus, Activity, BarChart3, Wallet, Target, Zap, Loader2, ArrowRight } from "lucide-react"
 import { UserMenu } from "./components/UserMenu"
 import { AuthModal } from "./components/AuthModal"
 import { ProBlurOverlay } from "./components/ProBlurOverlay"
@@ -25,6 +25,7 @@ import ChecklistPanel, { ChecklistData } from "./components/dashboard/ChecklistP
 import Sidebar from "./components/admin/Sidebar"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { cn } from "@/lib/utils"
+import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip } from "recharts"
 
 // API Base URL - hardcoded to ensure correct path (updated)
 const API_BASE_URL = "https://crypto-signals-production-ff4c.up.railway.app/api/v1"
@@ -519,9 +520,23 @@ export default function Dashboard() {
   const [checklistData, setChecklistData] = useState<ChecklistData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [etfSummary, setEtfSummary] = useState<any>(null)
 
   useEffect(() => {
     setMounted(true)
+  }, [])
+
+  useEffect(() => {
+    async function fetchETF() {
+      try {
+        const res = await fetch(`${API_BASE_URL}/etf/summary`, { cache: "no-store" })
+        if (res.ok) {
+          const data = await res.json()
+          setEtfSummary(data)
+        }
+      } catch {}
+    }
+    fetchETF()
   }, [])
 
   // Map frontend timeframe to backend API timeframe
@@ -974,24 +989,60 @@ export default function Dashboard() {
           </ProBlurOverlay>
         </div>
 
-        {/* Row 6: ETF Link Card (Free) */}
+        {/* Row 6: ETF Summary Card (Free) */}
         <div className="px-4 py-2 lg:px-6">
           <Link href="/etf">
-            <Card className="group cursor-pointer border-blue-500/20 bg-gradient-to-r from-blue-500/5 to-card hover:from-blue-500/10 transition-colors">
-              <CardHeader className="flex flex-row items-center justify-between gap-4 p-4">
-                <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-500/10 text-blue-600">
-                    <BarChart3 className="h-5 w-5" />
+            <Card className="group cursor-pointer border-blue-500/20 bg-gradient-to-r from-blue-500/5 to-card hover:from-blue-500/10 transition-colors overflow-hidden">
+              <CardContent className="p-0">
+                <div className="flex flex-col sm:flex-row">
+                  <div className="flex flex-1 items-center justify-between gap-4 p-4">
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-500/10 text-blue-600">
+                        <BarChart3 className="h-5 w-5" />
+                      </div>
+                      <div>
+                        <CardTitle className="text-base">Bitcoin Spot ETFs</CardTitle>
+                        <CardDescription className="text-xs">
+                          {etfSummary?.totals ? (
+                            <span className="flex items-center gap-2">
+                              <span className={etfSummary.totals.pnl_usd >= 0 ? "text-emerald-600" : "text-red-600"}>
+                                {etfSummary.totals.pnl_usd >= 0 ? "+" : ""}
+                                {etfSummary.totals.pnl_pct?.toFixed(2) || 0}% P&L
+                              </span>
+                              <span className="text-muted-foreground">·</span>
+                              <span>{etfSummary?.aum_history?.length ? `${etfSummary.aum_history.length} days tracked` : "View analytics"}</span>
+                            </span>
+                          ) : (
+                            "Track daily flows, AUM and fund P&L"
+                          )}
+                        </CardDescription>
+                      </div>
+                    </div>
+                    <Button size="sm" variant="secondary" className="shrink-0 group-hover:bg-blue-500/10 group-hover:text-blue-600 transition-colors">
+                      View Analytics
+                      <ArrowRight className="ml-1 h-4 w-4" />
+                    </Button>
                   </div>
-                  <div>
-                    <CardTitle className="text-base">Bitcoin Spot ETFs</CardTitle>
-                    <CardDescription className="text-xs">Track daily flows, AUM and fund P&L</CardDescription>
-                  </div>
+                  {etfSummary?.aum_history && etfSummary.aum_history.length > 1 && (
+                    <div className="h-20 w-full sm:w-48 border-t sm:border-t-0 sm:border-l border-blue-500/10 bg-blue-500/[0.02]">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <AreaChart data={etfSummary.aum_history.map((d: any) => ({
+                          date: new Date(d.date).toLocaleDateString(undefined, { month: "short", day: "numeric" }),
+                          aum: d.total_aum_usd,
+                        }))}>
+                          <defs>
+                            <linearGradient id="colorAum" x1="0" y1="0" x2="0" y2="1">
+                              <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3}/>
+                              <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
+                            </linearGradient>
+                          </defs>
+                          <Area type="monotone" dataKey="aum" stroke="#3b82f6" fillOpacity={1} fill="url(#colorAum)" strokeWidth={2} />
+                        </AreaChart>
+                      </ResponsiveContainer>
+                    </div>
+                  )}
                 </div>
-                <Button size="sm" variant="secondary" className="shrink-0">
-                  View Analytics
-                </Button>
-              </CardHeader>
+              </CardContent>
             </Card>
           </Link>
         </div>

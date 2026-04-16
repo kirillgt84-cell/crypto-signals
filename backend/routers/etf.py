@@ -35,7 +35,7 @@ async def get_etf_flows(
 
 @router.get("/flows/latest")
 async def get_latest_flows():
-    """Последний доступный день с детализацией по фондам"""
+    """Последний доступный день с детализацией по фондам + их stats"""
     db = get_db()
     latest = await db.query(
         "SELECT MAX(date) as max_date FROM etf_flows WHERE fund_ticker != 'TOTAL'",
@@ -46,7 +46,20 @@ async def get_latest_flows():
     
     max_date = latest[0]["max_date"]
     rows = await db.query(
-        "SELECT fund_ticker, fund_name, flow_usd, btc_price FROM etf_flows WHERE date = $1 ORDER BY ABS(flow_usd) DESC",
+        """SELECT 
+            f.fund_ticker,
+            f.fund_name,
+            f.flow_usd,
+            f.btc_price,
+            s.total_btc_held,
+            s.avg_btc_price,
+            s.latest_aum_usd,
+            s.unrealized_pnl_usd,
+            s.unrealized_pnl_pct
+        FROM etf_flows f
+        LEFT JOIN etf_fund_stats s ON s.fund_ticker = f.fund_ticker
+        WHERE f.date = $1
+        ORDER BY ABS(f.flow_usd) DESC""",
         [max_date]
     )
     return {"date": max_date, "flows": [dict(r) for r in rows]}
@@ -93,8 +106,18 @@ async def get_etf_summary():
     total_invested = sum(s["total_invested_usd"] or 0 for s in stats_rows)
     total_btc = sum(s["total_btc_held"] or 0 for s in stats_rows)
     
+    # История AUM (90 дней)
+    aum_rows = await db.query(
+        """SELECT date, total_flow_usd, total_aum_usd, total_btc_held, btc_price
+           FROM etf_daily_summary
+           WHERE date > NOW() - INTERVAL '90 days'
+           ORDER BY date ASC""",
+        []
+    )
+    
     return {
         "cumulative": cumulative,
+        "aum_history": [dict(r) for r in aum_rows],
         "funds": [dict(r) for r in stats_rows],
         "totals": {
             "aum_usd": round(total_aum, 2),

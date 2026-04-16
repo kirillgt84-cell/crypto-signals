@@ -30,6 +30,14 @@ interface FlowPoint {
   btc_price: number
 }
 
+interface AUMPoint {
+  date: string
+  total_flow_usd: number
+  total_aum_usd: number
+  total_btc_held: number
+  btc_price: number
+}
+
 interface FundStat {
   fund_ticker: string
   fund_name: string
@@ -45,6 +53,11 @@ interface LatestFlow {
   fund_ticker: string
   fund_name: string
   flow_usd: number
+  total_btc_held?: number
+  avg_btc_price?: number
+  latest_aum_usd?: number
+  unrealized_pnl_usd?: number
+  unrealized_pnl_pct?: number
 }
 
 function formatUSD(n: number) {
@@ -100,12 +113,19 @@ export default function EtfPage() {
 
   const totals = summary?.totals
   const cumulative = summary?.cumulative || []
+  const aumHistory = summary?.aum_history || []
   const funds = summary?.funds || []
 
-  const chartData = cumulative.map((d: FlowPoint) => ({
+  const flowChartData = cumulative.map((d: FlowPoint) => ({
     date: new Date(d.date).toLocaleDateString(undefined, { month: "short", day: "numeric" }),
     dailyFlow: d.daily_flow,
     cumulativeFlow: d.cumulative_flow,
+    btcPrice: d.btc_price,
+  }))
+
+  const aumChartData = aumHistory.map((d: AUMPoint) => ({
+    date: new Date(d.date).toLocaleDateString(undefined, { month: "short", day: "numeric" }),
+    totalAUM: d.total_aum_usd,
     btcPrice: d.btc_price,
   }))
 
@@ -178,7 +198,7 @@ export default function EtfPage() {
                   </div>
                 ) : (
                   <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={chartData}>
+                    <BarChart data={flowChartData}>
                       <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                       <XAxis dataKey="date" tick={{ fontSize: 12 }} />
                       <YAxis tick={{ fontSize: 12 }} tickFormatter={(v) => formatUSD(v)} />
@@ -198,7 +218,7 @@ export default function EtfPage() {
 
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-base font-semibold">Cumulative AUM vs BTC Price</CardTitle>
+              <CardTitle className="text-base font-semibold">Total AUM vs BTC Price</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="h-[300px] w-full">
@@ -208,7 +228,7 @@ export default function EtfPage() {
                   </div>
                 ) : (
                   <ResponsiveContainer width="100%" height="100%">
-                    <ComposedChart data={chartData}>
+                    <ComposedChart data={aumChartData}>
                       <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                       <XAxis dataKey="date" tick={{ fontSize: 12 }} />
                       <YAxis
@@ -226,8 +246,8 @@ export default function EtfPage() {
                       <Area
                         yAxisId="left"
                         type="monotone"
-                        dataKey="cumulativeFlow"
-                        name="Cumulative Flow"
+                        dataKey="totalAUM"
+                        name="Total AUM"
                         stroke="#10b981"
                         fill="#10b981"
                         fillOpacity={0.15}
@@ -329,13 +349,16 @@ export default function EtfPage() {
                   <TableRow>
                     <TableHead>Fund</TableHead>
                     <TableHead className="text-right">Flow</TableHead>
+                    <TableHead className="text-right">BTC Held</TableHead>
+                    <TableHead className="text-right">Avg Price</TableHead>
+                    <TableHead className="text-right">Unrealized P&L</TableHead>
                     <TableHead className="text-right">Direction</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {loading ? (
                     <TableRow>
-                      <TableCell colSpan={3} className="h-24 text-center">
+                      <TableCell colSpan={6} className="h-24 text-center">
                         <Loader2 className="mx-auto h-5 w-5 animate-spin text-muted-foreground" />
                       </TableCell>
                     </TableRow>
@@ -351,6 +374,17 @@ export default function EtfPage() {
                           <TableCell className="text-right font-mono">
                             <span className={f.flow_usd >= 0 ? "text-emerald-600" : "text-red-600"}>
                               {formatUSD(f.flow_usd)}
+                            </span>
+                          </TableCell>
+                          <TableCell className="text-right font-mono">
+                            {(f.total_btc_held ?? 0).toFixed(1)}
+                          </TableCell>
+                          <TableCell className="text-right font-mono">
+                            {formatUSD(f.avg_btc_price ?? 0)}
+                          </TableCell>
+                          <TableCell className="text-right font-mono">
+                            <span className={(f.unrealized_pnl_usd ?? 0) >= 0 ? "text-emerald-600" : "text-red-600"}>
+                              {formatUSD(f.unrealized_pnl_usd ?? 0)}
                             </span>
                           </TableCell>
                           <TableCell className="text-right">
@@ -370,7 +404,7 @@ export default function EtfPage() {
                   )}
                   {!loading && (latest?.flows || []).filter((f: any) => f.fund_ticker !== "TOTAL").length === 0 && (
                     <TableRow>
-                      <TableCell colSpan={3} className="text-center text-muted-foreground">
+                      <TableCell colSpan={6} className="text-center text-muted-foreground">
                         No daily breakdown available.
                       </TableCell>
                     </TableRow>

@@ -116,6 +116,9 @@ async def save_etf_snapshot():
         # Пересчитываем статистику фондов
         await _recalculate_etf_stats(db, btc_price)
         
+        # Сохраняем агрегированный дневной срез
+        await _save_etf_daily_summary(db, btc_price)
+        
         await fetcher.close()
         logger.info(f"[Scheduler] ETF flows saved: {inserted} records, BTC price: {btc_price}")
     except Exception as e:
@@ -171,6 +174,55 @@ async def _recalculate_etf_stats(db, current_btc_price: float):
             )
     except Exception as e:
         logger.error(f"[Scheduler] ETF stats recalculation failed: {e}")
+
+
+async def _save_etf_daily_summary(db, btc_price: float):
+    """Сохраняет агрегированный дневной срез AUM и BTC held"""
+    try:
+        # Определяем последнюю дату для которой есть flow данные
+        latest_date_row = await db.query(
+            "SELECT MAX(date) as max_date FROM etf_flows WHERE fund_ticker = 'TOTAL'",
+            []
+        )
+        latest_date = latest_date_row[0]["max_date"] if latest_date_row else None
+        if not latest_date:
+            return
+        
+        # Суммарные значения по всем фондам
+        agg = await db.query(
+            """SELECT 
+                COALESCE(SUM(latest_aum_usd), 0) as total_aum,
+                COALESCE(SUM(total_btc_held), 0) as total_btc,
+                COALESCE(SUM(total_invested_usd), 0) as total_invested
+               FROM etf_fund_stats""",
+            []
+        )
+        
+        total_aum = agg[0]["total_aum"] if agg else 0
+        total_btc = agg[0]["total_btc"] if agg else 0
+        
+        # Total flow за последнюю дату
+        flow_row = await db.query(
+            "SELECT flow_usd FROM etf_flows WHERE fund_ticker = 'TOTAL' AND date = $1",
+            [latest_date]
+        )
+        total_flow = flow_row[0]["flow_usd"] if flow_row else 0
+        
+        await db.execute(
+            """INSERT INTO etf_daily_summary
+               (date, total_flow_usd, total_aum_usd, total_btc_held, btc_price, updated_at)
+               VALUES ($1, $2, $3, $4, $5, NOW())
+               ON CONFLICT (date) DO UPDATE SET
+               total_flow_usd = EXCLUDED.total_flow_usd,
+               total_aum_usd = EXCLUDED.total_aum_usd,
+               total_btc_held = EXCLUDED.total_btc_held,
+               btc_price = EXCLUDED.btc_price,
+               updated_at = NOW()""",
+            [latest_date, total_flow, total_aum, total_btc, btc_price]
+        )
+        logger.info(f"[Scheduler] ETF daily summary saved for {latest_date}: AUM=${total_aum:,.0f}, BTC={total_btc:,.2f}")
+    except Exception as e:
+        logger.error(f"[Scheduler] ETF daily summary failed: {e}")
 
 
 async def run_telegram_alerts():

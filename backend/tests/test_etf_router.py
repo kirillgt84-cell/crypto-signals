@@ -44,7 +44,12 @@ class TestETFRouter:
             [
                 {"fund_ticker": "IBIT", "fund_name": "BlackRock", "total_invested_usd": 1e9, "total_btc_held": 12000.0,
                  "avg_btc_price": 83333.0, "latest_aum_usd": 1.02e9, "unrealized_pnl_usd": 20e6, "unrealized_pnl_pct": 2.0, "updated_at": "2026-03-30"}
-            ]
+            ],
+            [
+                {"date": "2026-03-28", "total_flow_usd": 10000000.0, "total_aum_usd": 1.01e9, "total_btc_held": 12000.0, "btc_price": 84000.0},
+                {"date": "2026-03-29", "total_flow_usd": 5000000.0, "total_aum_usd": 1.015e9, "total_btc_held": 12000.0, "btc_price": 84500.0},
+                {"date": "2026-03-30", "total_flow_usd": -2000000.0, "total_aum_usd": 1.02e9, "total_btc_held": 12000.0, "btc_price": 85000.0},
+            ],
         ])
         result = await get_etf_summary()
         assert len(result["cumulative"]) == 3
@@ -52,3 +57,4 @@ class TestETFRouter:
         assert result["totals"]["aum_usd"] == 1.02e9
         assert result["totals"]["pnl_usd"] == 20e6
         assert len(result["funds"]) == 1
+        assert len(result["aum_history"]) == 3

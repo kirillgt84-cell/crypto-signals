@@ -71,3 +71,15 @@ CREATE TABLE IF NOT EXISTS etf_fund_stats (
     unrealized_pnl_pct DOUBLE PRECISION DEFAULT 0,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+-- ETF daily aggregated summary (AUM, BTC held, total flow)
+CREATE TABLE IF NOT EXISTS etf_daily_summary (
+    date DATE PRIMARY KEY,
+    total_flow_usd DOUBLE PRECISION,
+    total_aum_usd DOUBLE PRECISION,
+    total_btc_held DOUBLE PRECISION,
+    btc_price DOUBLE PRECISION,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_etf_daily_summary_date ON etf_daily_summary(date DESC);
