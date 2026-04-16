@@ -73,6 +73,9 @@ CREATE TABLE IF NOT EXISTS user_preferences (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+ALTER TABLE user_preferences ADD COLUMN IF NOT EXISTS daily_report BOOLEAN DEFAULT FALSE;
+ALTER TABLE user_preferences ADD COLUMN IF NOT EXISTS weekly_report BOOLEAN DEFAULT FALSE;
+ALTER TABLE user_preferences ADD COLUMN IF NOT EXISTS telegram_alerts BOOLEAN DEFAULT FALSE;
 ALTER TABLE user_preferences ADD COLUMN IF NOT EXISTS telegram_chat_id VARCHAR(50);
 
 -- Sent reports tracking for idempotency

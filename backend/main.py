@@ -110,6 +110,21 @@ app = FastAPI(
     lifespan=lifespan
 )
 
+# Ensure CORS headers are present even on 500 errors
+@app.exception_handler(Exception)
+async def global_exception_handler(request, exc):
+    from fastapi.responses import JSONResponse
+    origin = request.headers.get("origin", "")
+    response = JSONResponse(
+        status_code=500,
+        content={"detail": "Internal server error"}
+    )
+    if origin:
+        response.headers["access-control-allow-origin"] = origin
+        response.headers["access-control-allow-credentials"] = "true"
+        response.headers["vary"] = "Origin"
+    return response
+
 # CORS configuration
 _default_origins = [
     "http://localhost:3000",
