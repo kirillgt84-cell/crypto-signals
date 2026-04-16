@@ -5,6 +5,7 @@ SignalStream OI Dashboard API
 import logging
 import os
 from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import Optional, List
 from datetime import datetime
@@ -110,90 +111,30 @@ app = FastAPI(
 )
 
 # CORS configuration
-_default_origins = {
+_default_origins = [
     "http://localhost:3000",
     "https://crypto-signals.vercel.app",
-}
+]
 
 _additional = os.getenv("ADDITIONAL_CORS_ORIGINS", "")
 if _additional:
     for o in _additional.split(","):
         o = o.strip()
-        if o:
-            _default_origins.add(o)
+        if o and o not in _default_origins:
+            _default_origins.append(o)
 
-_cors_patterns = [
-    re_module.compile(r"https://crypto-signals[-\w]+\.vercel\.app"),
-    re_module.compile(r"https://[\w-]+-chi\.vercel\.app"),
-    re_module.compile(r"https://[\w-]+\.vercel\.app"),
-]
+logger.info(f"CORS configured: origins={_default_origins}")
 
-logger.info(f"CORS configured: origins={list(_default_origins)}")
-
-
-class CustomCORSMiddleware:
-    """Reliable CORS middleware that always mirrors the origin when matched"""
-    def __init__(self, app, allow_origins: set, allow_patterns: list):
-        self.app = app
-        self.allow_origins = allow_origins
-        self.allow_patterns = allow_patterns
-
-    def _is_allowed(self, origin: str) -> bool:
-        if origin in self.allow_origins:
-            return True
-        for pat in self.allow_patterns:
-            if pat.match(origin):
-                return True
-        return False
-
-    async def __call__(self, scope, receive, send):
-        if scope["type"] != "http":
-            await self.app(scope, receive, send)
-            return
-
-        headers = dict(scope.get("headers", []))
-        origin_bytes = headers.get(b"origin")
-        origin = origin_bytes.decode("utf-8") if origin_bytes else None
-        method = scope.get("method", "GET")
-
-        if origin and self._is_allowed(origin):
-            if method == "OPTIONS":
-                # Preflight response
-                await send({
-                    "type": "http.response.start",
-                    "status": 200,
-                    "headers": [
-                        [b"access-control-allow-origin", origin.encode("utf-8")],
-                        [b"access-control-allow-credentials", b"true"],
-                        [b"access-control-allow-methods", b"GET, POST, PUT, DELETE, OPTIONS, PATCH"],
-                        [b"access-control-allow-headers", b"*"],
-                        [b"access-control-max-age", b"86400"],
-                        [b"vary", b"Origin"],
-                    ],
-                })
-                await send({"type": "http.response.body", "body": b""})
-                return
-
-            # Normal request: wrap send to inject headers
-            async def wrapped_send(message):
-                if message["type"] == "http.response.start":
-                    orig_headers = list(message.get("headers", []))
-                    new_headers = [
-                        [b"access-control-allow-origin", origin.encode("utf-8")],
-                        [b"access-control-allow-credentials", b"true"],
-                        [b"access-control-expose-headers", b"*"],
-                        [b"vary", b"Origin"],
-                    ]
-                    message["headers"] = orig_headers + new_headers
-                await send(message)
-
-            await self.app(scope, receive, wrapped_send)
-            return
-
-        await self.app(scope, receive, send)
-
-
-app.add_middleware(CustomCORSMiddleware, allow_origins=_default_origins, allow_patterns=_cors_patterns)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=_default_origins,
+    allow_origin_regex=r"https://[\w-]+-chi\.vercel\.app|https://[\w-]+\.vercel\.app|https://crypto-signals[-\w]+\.vercel\.app",
+    allow_credentials=True,
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
+    allow_headers=["*"],
+    expose_headers=["*"],
+    max_age=86400,
+)
 
 # Подключаем роутеры
 app.include_router(market.router)

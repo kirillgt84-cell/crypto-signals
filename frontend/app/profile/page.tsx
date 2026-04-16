@@ -96,7 +96,7 @@ export default function ProfilePage() {
     setLoadingAction("upgrade")
     try {
       // Placeholder: directly set pro tier for testing
-      await updateProfile({ subscription_tier: "pro" } as any)
+      await updateProfile({ subscription_tier: "pro" })
       await refreshUser()
       showMessage("Upgraded to Pro! (Payment integration coming soon)", "success")
     } catch (e: any) {

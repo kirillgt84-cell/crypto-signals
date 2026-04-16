@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { useRouter } from "next/navigation"
 import { motion, AnimatePresence } from "framer-motion"
 import { 
   X, Mail, Lock, User, 
@@ -34,6 +35,7 @@ export function AuthModal({ isOpen, onClose, defaultTab = "login" }: AuthModalPr
   const [username, setUsername] = useState("")
   
   const { login, register, loginWithOAuth, loginWithTelegram } = useAuth()
+  const router = useRouter()
   
   const handleEmailSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -43,11 +45,14 @@ export function AuthModal({ isOpen, onClose, defaultTab = "login" }: AuthModalPr
     try {
       if (activeTab === "login") {
         await login(email, password)
+        console.log(`[AuthModal] Login success, closing modal`)
+        onClose()
       } else {
         await register(email, password, username || undefined)
+        console.log(`[AuthModal] Register success, redirecting to profile`)
+        onClose()
+        router.push("/profile")
       }
-      console.log(`[AuthModal] Auth success, closing modal`)
-      onClose()
     } catch (err: any) {
       console.error(`[AuthModal] Auth error:`, err)
       setError(err.message || "Unknown error")
@@ -64,6 +69,7 @@ export function AuthModal({ isOpen, onClose, defaultTab = "login" }: AuthModalPr
   const handleTelegramAuth = (user: any) => {
     loginWithTelegram(user).then(() => {
       onClose()
+      router.push("/profile")
     }).catch((err: any) => {
       setError(err.message)
     })

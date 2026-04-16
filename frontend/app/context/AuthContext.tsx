@@ -35,7 +35,7 @@ interface AuthContextType {
   loginWithOAuth: (provider: string) => void
   loginWithTelegram: (user: any) => Promise<void>
   refreshToken: () => Promise<boolean>
-  updateProfile: (updates: Partial<Pick<User, "username" | "avatar_url">>) => Promise<void>
+  updateProfile: (updates: Partial<Pick<User, "username" | "avatar_url" | "subscription_tier">>) => Promise<void>
   updatePreferences: (updates: Partial<UserPreferences>) => Promise<void>
   changePassword: (oldPassword: string, newPassword: string) => Promise<void>
   refreshUser: () => Promise<void>
@@ -199,7 +199,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } catch {}
   }
 
-  const updateProfile = async (updates: Partial<Pick<User, "username" | "avatar_url">>) => {
+  const updateProfile = async (updates: Partial<Pick<User, "username" | "avatar_url" | "subscription_tier">>) => {
     const token = accessToken || localStorage.getItem("access_token")
     if (!token) throw new Error("Not authenticated")
     const res = await fetch(authUrl('/me'), {
