@@ -20,7 +20,7 @@ router = APIRouter(prefix="/api/v1/auth", tags=["auth"])
 # Config from env vars
 JWT_SECRET = os.getenv("JWT_SECRET", "default-secret-change-in-production")
 JWT_ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE = int(os.getenv("JWT_ACCESS_EXPIRE", "15"))  # minutes
+ACCESS_TOKEN_EXPIRE = int(os.getenv("JWT_ACCESS_EXPIRE", "60"))  # minutes
 REFRESH_TOKEN_EXPIRE = int(os.getenv("JWT_REFRESH_EXPIRE", "7"))  # days
 
 # OAuth Config
@@ -140,7 +140,7 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(s
     
     db = get_db()
     user = await db.query(
-        "SELECT id, email, username, avatar_url, is_email_verified FROM users WHERE id = $1 AND is_active = TRUE",
+        "SELECT id, email, username, avatar_url, is_email_verified, subscription_tier FROM users WHERE id = $1 AND is_active = TRUE",
         [user_id]
     )
     
@@ -238,20 +238,26 @@ async def refresh_token(refresh_token: str):
     """Refresh access token using refresh token"""
     db = get_db()
     
-    # Find refresh token in DB (compare hash)
+    # Find valid refresh tokens
     tokens = await db.query(
-        "SELECT id, user_id, expires_at, is_revoked FROM refresh_tokens WHERE is_revoked = FALSE",
+        "SELECT id, user_id, expires_at, is_revoked, token_hash FROM refresh_tokens WHERE is_revoked = FALSE AND expires_at > NOW()",
         []
     )
     
-    valid_token = None
     for t in tokens:
-        # This is inefficient - better to store token prefix and match by prefix
-        # For production, use Redis with token prefix
-        pass
-    
-    # Simple implementation: check all non-expired tokens
-    # In production, use Redis or better indexing
+        if bcrypt.checkpw(refresh_token.encode(), t["token_hash"].encode()):
+            # Revoke old token for security
+            await db.execute("UPDATE refresh_tokens SET is_revoked = TRUE WHERE id = $1", [t["id"]])
+            
+            access_token = create_access_token(t["user_id"])
+            new_refresh = create_refresh_token(t["user_id"])
+            
+            return {
+                "access_token": access_token,
+                "refresh_token": new_refresh,
+                "token_type": "bearer",
+                "expires_in": ACCESS_TOKEN_EXPIRE * 60
+            }
     
     raise HTTPException(status_code=401, detail="Invalid refresh token")
 

@@ -39,3 +39,46 @@ class TestAuthUpgrade:
             {"id": 1, "subscription_tier": "admin", "email": "admin@test.com"}
         )
         assert result["message"] == "Profile updated"
+
+    @patch("routers.auth.get_db")
+    @patch("routers.auth.bcrypt.checkpw")
+    @patch("routers.auth.create_access_token")
+    @patch("routers.auth.create_refresh_token")
+    async def test_refresh_token_success(self, mock_create_refresh, mock_create_access, mock_checkpw, mock_get_db):
+        from routers.auth import refresh_token
+        mock_db = mock_get_db.return_value
+        mock_db.query = AsyncMock(return_value=[{
+            "id": 1,
+            "user_id": 42,
+            "expires_at": "2099-01-01T00:00:00",
+            "is_revoked": False,
+            "token_hash": "hashed_token"
+        }])
+        mock_db.execute = AsyncMock(return_value=None)
+        mock_checkpw.return_value = True
+        mock_create_access.return_value = "new-access-token"
+        mock_create_refresh.return_value = "new-refresh-token"
+        
+        result = await refresh_token("old-refresh-token")
+        assert result["access_token"] == "new-access-token"
+        assert result["refresh_token"] == "new-refresh-token"
+        assert result["expires_in"] == 60 * 60
+
+    @patch("routers.auth.get_db")
+    @patch("routers.auth.bcrypt.checkpw")
+    async def test_refresh_token_invalid(self, mock_checkpw, mock_get_db):
+        from routers.auth import refresh_token
+        from fastapi import HTTPException
+        mock_db = mock_get_db.return_value
+        mock_db.query = AsyncMock(return_value=[{
+            "id": 1,
+            "user_id": 42,
+            "expires_at": "2099-01-01T00:00:00",
+            "is_revoked": False,
+            "token_hash": "hashed_token"
+        }])
+        mock_checkpw.return_value = False
+        
+        with pytest.raises(HTTPException) as exc_info:
+            await refresh_token("bad-token")
+        assert exc_info.value.status_code == 401
