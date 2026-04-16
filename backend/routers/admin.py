@@ -14,6 +14,46 @@ async def require_admin(current_user: dict = Depends(get_current_user)) -> dict:
     return current_user
 
 
+@router.get("/stats")
+async def admin_stats(admin: dict = Depends(require_admin)):
+    """Dashboard stats for admin panel"""
+    db = get_db()
+    
+    total = await db.query("SELECT COUNT(*) as c FROM users", [])
+    pro = await db.query("SELECT COUNT(*) as c FROM users WHERE subscription_tier = 'pro'", [])
+    free = await db.query("SELECT COUNT(*) as c FROM users WHERE subscription_tier = 'free'", [])
+    new_7d = await db.query("SELECT COUNT(*) as c FROM users WHERE created_at > NOW() - INTERVAL '7 days'", [])
+    
+    registrations = await db.query(
+        """SELECT DATE(created_at) as date, COUNT(*) as count
+           FROM users
+           WHERE created_at > NOW() - INTERVAL '30 days'
+           GROUP BY DATE(created_at)
+           ORDER BY date ASC""",
+        []
+    )
+    
+    # Fill missing days with 0
+    from datetime import datetime, timedelta
+    today = datetime.utcnow().date()
+    dates = {str((today - timedelta(days=i))): 0 for i in range(29, -1, -1)}
+    for r in registrations:
+        dates[str(r["date"])] = r["count"]
+    
+    registrations_by_day = [
+        {"date": d, "count": c}
+        for d, c in sorted(dates.items())
+    ]
+    
+    return {
+        "total_users": total[0]["c"] if total else 0,
+        "pro_users": pro[0]["c"] if pro else 0,
+        "free_users": free[0]["c"] if free else 0,
+        "new_users_7d": new_7d[0]["c"] if new_7d else 0,
+        "registrations_by_day": registrations_by_day,
+    }
+
+
 @router.get("/users")
 async def list_users(admin: dict = Depends(require_admin)):
     """List all users with basic info"""

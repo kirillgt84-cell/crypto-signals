@@ -9,7 +9,10 @@ import {
   Shield,
   ChevronLeft,
   ChevronRight,
-  Menu
+  Menu,
+  Settings,
+  BarChart3,
+  User
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Logo } from '../Logo';
@@ -23,6 +26,11 @@ interface SidebarProps {
 
 const baseNavItems = [
   { href: '/', label: 'Dashboard', icon: LayoutDashboard },
+  { href: '/etf', label: 'ETF Analytics', icon: BarChart3 },
+];
+
+const bottomNavItems = [
+  { href: '/profile', label: 'Profile', icon: User },
 ];
 
 const adminNavItem = { href: '/admin', label: 'Admin', icon: Shield };
@@ -33,7 +41,7 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
   const { user } = useAuth();
   const isAdmin = user?.subscription_tier === 'admin';
   
-  const navItems = isAdmin ? [...baseNavItems, adminNavItem] : baseNavItems;
+  const topNavItems = isAdmin ? [...baseNavItems, adminNavItem] : baseNavItems;
 
   return (
     <>
@@ -97,7 +105,7 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
 
           {/* Navigation */}
           <nav className="flex-1 space-y-1 p-3">
-            {navItems.map((item) => {
+            {topNavItems.map((item) => {
               const Icon = item.icon;
               const isActive = pathname === item.href;
 
@@ -109,12 +117,12 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
                   className={cn(
                     "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
                     isActive
-                      ? "bg-primary/10 text-primary"
+                      ? "bg-indigo-500/10 text-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-300"
                       : "text-muted-foreground hover:bg-accent hover:text-foreground",
                     collapsed && "justify-center px-2"
                   )}
                 >
-                  <Icon className={cn("h-5 w-5 flex-shrink-0", isActive && "text-primary")} />
+                  <Icon className={cn("h-5 w-5 flex-shrink-0", isActive && "text-indigo-600 dark:text-indigo-300")} />
                   {!collapsed && <span>{item.label}</span>}
                 </Link>
               );
@@ -122,15 +130,36 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
           </nav>
 
           {/* Bottom Section */}
-          <div className="border-t border-border p-3">
+          <div className="border-t border-border p-3 space-y-1">
+            {bottomNavItems.map((item) => {
+              const Icon = item.icon;
+              const isActive = pathname === item.href;
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  onClick={() => setMobileOpen(false)}
+                  className={cn(
+                    "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+                    isActive
+                      ? "bg-indigo-500/10 text-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-300"
+                      : "text-muted-foreground hover:bg-accent hover:text-foreground",
+                    collapsed && "justify-center px-2"
+                  )}
+                >
+                  <Icon className="h-4 w-4 flex-shrink-0" />
+                  {!collapsed && <span>{item.label}</span>}
+                </Link>
+              );
+            })}
             <Link href="/profile" onClick={() => setMobileOpen(false)}>
               <div className={cn(
-                "flex items-center gap-3 rounded-lg bg-muted/50 p-3",
+                "mt-2 flex items-center gap-3 rounded-lg bg-muted/50 p-3",
                 collapsed && "justify-center"
               )}>
                 <Avatar className="h-8 w-8">
                   <AvatarImage src={user?.avatar_url || ""} alt={user?.username || ""} />
-                  <AvatarFallback className="text-xs font-bold">
+                  <AvatarFallback className="text-xs font-bold bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300">
                     {user?.username?.slice(0, 2).toUpperCase() || "U"}
                   </AvatarFallback>
                 </Avatar>

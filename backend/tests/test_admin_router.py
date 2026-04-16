@@ -55,3 +55,24 @@ class TestAdminRouter:
         with pytest.raises(HTTPException) as exc_info:
             await update_user(1, {"subscription_tier": "pro"}, {"id": 1, "subscription_tier": "admin"})
         assert exc_info.value.status_code == 400
+
+    @patch("routers.admin.get_db")
+    async def test_admin_stats(self, mock_get_db):
+        from routers.admin import admin_stats
+        mock_db = mock_get_db.return_value
+        mock_db.query = AsyncMock(side_effect=[
+            [{"c": 42}],
+            [{"c": 5}],
+            [{"c": 37}],
+            [{"c": 3}],
+            [
+                {"date": "2026-04-10", "count": 2},
+                {"date": "2026-04-11", "count": 1},
+            ],
+        ])
+        result = await admin_stats({"id": 1, "subscription_tier": "admin"})
+        assert result["total_users"] == 42
+        assert result["pro_users"] == 5
+        assert result["free_users"] == 37
+        assert result["new_users_7d"] == 3
+        assert len(result["registrations_by_day"]) == 30

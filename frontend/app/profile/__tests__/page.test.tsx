@@ -48,12 +48,12 @@ describe("ProfilePage", () => {
     jest.clearAllMocks()
   })
 
-  it("renders profile tabs and default content", () => {
+  it("renders profile sidebar and default content", () => {
     render(<ProfilePage />)
-    expect(screen.getByRole("tab", { name: /Profile/i })).toBeInTheDocument()
-    expect(screen.getByRole("tab", { name: /Security/i })).toBeInTheDocument()
-    expect(screen.getByRole("tab", { name: /Prefs/i })).toBeInTheDocument()
-    expect(screen.getByRole("tab", { name: /Plan/i })).toBeInTheDocument()
+    expect(screen.getByRole("button", { name: /Overview/i })).toBeInTheDocument()
+    expect(screen.getByRole("button", { name: /Security/i })).toBeInTheDocument()
+    expect(screen.getByRole("button", { name: /Preferences/i })).toBeInTheDocument()
+    expect(screen.getByRole("button", { name: /Subscription/i })).toBeInTheDocument()
 
     expect(screen.getByDisplayValue("testuser")).toBeInTheDocument()
     expect(screen.getByText("test@test.com")).toBeInTheDocument()
