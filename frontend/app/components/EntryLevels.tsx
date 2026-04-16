@@ -1,13 +1,16 @@
 "use client"
 
+import { useMemo } from "react"
 import { motion } from "framer-motion"
-import { Target, Info } from "lucide-react"
+import { Target, Info, TrendingUp, TrendingDown, Minus } from "lucide-react"
+import { useAuth } from "../context/AuthContext"
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
+import { Badge } from "@/components/ui/badge"
 
 interface EntryLevelsProps {
   data: {
@@ -23,6 +26,60 @@ interface EntryLevelsProps {
 }
 
 export function EntryLevels({ data, loading }: EntryLevelsProps) {
+  const { isPro } = useAuth()
+
+  const plan = useMemo(() => {
+    const price = data?.price || 0
+    const ema20 = data?.ema20 || 0
+    const ema50 = data?.ema50 || 0
+    const vah = data?.vah || 0
+    const val = data?.val || 0
+    const poc = data?.poc || 0
+    if (!price || !ema20 || !ema50) return null
+
+    if (price > ema20 && ema20 > ema50) {
+      const entry = ema20
+      const stop = ema50 * 0.995
+      const target = vah
+      const risk = Math.abs(entry - stop)
+      const reward = Math.abs(target - entry)
+      const rr = risk > 0 ? +(reward / risk).toFixed(2) : 0
+      return {
+        direction: "LONG" as const,
+        entry,
+        stop,
+        target,
+        rr,
+        rationale: "Тренд восходящий. Вход на откате к EMA20, стоп под EMA50, цель — VAH.",
+      }
+    }
+    if (price < ema20 && ema20 < ema50) {
+      const entry = ema20
+      const stop = ema50 * 1.005
+      const target = val
+      const risk = Math.abs(entry - stop)
+      const reward = Math.abs(target - entry)
+      const rr = risk > 0 ? +(reward / risk).toFixed(2) : 0
+      return {
+        direction: "SHORT" as const,
+        entry,
+        stop,
+        target,
+        rr,
+        rationale: "Тренд нисходящий. Вход от отбоя от EMA20, стоп над EMA50, цель — VAL.",
+      }
+    }
+    const rr = Math.abs(vah - val) / Math.abs(poc - val || 1)
+    return {
+      direction: "WAIT" as const,
+      entry: poc,
+      stop: val,
+      target: vah,
+      rr: +rr.toFixed(2),
+      rationale: "Цена между EMA20 и EMA50 — консолидация. Ждите пробоя или торгуйте диапазон.",
+    }
+  }, [data])
+
   if (loading) {
     return (
       <div className="w-full h-full border-2 border-primary/30 rounded-lg bg-card p-6 font-mono">
@@ -289,6 +346,41 @@ export function EntryLevels({ data, loading }: EntryLevelsProps) {
             <span>▲ — текущая цена на шкале</span>
           </div>
         </div>
+
+        {/* Pro Trading Plan */}
+        {isPro && plan && (
+          <motion.div
+            className="mt-4 rounded-xl border border-amber-500/30 bg-amber-500/5 p-3"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+          >
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs font-bold uppercase tracking-wider text-amber-500">Trading Plan</span>
+              <Badge className={plan.direction === "LONG" ? "bg-emerald-500" : plan.direction === "SHORT" ? "bg-rose-500" : "bg-slate-500"}>
+                {plan.direction === "LONG" ? <TrendingUp className="mr-1 h-3 w-3" /> : plan.direction === "SHORT" ? <TrendingDown className="mr-1 h-3 w-3" /> : <Minus className="mr-1 h-3 w-3" />}
+                {plan.direction}
+              </Badge>
+            </div>
+            <div className="grid grid-cols-3 gap-2 text-center mb-2">
+              <div>
+                <p className="text-[10px] text-muted-foreground uppercase">Entry</p>
+                <p className="text-sm font-mono font-bold text-white">${plan.entry.toLocaleString(undefined, { maximumFractionDigits: 1 })}</p>
+              </div>
+              <div>
+                <p className="text-[10px] text-muted-foreground uppercase">Stop</p>
+                <p className="text-sm font-mono font-bold text-rose-400">${plan.stop.toLocaleString(undefined, { maximumFractionDigits: 1 })}</p>
+              </div>
+              <div>
+                <p className="text-[10px] text-muted-foreground uppercase">Target</p>
+                <p className="text-sm font-mono font-bold text-emerald-400">${plan.target.toLocaleString(undefined, { maximumFractionDigits: 1 })}</p>
+              </div>
+            </div>
+            <div className="flex items-center justify-between text-xs">
+              <span className="text-muted-foreground">Risk/Reward: <span className="font-mono font-bold text-amber-400">1:{plan.rr}</span></span>
+            </div>
+            <p className="mt-1 text-[10px] text-slate-400 leading-snug">{plan.rationale}</p>
+          </motion.div>
+        )}
       </motion.div>
     </TooltipProvider>
   )

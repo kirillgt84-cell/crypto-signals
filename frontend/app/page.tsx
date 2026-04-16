@@ -20,6 +20,7 @@ import { EntryLevels } from "./components/EntryLevels"
 import { LiquidationMap } from "./components/LiquidationMap"
 import { OrderBook } from "./components/OrderBook"
 import { FundamentalsCard } from "./components/FundamentalsCard"
+import ChecklistPanel, { ChecklistData } from "./components/dashboard/ChecklistPanel"
 import Sidebar from "./components/admin/Sidebar"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { cn } from "@/lib/utils"
@@ -435,6 +436,7 @@ export default function Dashboard() {
   })
   const [oiAnalysis, setOiAnalysis] = useState<OIAnalysis | null>(null)
   const [liquidations, setLiquidations] = useState<LiquidationLevel[]>([])
+  const [checklistData, setChecklistData] = useState<ChecklistData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -472,6 +474,7 @@ export default function Dashboard() {
           fetch(`${API_BASE_URL}/market/profile/${symbol}?_cb=${cacheBuster}`, { cache: 'no-store' }),
           fetch(`${API_BASE_URL}/market/spot-volume/${symbol}?timeframe=${apiTf}&_cb=${cacheBuster}`, { cache: 'no-store' }),
           fetch(`${API_BASE_URL}/market/cvd/${symbol}?timeframe=${apiTf}&_cb=${cacheBuster}`, { cache: 'no-store' }),
+          fetch(`${API_BASE_URL}/market/checklist/${symbol}?timeframe=${apiTf}&_cb=${cacheBuster}`, { cache: 'no-store' }),
         ])
         
         const oiRes = results[0].status === 'fulfilled' ? results[0].value : { ok: false, status: 'rejected' } as unknown as Response
@@ -479,9 +482,10 @@ export default function Dashboard() {
         const profileRes = results[2].status === 'fulfilled' ? results[2].value : { ok: false, status: 'rejected' } as unknown as Response
         const spotVolumeRes = results[3].status === 'fulfilled' ? results[3].value : { ok: false, status: 'rejected' } as unknown as Response
         const cvdRes = results[4].status === 'fulfilled' ? results[4].value : { ok: false, status: 'rejected' } as unknown as Response
+        const checklistRes = results[5].status === 'fulfilled' ? results[5].value : { ok: false, status: 'rejected' } as unknown as Response
 
         // Parse responses
-        let oiData: any = {}, levelsData: any = {}, profileData: any = {}, spotVolumeData: any = {}, cvdData: any = {}
+        let oiData: any = {}, levelsData: any = {}, profileData: any = {}, spotVolumeData: any = {}, cvdData: any = {}, checklist: any = {}
         let hasApiError = false
         
         console.log(`API Responses for ${symbol}:`, { oiOk: oiRes.ok, levelsOk: levelsRes.ok, profileOk: profileRes.ok })
@@ -526,6 +530,14 @@ export default function Dashboard() {
           cvdData = await cvdRes.json()
         } else {
           console.error("CVD API error:", cvdRes.status)
+        }
+        
+        if (checklistRes.ok) {
+          checklist = await checklistRes.json()
+          setChecklistData(checklist)
+        } else {
+          console.error("Checklist API error:", checklistRes.status)
+          setChecklistData(null)
         }
 
         // Combine data into MarketData format with safe defaults
@@ -593,6 +605,11 @@ export default function Dashboard() {
           volume_change_pct: combinedData.volume_change,
         } : null
         setOiAnalysis(enrichedAnalysis)
+        
+        // Set checklist even if other data fails
+        if (checklist && checklist.checks) {
+          setChecklistData(checklist)
+        }
         
         // Set liquidations from levels data - use real sizes from OKX if available
         if (levelsData.liquidation_levels) {
@@ -828,7 +845,20 @@ export default function Dashboard() {
           </ProBlurOverlay>
         </div>
 
-        {/* Row 6: Secondary Indicators */}
+        {/* Row 5.5: Entry Checklist */}
+        <div className="px-4 py-4 lg:px-6">
+          <ProBlurOverlay title="Pro Checklist" description="7-filter entry checklist with score and recommendation.">
+            {loading ? (
+              <div className="h-64 flex items-center justify-center rounded-xl bg-muted/30 border border-dashed">
+                <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+              </div>
+            ) : (
+              <ChecklistPanel data={checklistData} />
+            )}
+          </ProBlurOverlay>
+        </div>
+
+        {/* Row 6: Secondary Indicators -->
         <SecondaryIndicators data={marketData} timeframe={timeframe} loading={loading} />
         
         {/* Auth Modal */}

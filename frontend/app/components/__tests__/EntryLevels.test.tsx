@@ -15,6 +15,10 @@ jest.mock("@/components/ui/tooltip", () => ({
   TooltipContent: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
 }))
 
+jest.mock("../../context/AuthContext", () => ({
+  useAuth: () => ({ isPro: false }),
+}))
+
 describe("EntryLevels", () => {
   it("renders loading skeleton", () => {
     render(<EntryLevels data={{ price: 0 } as any} loading={true} />)
