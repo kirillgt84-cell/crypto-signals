@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useRef, useState } from "react"
+import Link from "next/link"
 import { TrendingUp, TrendingDown, Minus, Activity, BarChart3, Wallet, Target, Zap, Loader2 } from "lucide-react"
 import { UserMenu } from "./components/UserMenu"
 import { AuthModal } from "./components/AuthModal"
@@ -973,7 +974,29 @@ export default function Dashboard() {
           </ProBlurOverlay>
         </div>
 
-        {/* Row 6: Secondary Indicators -->
+        {/* Row 6: ETF Link Card (Free) */}
+        <div className="px-4 py-2 lg:px-6">
+          <Link href="/etf">
+            <Card className="group cursor-pointer border-blue-500/20 bg-gradient-to-r from-blue-500/5 to-card hover:from-blue-500/10 transition-colors">
+              <CardHeader className="flex flex-row items-center justify-between gap-4 p-4">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-500/10 text-blue-600">
+                    <BarChart3 className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-base">Bitcoin Spot ETFs</CardTitle>
+                    <CardDescription className="text-xs">Track daily flows, AUM and fund P&L</CardDescription>
+                  </div>
+                </div>
+                <Button size="sm" variant="secondary" className="shrink-0">
+                  View Analytics
+                </Button>
+              </CardHeader>
+            </Card>
+          </Link>
+        </div>
+
+        {/* Row 7: Secondary Indicators */}
         <SecondaryIndicators data={marketData} timeframe={timeframe} loading={loading} />
         
         {/* Auth Modal */}

@@ -22,6 +22,7 @@ from routers.auth import router as auth_router
 from routers.fundamentals import router as fundamentals_router
 from routers.telegram import router as telegram_router
 from routers.admin import router as admin_router
+from routers.etf import router as etf_router
 from scheduler import start_scheduler, stop_scheduler
 
 # Глобальная переменная для scheduler
@@ -87,6 +88,14 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         logger.error(f"Failed to run fundamentals on startup: {e}")
     
+    # Первоначальный сбор ETF данных
+    try:
+        from scheduler import save_etf_snapshot
+        logger.info("Triggering initial ETF collection on startup...")
+        await save_etf_snapshot()
+    except Exception as e:
+        logger.error(f"Failed to run ETF snapshot on startup: {e}")
+    
     yield
     
     # Shutdown
@@ -132,6 +141,7 @@ app.include_router(auth_router)
 app.include_router(fundamentals_router)
 app.include_router(telegram_router)
 app.include_router(admin_router)
+app.include_router(etf_router)
 
 # ============= Health Check =============
 @app.get("/health")

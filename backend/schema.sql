@@ -43,3 +43,31 @@ CREATE TABLE IF NOT EXISTS cvd_cache (
     net_delta DOUBLE PRECISION,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+-- Bitcoin Spot ETF flows (from Farside Investors)
+CREATE TABLE IF NOT EXISTS etf_flows (
+    id SERIAL PRIMARY KEY,
+    date DATE NOT NULL,
+    fund_ticker VARCHAR(20) NOT NULL,
+    fund_name VARCHAR(100) NOT NULL,
+    flow_usd DOUBLE PRECISION,
+    btc_price DOUBLE PRECISION,
+    UNIQUE(date, fund_ticker)
+);
+
+CREATE INDEX IF NOT EXISTS idx_etf_flows_date ON etf_flows(date DESC);
+CREATE INDEX IF NOT EXISTS idx_etf_flows_ticker ON etf_flows(fund_ticker);
+
+-- ETF fund calculated stats
+CREATE TABLE IF NOT EXISTS etf_fund_stats (
+    fund_ticker VARCHAR(20) PRIMARY KEY,
+    fund_name VARCHAR(100) NOT NULL,
+    launch_date DATE,
+    total_invested_usd DOUBLE PRECISION DEFAULT 0,
+    total_btc_held DOUBLE PRECISION DEFAULT 0,
+    avg_btc_price DOUBLE PRECISION DEFAULT 0,
+    latest_aum_usd DOUBLE PRECISION DEFAULT 0,
+    unrealized_pnl_usd DOUBLE PRECISION DEFAULT 0,
+    unrealized_pnl_pct DOUBLE PRECISION DEFAULT 0,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
