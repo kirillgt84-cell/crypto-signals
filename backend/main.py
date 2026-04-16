@@ -101,13 +101,24 @@ app = FastAPI(
 )
 
 # CORS - явные origins + regex для Vercel preview-деплоев
+_default_origins = [
+    "http://localhost:3000",
+    "https://crypto-signals.vercel.app",
+]
+
+_additional = os.getenv("ADDITIONAL_CORS_ORIGINS", "")
+if _additional:
+    for o in _additional.split(","):
+        o = o.strip()
+        if o and o not in _default_origins:
+            _default_origins.append(o)
+
+logger.info(f"CORS configured: origins={_default_origins}, regex=https://crypto-signals[-\\w]+\\.vercel\\.app")
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:3000",
-        "https://crypto-signals.vercel.app",
-    ],
-    allow_origin_regex=r"https://crypto-signals-[\w-]+\.vercel\.app",
+    allow_origins=_default_origins,
+    allow_origin_regex=r"https://crypto-signals[-\w]+\.vercel\.app",
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
     allow_headers=["*"],
