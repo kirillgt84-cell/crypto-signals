@@ -21,6 +21,7 @@ from routers import market
 from routers.auth import router as auth_router
 from routers.fundamentals import router as fundamentals_router
 from routers.telegram import router as telegram_router
+from routers.admin import router as admin_router
 from scheduler import start_scheduler, stop_scheduler
 
 # Глобальная переменная для scheduler
@@ -119,6 +120,7 @@ app.include_router(market.router)
 app.include_router(auth_router)
 app.include_router(fundamentals_router)
 app.include_router(telegram_router)
+app.include_router(admin_router)
 
 # ============= Health Check =============
 @app.get("/health")

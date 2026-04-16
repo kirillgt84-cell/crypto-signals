@@ -19,7 +19,7 @@ interface User {
   username: string
   avatar_url: string | null
   is_email_verified: boolean
-  subscription_tier: "free" | "pro"
+  subscription_tier: "free" | "pro" | "admin"
   preferences?: UserPreferences | null
   connected_oauth?: string[]
 }

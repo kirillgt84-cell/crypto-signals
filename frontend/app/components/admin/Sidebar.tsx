@@ -6,26 +6,34 @@ import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { 
   LayoutDashboard, 
+  Shield,
   ChevronLeft,
   ChevronRight,
   Menu
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Logo } from '../Logo';
+import { useAuth } from '../../context/AuthContext';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 interface SidebarProps {
   collapsed: boolean;
   onToggle: () => void;
 }
 
-// Only Dashboard page exists for now
-const navItems = [
+const baseNavItems = [
   { href: '/', label: 'Dashboard', icon: LayoutDashboard },
 ];
+
+const adminNavItem = { href: '/admin', label: 'Admin', icon: Shield };
 
 export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const { user } = useAuth();
+  const isAdmin = user?.subscription_tier === 'admin';
+  
+  const navItems = isAdmin ? [...baseNavItems, adminNavItem] : baseNavItems;
 
   return (
     <>
@@ -115,20 +123,25 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
 
           {/* Bottom Section */}
           <div className="border-t border-border p-3">
-            <div className={cn(
-              "flex items-center gap-3 rounded-lg bg-muted/50 p-3",
-              collapsed && "justify-center"
-            )}>
-              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-primary to-emerald-500 text-xs font-bold text-white">
-                JD
+            <Link href="/profile" onClick={() => setMobileOpen(false)}>
+              <div className={cn(
+                "flex items-center gap-3 rounded-lg bg-muted/50 p-3",
+                collapsed && "justify-center"
+              )}>
+                <Avatar className="h-8 w-8">
+                  <AvatarImage src={user?.avatar_url || ""} alt={user?.username || ""} />
+                  <AvatarFallback className="text-xs font-bold">
+                    {user?.username?.slice(0, 2).toUpperCase() || "U"}
+                  </AvatarFallback>
+                </Avatar>
+                {!collapsed && (
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-medium">{user?.username || "Guest"}</p>
+                    <p className="truncate text-xs text-muted-foreground">{user?.email || "No email"}</p>
+                  </div>
+                )}
               </div>
-              {!collapsed && (
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-medium">John Doe</p>
-                  <p className="truncate text-xs text-muted-foreground">john@example.com</p>
-                </div>
-              )}
-            </div>
+            </Link>
           </div>
         </div>
       </aside>

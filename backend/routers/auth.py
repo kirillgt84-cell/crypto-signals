@@ -576,11 +576,15 @@ async def update_me(
     """Update user profile and preferences"""
     db = get_db()
     
-    user_fields = ["username", "avatar_url"]
+    user_fields = ["username", "avatar_url", "subscription_tier"]
     pref_fields = ["theme", "language", "timezone", "notifications_enabled", "daily_report", "weekly_report", "telegram_alerts", "telegram_chat_id"]
     
     user_updates = {k: v for k, v in updates.items() if k in user_fields}
     pref_updates = {k: v for k, v in updates.items() if k in pref_fields}
+    
+    # Prevent self-promotion to admin
+    if user_updates.get("subscription_tier") == "admin" and current_user.get("subscription_tier") != "admin":
+        raise HTTPException(status_code=403, detail="Cannot self-promote to admin")
     
     if not user_updates and not pref_updates:
         raise HTTPException(status_code=400, detail="No valid fields to update")

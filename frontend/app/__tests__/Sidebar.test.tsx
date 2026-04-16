@@ -1,6 +1,18 @@
 import { render, screen, fireEvent } from '@testing-library/react'
 import Sidebar from '../components/admin/Sidebar'
 
+jest.mock('../context/AuthContext', () => ({
+  useAuth: () => ({
+    user: {
+      username: 'johndoe',
+      email: 'john@example.com',
+      avatar_url: null,
+      subscription_tier: 'free',
+    },
+    isLoading: false,
+  }),
+}))
+
 describe('Sidebar', () => {
   const mockToggle = jest.fn()
 
@@ -20,6 +32,12 @@ describe('Sidebar', () => {
     expect(screen.getByText('Dashboard')).toBeInTheDocument()
   })
 
+  it('does not show Admin link for non-admin', () => {
+    render(<Sidebar collapsed={false} onToggle={mockToggle} />)
+    
+    expect(screen.queryByText('Admin')).not.toBeInTheDocument()
+  })
+
   it('calls onToggle when collapse button clicked', () => {
     render(<Sidebar collapsed={false} onToggle={mockToggle} />)
     
@@ -37,7 +55,7 @@ describe('Sidebar', () => {
   it('shows user info in bottom section', () => {
     render(<Sidebar collapsed={false} onToggle={mockToggle} />)
     
-    expect(screen.getByText('John Doe')).toBeInTheDocument()
+    expect(screen.getByText('johndoe')).toBeInTheDocument()
     expect(screen.getByText('john@example.com')).toBeInTheDocument()
   })
 })
