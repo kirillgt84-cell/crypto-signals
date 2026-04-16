@@ -10,6 +10,7 @@ interface UserPreferences {
   daily_report?: boolean
   weekly_report?: boolean
   telegram_alerts?: boolean
+  telegram_chat_id?: string | null
 }
 
 interface User {

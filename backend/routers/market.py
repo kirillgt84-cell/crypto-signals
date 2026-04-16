@@ -421,4 +421,21 @@ async def get_spot_volume(
         return data
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/sentiment/{symbol}")
+async def get_sentiment(
+    symbol: str
+):
+    """
+    Sentiment метрики: Long/Short ratio, Top Trader ratio, Taker volume ratio
+    """
+    try:
+        symbol_upper = symbol.upper()
+        if not symbol_upper.endswith('USDT'):
+            symbol_upper = f"{symbol_upper}USDT"
+        
+        data = await fetcher.get_sentiment_metrics(symbol_upper)
+        return clean_json(data)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 # Deploy timestamp: Sun Apr 12 09:39:12 CEST 2026

@@ -63,6 +63,18 @@ interface MarketData {
   macd: number
   macd_signal: number
   exchange_flow: number
+  sentiment: {
+    long_short_ratio: number
+    long_accounts_pct: number
+    short_accounts_pct: number
+    top_trader_ratio: number
+    top_long_pct: number
+    top_short_pct: number
+    taker_volume_ratio: number
+    taker_buy: number
+    taker_sell: number
+    sentiment_signal: "bullish" | "bearish" | "neutral"
+  }
 }
 
 interface OIAnalysis {
@@ -154,6 +166,61 @@ function MetricCard({
         </CardAction>
       </CardHeader>
     </Card>
+  )
+}
+
+// Row 0.5: Sentiment Cards (Free)
+function SentimentCards({ data, loading }: { data: MarketData; loading: boolean }) {
+  const s = data.sentiment
+  const signalColor = s.sentiment_signal === "bullish" ? "text-emerald-600" : s.sentiment_signal === "bearish" ? "text-red-600" : "text-amber-600"
+  const signalBg = s.sentiment_signal === "bullish" ? "bg-emerald-500/10 border-emerald-500/20" : s.sentiment_signal === "bearish" ? "bg-red-500/10 border-red-500/20" : "bg-amber-500/10 border-amber-500/20"
+  
+  return (
+    <div className="grid grid-cols-1 gap-3 px-4 pb-2 sm:grid-cols-3 lg:px-6">
+      <Card className={cn("border", signalBg)}>
+        <CardHeader className="p-3 pb-2">
+          <CardDescription className="text-xs font-bold uppercase tracking-wide">Long/Short Ratio</CardDescription>
+          {loading ? (
+            <div className="h-7 flex items-center"><Loader2 className="h-4 w-4 animate-spin text-muted-foreground" /></div>
+          ) : (
+            <CardTitle className="text-lg font-bold tabular-nums">{s.long_short_ratio.toFixed(2)}</CardTitle>
+          )}
+        </CardHeader>
+        <CardContent className="px-3 pt-0 pb-3">
+          <p className="text-xs text-muted-foreground">Long: {s.long_accounts_pct.toFixed(1)}% · Short: {s.short_accounts_pct.toFixed(1)}%</p>
+        </CardContent>
+      </Card>
+      
+      <Card className={cn("border", signalBg)}>
+        <CardHeader className="p-3 pb-2">
+          <CardDescription className="text-xs font-bold uppercase tracking-wide">Top Trader L/S</CardDescription>
+          {loading ? (
+            <div className="h-7 flex items-center"><Loader2 className="h-4 w-4 animate-spin text-muted-foreground" /></div>
+          ) : (
+            <CardTitle className="text-lg font-bold tabular-nums">{s.top_trader_ratio.toFixed(2)}</CardTitle>
+          )}
+        </CardHeader>
+        <CardContent className="px-3 pt-0 pb-3">
+          <p className="text-xs text-muted-foreground">Long: {s.top_long_pct.toFixed(1)}% · Short: {s.top_short_pct.toFixed(1)}%</p>
+        </CardContent>
+      </Card>
+      
+      <Card className={cn("border", signalBg)}>
+        <CardHeader className="p-3 pb-2">
+          <CardDescription className="text-xs font-bold uppercase tracking-wide">Taker Buy/Sell</CardDescription>
+          {loading ? (
+            <div className="h-7 flex items-center"><Loader2 className="h-4 w-4 animate-spin text-muted-foreground" /></div>
+          ) : (
+            <CardTitle className="text-lg font-bold tabular-nums">{s.taker_volume_ratio.toFixed(2)}</CardTitle>
+          )}
+        </CardHeader>
+        <CardContent className="px-3 pt-0 pb-3">
+          <p className={cn("text-xs font-medium", signalColor)}>
+            {s.sentiment_signal === "bullish" ? "Bullish dominance" : s.sentiment_signal === "bearish" ? "Bearish dominance" : "Neutral balance"}
+          </p>
+        </CardContent>
+      </Card>
+    </div>
   )
 }
 
@@ -433,6 +500,18 @@ export default function Dashboard() {
     macd: 0,
     macd_signal: 0,
     exchange_flow: 0,
+    sentiment: {
+      long_short_ratio: 1.0,
+      long_accounts_pct: 50.0,
+      short_accounts_pct: 50.0,
+      top_trader_ratio: 1.0,
+      top_long_pct: 50.0,
+      top_short_pct: 50.0,
+      taker_volume_ratio: 1.0,
+      taker_buy: 1.0,
+      taker_sell: 1.0,
+      sentiment_signal: "neutral",
+    },
   })
   const [oiAnalysis, setOiAnalysis] = useState<OIAnalysis | null>(null)
   const [liquidations, setLiquidations] = useState<LiquidationLevel[]>([])
@@ -475,6 +554,7 @@ export default function Dashboard() {
           fetch(`${API_BASE_URL}/market/spot-volume/${symbol}?timeframe=${apiTf}&_cb=${cacheBuster}`, { cache: 'no-store' }),
           fetch(`${API_BASE_URL}/market/cvd/${symbol}?timeframe=${apiTf}&_cb=${cacheBuster}`, { cache: 'no-store' }),
           fetch(`${API_BASE_URL}/market/checklist/${symbol}?timeframe=${apiTf}&_cb=${cacheBuster}`, { cache: 'no-store' }),
+          fetch(`${API_BASE_URL}/market/sentiment/${symbol}?_cb=${cacheBuster}`, { cache: 'no-store' }),
         ])
         
         const oiRes = results[0].status === 'fulfilled' ? results[0].value : { ok: false, status: 'rejected' } as unknown as Response
@@ -483,6 +563,7 @@ export default function Dashboard() {
         const spotVolumeRes = results[3].status === 'fulfilled' ? results[3].value : { ok: false, status: 'rejected' } as unknown as Response
         const cvdRes = results[4].status === 'fulfilled' ? results[4].value : { ok: false, status: 'rejected' } as unknown as Response
         const checklistRes = results[5].status === 'fulfilled' ? results[5].value : { ok: false, status: 'rejected' } as unknown as Response
+        const sentimentRes = results[6].status === 'fulfilled' ? results[6].value : { ok: false, status: 'rejected' } as unknown as Response
 
         // Parse responses
         let oiData: any = {}, levelsData: any = {}, profileData: any = {}, spotVolumeData: any = {}, cvdData: any = {}, checklist: any = {}
@@ -539,6 +620,13 @@ export default function Dashboard() {
           console.error("Checklist API error:", checklistRes.status)
           setChecklistData(null)
         }
+        
+        let sentimentData: any = {}
+        if (sentimentRes.ok) {
+          sentimentData = await sentimentRes.json()
+        } else {
+          console.error("Sentiment API error:", sentimentRes.status)
+        }
 
         // Combine data into MarketData format with safe defaults
         console.log("OI API response:", oiData)
@@ -583,6 +671,18 @@ export default function Dashboard() {
           macd: Number(levelsData?.ema_levels?.macd) || Number(oiData.macd) || 0,
           macd_signal: Number(levelsData?.ema_levels?.macd_signal) || Number(oiData.macd_signal) || 0,
           exchange_flow: Number(oiData.exchange_flow) || 0,
+          sentiment: {
+            long_short_ratio: Number(sentimentData.long_short_ratio) || 1.0,
+            long_accounts_pct: Number(sentimentData.long_accounts_pct) || 50.0,
+            short_accounts_pct: Number(sentimentData.short_accounts_pct) || 50.0,
+            top_trader_ratio: Number(sentimentData.top_trader_ratio) || 1.0,
+            top_long_pct: Number(sentimentData.top_long_pct) || 50.0,
+            top_short_pct: Number(sentimentData.top_short_pct) || 50.0,
+            taker_volume_ratio: Number(sentimentData.taker_volume_ratio) || 1.0,
+            taker_buy: Number(sentimentData.taker_buy) || 1.0,
+            taker_sell: Number(sentimentData.taker_sell) || 1.0,
+            sentiment_signal: sentimentData.sentiment_signal || "neutral",
+          },
         }
         
         console.log(`DEBUG final values for ${symbol}:`, {
@@ -674,6 +774,18 @@ export default function Dashboard() {
             macd: 125,
             macd_signal: 98,
             exchange_flow: -450,
+            sentiment: {
+              long_short_ratio: 1.0,
+              long_accounts_pct: 50.0,
+              short_accounts_pct: 50.0,
+              top_trader_ratio: 1.0,
+              top_long_pct: 50.0,
+              top_short_pct: 50.0,
+              taker_volume_ratio: 1.0,
+              taker_buy: 1.0,
+              taker_sell: 1.0,
+              sentiment_signal: "neutral",
+            },
           })
         }
         
@@ -779,6 +891,9 @@ export default function Dashboard() {
             ⚠️ {error}
           </div>
         )}
+
+        {/* Row 0.5: Sentiment Cards */}
+        <SentimentCards data={marketData} loading={loading} />
 
         {/* Row 1: OI Analysis Cards */}
         <OIAnalysisCards data={marketData} loading={loading} timeframe={timeframe} />

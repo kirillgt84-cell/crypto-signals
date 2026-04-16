@@ -20,6 +20,7 @@ logger = logging.getLogger(__name__)
 from routers import market
 from routers.auth import router as auth_router
 from routers.fundamentals import router as fundamentals_router
+from routers.telegram import router as telegram_router
 from scheduler import start_scheduler, stop_scheduler
 
 # Глобальная переменная для scheduler
@@ -117,6 +118,7 @@ app.add_middleware(
 app.include_router(market.router)
 app.include_router(auth_router)
 app.include_router(fundamentals_router)
+app.include_router(telegram_router)
 
 # ============= Health Check =============
 @app.get("/health")

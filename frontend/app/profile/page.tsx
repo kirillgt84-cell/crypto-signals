@@ -106,6 +106,66 @@ export default function ProfilePage() {
     }
   }
 
+  const handleTestEmail = async () => {
+    setLoadingAction("test-email")
+    try {
+      const token = localStorage.getItem("access_token")
+      const res = await fetch(`https://crypto-signals-production-ff4c.up.railway.app/api/v1/auth/me/test-email`, {
+        method: "POST",
+        cache: 'no-store',
+        headers: { Authorization: `Bearer ${token}` }
+      })
+      if (!res.ok) {
+        const err = await res.json()
+        throw new Error(err.detail || "Failed to send test email")
+      }
+      showMessage("Test email sent! Check your inbox.", "success")
+    } catch (e: any) {
+      showMessage(e.message || "Failed to send test email", "error")
+    } finally {
+      setLoadingAction(null)
+    }
+  }
+
+  const handleTestTelegram = async () => {
+    setLoadingAction("test-telegram")
+    try {
+      const token = localStorage.getItem("access_token")
+      const res = await fetch(`https://crypto-signals-production-ff4c.up.railway.app/api/v1/auth/me/test-telegram`, {
+        method: "POST",
+        cache: 'no-store',
+        headers: { Authorization: `Bearer ${token}` }
+      })
+      if (!res.ok) {
+        const err = await res.json()
+        throw new Error(err.detail || "Failed to send test Telegram")
+      }
+      showMessage("Test Telegram message sent!", "success")
+    } catch (e: any) {
+      showMessage(e.message || "Failed to send test Telegram", "error")
+    } finally {
+      setLoadingAction(null)
+    }
+  }
+
+  const handleTelegramConnect = async () => {
+    try {
+      const token = localStorage.getItem("access_token")
+      const res = await fetch(`https://crypto-signals-production-ff4c.up.railway.app/api/v1/auth/me/telegram-link`, {
+        cache: 'no-store',
+        headers: { Authorization: `Bearer ${token}` }
+      })
+      if (!res.ok) {
+        const err = await res.json()
+        throw new Error(err.detail || "Failed to get Telegram link")
+      }
+      const data = await res.json()
+      window.open(data.deep_link, "_blank")
+    } catch (e: any) {
+      showMessage(e.message || "Failed to open Telegram link", "error")
+    }
+  }
+
   if (isLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center">
@@ -300,6 +360,21 @@ export default function ProfilePage() {
                 </div>
 
                 <div className="space-y-4">
+                  <p className="text-sm font-medium">Telegram Connection</p>
+                  <div className="flex items-center justify-between rounded-lg border p-4">
+                    <div>
+                      <p className="text-sm font-medium">Status</p>
+                      <p className="text-xs text-muted-foreground">
+                        {user.preferences?.telegram_chat_id ? "Connected" : "Not connected"}
+                      </p>
+                    </div>
+                    <Button variant="outline" size="sm" onClick={handleTelegramConnect}>
+                      {user.preferences?.telegram_chat_id ? "Reconnect Telegram" : "Connect Telegram"}
+                    </Button>
+                  </div>
+                </div>
+
+                <div className="space-y-4">
                   <p className="text-sm font-medium">Report Subscriptions</p>
                   <div className="flex items-center justify-between">
                     <div className="space-y-0.5">
@@ -323,6 +398,22 @@ export default function ProfilePage() {
                     <Switch checked={user.preferences?.telegram_alerts ?? false} onCheckedChange={(v) => handlePrefToggle("telegram_alerts", v)} />
                   </div>
                 </div>
+
+                {isPro && (
+                  <div className="space-y-4">
+                    <p className="text-sm font-medium">Test Notifications</p>
+                    <div className="flex flex-wrap gap-2">
+                      <Button variant="outline" size="sm" onClick={handleTestEmail} disabled={loadingAction === "test-email"}>
+                        {loadingAction === "test-email" && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        Send Test Email
+                      </Button>
+                      <Button variant="outline" size="sm" onClick={handleTestTelegram} disabled={loadingAction === "test-telegram" || !user.preferences?.telegram_chat_id}>
+                        {loadingAction === "test-telegram" && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        Send Test Telegram
+                      </Button>
+                    </div>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>

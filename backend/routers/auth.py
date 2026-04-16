@@ -13,6 +13,7 @@ import bcrypt
 import secrets
 import httpx
 from database import get_db
+from services.notifications import send_email, send_telegram_message, TELEGRAM_BOT_NAME
 
 router = APIRouter(prefix="/api/v1/auth", tags=["auth"])
 
@@ -517,7 +518,7 @@ async def get_me(current_user: dict = Depends(get_current_user)):
     
     # Get preferences
     prefs = await db.query(
-        "SELECT theme, language, timezone, notifications_enabled, daily_report, weekly_report, telegram_alerts FROM user_preferences WHERE user_id = $1",
+        "SELECT theme, language, timezone, notifications_enabled, daily_report, weekly_report, telegram_alerts, telegram_chat_id FROM user_preferences WHERE user_id = $1",
         [current_user["id"]]
     )
     
@@ -576,7 +577,7 @@ async def update_me(
     db = get_db()
     
     user_fields = ["username", "avatar_url"]
-    pref_fields = ["theme", "language", "timezone", "notifications_enabled", "daily_report", "weekly_report", "telegram_alerts"]
+    pref_fields = ["theme", "language", "timezone", "notifications_enabled", "daily_report", "weekly_report", "telegram_alerts", "telegram_chat_id"]
     
     user_updates = {k: v for k, v in updates.items() if k in user_fields}
     pref_updates = {k: v for k, v in updates.items() if k in pref_fields}
@@ -601,3 +602,54 @@ async def update_me(
         )
     
     return {"message": "Profile updated"}
+
+
+@router.get("/me/telegram-link")
+async def get_telegram_link(current_user: dict = Depends(get_current_user)):
+    """Get Telegram bot deep link for connecting account"""
+    return {
+        "bot_name": TELEGRAM_BOT_NAME,
+        "deep_link": f"https://t.me/{TELEGRAM_BOT_NAME}?start={current_user['id']}"
+    }
+
+
+@router.post("/me/test-email")
+async def test_email(current_user: dict = Depends(get_current_user)):
+    """Send a test email to the current user"""
+    if not current_user.get("email"):
+        raise HTTPException(status_code=400, detail="No email address on file")
+    
+    html = f"""
+    <html>
+      <body style="font-family:Arial,sans-serif;padding:24px;">
+        <h2>Test Email from Fast Lane</h2>
+        <p>This is a test email sent to {current_user['email']}.</p>
+        <p>If you received this, your email notifications are working correctly.</p>
+      </body>
+    </html>
+    """
+    result = await send_email(current_user["email"], "Fast Lane Test Email", html)
+    if not result["success"]:
+        raise HTTPException(status_code=500, detail=result.get("error", "Failed to send email"))
+    return {"message": "Test email sent", "id": result.get("id")}
+
+
+@router.post("/me/test-telegram")
+async def test_telegram(current_user: dict = Depends(get_current_user)):
+    """Send a test Telegram message to the current user"""
+    db = get_db()
+    row = await db.query(
+        "SELECT telegram_chat_id FROM user_preferences WHERE user_id = $1",
+        [current_user["id"]]
+    )
+    chat_id = row[0]["telegram_chat_id"] if row else None
+    if not chat_id:
+        raise HTTPException(status_code=400, detail="Telegram not connected")
+    
+    result = await send_telegram_message(
+        chat_id,
+        f"<b>Fast Lane Test</b>\nYour Telegram alerts are working, {current_user.get('username', 'trader')}!"
+    )
+    if not result["success"]:
+        raise HTTPException(status_code=500, detail=result.get("error", "Failed to send Telegram message"))
+    return {"message": "Test Telegram message sent", "message_id": result.get("message_id")}

@@ -226,3 +226,31 @@ class TestSpotVolumeEndpoint:
 
         assert result["spot_volume"] == 25000000000
         mock_fetcher.get_spot_volume.assert_called_once_with("BTCUSDT", "1h")
+
+
+@pytest.mark.asyncio
+class TestSentimentEndpoint:
+    @patch("routers.market.fetcher")
+    async def test_get_sentiment(self, mock_fetcher):
+        from routers.market import get_sentiment
+
+        mock_fetcher.get_sentiment_metrics = AsyncMock(return_value={
+            "symbol": "BTCUSDT",
+            "long_short_ratio": 1.25,
+            "long_accounts_pct": 55.5,
+            "short_accounts_pct": 44.5,
+            "top_trader_ratio": 1.8,
+            "top_long_pct": 64.0,
+            "top_short_pct": 36.0,
+            "taker_volume_ratio": 1.12,
+            "taker_buy": 1.5,
+            "taker_sell": 1.34,
+            "sentiment_signal": "bullish",
+        })
+
+        result = await get_sentiment("BTC")
+
+        assert result["symbol"] == "BTCUSDT"
+        assert result["long_short_ratio"] == 1.25
+        assert result["sentiment_signal"] == "bullish"
+        mock_fetcher.get_sentiment_metrics.assert_called_once_with("BTCUSDT")

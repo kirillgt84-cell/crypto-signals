@@ -2,6 +2,7 @@
 Fetcher для Binance Futures данных
 """
 import aiohttp
+import asyncio
 import math
 import pandas as pd
 from datetime import datetime, timedelta
@@ -623,6 +624,111 @@ class BinanceFuturesFetcher:
                 "timeframe": timeframe,
                 "spot_volume": 0,
                 "spot_volume_change": 0,
+                "error": str(e)
+            }
+    
+    async def get_sentiment_metrics(self, symbol: str = "BTCUSDT") -> Dict:
+        """
+        Получает sentiment метрики из Binance Data Collection API:
+        - Global Long/Short Account Ratio
+        - Top Trader Long/Short Position Ratio
+        - Taker Buy/Sell Volume Ratio
+        """
+        import logging
+        logger = logging.getLogger(__name__)
+        session = await self._get_session()
+        
+        try:
+            async def fetch_json(url: str, params: dict):
+                async with session.get(url, params=params, headers={"Accept": "application/json"}) as resp:
+                    return await resp.json()
+            
+            ls_data, top_data, taker_data = await asyncio.gather(
+                fetch_json(f"{self.BASE_URL}/futures/data/globalLongShortAccountRatio", {"symbol": symbol, "period": "1h", "limit": 1}),
+                fetch_json(f"{self.BASE_URL}/futures/data/topLongShortPositionRatio", {"symbol": symbol, "period": "1h", "limit": 1}),
+                fetch_json(f"{self.BASE_URL}/fapi/v1/takerlongshortRatio", {"symbol": symbol, "period": "1h", "limit": 1}),
+                return_exceptions=True
+            )
+            
+            # Parse global L/S ratio
+            ls_ratio = None
+            ls_long = ls_short = 0.5
+            if isinstance(ls_data, list) and len(ls_data) > 0:
+                ls_long = float(ls_data[0].get("longAccount", 0))
+                ls_short = float(ls_data[0].get("shortAccount", 0))
+                ls_ratio = ls_long / ls_short if ls_short > 0 else None
+            
+            # Parse top trader position ratio
+            top_ratio = None
+            top_long = top_short = 0.5
+            if isinstance(top_data, list) and len(top_data) > 0:
+                top_long = float(top_data[0].get("longAccount", 0))
+                top_short = float(top_data[0].get("shortAccount", 0))
+                top_ratio = top_long / top_short if top_short > 0 else None
+            
+            # Parse taker volume ratio
+            taker_ratio = None
+            taker_buy = taker_sell = 1.0
+            if isinstance(taker_data, list) and len(taker_data) > 0:
+                taker_buy = float(taker_data[0].get("buyVol", 0))
+                taker_sell = float(taker_data[0].get("sellVol", 0))
+                taker_ratio = taker_buy / taker_sell if taker_sell > 0 else None
+            
+            # Simple signal
+            bullish_signals = 0
+            bearish_signals = 0
+            if ls_ratio is not None:
+                if ls_ratio > 1.2:
+                    bearish_signals += 1  # too many longs = potential squeeze down
+                elif ls_ratio < 0.8:
+                    bullish_signals += 1
+            if top_ratio is not None:
+                if top_ratio > 1.5:
+                    bullish_signals += 1
+                elif top_ratio < 0.67:
+                    bearish_signals += 1
+            if taker_ratio is not None:
+                if taker_ratio > 1.1:
+                    bullish_signals += 1
+                elif taker_ratio < 0.9:
+                    bearish_signals += 1
+            
+            if bullish_signals > bearish_signals:
+                signal = "bullish"
+            elif bearish_signals > bullish_signals:
+                signal = "bearish"
+            else:
+                signal = "neutral"
+            
+            return {
+                "symbol": symbol,
+                "long_short_ratio": round(ls_ratio, 2) if ls_ratio is not None else 1.0,
+                "long_accounts_pct": round(ls_long * 100, 1) if ls_long else 50.0,
+                "short_accounts_pct": round(ls_short * 100, 1) if ls_short else 50.0,
+                "top_trader_ratio": round(top_ratio, 2) if top_ratio is not None else 1.0,
+                "top_long_pct": round(top_long * 100, 1) if top_long else 50.0,
+                "top_short_pct": round(top_short * 100, 1) if top_short else 50.0,
+                "taker_volume_ratio": round(taker_ratio, 2) if taker_ratio is not None else 1.0,
+                "taker_buy": round(taker_buy, 2),
+                "taker_sell": round(taker_sell, 2),
+                "sentiment_signal": signal,
+                "timestamp": datetime.utcnow().isoformat()
+            }
+        except Exception as e:
+            logger.error(f"Sentiment metrics error: {e}")
+            return {
+                "symbol": symbol,
+                "long_short_ratio": 1.0,
+                "long_accounts_pct": 50.0,
+                "short_accounts_pct": 50.0,
+                "top_trader_ratio": 1.0,
+                "top_long_pct": 50.0,
+                "top_short_pct": 50.0,
+                "taker_volume_ratio": 1.0,
+                "taker_buy": 1.0,
+                "taker_sell": 1.0,
+                "sentiment_signal": "neutral",
+                "timestamp": datetime.utcnow().isoformat(),
                 "error": str(e)
             }
     

@@ -271,6 +271,51 @@ class TestBinanceFuturesFetcher:
         assert result["spot_volume"] == 0
         assert "error" in result
 
+    async def test_get_sentiment_metrics_success(self):
+        fetcher = BinanceFuturesFetcher()
+        fetcher.session = make_mock_session([
+            ("/globalLongShortAccountRatio", make_mock_response([
+                {"symbol": "BTCUSDT", "longAccount": "0.65", "shortAccount": "0.35", "longShortRatio": "1.857"}
+            ])),
+            ("/topLongShortPositionRatio", make_mock_response([
+                {"symbol": "BTCUSDT", "longAccount": "0.72", "shortAccount": "0.28", "longShortRatio": "2.571"}
+            ])),
+            ("/takerlongshortRatio", make_mock_response([
+                {"buyVol": "1.5", "sellVol": "1.0", "buySellRatio": "1.5"}
+            ])),
+        ])
+
+        result = await fetcher.get_sentiment_metrics("BTCUSDT")
+
+        assert result["symbol"] == "BTCUSDT"
+        assert result["long_short_ratio"] == pytest.approx(1.86, rel=0.01)
+        assert result["top_trader_ratio"] == pytest.approx(2.57, rel=0.01)
+        assert result["taker_volume_ratio"] == pytest.approx(1.5, rel=0.01)
+        assert result["sentiment_signal"] == "bullish"
+
+    async def test_get_sentiment_metrics_fallback(self):
+        fetcher = BinanceFuturesFetcher()
+
+        class ErrorResponse:
+            async def json(self):
+                raise Exception("network error")
+            async def __aenter__(self):
+                return self
+            async def __aexit__(self, *args):
+                return None
+
+        fetcher.session = make_mock_session([
+            ("/globalLongShortAccountRatio", ErrorResponse()),
+            ("/topLongShortPositionRatio", ErrorResponse()),
+            ("/takerlongshortRatio", ErrorResponse()),
+        ])
+
+        result = await fetcher.get_sentiment_metrics("BTCUSDT")
+
+        assert result["symbol"] == "BTCUSDT"
+        assert result["long_short_ratio"] == 1.0
+        assert result["sentiment_signal"] == "neutral"
+
     async def test_close_session(self):
         fetcher = BinanceFuturesFetcher()
 

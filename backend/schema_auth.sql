@@ -73,6 +73,21 @@ CREATE TABLE IF NOT EXISTS user_preferences (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+ALTER TABLE user_preferences ADD COLUMN IF NOT EXISTS telegram_chat_id VARCHAR(50);
+
+-- Sent reports tracking for idempotency
+CREATE TABLE IF NOT EXISTS sent_reports (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+    report_type VARCHAR(20) NOT NULL,
+    sent_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    status VARCHAR(20) DEFAULT 'pending',
+    content_summary TEXT
+);
+
+CREATE INDEX IF NOT EXISTS idx_sent_reports_user ON sent_reports(user_id);
+CREATE INDEX IF NOT EXISTS idx_sent_reports_type ON sent_reports(report_type, sent_at);
+
 -- Indexes
 CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
 CREATE INDEX IF NOT EXISTS idx_oauth_provider ON oauth_accounts(provider, provider_user_id);

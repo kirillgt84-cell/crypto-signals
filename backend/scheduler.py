@@ -7,6 +7,7 @@ from datetime import datetime
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from fetchers.binance_futures import BinanceFuturesFetcher
 from database import get_db
+from services.notifications import send_daily_reports, send_weekly_reports, send_telegram_alerts
 
 logger = logging.getLogger(__name__)
 
@@ -62,6 +63,30 @@ async def save_fundamentals_snapshot():
     except Exception as e:
         logger.error(f"[Scheduler] Fundamentals collection failed: {e}")
 
+async def run_daily_reports():
+    """Wrapper for daily reports"""
+    try:
+        await send_daily_reports()
+        logger.info("[Scheduler] Daily reports job completed")
+    except Exception as e:
+        logger.error(f"[Scheduler] Daily reports failed: {e}")
+
+async def run_weekly_reports():
+    """Wrapper for weekly reports"""
+    try:
+        await send_weekly_reports()
+        logger.info("[Scheduler] Weekly reports job completed")
+    except Exception as e:
+        logger.error(f"[Scheduler] Weekly reports failed: {e}")
+
+async def run_telegram_alerts():
+    """Wrapper for Telegram alerts"""
+    try:
+        await send_telegram_alerts()
+        logger.info("[Scheduler] Telegram alerts job completed")
+    except Exception as e:
+        logger.error(f"[Scheduler] Telegram alerts failed: {e}")
+
 async def should_run_fundamentals() -> bool:
     """Проверяет, есть ли свежие данные фундаменталок в БД"""
     try:
@@ -96,8 +121,38 @@ def start_scheduler():
         replace_existing=True
     )
     
+    # Daily reports at 08:00 UTC
+    scheduler.add_job(
+        run_daily_reports,
+        'cron',
+        hour=8,
+        minute=0,
+        id='daily_reports',
+        replace_existing=True
+    )
+    
+    # Weekly reports on Monday at 08:00 UTC
+    scheduler.add_job(
+        run_weekly_reports,
+        'cron',
+        day_of_week='mon',
+        hour=8,
+        minute=0,
+        id='weekly_reports',
+        replace_existing=True
+    )
+    
+    # Telegram alerts every hour
+    scheduler.add_job(
+        run_telegram_alerts,
+        'interval',
+        hours=1,
+        id='telegram_alerts',
+        replace_existing=True
+    )
+    
     scheduler.start()
-    logger.info("[Scheduler] Started - OI snapshot every 5 minutes, Fundamentals daily at 02:30")
+    logger.info("[Scheduler] Started - OI snapshot every 5 minutes, Fundamentals daily at 02:30, Reports at 08:00, Telegram alerts hourly")
     return scheduler
 
 def stop_scheduler(scheduler):
