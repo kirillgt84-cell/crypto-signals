@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { motion } from "framer-motion"
-import { TrendingUp, TrendingDown, Activity, Wallet, AlertCircle, Loader2, Info } from "lucide-react"
+import { Activity, AlertCircle, Loader2, Info } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { cn } from "@/lib/utils"
 
@@ -28,10 +28,7 @@ interface FundamentalsData {
   composite: {
     score: number
     sentiment: string
-    components: Record<
-      string,
-      { value: number; normalized: number; weight: number }
-    >
+    components: Record<string, { value: number; normalized: number; weight: number }>
     interpretation: Record<string, string>
   } | null
 }
@@ -48,37 +45,58 @@ const METRIC_INFO: Record<string, string> = {
   market_momentum: "Изменение цены за 24 часа. Отражает краткосрочный рыночный импульс.",
 }
 
+function getMVRVInterpretation(value: number): string {
+  if (value < 1.0) return "Актив сильно недооценён. Традиционно считается зоной накопления и низкого риска для длинных позиций."
+  if (value < 2.5) return "Справедливая рыночная оценка. Риски сбалансированы, тренд может продолжаться."
+  if (value < 3.5) return "Переоценка рынка. Возможна коррекция, рекомендуется фиксация части прибыли."
+  return "Экстремальная переоценка (пузырь). Высокая вероятность глубокой коррекции."
+}
+
+function getNUPLInterpretation(value: number): string {
+  if (value < -0.25) return "Рынок в капитуляции. Нереализованные убытки доминируют. Часто формируется локальное дно."
+  if (value < 0) return "Фаза надежды. Инвесторы выходят в ноль, настроения осторожно позитивные."
+  if (value < 0.25) return "Умеренная прибыль. Здоровый бычий тренд без признаков перегрева."
+  if (value < 0.5) return "Эйфория. Большинство инвесторов в прибыли, рынок начинает перегреваться."
+  return "Экстремальная жадность. Нереализованная прибыль находится на пике, риск разворота максимален."
+}
+
+function getFundingInterpretation(value: number): string {
+  if (value < -0.001) return "Шорты переплачивают. Давление на shorts может спровоцировать short squeeze."
+  if (value <= 0.001) return "Нейтральное финансирование. Баланс между лонгами и шортами."
+  return "Лонгисты переплачивают. Перегретый рынок лонгов, высок риск ликвидации."
+}
+
 function ZoneCard({
   title,
   valueFormatted,
-  description,
+  interpretation,
   infoKey,
   children,
 }: {
   title: string
   valueFormatted: string
-  description: string
+  interpretation: string
   infoKey: string
   children: React.ReactNode
 }) {
   return (
-    <div className="space-y-1.5 p-2.5 rounded-lg bg-slate-900/40 border border-slate-800">
+    <div className="space-y-2 p-4 rounded-lg bg-slate-900/40 border border-slate-800">
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-1.5">
-          <span className="text-[10px] text-slate-400 uppercase tracking-wider font-semibold">{title}</span>
+        <div className="flex items-center gap-2">
+          <span className="text-sm font-semibold text-slate-200 uppercase tracking-wider">{title}</span>
           <div className="group relative">
-            <Info className="w-3 h-3 text-slate-600 cursor-help hover:text-slate-400 transition-colors" />
-            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 w-44 p-2 bg-slate-900 border border-slate-700 rounded-md text-[9px] text-slate-300 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-20 shadow-xl">
+            <Info className="w-4 h-4 text-slate-600 cursor-help hover:text-slate-400 transition-colors" />
+            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-56 p-2.5 bg-slate-900 border border-slate-700 rounded-md text-[10px] text-slate-300 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-20 shadow-xl leading-relaxed">
               {METRIC_INFO[infoKey]}
             </div>
           </div>
         </div>
-        <span className="text-xs font-bold font-mono text-white">{valueFormatted}</span>
+        <span className="text-base font-bold font-mono text-white">{valueFormatted}</span>
       </div>
 
       {children}
 
-      <p className="text-[10px] font-medium text-slate-400 leading-tight">{description}</p>
+      <p className="text-xs text-slate-400 leading-relaxed">{interpretation}</p>
     </div>
   )
 }
@@ -86,23 +104,35 @@ function ZoneCard({
 function ZoneBar({
   segments,
   indicatorPosition,
+  labels,
 }: {
   segments: { color: string }[]
   indicatorPosition: number
+  labels?: string[]
 }) {
   return (
-    <div className="space-y-0.5">
-      <div className="relative h-2 rounded-full overflow-hidden flex">
+    <div className="space-y-1">
+      <div className="relative h-4 rounded-full overflow-hidden flex">
         {segments.map((seg, i) => (
-          <div key={i} className={cn("h-full flex-1 first:rounded-l-full last:rounded-r-full", seg.color, i > 0 && "ml-px")} />
+          <div
+            key={i}
+            className={cn("h-full flex-1 first:rounded-l-full last:rounded-r-full", seg.color, i > 0 && "ml-px")}
+          />
         ))}
       </div>
-      <div className="relative h-1">
+      <div className="relative h-2">
         <div
-          className="absolute top-0 w-0 h-0 border-l-[4px] border-l-transparent border-r-[4px] border-r-transparent border-b-[5px] border-b-white -translate-x-1/2 transition-all duration-500"
+          className="absolute top-0 w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-b-[7px] border-b-white -translate-x-1/2 transition-all duration-500"
           style={{ left: `${Math.max(2, Math.min(98, indicatorPosition))}%` }}
         />
       </div>
+      {labels && (
+        <div className="flex justify-between text-[10px] text-slate-500 font-medium pt-0.5">
+          {labels.map((l, i) => (
+            <span key={i}>{l}</span>
+          ))}
+        </div>
+      )}
     </div>
   )
 }
@@ -211,7 +241,7 @@ export function FundamentalsCard({ symbol, loading: parentLoading }: Fundamental
           MVRV + NUPL + Funding composite index
         </CardDescription>
       </CardHeader>
-      <CardContent className="space-y-3">
+      <CardContent className="space-y-4">
         {/* Composite Score */}
         <motion.div
           className={cn(
@@ -230,7 +260,8 @@ export function FundamentalsCard({ symbol, loading: parentLoading }: Fundamental
           </div>
           <div className="text-right">
             <span className={cn("text-xl font-mono font-bold", getSentimentColor(sentiment))}>
-              {score > 0 ? "+" : ""}{score.toFixed(2)}
+              {score > 0 ? "+" : ""}
+              {score.toFixed(2)}
             </span>
           </div>
         </motion.div>
@@ -245,7 +276,7 @@ export function FundamentalsCard({ symbol, loading: parentLoading }: Fundamental
             <ZoneCard
               title="MVRV"
               valueFormatted={data.mvrv.value.toFixed(2)}
-              description={data.mvrv.raw_data?.description || ""}
+              interpretation={getMVRVInterpretation(data.mvrv.value)}
               infoKey="mvrv"
             >
               <ZoneBar
@@ -256,6 +287,7 @@ export function FundamentalsCard({ symbol, loading: parentLoading }: Fundamental
                   { color: "bg-rose-500" },
                 ]}
                 indicatorPosition={Math.min(100, (data.mvrv.value / 5) * 100)}
+                labels={["<1.0", "1.0–2.5", "2.5–3.5", ">3.5"]}
               />
             </ZoneCard>
           </motion.div>
@@ -271,7 +303,7 @@ export function FundamentalsCard({ symbol, loading: parentLoading }: Fundamental
             <ZoneCard
               title="NUPL"
               valueFormatted={`${data.nupl.value > 0 ? "+" : ""}${data.nupl.value.toFixed(2)}`}
-              description={data.nupl.raw_data?.description || ""}
+              interpretation={getNUPLInterpretation(data.nupl.value)}
               infoKey="nupl"
             >
               <ZoneBar
@@ -283,6 +315,7 @@ export function FundamentalsCard({ symbol, loading: parentLoading }: Fundamental
                   { color: "bg-rose-500" },
                 ]}
                 indicatorPosition={Math.min(100, Math.max(0, ((data.nupl.value + 0.5) / 1.5) * 100))}
+                labels={["<-0.25", "-0.25–0", "0–0.25", "0.25–0.5", ">0.5"]}
               />
             </ZoneCard>
           </motion.div>
@@ -298,7 +331,7 @@ export function FundamentalsCard({ symbol, loading: parentLoading }: Fundamental
             <ZoneCard
               title="24h Momentum"
               valueFormatted={`${(comps.market_momentum.value * 100).toFixed(1)}%`}
-              description={
+              interpretation={
                 comps.market_momentum.value > 0.10
                   ? "Сильный бычий импульс"
                   : comps.market_momentum.value < -0.10
@@ -315,6 +348,7 @@ export function FundamentalsCard({ symbol, loading: parentLoading }: Fundamental
                   { color: "bg-emerald-400" },
                 ]}
                 indicatorPosition={Math.min(100, Math.max(0, ((comps.market_momentum.value + 0.3) / 0.6) * 100))}
+                labels={["<-15%", "-15–0%", "0–15%", ">15%"]}
               />
             </ZoneCard>
           </motion.div>
@@ -330,13 +364,7 @@ export function FundamentalsCard({ symbol, loading: parentLoading }: Fundamental
             <ZoneCard
               title="Funding Rate"
               valueFormatted={`${(comps.funding.value * 100).toFixed(3)}%`}
-              description={
-                comps.funding.value > 0.001
-                  ? "Лонги перегреты"
-                  : comps.funding.value < -0.001
-                  ? "Шорты перегреты"
-                  : "Нейтрально"
-              }
+              interpretation={getFundingInterpretation(comps.funding.value)}
               infoKey="funding"
             >
               <ZoneBar
@@ -346,6 +374,7 @@ export function FundamentalsCard({ symbol, loading: parentLoading }: Fundamental
                   { color: "bg-rose-500" },
                 ]}
                 indicatorPosition={Math.min(100, Math.max(0, ((comps.funding.value + 0.002) / 0.004) * 100))}
+                labels={["<-0.05%", "±0.05%", ">0.05%"]}
               />
             </ZoneCard>
           </motion.div>
@@ -364,8 +393,8 @@ export function FundamentalsCard({ symbol, loading: parentLoading }: Fundamental
           >
             {comps.mvrv && (
               <div className="text-center">
-                <p className="text-[9px] text-slate-500 uppercase">MVRV</p>
-                <p className="text-[10px] font-mono font-bold text-slate-300">
+                <p className="text-[10px] text-slate-500 uppercase">MVRV</p>
+                <p className="text-xs font-mono font-bold text-slate-300">
                   {comps.mvrv.normalized > 0 ? "+" : ""}
                   {comps.mvrv.normalized.toFixed(2)}
                 </p>
@@ -373,8 +402,8 @@ export function FundamentalsCard({ symbol, loading: parentLoading }: Fundamental
             )}
             {comps.nupl && (
               <div className="text-center">
-                <p className="text-[9px] text-slate-500 uppercase">NUPL</p>
-                <p className="text-[10px] font-mono font-bold text-slate-300">
+                <p className="text-[10px] text-slate-500 uppercase">NUPL</p>
+                <p className="text-xs font-mono font-bold text-slate-300">
                   {comps.nupl.normalized > 0 ? "+" : ""}
                   {comps.nupl.normalized.toFixed(2)}
                 </p>
@@ -382,8 +411,8 @@ export function FundamentalsCard({ symbol, loading: parentLoading }: Fundamental
             )}
             {comps.funding && (
               <div className="text-center">
-                <p className="text-[9px] text-slate-500 uppercase">Funding</p>
-                <p className="text-[10px] font-mono font-bold text-slate-300">
+                <p className="text-[10px] text-slate-500 uppercase">Funding</p>
+                <p className="text-xs font-mono font-bold text-slate-300">
                   {comps.funding.normalized > 0 ? "+" : ""}
                   {comps.funding.normalized.toFixed(2)}
                 </p>
@@ -391,8 +420,8 @@ export function FundamentalsCard({ symbol, loading: parentLoading }: Fundamental
             )}
             {comps.market_momentum && (
               <div className="text-center">
-                <p className="text-[9px] text-slate-500 uppercase">Momentum</p>
-                <p className="text-[10px] font-mono font-bold text-slate-300">
+                <p className="text-[10px] text-slate-500 uppercase">Momentum</p>
+                <p className="text-xs font-mono font-bold text-slate-300">
                   {comps.market_momentum.normalized > 0 ? "+" : ""}
                   {comps.market_momentum.normalized.toFixed(2)}
                 </p>

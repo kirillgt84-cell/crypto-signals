@@ -1,8 +1,7 @@
 "use client"
 
-import { useState } from "react"
 import Link from "next/link"
-import { useRouter } from "next/navigation"
+import { useState } from "react"
 import {
   User,
   LogOut,
@@ -42,13 +41,11 @@ const tierBadge: Record<string, { label: string; variant: any; icon: React.React
 export function UserMenu({ onOpenAuth }: UserMenuProps) {
   const { user, isAuthenticated, logout } = useAuth()
   const [isLoggingOut, setIsLoggingOut] = useState(false)
-  const [open, setOpen] = useState(false)
 
   const handleLogout = async () => {
     setIsLoggingOut(true)
     await logout()
     setIsLoggingOut(false)
-    setOpen(false)
   }
 
   if (!isAuthenticated) {
@@ -63,11 +60,11 @@ export function UserMenu({ onOpenAuth }: UserMenuProps) {
   const tier = tierBadge[user?.subscription_tier || "free"]
 
   return (
-    <DropdownMenu open={open} onOpenChange={setOpen}>
+    <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button
           variant="ghost"
-          className="relative h-10 pl-2 pr-3 gap-2 rounded-full hover:bg-accent data-[state=open]:bg-accent"
+          className="relative h-10 pl-2 pr-3 gap-2 rounded-full hover:bg-accent group"
         >
           <Avatar className="h-7 w-7 border border-border/50">
             <AvatarImage src={user?.avatar_url || ""} alt={user?.username} />
@@ -76,14 +73,12 @@ export function UserMenu({ onOpenAuth }: UserMenuProps) {
             </AvatarFallback>
           </Avatar>
           <span className="hidden md:inline text-sm font-medium">{user?.username}</span>
-          <span className="transition-transform duration-200" style={{ transform: open ? "rotate(180deg)" : "rotate(0deg)" }}>
-            <ChevronDown className="size-4 text-muted-foreground" />
-          </span>
+          <ChevronDown className="size-4 text-muted-foreground transition-transform duration-200 group-data-[state=open]:rotate-180" />
         </Button>
       </DropdownMenuTrigger>
 
       <DropdownMenuContent
-        className="w-72 rounded-xl p-2 shadow-xl ring-1 ring-border/50 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95"
+        className="w-72 rounded-xl p-2 shadow-xl ring-1 ring-border/50"
         align="end"
         sideOffset={8}
       >
@@ -117,14 +112,14 @@ export function UserMenu({ onOpenAuth }: UserMenuProps) {
             Platform
           </DropdownMenuLabel>
           <DropdownMenuItem asChild className="rounded-lg cursor-pointer">
-            <Link href="/dashboard" onClick={() => setOpen(false)}>
+            <Link href="/dashboard">
               <LayoutDashboard className="mr-2 size-4 text-muted-foreground" />
               <span>Dashboard</span>
               <DropdownMenuShortcut>⌘D</DropdownMenuShortcut>
             </Link>
           </DropdownMenuItem>
           <DropdownMenuItem asChild className="rounded-lg cursor-pointer">
-            <Link href="/trades" onClick={() => setOpen(false)}>
+            <Link href="/trades">
               <Wallet className="mr-2 size-4 text-muted-foreground" />
               <span>My Trades</span>
             </Link>
@@ -138,14 +133,14 @@ export function UserMenu({ onOpenAuth }: UserMenuProps) {
             Account
           </DropdownMenuLabel>
           <DropdownMenuItem asChild className="rounded-lg cursor-pointer">
-            <Link href="/profile" onClick={() => setOpen(false)}>
+            <Link href="/profile">
               <Settings className="mr-2 size-4 text-muted-foreground" />
               <span>Settings</span>
               <DropdownMenuShortcut>⌘S</DropdownMenuShortcut>
             </Link>
           </DropdownMenuItem>
           <DropdownMenuItem asChild className="rounded-lg cursor-pointer">
-            <Link href="/help" onClick={() => setOpen(false)}>
+            <Link href="/help">
               <HelpCircle className="mr-2 size-4 text-muted-foreground" />
               <span>Help & Support</span>
             </Link>

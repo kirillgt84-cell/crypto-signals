@@ -80,8 +80,8 @@ describe("FundamentalsCard", () => {
     // MVRV and NUPL appear in both main metrics and mini grid
     expect(screen.getAllByText("MVRV").length).toBeGreaterThanOrEqual(1)
     expect(screen.getAllByText("NUPL").length).toBeGreaterThanOrEqual(1)
-    expect(screen.getByText("Справедливая цена")).toBeInTheDocument()
-    expect(screen.getByText("🟡 Надежда")).toBeInTheDocument()
+    expect(screen.getByText("Справедливая рыночная оценка. Риски сбалансированы, тренд может продолжаться.")).toBeInTheDocument()
+    expect(screen.getByText("Эйфория. Большинство инвесторов в прибыли, рынок начинает перегреваться.")).toBeInTheDocument()
   })
 
   it("renders ETH fallback with market momentum", async () => {
