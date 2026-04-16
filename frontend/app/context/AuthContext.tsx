@@ -68,14 +68,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           if (res.ok) {
             const userData = await res.json()
             setUser(userData)
-          } else if (storedRefresh) {
+          } else if (res.status === 401 && storedRefresh) {
             const refreshed = await refreshToken()
-            if (!refreshed) logout()
+            if (refreshed) {
+              await refreshUser()
+            } else {
+              logout()
+            }
+          } else if (res.status !== 401) {
+            // Network or server error: keep current token, don't force logout
+            // User stays logged in; next navigation will retry
           } else {
             logout()
           }
         } catch {
-          logout()
+          // Network error on /me: don't logout immediately
         }
       }
       setIsLoading(false)
@@ -85,7 +92,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (!accessToken) return
-    const interval = setInterval(() => { refreshToken() }, 10 * 60 * 1000)
+    const interval = setInterval(async () => {
+      const ok = await refreshToken()
+      if (ok) await refreshUser()
+    }, 10 * 60 * 1000)
     return () => clearInterval(interval)
   }, [accessToken])
 
@@ -179,12 +189,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ refresh_token: refresh })
       })
-      if (!res.ok) { logout(); return false }
+      if (!res.ok) { return false }
       const data = await res.json()
       localStorage.setItem("access_token", data.access_token)
+      localStorage.setItem("refresh_token", data.refresh_token)
       setAccessToken(data.access_token)
       return true
-    } catch { logout(); return false }
+    } catch { return false }
   }
 
   const refreshUser = async () => {

@@ -87,6 +87,9 @@ class TelegramAuthRequest(BaseModel):
     auth_date: int
     hash: str
 
+class RefreshRequest(BaseModel):
+    refresh_token: str
+
 # ============= JWT UTILS =============
 
 def create_access_token(user_id: int) -> str:
@@ -234,31 +237,32 @@ async def login(req: LoginRequest):
     }
 
 @router.post("/refresh")
-async def refresh_token(refresh_token: str):
+async def refresh_token(body: RefreshRequest):
     """Refresh access token using refresh token"""
     db = get_db()
-    
+    refresh_token = body.refresh_token
+
     # Find valid refresh tokens
     tokens = await db.query(
         "SELECT id, user_id, expires_at, is_revoked, token_hash FROM refresh_tokens WHERE is_revoked = FALSE AND expires_at > NOW()",
         []
     )
-    
+
     for t in tokens:
         if bcrypt.checkpw(refresh_token.encode(), t["token_hash"].encode()):
             # Revoke old token for security
             await db.execute("UPDATE refresh_tokens SET is_revoked = TRUE WHERE id = $1", [t["id"]])
-            
+
             access_token = create_access_token(t["user_id"])
             new_refresh = create_refresh_token(t["user_id"])
-            
+
             return {
                 "access_token": access_token,
                 "refresh_token": new_refresh,
                 "token_type": "bearer",
                 "expires_in": ACCESS_TOKEN_EXPIRE * 60
             }
-    
+
     raise HTTPException(status_code=401, detail="Invalid refresh token")
 
 @router.post("/logout")

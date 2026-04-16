@@ -59,7 +59,8 @@ class TestAuthUpgrade:
         mock_create_access.return_value = "new-access-token"
         mock_create_refresh.return_value = "new-refresh-token"
         
-        result = await refresh_token("old-refresh-token")
+        from routers.auth import RefreshRequest
+        result = await refresh_token(RefreshRequest(refresh_token="old-refresh-token"))
         assert result["access_token"] == "new-access-token"
         assert result["refresh_token"] == "new-refresh-token"
         assert result["expires_in"] == 60 * 60
@@ -80,5 +81,6 @@ class TestAuthUpgrade:
         mock_checkpw.return_value = False
         
         with pytest.raises(HTTPException) as exc_info:
-            await refresh_token("bad-token")
+            from routers.auth import RefreshRequest
+            await refresh_token(RefreshRequest(refresh_token="bad-token"))
         assert exc_info.value.status_code == 401

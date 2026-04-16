@@ -299,10 +299,10 @@ class TestRefreshLogout:
     async def test_refresh_token_unimplemented(self, mock_get_db, mock_db):
         mock_get_db.return_value = mock_db
         mock_db.query.return_value = []
-        from routers.auth import refresh_token
+        from routers.auth import refresh_token, RefreshRequest
         from fastapi import HTTPException
         with pytest.raises(HTTPException) as exc:
-            await refresh_token("some_token")
+            await refresh_token(RefreshRequest(refresh_token="some_token"))
         assert exc.value.status_code == 401
 
     @patch("routers.auth.get_db")

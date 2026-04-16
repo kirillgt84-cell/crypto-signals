@@ -1,12 +1,13 @@
 "use client"
 
-import { useEffect, useState, useMemo } from "react"
+import { useEffect, useRef, useState, useMemo } from "react"
 import { motion } from "framer-motion"
 import { BookOpen, AlertCircle } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 interface OrderBookProps {
   symbol: string
+  currentPrice?: number
   loading?: boolean
 }
 
@@ -85,20 +86,36 @@ export function interpolateLevels(levels: Level[]): Level[] {
   return result
 }
 
-export function OrderBook({ symbol, loading: parentLoading }: OrderBookProps) {
+export function OrderBook({ symbol, currentPrice = 0, loading: parentLoading }: OrderBookProps) {
   const [rawData, setRawData] = useState<{ bids: { price: number; quantity: number }[]; asks: { price: number; quantity: number }[] } | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [selectedStep, setSelectedStep] = useState<number>(50)
   const levelCount = ORDER_BOOK_LEVELS
   const rowHeight = Math.max(2, Math.floor((CHART_HEIGHT - MID_HEIGHT) / (levelCount * 2)))
 
-  const stepOptions: StepOption[] = useMemo(() => {
-    const price = symbol === "BTC" ? 70000 : symbol === "ETH" ? 3500 : 100
-    if (price >= 20000) return [{ label: "Raw", value: 0 }, { label: "$10", value: 10 }, { label: "$50", value: 50 }, { label: "$100", value: 100 }]
-    if (price >= 1000) return [{ label: "Raw", value: 0 }, { label: "$1", value: 1 }, { label: "$5", value: 5 }, { label: "$10", value: 10 }]
-    if (price >= 100) return [{ label: "Raw", value: 0 }, { label: "$0.1", value: 0.1 }, { label: "$0.5", value: 0.5 }, { label: "$1", value: 1 }]
-    return [{ label: "Raw", value: 0 }, { label: "$0.01", value: 0.01 }, { label: "$0.05", value: 0.05 }, { label: "$0.1", value: 0.1 }]
+  // Compute step options synchronously every render to guarantee correctness
+  const price = currentPrice > 0 ? currentPrice : (symbol === "BTC" ? 70000 : symbol === "ETH" ? 3500 : 100)
+  let stepOptions: StepOption[]
+  if (price >= 20000) stepOptions = [{ label: "Raw", value: 0 }, { label: "$10", value: 10 }, { label: "$50", value: 50 }, { label: "$100", value: 100 }]
+  else if (price >= 1000) stepOptions = [{ label: "Raw", value: 0 }, { label: "$1", value: 1 }, { label: "$5", value: 5 }, { label: "$10", value: 10 }]
+  else if (price >= 100) stepOptions = [{ label: "Raw", value: 0 }, { label: "$0.1", value: 0.1 }, { label: "$0.5", value: 0.5 }, { label: "$1", value: 1 }]
+  else if (price >= 1) stepOptions = [{ label: "Raw", value: 0 }, { label: "$0.01", value: 0.01 }, { label: "$0.05", value: 0.05 }, { label: "$0.1", value: 0.1 }]
+  else if (price >= 0.01) stepOptions = [{ label: "Raw", value: 0 }, { label: "$0.001", value: 0.001 }, { label: "$0.005", value: 0.005 }, { label: "$0.01", value: 0.01 }]
+  else stepOptions = [{ label: "Raw", value: 0 }, { label: "$0.0001", value: 0.0001 }, { label: "$0.0005", value: 0.0005 }, { label: "$0.001", value: 0.001 }]
+
+  const positiveSteps = stepOptions.map((o) => o.value).filter((v) => v > 0)
+  const targetStep = price * 0.005
+  const defaultStep = positiveSteps.length
+    ? positiveSteps.reduce((best, s) => (Math.abs(s - targetStep) < Math.abs(best - targetStep) ? s : best))
+    : 0
+
+  const userStepRef = useRef<number | null>(null)
+  const [tick, setTick] = useState(0)
+  const selectedStep = userStepRef.current ?? defaultStep
+
+  useEffect(() => {
+    userStepRef.current = null
+    setTick((t) => t + 1)
   }, [symbol])
 
   useEffect(() => {
@@ -261,7 +278,7 @@ export function OrderBook({ symbol, loading: parentLoading }: OrderBookProps) {
           {stepOptions.map((opt) => (
             <button
               key={opt.value}
-              onClick={() => setSelectedStep(opt.value)}
+              onClick={() => { userStepRef.current = opt.value === defaultStep ? null : opt.value; setTick((t) => t + 1) }}
               className={cn(
                 "px-2 py-0.5 text-[10px] font-bold rounded transition-colors border",
                 selectedStep === opt.value
