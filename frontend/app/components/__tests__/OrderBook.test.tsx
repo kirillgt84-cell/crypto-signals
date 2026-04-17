@@ -1,5 +1,5 @@
 import React from "react"
-import { render, screen, waitFor, act } from "@testing-library/react"
+import { render, screen, waitFor, act, cleanup } from "@testing-library/react"
 import { OrderBook, padLevels, ORDER_BOOK_LEVELS } from "../OrderBook"
 
 jest.mock("framer-motion", () => ({
@@ -8,7 +8,6 @@ jest.mock("framer-motion", () => ({
   },
 }))
 
-// Mock fetch for snapshot
 const mockSnapshot = {
   lastUpdateId: 100,
   bids: [["70000", "1"], ["69990", "2"]],
@@ -89,9 +88,13 @@ describe("padLevels", () => {
 })
 
 describe("OrderBook", () => {
-  beforeEach(() => {
-    jest.clearAllMocks()
+  afterEach(() => {
+    cleanup()
     MockWebSocket.instances = []
+    jest.clearAllMocks()
+  })
+
+  beforeEach(() => {
     ;(global.fetch as jest.Mock).mockResolvedValue({
       ok: true,
       json: () => Promise.resolve(mockSnapshot),
@@ -103,7 +106,7 @@ describe("OrderBook", () => {
     expect(screen.getByText("ORDER DEPTH")).toBeInTheDocument()
   })
 
-  it("connects WebSocket and shows data after snapshot", async () => {
+  it("connects WebSocket and renders after snapshot", async () => {
     render(<OrderBook symbol="BTC" loading={false} />)
 
     await waitFor(() => {
@@ -113,8 +116,22 @@ describe("OrderBook", () => {
     expect(MockWebSocket.instances[0].url).toContain("fstream.binance.com")
     expect(MockWebSocket.instances[0].url).toContain("btcusdt@depth")
 
-    // Simulate valid diff update
+    // Wait for snapshot to load and UI to update
+    await waitFor(() => {
+      expect(screen.getByText("$10")).toBeInTheDocument()
+    })
+  })
+
+  it("applies buffered diff after snapshot", async () => {
+    render(<OrderBook symbol="BTC" loading={false} />)
+
+    await waitFor(() => {
+      expect(MockWebSocket.instances.length).toBe(1)
+    })
+
     const ws = MockWebSocket.instances[0]
+
+    // Send diff BEFORE snapshot loads (goes to buffer)
     act(() => {
       ws.simulateMessage({
         U: 101,
@@ -124,8 +141,9 @@ describe("OrderBook", () => {
       })
     })
 
+    // Wait for snapshot + diff processing
     await waitFor(() => {
-      expect(screen.getByText("ORDER DEPTH")).toBeInTheDocument()
+      expect(screen.getByText("$10")).toBeInTheDocument()
     })
   })
 

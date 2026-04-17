@@ -114,6 +114,10 @@ export function OrderBook({ symbol, currentPrice = 0, loading: parentLoading }: 
   useEffect(() => {
     if (!symbol) return
 
+    setLoading(true)
+    setError(null)
+    setRawBook(null)
+
     const symLower = symbol.toLowerCase()
     let localBids = new Map<number, number>()
     let localAsks = new Map<number, number>()
@@ -122,6 +126,7 @@ export function OrderBook({ symbol, currentPrice = 0, loading: parentLoading }: 
     let buffer: any[] = []
     let ws: WebSocket | null = null
     let flushTimeout: ReturnType<typeof setTimeout> | null = null
+    let reconnectTimeout: ReturnType<typeof setTimeout> | null = null
     let abort = false
 
     const applyDiff = (data: any) => {
@@ -152,83 +157,108 @@ export function OrderBook({ symbol, currentPrice = 0, loading: parentLoading }: 
       }, FLUSH_THROTTLE_MS)
     }
 
-    // Fetch snapshot via Futures REST
-    fetch(`https://fapi.binance.com/fapi/v1/depth?symbol=${symbol}USDT&limit=1000`)
-      .then(res => {
-        if (!res.ok) throw new Error("Snapshot failed")
-        return res.json()
-      })
-      .then(snapshot => {
-        if (abort) return
-        localBids = new Map(snapshot.bids.map(([p, q]: [string, string]) => [parseFloat(p), parseFloat(q)]))
-        localAsks = new Map(snapshot.asks.map(([p, q]: [string, string]) => [parseFloat(p), parseFloat(q)]))
-        lastUpdateId = snapshot.lastUpdateId
+    const connect = () => {
+      if (abort) return
 
-        // Apply buffered diffs that overlap with snapshot
-        buffer.forEach(msg => {
-          if (msg.u < lastUpdateId + 1) return
-          if (msg.U <= lastUpdateId + 1 && msg.u >= lastUpdateId + 1) {
-            applyDiff(msg)
-            lastUpdateId = msg.u
-          } else if (msg.U === lastUpdateId + 1) {
-            applyDiff(msg)
-            lastUpdateId = msg.u
+      // Fetch snapshot via Futures REST
+      fetch(`https://fapi.binance.com/fapi/v1/depth?symbol=${symbol}USDT&limit=1000`)
+        .then(res => {
+          if (!res.ok) throw new Error("Snapshot failed")
+          return res.json()
+        })
+        .then(snapshot => {
+          if (abort) return
+          localBids = new Map(snapshot.bids.map(([p, q]: [string, string]) => [parseFloat(p), parseFloat(q)]))
+          localAsks = new Map(snapshot.asks.map(([p, q]: [string, string]) => [parseFloat(p), parseFloat(q)]))
+          lastUpdateId = snapshot.lastUpdateId
+
+          // Apply buffered diffs: find first overlapping message, then all sequential
+          const overlapIdx = buffer.findIndex(
+            (msg: any) => msg.U <= lastUpdateId + 1 && msg.u >= lastUpdateId + 1
+          )
+
+          if (buffer.length === 0 || overlapIdx !== -1) {
+            if (overlapIdx !== -1) {
+              for (let i = overlapIdx; i < buffer.length; i++) {
+                const msg = buffer[i]
+                if (i === overlapIdx) {
+                  applyDiff(msg)
+                  lastUpdateId = msg.u
+                } else if (msg.U === lastUpdateId + 1) {
+                  applyDiff(msg)
+                  lastUpdateId = msg.u
+                }
+                // else: gap in buffer, ignore rest
+              }
+            }
+            buffer = []
+            snapshotLoaded = true
+            // First render: show immediately without throttle
+            setRawBook({
+              bids: Array.from(localBids.entries()),
+              asks: Array.from(localAsks.entries()),
+            })
+            setLoading(false)
+          } else {
+            // Buffer has messages but none overlap — need fresh snapshot
+            console.warn(`[OrderBook] No overlap for ${symbol}, reconnecting...`)
+            ws?.close()
           }
         })
-        buffer = []
-        snapshotLoaded = true
+        .catch(() => {
+          if (abort) return
+          setError("Order book unavailable")
+          setLoading(false)
+        })
+
+      // Connect WebSocket
+      ws = new WebSocket(`wss://fstream.binance.com/ws/${symLower}usdt@depth`)
+
+      ws.onopen = () => {
+        console.log(`[OrderBook WS] Connected: ${symbol}`)
+      }
+
+      ws.onmessage = (event) => {
+        const data = JSON.parse(event.data)
+        if (!snapshotLoaded) {
+          buffer.push(data)
+          if (buffer.length > 200) buffer.shift()
+          return
+        }
+
+        if (data.U !== lastUpdateId + 1) {
+          console.warn(`[OrderBook WS] Gap on ${symbol}: expected ${lastUpdateId + 1}, got ${data.U}`)
+          ws?.close()
+          return
+        }
+
+        applyDiff(data)
+        lastUpdateId = data.u
         flushDisplay()
-        setLoading(false)
-      })
-      .catch(() => {
-        if (abort) return
-        setError("Order book unavailable")
-        setLoading(false)
-      })
-
-    // Connect WebSocket
-    ws = new WebSocket(`wss://fstream.binance.com/ws/${symLower}usdt@depth`)
-
-    ws.onopen = () => {
-      console.log(`[OrderBook WS] Connected: ${symbol}`)
-    }
-
-    ws.onmessage = (event) => {
-      const data = JSON.parse(event.data)
-      if (!snapshotLoaded) {
-        buffer.push(data)
-        return
       }
 
-      if (data.U !== lastUpdateId + 1) {
-        console.warn(`[OrderBook WS] Gap on ${symbol}, reconnecting...`)
-        ws?.close()
-        return
+      ws.onerror = (err) => {
+        console.error(`[OrderBook WS] Error on ${symbol}:`, err)
       }
 
-      applyDiff(data)
-      lastUpdateId = data.u
-      flushDisplay()
-    }
-
-    ws.onerror = (err) => {
-      console.error(`[OrderBook WS] Error on ${symbol}:`, err)
-    }
-
-    ws.onclose = () => {
-      if (!abort && snapshotLoaded) {
-        setTimeout(() => {
-          if (!abort) {
-            setError("Order book reconnecting...")
-          }
-        }, 3000)
+      ws.onclose = () => {
+        snapshotLoaded = false
+        buffer = []
+        if (!abort) {
+          reconnectTimeout = setTimeout(() => {
+            if (!abort) connect()
+          }, 3000)
+        }
       }
     }
+
+    connect()
 
     return () => {
       abort = true
       ws?.close()
       if (flushTimeout) clearTimeout(flushTimeout)
+      if (reconnectTimeout) clearTimeout(reconnectTimeout)
     }
   }, [symbol])
 
