@@ -80,23 +80,23 @@ function ZoneCard({
   children: React.ReactNode
 }) {
   return (
-    <div className="space-y-2 p-4 rounded-lg bg-slate-900/40 border border-slate-800">
+    <div className="space-y-3 p-5 rounded-lg bg-slate-900/40 border border-slate-800">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <span className="text-sm font-semibold text-slate-200 uppercase tracking-wider">{title}</span>
+          <span className="text-base font-semibold text-slate-200 uppercase tracking-wider">{title}</span>
           <div className="group relative">
-            <Info className="w-4 h-4 text-slate-600 cursor-help hover:text-slate-400 transition-colors" />
-            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-56 p-2.5 bg-slate-900 border border-slate-700 rounded-md text-[10px] text-slate-300 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-20 shadow-xl leading-relaxed">
+            <Info className="w-5 h-5 text-slate-600 cursor-help hover:text-slate-400 transition-colors" />
+            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-60 p-3 bg-slate-900 border border-slate-700 rounded-md text-xs text-slate-300 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-20 shadow-xl leading-relaxed">
               {METRIC_INFO[infoKey]}
             </div>
           </div>
         </div>
-        <span className="text-base font-bold font-mono text-white">{valueFormatted}</span>
+        <span className="text-lg font-bold font-mono text-white">{valueFormatted}</span>
       </div>
 
       {children}
 
-      <p className="text-xs text-slate-400 leading-relaxed">{interpretation}</p>
+      <p className="text-sm text-slate-400 leading-relaxed">{interpretation}</p>
     </div>
   )
 }
@@ -127,7 +127,7 @@ function ZoneBar({
         />
       </div>
       {labels && (
-        <div className="flex justify-between text-[10px] text-slate-500 font-medium pt-0.5">
+        <div className="flex justify-between text-xs text-slate-500 font-medium pt-1">
           {labels.map((l, i) => (
             <span key={i}>{l}</span>
           ))}
@@ -254,8 +254,8 @@ export function FundamentalsCard({ symbol, loading: parentLoading }: Fundamental
           <div className="flex items-center gap-3">
             <span className="text-2xl leading-none">{getSentimentEmoji(sentiment)}</span>
             <div>
-              <div className={cn("text-sm font-bold", getSentimentColor(sentiment))}>{sentiment}</div>
-              <div className="text-[10px] text-slate-500">Composite score</div>
+              <div className={cn("text-base font-bold", getSentimentColor(sentiment))}>{sentiment}</div>
+              <div className="text-xs text-slate-500">Composite score</div>
             </div>
           </div>
           <div className="text-right">
