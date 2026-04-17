@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { useState } from "react"
+import { useState, useRef, useEffect } from "react"
 import {
   User,
   LogOut,
@@ -15,16 +15,6 @@ import {
 } from "lucide-react"
 import { useAuth } from "../context/AuthContext"
 import { Button } from "@/components/ui/button"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuGroup,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuShortcut,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 
@@ -40,12 +30,27 @@ const tierBadge: Record<string, { label: string; variant: any; icon: React.React
 
 export function UserMenu({ onOpenAuth }: UserMenuProps) {
   const { user, isAuthenticated, logout } = useAuth()
+  const [open, setOpen] = useState(false)
   const [isLoggingOut, setIsLoggingOut] = useState(false)
+  const ref = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (ref.current && !ref.current.contains(event.target as Node)) {
+        setOpen(false)
+      }
+    }
+    if (open) {
+      document.addEventListener("mousedown", handleClickOutside)
+      return () => document.removeEventListener("mousedown", handleClickOutside)
+    }
+  }, [open])
 
   const handleLogout = async () => {
     setIsLoggingOut(true)
     await logout()
     setIsLoggingOut(false)
+    setOpen(false)
   }
 
   if (!isAuthenticated) {
@@ -60,105 +65,111 @@ export function UserMenu({ onOpenAuth }: UserMenuProps) {
   const tier = tierBadge[user?.subscription_tier || "free"]
 
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button
-          variant="ghost"
-          className="relative h-10 pl-2 pr-3 gap-2 rounded-full hover:bg-accent group"
-        >
-          <Avatar className="h-7 w-7 border border-border/50">
-            <AvatarImage src={user?.avatar_url || ""} alt={user?.username} />
-            <AvatarFallback className="bg-primary/10 text-primary text-xs font-semibold">
-              {user?.username?.slice(0, 2).toUpperCase() || "U"}
-            </AvatarFallback>
-          </Avatar>
-          <span className="hidden md:inline text-sm font-medium">{user?.username}</span>
-          <ChevronDown className="size-4 text-muted-foreground transition-transform duration-200 group-data-[state=open]:rotate-180" />
-        </Button>
-      </DropdownMenuTrigger>
-
-      <DropdownMenuContent
-        className="w-72 rounded-xl p-2 shadow-xl ring-1 ring-border/50"
-        align="end"
-        sideOffset={8}
+    <div ref={ref} className="relative">
+      <Button
+        variant="ghost"
+        onClick={() => setOpen((v) => !v)}
+        className="relative h-10 pl-2 pr-3 gap-2 rounded-full hover:bg-accent"
+        aria-expanded={open}
       >
-        <DropdownMenuLabel className="font-normal px-2 py-2">
-          <div className="flex items-center gap-3">
-            <Avatar className="h-10 w-10 border border-border/50">
-              <AvatarImage src={user?.avatar_url || ""} alt={user?.username} />
-              <AvatarFallback className="bg-primary/10 text-primary font-semibold">
-                {user?.username?.slice(0, 2).toUpperCase() || "U"}
-              </AvatarFallback>
-            </Avatar>
-            <div className="flex flex-col">
-              <p className="text-sm font-semibold leading-tight">{user?.username}</p>
-              <p className="text-xs text-muted-foreground leading-tight truncate max-w-[140px]">
-                {user?.email || "No email"}
-              </p>
-              <div className="mt-1">
-                <Badge variant={tier.variant} className="text-[10px] h-4 px-1.5 gap-1">
-                  {tier.icon}
-                  {tier.label}
-                </Badge>
+        <Avatar className="h-7 w-7 border border-border/50">
+          <AvatarImage src={user?.avatar_url || ""} alt={user?.username} />
+          <AvatarFallback className="bg-primary/10 text-primary text-xs font-semibold">
+            {user?.username?.slice(0, 2).toUpperCase() || "U"}
+          </AvatarFallback>
+        </Avatar>
+        <span className="hidden md:inline text-sm font-medium">{user?.username}</span>
+        <ChevronDown className={`size-4 text-muted-foreground transition-transform duration-200 ${open ? "rotate-180" : ""}`} />
+      </Button>
+
+      {open && (
+        <div className="absolute right-0 top-full mt-2 w-72 rounded-xl border border-border/50 bg-popover p-2 shadow-xl z-50 animate-in fade-in-0 zoom-in-95">
+          {/* Header */}
+          <div className="px-2 py-2">
+            <div className="flex items-center gap-3">
+              <Avatar className="h-10 w-10 border border-border/50">
+                <AvatarImage src={user?.avatar_url || ""} alt={user?.username} />
+                <AvatarFallback className="bg-primary/10 text-primary font-semibold">
+                  {user?.username?.slice(0, 2).toUpperCase() || "U"}
+                </AvatarFallback>
+              </Avatar>
+              <div className="flex flex-col">
+                <p className="text-sm font-semibold leading-tight">{user?.username}</p>
+                <p className="text-xs text-muted-foreground leading-tight truncate max-w-[140px]">
+                  {user?.email || "No email"}
+                </p>
+                <div className="mt-1">
+                  <Badge variant={tier.variant} className="text-[10px] h-4 px-1.5 gap-1">
+                    {tier.icon}
+                    {tier.label}
+                  </Badge>
+                </div>
               </div>
             </div>
           </div>
-        </DropdownMenuLabel>
 
-        <DropdownMenuSeparator className="my-1" />
+          <div className="h-px bg-border my-1" />
 
-        <DropdownMenuGroup>
-          <DropdownMenuLabel className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium px-2 py-1">
-            Platform
-          </DropdownMenuLabel>
-          <DropdownMenuItem asChild className="rounded-lg cursor-pointer">
-            <Link href="/dashboard">
-              <LayoutDashboard className="mr-2 size-4 text-muted-foreground" />
+          {/* Platform */}
+          <div className="px-2 py-1">
+            <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium mb-1">Platform</p>
+            <Link
+              href="/dashboard"
+              onClick={() => setOpen(false)}
+              className="flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm hover:bg-accent transition-colors"
+            >
+              <LayoutDashboard className="size-4 text-muted-foreground" />
               <span>Dashboard</span>
-              <DropdownMenuShortcut>⌘D</DropdownMenuShortcut>
+              <span className="ml-auto text-xs tracking-widest text-muted-foreground">⌘D</span>
             </Link>
-          </DropdownMenuItem>
-          <DropdownMenuItem asChild className="rounded-lg cursor-pointer">
-            <Link href="/trades">
-              <Wallet className="mr-2 size-4 text-muted-foreground" />
+            <Link
+              href="/trades"
+              onClick={() => setOpen(false)}
+              className="flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm hover:bg-accent transition-colors"
+            >
+              <Wallet className="size-4 text-muted-foreground" />
               <span>My Trades</span>
             </Link>
-          </DropdownMenuItem>
-        </DropdownMenuGroup>
+          </div>
 
-        <DropdownMenuSeparator className="my-1" />
+          <div className="h-px bg-border my-1" />
 
-        <DropdownMenuGroup>
-          <DropdownMenuLabel className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium px-2 py-1">
-            Account
-          </DropdownMenuLabel>
-          <DropdownMenuItem asChild className="rounded-lg cursor-pointer">
-            <Link href="/profile">
-              <Settings className="mr-2 size-4 text-muted-foreground" />
+          {/* Account */}
+          <div className="px-2 py-1">
+            <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium mb-1">Account</p>
+            <Link
+              href="/profile"
+              onClick={() => setOpen(false)}
+              className="flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm hover:bg-accent transition-colors"
+            >
+              <Settings className="size-4 text-muted-foreground" />
               <span>Settings</span>
-              <DropdownMenuShortcut>⌘S</DropdownMenuShortcut>
+              <span className="ml-auto text-xs tracking-widest text-muted-foreground">⌘S</span>
             </Link>
-          </DropdownMenuItem>
-          <DropdownMenuItem asChild className="rounded-lg cursor-pointer">
-            <Link href="/help">
-              <HelpCircle className="mr-2 size-4 text-muted-foreground" />
+            <Link
+              href="/help"
+              onClick={() => setOpen(false)}
+              className="flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm hover:bg-accent transition-colors"
+            >
+              <HelpCircle className="size-4 text-muted-foreground" />
               <span>Help & Support</span>
             </Link>
-          </DropdownMenuItem>
-        </DropdownMenuGroup>
+          </div>
 
-        <DropdownMenuSeparator className="my-1" />
+          <div className="h-px bg-border my-1" />
 
-        <DropdownMenuItem
-          onClick={handleLogout}
-          disabled={isLoggingOut}
-          className="rounded-lg cursor-pointer text-destructive focus:text-destructive focus:bg-destructive/10"
-        >
-          <LogOut className="mr-2 size-4" />
-          <span>{isLoggingOut ? "Signing out..." : "Sign out"}</span>
-          <DropdownMenuShortcut>⇧⌘Q</DropdownMenuShortcut>
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
+          {/* Logout */}
+          <button
+            onClick={handleLogout}
+            disabled={isLoggingOut}
+            className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-sm text-destructive hover:bg-destructive/10 transition-colors disabled:opacity-50"
+          >
+            <LogOut className="size-4" />
+            <span>{isLoggingOut ? "Signing out..." : "Sign out"}</span>
+            <span className="ml-auto text-xs tracking-widest text-muted-foreground">⇧⌘Q</span>
+          </button>
+        </div>
+      )}
+    </div>
   )
 }
