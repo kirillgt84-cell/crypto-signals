@@ -282,7 +282,7 @@ class BinanceFuturesFetcher:
             # Получаем recent trades для кластеризации
             async with session.get(
                 f"{self.BASE_URL}/fapi/v1/aggTrades",
-                params={"symbol": symbol, "limit": 500},
+                params={"symbol": symbol, "limit": 1500},
                 headers={"Accept": "application/json"}
             ) as resp:
                 trades = await resp.json()
@@ -317,17 +317,18 @@ class BinanceFuturesFetcher:
                 else:
                     step = 10 * magnitude
             else:
-                # Fallback по цене актива если все сделки по одной цене
-                if sample_price > 10000:
-                    step = 100
-                elif sample_price > 1000:
-                    step = 10
-                elif sample_price > 100:
-                    step = 1
-                elif sample_price > 1:
-                    step = 0.001
+                # Fallback: adaptive step ~0.02% of price, rounded to clean number
+                raw_step = sample_price * 0.0002
+                if raw_step >= 100:
+                    step = round(raw_step / 100) * 100
+                elif raw_step >= 10:
+                    step = round(raw_step / 10) * 10
+                elif raw_step >= 1:
+                    step = round(raw_step)
+                elif raw_step >= 0.1:
+                    step = round(raw_step, 1)
                 else:
-                    step = 0.0001
+                    step = max(0.0001, round(raw_step, 4))
             
             print(f"DEBUG cluster: {symbol} price_range={price_range}, step={step}, min={min_p}, max={max_p}")
             
@@ -357,19 +358,39 @@ class BinanceFuturesFetcher:
             total_volume = sum(c["total"] for c in clusters.values())
             target_volume = total_volume * 0.7  # 70% объема
             
-            # Сортируем кластеры по объему (от большего к меньшему)
-            sorted_by_volume = sorted(clusters.items(), key=lambda x: x[1]["total"], reverse=True)
-            
-            accumulated = 0
-            value_area_prices = []
-            for price, data in sorted_by_volume:
-                accumulated += data["total"]
-                value_area_prices.append(price)
-                if accumulated >= target_volume:
-                    break
-            
-            vah = max(value_area_prices) if value_area_prices else poc_price
-            val = min(value_area_prices) if value_area_prices else poc_price
+            if len(clusters) <= 1:
+                vah = poc_price
+                val = poc_price
+                accumulated = total_volume
+            else:
+                # Правильный алгоритм: расширение окна вокруг POC по цене
+                sorted_prices = sorted(clusters.keys())
+                poc_idx = sorted_prices.index(poc_price)
+                
+                included = {poc_price}
+                accumulated = clusters[poc_price]["total"]
+                
+                up_idx = poc_idx + 1
+                down_idx = poc_idx - 1
+                
+                while accumulated < target_volume:
+                    up_vol = clusters[sorted_prices[up_idx]]["total"] if up_idx < len(sorted_prices) else -1
+                    down_vol = clusters[sorted_prices[down_idx]]["total"] if down_idx >= 0 else -1
+                    
+                    if up_vol <= 0 and down_vol <= 0:
+                        break
+                    
+                    if up_vol >= down_vol:
+                        included.add(sorted_prices[up_idx])
+                        accumulated += up_vol
+                        up_idx += 1
+                    else:
+                        included.add(sorted_prices[down_idx])
+                        accumulated += down_vol
+                        down_idx -= 1
+                
+                vah = max(included)
+                val = min(included)
             
             print(f"DEBUG cluster: {symbol} clusters={len(clusters)}, step={step}, poc={poc_price}, vah={vah}, val={val}")
             if len(clusters) <= 3:
