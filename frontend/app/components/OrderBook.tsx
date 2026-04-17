@@ -21,8 +21,9 @@ type Level = {
 }
 
 export const ORDER_BOOK_LEVELS = 30
-const MID_HEIGHT = 22 // px
-const CHART_HEIGHT = 622 // px — fixed total height for asks + mid + bids
+const MID_HEIGHT = 22
+const CHART_HEIGHT = 622
+const FLUSH_THROTTLE_MS = 100
 
 export function padLevels(
   levels: Level[],
@@ -47,53 +48,44 @@ export function padLevels(
   return padded.slice(0, count)
 }
 
-export function interpolateLevels(levels: Level[]): Level[] {
-  const result = [...levels]
-  let lastFilled = -1
+function aggregateLevels(
+  rawEntries: [number, number][],
+  isBid: boolean,
+  aggStep: number
+): Level[] {
+  let processed: [number, number][]
 
-  for (let i = 0; i < result.length; i++) {
-    if (result[i].quantity > 0) {
-      if (lastFilled !== -1 && i - lastFilled > 1) {
-        const startQty = result[lastFilled].quantity
-        const endQty = result[i].quantity
-        const steps = i - lastFilled
-        for (let j = 1; j < steps; j++) {
-          const ratio = j / steps
-          result[lastFilled + j].quantity = startQty * (1 - ratio) + endQty * ratio
-        }
-      }
-      lastFilled = i
-    }
+  if (aggStep <= 0) {
+    processed = rawEntries.map(([price, qty]) => [price, qty])
+  } else {
+    const buckets = new Map<number, number>()
+    rawEntries.forEach(([price, qty]) => {
+      const bucketPrice = isBid
+        ? Math.floor(price / aggStep) * aggStep
+        : Math.ceil(price / aggStep) * aggStep
+      buckets.set(bucketPrice, (buckets.get(bucketPrice) || 0) + qty)
+    })
+    processed = Array.from(buckets.entries())
   }
 
-  if (lastFilled !== -1 && lastFilled < result.length - 1) {
-    const startQty = result[lastFilled].quantity
-    for (let i = lastFilled + 1; i < result.length; i++) {
-      const ratio = (i - lastFilled) / (result.length - lastFilled)
-      result[i].quantity = startQty * (1 - ratio)
-    }
-  }
+  const sorted = isBid
+    ? processed.sort((a, b) => b[0] - a[0])
+    : processed.sort((a, b) => a[0] - b[0])
 
-  const firstFilled = result.findIndex((l) => l.quantity > 0)
-  if (firstFilled > 0) {
-    const endQty = result[firstFilled].quantity
-    for (let i = 0; i < firstFilled; i++) {
-      const ratio = i / firstFilled
-      result[i].quantity = endQty * ratio
-    }
-  }
-
-  return result
+  let cumulative = 0
+  return sorted.map(([price, quantity]) => {
+    cumulative += quantity
+    return { price, quantity, total: cumulative, side: isBid ? "bid" : "ask" }
+  })
 }
 
 export function OrderBook({ symbol, currentPrice = 0, loading: parentLoading }: OrderBookProps) {
-  const [rawData, setRawData] = useState<{ bids: { price: number; quantity: number }[]; asks: { price: number; quantity: number }[] } | null>(null)
+  const [rawBook, setRawBook] = useState<{ bids: [number, number][]; asks: [number, number][] } | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const levelCount = ORDER_BOOK_LEVELS
   const rowHeight = Math.max(2, Math.floor((CHART_HEIGHT - MID_HEIGHT) / (levelCount * 2)))
 
-  // Compute step options synchronously every render to guarantee correctness
   const price = currentPrice > 0 ? currentPrice : (symbol === "BTC" ? 70000 : symbol === "ETH" ? 3500 : 100)
   let stepOptions: StepOption[]
   if (price >= 20000) stepOptions = [{ label: "Raw", value: 0 }, { label: "$10", value: 10 }, { label: "$50", value: 50 }, { label: "$100", value: 100 }]
@@ -118,87 +110,142 @@ export function OrderBook({ symbol, currentPrice = 0, loading: parentLoading }: 
     setTick((t) => t + 1)
   }, [symbol])
 
+  // WebSocket connection
   useEffect(() => {
     if (!symbol) return
 
-    const fetchOrderBook = async () => {
-      try {
-        const res = await fetch(
-          `https://api.binance.com/api/v3/depth?symbol=${symbol}USDT&limit=5000`,
-          { cache: "no-store" }
-        )
-        if (!res.ok) throw new Error("Failed to fetch order book")
+    const symLower = symbol.toLowerCase()
+    let localBids = new Map<number, number>()
+    let localAsks = new Map<number, number>()
+    let lastUpdateId = 0
+    let snapshotLoaded = false
+    let buffer: any[] = []
+    let ws: WebSocket | null = null
+    let flushTimeout: ReturnType<typeof setTimeout> | null = null
+    let abort = false
 
-        const json = await res.json()
+    const applyDiff = (data: any) => {
+      const processSide = (updates: [string, string][], map: Map<number, number>) => {
+        for (const [p, q] of updates) {
+          const price = parseFloat(p)
+          const qty = parseFloat(q)
+          if (qty === 0) {
+            map.delete(price)
+          } else {
+            map.set(price, qty)
+          }
+        }
+      }
+      processSide(data.b || [], localBids)
+      processSide(data.a || [], localAsks)
+    }
 
-        const rawBids = json.bids.map(([p, q]: [string, string]) => ({
-          price: parseFloat(p),
-          quantity: parseFloat(q),
-        }))
-        const rawAsks = json.asks.map(([p, q]: [string, string]) => ({
-          price: parseFloat(p),
-          quantity: parseFloat(q),
-        }))
+    const flushDisplay = () => {
+      if (flushTimeout) return
+      flushTimeout = setTimeout(() => {
+        if (abort) return
+        setRawBook({
+          bids: Array.from(localBids.entries()),
+          asks: Array.from(localAsks.entries()),
+        })
+        flushTimeout = null
+      }, FLUSH_THROTTLE_MS)
+    }
 
-        setRawData({ bids: rawBids, asks: rawAsks })
-        setError(null)
-      } catch (err) {
-        setError("Order book unavailable")
-      } finally {
+    // Fetch snapshot via Futures REST
+    fetch(`https://fapi.binance.com/fapi/v1/depth?symbol=${symbol}USDT&limit=1000`)
+      .then(res => {
+        if (!res.ok) throw new Error("Snapshot failed")
+        return res.json()
+      })
+      .then(snapshot => {
+        if (abort) return
+        localBids = new Map(snapshot.bids.map(([p, q]: [string, string]) => [parseFloat(p), parseFloat(q)]))
+        localAsks = new Map(snapshot.asks.map(([p, q]: [string, string]) => [parseFloat(p), parseFloat(q)]))
+        lastUpdateId = snapshot.lastUpdateId
+
+        // Apply buffered diffs that overlap with snapshot
+        buffer.forEach(msg => {
+          if (msg.u < lastUpdateId + 1) return
+          if (msg.U <= lastUpdateId + 1 && msg.u >= lastUpdateId + 1) {
+            applyDiff(msg)
+            lastUpdateId = msg.u
+          } else if (msg.U === lastUpdateId + 1) {
+            applyDiff(msg)
+            lastUpdateId = msg.u
+          }
+        })
+        buffer = []
+        snapshotLoaded = true
+        flushDisplay()
         setLoading(false)
+      })
+      .catch(() => {
+        if (abort) return
+        setError("Order book unavailable")
+        setLoading(false)
+      })
+
+    // Connect WebSocket
+    ws = new WebSocket(`wss://fstream.binance.com/ws/${symLower}usdt@depth`)
+
+    ws.onopen = () => {
+      console.log(`[OrderBook WS] Connected: ${symbol}`)
+    }
+
+    ws.onmessage = (event) => {
+      const data = JSON.parse(event.data)
+      if (!snapshotLoaded) {
+        buffer.push(data)
+        return
+      }
+
+      if (data.U !== lastUpdateId + 1) {
+        console.warn(`[OrderBook WS] Gap on ${symbol}, reconnecting...`)
+        ws?.close()
+        return
+      }
+
+      applyDiff(data)
+      lastUpdateId = data.u
+      flushDisplay()
+    }
+
+    ws.onerror = (err) => {
+      console.error(`[OrderBook WS] Error on ${symbol}:`, err)
+    }
+
+    ws.onclose = () => {
+      if (!abort && snapshotLoaded) {
+        setTimeout(() => {
+          if (!abort) {
+            setError("Order book reconnecting...")
+          }
+        }, 3000)
       }
     }
 
-    fetchOrderBook()
-    const interval = setInterval(fetchOrderBook, 3000)
-    return () => clearInterval(interval)
+    return () => {
+      abort = true
+      ws?.close()
+      if (flushTimeout) clearTimeout(flushTimeout)
+    }
   }, [symbol])
 
   const { visibleAsks, visibleBids, bestBid, bestAsk, maxTotal, midPrice } = useMemo(() => {
-    if (!rawData) {
+    if (!rawBook) {
       return { visibleAsks: [] as Level[], visibleBids: [] as Level[], bestBid: 0, bestAsk: 0, maxTotal: 1, midPrice: 0 }
     }
 
-    const aggregate = (
-      raw: { price: number; quantity: number }[],
-      isBid: boolean,
-      aggStep: number
-    ): Level[] => {
-      let processed: { price: number; quantity: number }[]
-
-      if (aggStep <= 0) {
-        processed = raw.map((r) => ({ price: r.price, quantity: r.quantity }))
-      } else {
-        const buckets = new Map<number, number>()
-        raw.forEach((r) => {
-          const bucketPrice = isBid
-            ? Math.floor(r.price / aggStep) * aggStep
-            : Math.ceil(r.price / aggStep) * aggStep
-          buckets.set(bucketPrice, (buckets.get(bucketPrice) || 0) + r.quantity)
-        })
-        processed = Array.from(buckets.entries()).map(([price, quantity]) => ({ price, quantity }))
-      }
-
-      const sorted = isBid
-        ? processed.sort((a, b) => b.price - a.price)
-        : processed.sort((a, b) => a.price - b.price)
-
-      let cumulative = 0
-      return sorted.map((r) => {
-        cumulative += r.quantity
-        return { price: r.price, quantity: r.quantity, total: cumulative, side: isBid ? "bid" : "ask" }
-      })
-    }
-
-    const bidRows = aggregate(rawData.bids, true, selectedStep)
-    const askRows = aggregate(rawData.asks, false, selectedStep)
+    const bidRows = aggregateLevels(rawBook.bids, true, selectedStep)
+    const askRows = aggregateLevels(rawBook.asks, false, selectedStep)
 
     const bb = bidRows[0]?.price || 0
     const ba = askRows[0]?.price || 0
     const mp = (ba + bb) / 2
 
-    const asksPadded = interpolateLevels(padLevels(askRows, "ask", selectedStep, levelCount))
-    const bidsPadded = interpolateLevels(padLevels(bidRows, "bid", selectedStep, levelCount))
+    const asksPadded = padLevels(askRows, "ask", selectedStep, levelCount)
+    const bidsPadded = padLevels(bidRows, "bid", selectedStep, levelCount)
 
     const visibleAsks = [...asksPadded].reverse()
     const visibleBids = bidsPadded
@@ -209,15 +256,8 @@ export function OrderBook({ symbol, currentPrice = 0, loading: parentLoading }: 
       1
     )
 
-    return {
-      visibleAsks,
-      visibleBids,
-      bestBid: bb,
-      bestAsk: ba,
-      maxTotal: mt,
-      midPrice: mp,
-    }
-  }, [rawData, selectedStep])
+    return { visibleAsks, visibleBids, bestBid: bb, bestAsk: ba, maxTotal: mt, midPrice: mp }
+  }, [rawBook, selectedStep, levelCount])
 
   const isLoading = parentLoading || loading
 
@@ -237,7 +277,7 @@ export function OrderBook({ symbol, currentPrice = 0, loading: parentLoading }: 
     )
   }
 
-  if (error || !rawData) {
+  if (error || !rawBook) {
     return (
       <div className="w-full min-h-[500px] border-2 border-muted rounded-xl bg-[#0b0f19] p-4 font-mono flex flex-col items-center justify-center text-muted-foreground">
         <AlertCircle className="w-8 h-8 mb-2" />

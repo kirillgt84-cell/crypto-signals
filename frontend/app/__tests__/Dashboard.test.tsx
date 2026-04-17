@@ -52,6 +52,7 @@ const mockLevels = {
 describe('Dashboard Integration', () => {
   beforeEach(() => {
     jest.clearAllMocks()
+    ;(global.fetch as jest.Mock).mockReset().mockResolvedValue({ ok: false })
   })
 
   it('renders loading state initially', () => {
