@@ -125,10 +125,11 @@ async def global_exception_handler(request, exc):
         response.headers["vary"] = "Origin"
     return response
 
-# CORS configuration
+# CORS configuration — allow all Vercel preview deployments + local dev
 _default_origins = [
     "http://localhost:3000",
     "https://crypto-signals.vercel.app",
+    "https://crypto-signals-chi.vercel.app",
 ]
 
 _additional = os.getenv("ADDITIONAL_CORS_ORIGINS", "")
@@ -143,7 +144,7 @@ logger.info(f"CORS configured: origins={_default_origins}")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=_default_origins,
-    allow_origin_regex=r"https://[\w-]+-chi\.vercel\.app|https://[\w-]+\.vercel\.app|https://crypto-signals[-\w]+\.vercel\.app",
+    allow_origin_regex=r"https://.*\.vercel\.app",
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
     allow_headers=["*"],
