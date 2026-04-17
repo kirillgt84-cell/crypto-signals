@@ -40,17 +40,6 @@ const mockMarketData = {
   exchange_flow: -450,
 }
 
-const mockChecklist = {
-  symbol: 'BTC',
-  score: 5,
-  total: 7,
-  items: [
-    { name: 'Trend', passed: true, description: 'Above EMA20' },
-    { name: 'OI Rising', passed: true, description: 'OI +5%' },
-  ],
-  recommendation: 'Strong LONG setup',
-}
-
 const mockLevels = {
   ema20: 69500,
   ema50: 68000,
@@ -104,26 +93,6 @@ describe('Dashboard Integration', () => {
           json: () => Promise.resolve({ cvd_value: 2450000 }),
         })
       }
-      if (url.includes('/market/checklist/')) {
-        return Promise.resolve({
-          ok: true,
-          json: () => Promise.resolve({
-            score: 5,
-            max_score: 7,
-            recommendation: 'BUY',
-            action: 'ВХОД',
-            color: 'yellow',
-            checks: {
-              oi_signal: { passed: true, value: 'OI: bullish', description: 'OI подтверждает', weight: 'required' },
-              cvd_confirmation: { passed: true, value: 'CVD: bullish', description: 'CVD подтверждает', weight: 'required' },
-              cluster_clear: { passed: true, value: 'POC: 69800', description: 'Данные доступны', weight: 'required' },
-              ema_position: { passed: true, value: 'uptrend (1.2%)', description: 'Цена у EMA50', weight: 'preferred' },
-              funding_normal: { passed: true, value: '0.0080%', description: 'Funding не экстремальный', weight: 'background' },
-            },
-            levels: { price: 70000, ema50: 68000, ema200: 65000, poc: 69800, liquidation_long: 65000, liquidation_short: 75000 },
-          }),
-        })
-      }
       return Promise.resolve({ ok: false })
     })
 
@@ -137,22 +106,6 @@ describe('Dashboard Integration', () => {
 
   it('displays symbol selector', async () => {
     ;(global.fetch as jest.Mock).mockImplementation((url: string) => {
-      if (url.includes('/market/checklist/')) {
-        return Promise.resolve({
-          ok: true,
-          json: () => Promise.resolve({
-            score: 5, max_score: 7, recommendation: 'BUY', action: 'ВХОД', color: 'yellow',
-            checks: {
-              oi_signal: { passed: true, value: 'OI: bullish', description: 'OI', weight: 'required' },
-              cvd_confirmation: { passed: true, value: 'CVD: bullish', description: 'CVD', weight: 'required' },
-              cluster_clear: { passed: true, value: 'POC', description: 'Cluster', weight: 'required' },
-              ema_position: { passed: true, value: 'uptrend', description: 'EMA', weight: 'preferred' },
-              funding_normal: { passed: true, value: '0.008%', description: 'Funding', weight: 'background' },
-            },
-            levels: { price: 70000, ema50: 68000, ema200: 65000, poc: 69800, liquidation_long: 65000, liquidation_short: 75000 },
-          }),
-        })
-      }
       if (url.includes('/market/')) {
         return Promise.resolve({
           ok: true,
@@ -171,22 +124,6 @@ describe('Dashboard Integration', () => {
 
   it('displays timeframe selector', async () => {
     ;(global.fetch as jest.Mock).mockImplementation((url: string) => {
-      if (url.includes('/market/checklist/')) {
-        return Promise.resolve({
-          ok: true,
-          json: () => Promise.resolve({
-            score: 5, max_score: 7, recommendation: 'BUY', action: 'ВХОД', color: 'yellow',
-            checks: {
-              oi_signal: { passed: true, value: 'OI: bullish', description: 'OI', weight: 'required' },
-              cvd_confirmation: { passed: true, value: 'CVD: bullish', description: 'CVD', weight: 'required' },
-              cluster_clear: { passed: true, value: 'POC', description: 'Cluster', weight: 'required' },
-              ema_position: { passed: true, value: 'uptrend', description: 'EMA', weight: 'preferred' },
-              funding_normal: { passed: true, value: '0.008%', description: 'Funding', weight: 'background' },
-            },
-            levels: { price: 70000, ema50: 68000, ema200: 65000, poc: 69800, liquidation_long: 65000, liquidation_short: 75000 },
-          }),
-        })
-      }
       if (url.includes('/market/')) {
         return Promise.resolve({
           ok: true,
