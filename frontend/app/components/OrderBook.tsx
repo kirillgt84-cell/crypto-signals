@@ -262,7 +262,7 @@ export function OrderBook({ symbol, currentPrice = 0, loading: parentLoading }: 
     }
   }, [symbol])
 
-  const { visibleAsks, visibleBids, bestBid, bestAsk, maxTotal, midPrice } = useMemo(() => {
+  const { visibleAsks, visibleBids, bestBid, bestAsk, maxQuantity, midPrice } = useMemo(() => {
     if (!rawBook) {
       return { visibleAsks: [] as Level[], visibleBids: [] as Level[], bestBid: 0, bestAsk: 0, maxTotal: 1, midPrice: 0 }
     }
@@ -280,13 +280,13 @@ export function OrderBook({ symbol, currentPrice = 0, loading: parentLoading }: 
     const visibleAsks = [...asksPadded].reverse()
     const visibleBids = bidsPadded
 
-    const mt = Math.max(
+    const mq = Math.max(
       ...visibleAsks.map((a) => a.quantity),
       ...visibleBids.map((b) => b.quantity),
       1
     )
 
-    return { visibleAsks, visibleBids, bestBid: bb, bestAsk: ba, maxTotal: mt, midPrice: mp }
+    return { visibleAsks, visibleBids, bestBid: bb, bestAsk: ba, maxQuantity: mq, midPrice: mp }
   }, [rawBook, selectedStep, levelCount])
 
   const isLoading = parentLoading || loading
@@ -325,11 +325,13 @@ export function OrderBook({ symbol, currentPrice = 0, loading: parentLoading }: 
   const formatQty = (v: number) => {
     if (v >= 1_000_000) return `${(v / 1_000_000).toFixed(2)}M`
     if (v >= 1_000) return `${(v / 1_000).toFixed(1)}K`
-    return v.toFixed(1)
+    if (v >= 1) return `${v.toFixed(1)}`
+    if (v >= 0.01) return `${v.toFixed(2)}`
+    return `${v.toFixed(4)}`
   }
 
   const scaleMarkers = [0, 0.25, 0.5, 0.75, 1].map((ratio) =>
-    formatQty(maxTotal * ratio)
+    formatQty(maxQuantity * ratio)
   )
 
   return (
@@ -377,7 +379,7 @@ export function OrderBook({ symbol, currentPrice = 0, loading: parentLoading }: 
       {/* Asks */}
       <div className="flex flex-col">
         {visibleAsks.map((ask, i) => {
-          const barWidth = (ask.quantity / maxTotal) * 100
+          const barWidth = (ask.quantity / maxQuantity) * 100
           return (
             <motion.div
               key={`ask-${ask.price}-${i}`}
@@ -419,7 +421,7 @@ export function OrderBook({ symbol, currentPrice = 0, loading: parentLoading }: 
       {/* Bids */}
       <div className="flex flex-col">
         {visibleBids.map((bid, i) => {
-          const barWidth = (bid.quantity / maxTotal) * 100
+          const barWidth = (bid.quantity / maxQuantity) * 100
           return (
             <motion.div
               key={`bid-${bid.price}-${i}`}
@@ -451,7 +453,7 @@ export function OrderBook({ symbol, currentPrice = 0, loading: parentLoading }: 
       {/* Footer */}
       <div className="mt-2 pt-2 border-t border-slate-800 flex items-center justify-between text-[10px] text-slate-400">
         <span>Asks: <span className="text-rose-400 font-bold">{ORDER_BOOK_LEVELS}</span></span>
-        <span>Max: <span className="text-blue-400 font-bold">{formatQty(maxTotal)}</span></span>
+        <span>Max: <span className="text-blue-400 font-bold">{formatQty(maxQuantity)}</span></span>
         <span>Bids: <span className="text-emerald-400 font-bold">{ORDER_BOOK_LEVELS}</span></span>
       </div>
     </motion.div>

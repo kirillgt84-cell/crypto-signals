@@ -10,6 +10,7 @@ interface LiquidationLevel {
   price: number
   size: number
   side: "Long" | "Short"
+  source?: string
 }
 
 interface LiquidationMapProps {
@@ -65,10 +66,17 @@ export function LiquidationMap({
 
   const rowHeight = Math.max(2, Math.floor((CHART_HEIGHT - MID_HEIGHT) / (levelCount * 2)))
 
-  const { shortsAbove, longsBelow, maxSize, midPrice } = useMemo(() => {
+  const { shortsAbove, longsBelow, maxSize, midPrice, hasRealData } = useMemo(() => {
     if (!currentPrice || loading) {
-      return { shortsAbove: [] as MapLevel[], longsBelow: [] as MapLevel[], maxSize: 1, midPrice: 0 }
+      return { shortsAbove: [] as MapLevel[], longsBelow: [] as MapLevel[], maxSize: 1, midPrice: 0, hasRealData: false }
     }
+
+    const isReal = Array.isArray(liquidations) && (
+      liquidations.some((l) => (l as any).source === "okx") ||
+      (liquidations.length > 0 &&
+       typeof liquidations[0] === "object" && "source" in liquidations[0] &&
+       (liquidations[0] as any).source === "okx")
+    )
 
     const safeLiqs = Array.isArray(liquidations) ? liquidations : []
     const step = selectedStep > 0 ? selectedStep : 1
@@ -108,10 +116,11 @@ export function LiquidationMap({
     )
 
     return {
-      shortsAbove: shorts, // already ordered: farthest at top, closest at bottom
-      longsBelow: longs,   // already ordered: closest at top, farthest at bottom
+      shortsAbove: shorts,
+      longsBelow: longs,
       maxSize: ms,
       midPrice: currentPrice,
+      hasRealData: isReal,
     }
   }, [liquidations, currentPrice, loading, selectedStep, levelCount])
 
@@ -125,7 +134,9 @@ export function LiquidationMap({
     if (v >= 1_000_000_000) return `${(v / 1_000_000_000).toFixed(2)}B`
     if (v >= 1_000_000) return `${(v / 1_000_000).toFixed(1)}M`
     if (v >= 1_000) return `${(v / 1_000).toFixed(1)}K`
-    return v.toFixed(0)
+    if (v >= 1) return `${v.toFixed(0)}`
+    if (v >= 0.01) return `${v.toFixed(2)}`
+    return `${v.toFixed(4)}`
   }
 
   const scaleMarkers = [0, 0.25, 0.5, 0.75, 1].map((ratio) =>
@@ -160,6 +171,9 @@ export function LiquidationMap({
           <AlertTriangle className="w-4 h-4 text-amber-500" />
           <span className="text-sm font-bold tracking-widest text-amber-500">LIQUIDATION MAP</span>
           <span className="text-[10px] text-muted-foreground">{symbol}/USDT</span>
+          {!hasRealData && (
+            <span className="text-[9px] px-1 py-0.5 rounded bg-amber-500/20 text-amber-400 border border-amber-500/30">Simulated</span>
+          )}
         </div>
         <div className="flex items-center gap-1">
           {stepOptions.map((opt) => (

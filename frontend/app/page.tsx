@@ -707,22 +707,24 @@ export default function Dashboard() {
             ...(liqData.long_liquidations || []).map((l: any) => ({
               price: l.price,
               side: "Long" as const,
-              size: l.size != null ? (isRealData ? l.size * combinedData.price : l.size) : (l.distance === "-5%" ? 100 : l.distance === "-10%" ? 60 : 30)
+              size: l.size != null ? (isRealData ? l.size * combinedData.price : l.size) : 0,
+              source: liqData.source || "unknown",
             })),
             ...(liqData.short_liquidations || []).map((l: any) => ({
               price: l.price,
               side: "Short" as const,
-              size: l.size != null ? (isRealData ? l.size * combinedData.price : l.size) : (l.distance === "+5%" ? 100 : l.distance === "+10%" ? 60 : 30)
+              size: l.size != null ? (isRealData ? l.size * combinedData.price : l.size) : 0,
+              source: liqData.source || "unknown",
             }))
           ]
           setLiquidations(formattedLiquidations)
         } else if (levelsData.liquidations) {
           setLiquidations(levelsData.liquidations)
         } else {
-          // Fallback: generate from price
+          // Fallback: price levels only, no fabricated volume
           setLiquidations([
-            { price: combinedData.price * 0.97, side: "Long", size: 125000000 },
-            { price: combinedData.price * 1.03, side: "Short", size: 98000000 },
+            { price: combinedData.price * 0.97, side: "Long", size: 0, source: "fallback" },
+            { price: combinedData.price * 1.03, side: "Short", size: 0, source: "fallback" },
           ])
         }
         
@@ -790,8 +792,8 @@ export default function Dashboard() {
         
         const liqPrice = (!marketData || marketData.price === 0) ? fallbackPrice : marketData.price
         setLiquidations([
-          { price: liqPrice * 0.97, side: "Long", size: 125000000 },
-          { price: liqPrice * 1.03, side: "Short", size: 98000000 },
+          { price: liqPrice * 0.97, side: "Long", size: 0, source: "fallback" },
+          { price: liqPrice * 1.03, side: "Short", size: 0, source: "fallback" },
         ])
       } finally {
         setLoading(false)
