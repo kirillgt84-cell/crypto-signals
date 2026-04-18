@@ -210,7 +210,7 @@ export default function HeatmapClient({ initialData }: { initialData: HeatmapIte
                 name={group.name}
                 items={group.items}
                 maxChange={maxChange}
-                height={280}
+                height={300}
                 onHover={setHovered}
               />
             ))}
@@ -263,7 +263,13 @@ function SectorTreemap({
           const change = cell.item.volume_change_pct || 0
           const bg = getColor(change, maxChange)
           const textColor = change > 0 ? "#dcfce7" : change < 0 ? "#ffe4e6" : "#e2e8f0"
-          const showText = cell.w > 55 && cell.h > 38
+
+          // Dynamic font sizing based on cell dimensions
+          const minDim = Math.min(cell.w, cell.h)
+          const symbolSize = Math.min(Math.max(minDim / 5.5, 8), 16)
+          const percentSize = Math.min(Math.max(minDim / 7.5, 7), 13)
+          const showText = minDim > 32
+
           return (
             <div
               key={cell.item.symbol}
@@ -273,9 +279,17 @@ function SectorTreemap({
               onMouseLeave={() => onHover(null)}
             >
               {showText && (
-                <div className="p-1">
-                  <div className="text-[11px] font-bold truncate" style={{ color: textColor }}>{cell.item.symbol}</div>
-                  <div className="text-[10px] opacity-90" style={{ color: textColor }}>
+                <div className="p-1" style={{ whiteSpace: "nowrap", overflow: "hidden" }}>
+                  <div
+                    className="font-bold truncate"
+                    style={{ color: textColor, fontSize: `${symbolSize}px`, lineHeight: 1.2 }}
+                  >
+                    {cell.item.symbol}
+                  </div>
+                  <div
+                    className="opacity-90"
+                    style={{ color: textColor, fontSize: `${percentSize}px`, lineHeight: 1.2 }}
+                  >
                     {change > 0 ? "+" : ""}{change.toFixed(1)}%
                   </div>
                 </div>
