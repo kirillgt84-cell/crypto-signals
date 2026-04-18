@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState, useCallback, Suspense, useRef } from "react"
+import { useEffect, useState, useCallback, Suspense } from "react"
 import { useSearchParams } from "next/navigation"
 import { Treemap, ResponsiveContainer } from "recharts"
 import { Loader2, Flame } from "lucide-react"
@@ -107,20 +107,18 @@ function HeatmapContent() {
   const [data, setData] = useState<HeatmapItem[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const chartRef = useRef<HTMLDivElement>(null)
   const [chartSize, setChartSize] = useState({ width: 0, height: 0 })
 
   useEffect(() => {
-    const el = chartRef.current
-    if (!el) return
-    const ro = new ResizeObserver((entries) => {
-      for (const entry of entries) {
-        const { width, height } = entry.contentRect
-        setChartSize({ width, height })
-      }
-    })
-    ro.observe(el)
-    return () => ro.disconnect()
+    const update = () => {
+      setChartSize({
+        width: window.innerWidth - 32,
+        height: Math.max(400, window.innerHeight - 180),
+      })
+    }
+    update()
+    window.addEventListener("resize", update)
+    return () => window.removeEventListener("resize", update)
   }, [])
 
   const fetchData = useCallback(async () => {
@@ -230,11 +228,7 @@ function HeatmapContent() {
           </div>
         )}
 
-        <div
-          ref={chartRef}
-          className="w-full relative"
-          style={{ height: "calc(100vh - 160px)", minHeight: 400 }}
-        >
+        <div className="w-full relative" style={{ height: chartSize.height || 400 }}>
           {loading && data.length === 0 && (
             <div className="absolute inset-0 flex items-center justify-center">
               <Loader2 className="w-8 h-8 animate-spin text-amber-500" />
@@ -248,16 +242,16 @@ function HeatmapContent() {
           )}
 
           {treemapData.length > 0 && chartSize.width > 0 && chartSize.height > 0 && (
-            <ResponsiveContainer width="100%" height="100%">
-              <Treemap
-                data={treemapData}
-                dataKey="size"
-                aspectRatio={4 / 3}
-                stroke="#0b0f19"
-                fill="#8884d8"
-                content={<TreemapCell />}
-              />
-            </ResponsiveContainer>
+            <Treemap
+              width={chartSize.width}
+              height={chartSize.height}
+              data={treemapData}
+              dataKey="size"
+              aspectRatio={4 / 3}
+              stroke="#0b0f19"
+              fill="#8884d8"
+              content={<TreemapCell />}
+            />
           )}
         </div>
       </main>
