@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useMemo } from "react"
 import { hierarchy, treemap as d3Treemap } from "d3-hierarchy"
 import { cn } from "@/lib/utils"
+import { ArrowLeft } from "lucide-react"
 
 const API_BASE_URL = "https://crypto-signals-production-ff4c.up.railway.app/api/v1"
 
@@ -194,6 +195,15 @@ export default function HeatmapClient({ initialData }: { initialData: HeatmapIte
           </div>
         )}
 
+        {isSingleSector && (
+          <button
+            onClick={() => setSector("all")}
+            className="mb-3 flex items-center gap-1 text-xs text-slate-400 hover:text-amber-400 transition-colors"
+          >
+            <ArrowLeft className="w-3 h-3" /> All Sectors
+          </button>
+        )}
+
         {isSingleSector ? (
           <SectorTreemap
             name={sector}
@@ -212,6 +222,7 @@ export default function HeatmapClient({ initialData }: { initialData: HeatmapIte
                 maxChange={maxChange}
                 height={300}
                 onHover={setHovered}
+                onSelect={() => setSector(group.name)}
               />
             ))}
           </div>
@@ -238,12 +249,14 @@ function SectorTreemap({
   maxChange,
   height,
   onHover,
+  onSelect,
 }: {
   name: string
   items: HeatmapItem[]
   maxChange: number
   height: number
   onHover: (item: HeatmapItem | null) => void
+  onSelect?: () => void
 }) {
   const [width, setWidth] = useState(400)
   const ref = useCallback((node: HTMLDivElement | null) => {
@@ -253,10 +266,22 @@ function SectorTreemap({
   const layout = useMemo(() => computeLayout(items, width, height), [items, width, height])
 
   return (
-    <div ref={ref} className="border border-slate-800 rounded-lg overflow-hidden">
-      <div className="px-3 py-2 bg-slate-800/40 border-b border-slate-800">
-        <span className="text-xs font-bold text-amber-400 uppercase tracking-wider">{name}</span>
-        <span className="text-[10px] text-slate-500 ml-2">{items.length} coins</span>
+    <div
+      ref={ref}
+      className={cn(
+        "border border-slate-800 rounded-lg overflow-hidden",
+        onSelect && "cursor-pointer hover:border-amber-500/40 transition-colors"
+      )}
+      onClick={onSelect}
+    >
+      <div className="px-3 py-2 bg-slate-800/40 border-b border-slate-800 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <span className="text-xs font-bold text-amber-400 uppercase tracking-wider">{name}</span>
+          <span className="text-[10px] text-slate-500">{items.length} coins</span>
+        </div>
+        {onSelect && (
+          <span className="text-[10px] text-slate-500 hover:text-amber-400 transition-colors">Open →</span>
+        )}
       </div>
       <div className="relative" style={{ height }}>
         {layout.map((cell) => {
@@ -264,7 +289,6 @@ function SectorTreemap({
           const bg = getColor(change, maxChange)
           const textColor = change > 0 ? "#dcfce7" : change < 0 ? "#ffe4e6" : "#e2e8f0"
 
-          // Dynamic font sizing based on cell dimensions
           const minDim = Math.min(cell.w, cell.h)
           const symbolSize = Math.min(Math.max(minDim / 5.5, 8), 16)
           const percentSize = Math.min(Math.max(minDim / 7.5, 7), 13)
@@ -277,6 +301,7 @@ function SectorTreemap({
               style={{ left: cell.x, top: cell.y, width: cell.w, height: cell.h, backgroundColor: bg }}
               onMouseEnter={() => onHover(cell.item)}
               onMouseLeave={() => onHover(null)}
+              onClick={(e) => e.stopPropagation()}
             >
               {showText && (
                 <div className="p-1" style={{ whiteSpace: "nowrap", overflow: "hidden" }}>
