@@ -250,7 +250,6 @@ function HeatmapContent() {
               aspectRatio={4 / 3}
               stroke="#0b0f19"
               fill="#8884d8"
-              content={<TreemapCell />}
             />
           )}
         </div>
