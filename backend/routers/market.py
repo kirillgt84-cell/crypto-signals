@@ -608,3 +608,54 @@ async def get_heatmap(
         import traceback
         raise HTTPException(status_code=500, detail=f"{str(e)}\n{traceback.format_exc()}")
 # Deploy timestamp: Sun Apr 12 09:39:12 CEST 2026
+
+# ── Coin Search ──────────────────────────────────────────────────────────────
+
+_coins_cache = {"data": [], "last_update": None}
+
+@router.get("/coins")
+async def get_coins(
+    q: Optional[str] = Query(None, description="Search by symbol (e.g. BTC)"),
+    limit: int = Query(200, ge=1, le=500)
+):
+    """List active Binance Futures USDT pairs with 24h volume/price."""
+    import httpx
+    from datetime import datetime
+
+    now = datetime.utcnow()
+    if not _coins_cache["data"] or (
+        _coins_cache["last_update"] and
+        (now - _coins_cache["last_update"]).seconds > 21600
+    ):
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            info_res = await client.get("https://fapi.binance.com/fapi/v1/exchangeInfo")
+            symbols_info = info_res.json().get("symbols", [])
+            ticker_res = await client.get("https://fapi.binance.com/fapi/v1/ticker/24hr")
+            tickers = {t["symbol"]: t for t in ticker_res.json()}
+
+        coins = []
+        for s in symbols_info:
+            if s.get("quoteAsset") != "USDT" or s.get("status") != "TRADING":
+                continue
+            sym = s["symbol"]
+            t = tickers.get(sym, {})
+            price = float(t.get("lastPrice", 0) or 0)
+            vol = float(t.get("volume", 0) or 0)
+            weighted_avg = float(t.get("weightedAvgPrice", 0) or 0)
+            coins.append({
+                "symbol": sym,
+                "baseAsset": s.get("baseAsset", sym),
+                "quoteAsset": "USDT",
+                "volume_24h": vol * weighted_avg,
+                "price": price,
+                "priceChangePercent": float(t.get("priceChangePercent", 0) or 0),
+            })
+        coins.sort(key=lambda x: x["volume_24h"], reverse=True)
+        _coins_cache["data"] = coins
+        _coins_cache["last_update"] = now
+
+    coins = _coins_cache["data"]
+    if q:
+        q = q.lower()
+        coins = [c for c in coins if q in c["baseAsset"].lower() or c["baseAsset"].lower().startswith(q)]
+    return clean_json(coins[:limit])

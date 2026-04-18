@@ -16,6 +16,7 @@ import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle }
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { TradingViewChart } from "./components/TradingViewChart"
+import CoinSearch from "./components/CoinSearch"
 import { OITerminal } from "./components/OITerminal"
 import { EntryLevels } from "./components/EntryLevels"
 
@@ -750,16 +751,7 @@ export default function Dashboard() {
             <Link href="/heatmap" className="text-xs font-bold text-amber-500 hover:text-amber-400 border border-amber-500/30 rounded px-2 py-1 transition-colors">
               🔥 Heatmap
             </Link>
-            <Select value={symbol} onValueChange={setSymbol}>
-              <SelectTrigger className="w-24">
-                <SelectValue placeholder="Symbol" />
-              </SelectTrigger>
-              <SelectContent>
-                {symbols.map(s => (
-                  <SelectItem key={s} value={s}>{s}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <CoinSearch onSelect={(sym) => setSymbol(sym.replace("USDT", ""))} currentSymbol={symbol + "USDT"} />
             <Select value={timeframe} onValueChange={setTimeframe}>
               <SelectTrigger className="w-20">
                 <SelectValue placeholder="TF" />
