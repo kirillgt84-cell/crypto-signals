@@ -802,9 +802,7 @@ export default function Dashboard() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="flex-1 pt-0 min-h-0 flex flex-col">
-                <ProBlurOverlay title="Pro Analysis" description="See full OI interpretation, market state, and actionable signals.">
-                  <OITerminal analysis={oiAnalysis} loading={loading} />
-                </ProBlurOverlay>
+                <OITerminal analysis={oiAnalysis} loading={loading} />
               </CardContent>
             </Card>
           </div>
