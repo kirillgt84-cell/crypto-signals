@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react"
 import Link from "next/link"
-import { TrendingUp, TrendingDown, Minus, Activity, BarChart3, Wallet, Target, Zap, Loader2, ArrowRight } from "lucide-react"
+import { TrendingUp, TrendingDown, Minus, Activity, BarChart3, Wallet, Target, Zap, Loader2, ArrowRight, Radio } from "lucide-react"
 import { UserMenu } from "./components/UserMenu"
 import { AuthModal } from "./components/AuthModal"
 import { ProBlurOverlay } from "./components/ProBlurOverlay"
@@ -275,12 +275,12 @@ function ChartSection({ symbol, timeframe, data, loading, className }: { symbol:
   return (
     <Card className={cn("flex flex-col", className)}>
       <CardHeader className="gap-2 shrink-0">
-        <CardTitle>Price Action & OI Analysis</CardTitle>
+        <CardTitle>Real-time chart</CardTitle>
         <CardDescription>
           {loading ? (
             "Loading market data..."
           ) : (
-            <>Real-time chart with POC, EMA levels for <strong>{symbol}</strong> at <span className="font-mono font-bold">${price > 0 ? price.toLocaleString(undefined, {minimumFractionDigits: decimals, maximumFractionDigits: decimals}) : "--"}</span> on {timeframes.find(tf => tf.value === timeframe)?.label}</>
+            <><strong>{symbol}</strong> at <span className="font-mono font-bold">${price > 0 ? price.toLocaleString(undefined, {minimumFractionDigits: decimals, maximumFractionDigits: decimals}) : "--"}</span> on {timeframes.find(tf => tf.value === timeframe)?.label}</>
           )}
         </CardDescription>
       </CardHeader>
@@ -796,10 +796,13 @@ export default function Dashboard() {
           <div className="lg:w-1/3 flex flex-col">
             <Card className="flex flex-col flex-1">
               <CardHeader className="gap-2 pb-2 shrink-0">
-                <CardTitle>OI Analysis</CardTitle>
-                <CardDescription>
-                  Open Interest + Price + Volume
-                </CardDescription>
+                <CardTitle className="flex items-center gap-2 text-sm font-bold tracking-widest text-amber-500">
+                <Radio className="w-4 h-4" />
+                OI ANALYSIS
+              </CardTitle>
+              <CardDescription className="text-[10px] text-muted-foreground">
+                Open Interest + Price + Volume
+              </CardDescription>
               </CardHeader>
               <CardContent className="flex-1 pt-0 min-h-0 flex flex-col">
                 <OITerminal analysis={oiAnalysis} loading={loading} />
@@ -812,8 +815,11 @@ export default function Dashboard() {
         <div className="grid grid-cols-1 gap-4 px-4 py-4 lg:grid-cols-2 lg:px-6 items-stretch">
           <Card className="flex flex-col">
             <CardHeader className="gap-2 pb-2">
-              <CardTitle>Short Term Points</CardTitle>
-              <CardDescription>Key levels, sentiment &amp; market positioning</CardDescription>
+              <CardTitle className="flex items-center gap-2 text-sm font-bold tracking-widest text-amber-500">
+                <Target className="w-4 h-4" />
+                SHORT TERM POINTS
+              </CardTitle>
+              <CardDescription className="text-[10px] text-muted-foreground">Key levels, sentiment &amp; market positioning</CardDescription>
             </CardHeader>
             <CardContent className="pt-0 flex-1">
               <ProBlurOverlay title="Pro Levels" description="Get exact entry, stop, and take-profit levels with scenario planning.">

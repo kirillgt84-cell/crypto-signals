@@ -172,7 +172,7 @@ export function FundamentalsCard({ symbol, loading: parentLoading }: Fundamental
     return (
       <Card className="bg-[#0b0f19] border-amber-500/30">
         <CardHeader className="pb-2">
-          <CardTitle className="flex items-center gap-2 text-sm font-bold tracking-widest text-amber-500">
+          <CardTitle className="flex items-center gap-2 text-sm font-bold tracking-widest text-white">
             <Activity className="w-4 h-4" />
             FUNDAMENTAL HEALTH
           </CardTitle>
@@ -192,7 +192,7 @@ export function FundamentalsCard({ symbol, loading: parentLoading }: Fundamental
     return (
       <Card className="bg-[#0b0f19] border-amber-500/30">
         <CardHeader className="pb-2">
-          <CardTitle className="flex items-center gap-2 text-sm font-bold tracking-widest text-amber-500">
+          <CardTitle className="flex items-center gap-2 text-sm font-bold tracking-widest text-white">
             <Activity className="w-4 h-4" />
             FUNDAMENTAL HEALTH
           </CardTitle>
@@ -233,7 +233,7 @@ export function FundamentalsCard({ symbol, loading: parentLoading }: Fundamental
   return (
     <Card className="bg-[#0b0f19] border-amber-500/30">
       <CardHeader className="pb-2">
-        <CardTitle className="flex items-center gap-2 text-sm font-bold tracking-widest text-amber-500">
+        <CardTitle className="flex items-center gap-2 text-sm font-bold tracking-widest text-white">
           <Activity className="w-4 h-4" />
           FUNDAMENTAL HEALTH
         </CardTitle>
