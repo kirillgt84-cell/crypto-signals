@@ -667,7 +667,7 @@ class BinanceFuturesFetcher:
             ls_data, top_data, taker_data = await asyncio.gather(
                 fetch_json(f"{self.BASE_URL}/futures/data/globalLongShortAccountRatio", {"symbol": symbol, "period": "1h", "limit": 1}),
                 fetch_json(f"{self.BASE_URL}/futures/data/topLongShortPositionRatio", {"symbol": symbol, "period": "1h", "limit": 1}),
-                fetch_json(f"{self.BASE_URL}/fapi/v1/takerlongshortRatio", {"symbol": symbol, "period": "1h", "limit": 1}),
+                fetch_json(f"{self.BASE_URL}/futures/data/takerlongshortRatio", {"symbol": symbol, "period": "1h", "limit": 1}),
                 return_exceptions=True
             )
             
