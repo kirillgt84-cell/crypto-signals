@@ -42,8 +42,12 @@ export default function CoinSearch({ onSelect, currentSymbol = "BTCUSDT" }: Coin
     try {
       const res = await fetch(`${API_BASE_URL}/market/coins?limit=300`)
       const data = await res.json()
-      setCoins(data)
-      localStorage.setItem("coins_cache", JSON.stringify(data))
+      if (Array.isArray(data)) {
+        setCoins(data)
+        localStorage.setItem("coins_cache", JSON.stringify(data))
+      } else {
+        console.warn("Unexpected coins response:", data)
+      }
     } catch {
       const cached = localStorage.getItem("coins_cache")
       if (cached) setCoins(JSON.parse(cached))
@@ -53,6 +57,7 @@ export default function CoinSearch({ onSelect, currentSymbol = "BTCUSDT" }: Coin
   }
 
   const filteredCoins = useMemo(() => {
+    if (!Array.isArray(coins)) return []
     if (!query) {
       const favs = coins.filter((c) => favorites.includes(c.baseAsset))
       const others = coins.filter((c) => !favorites.includes(c.baseAsset))
