@@ -44,9 +44,6 @@ export default function RootLayout({
                       <Link href="/" className="text-slate-400 hover:text-amber-400 text-sm transition-colors">
                         Dashboard
                       </Link>
-                      <Link href="/heatmap" className="text-slate-400 hover:text-amber-400 text-sm transition-colors flex items-center gap-1">
-                        <span>🔥</span> Heatmap
-                      </Link>
                     </div>
                   </div>
                 </div>

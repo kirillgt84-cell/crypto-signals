@@ -12,7 +12,8 @@ import {
   Menu,
   Settings,
   BarChart3,
-  User
+  User,
+  Flame
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Logo } from '../Logo';
@@ -26,6 +27,7 @@ interface SidebarProps {
 
 const baseNavItems = [
   { href: '/', label: 'Dashboard', icon: LayoutDashboard },
+  { href: '/heatmap', label: 'Heatmap', icon: Flame },
   { href: '/etf', label: 'ETF Analytics', icon: BarChart3 },
 ];
 
