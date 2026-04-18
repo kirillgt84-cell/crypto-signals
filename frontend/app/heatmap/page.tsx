@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState, useCallback, Suspense } from "react"
+import { useEffect, useState, useCallback, Suspense, useRef } from "react"
 import { useSearchParams } from "next/navigation"
 import { Treemap, ResponsiveContainer } from "recharts"
 import { Loader2, Flame } from "lucide-react"
@@ -107,6 +107,21 @@ function HeatmapContent() {
   const [data, setData] = useState<HeatmapItem[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const chartRef = useRef<HTMLDivElement>(null)
+  const [chartSize, setChartSize] = useState({ width: 0, height: 0 })
+
+  useEffect(() => {
+    const el = chartRef.current
+    if (!el) return
+    const ro = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        const { width, height } = entry.contentRect
+        setChartSize({ width, height })
+      }
+    })
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [])
 
   const fetchData = useCallback(async () => {
     setLoading(true)
@@ -228,17 +243,23 @@ function HeatmapContent() {
         )}
 
         {treemapData.length > 0 && (
-          <div className="w-full" style={{ height: "calc(100vh - 160px)", minHeight: 400 }}>
-            <ResponsiveContainer width="100%" height="100%" minHeight={400}>
-              <Treemap
-                data={treemapData}
-                dataKey="size"
-                aspectRatio={4 / 3}
-                stroke="#0b0f19"
-                fill="#8884d8"
-                content={<TreemapCell />}
-              />
-            </ResponsiveContainer>
+          <div
+            ref={chartRef}
+            className="w-full"
+            style={{ height: "calc(100vh - 160px)", minHeight: 400 }}
+          >
+            {chartSize.width > 0 && chartSize.height > 0 && (
+              <ResponsiveContainer width="100%" height="100%">
+                <Treemap
+                  data={treemapData}
+                  dataKey="size"
+                  aspectRatio={4 / 3}
+                  stroke="#0b0f19"
+                  fill="#8884d8"
+                  content={<TreemapCell />}
+                />
+              </ResponsiveContainer>
+            )}
           </div>
         )}
       </main>
