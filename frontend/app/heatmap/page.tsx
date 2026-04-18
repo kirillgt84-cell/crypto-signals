@@ -89,8 +89,8 @@ function computeTreemapLayout(items: HeatmapItem[], width: number, height: numbe
 
 function HeatmapContent() {
   const searchParams = useSearchParams()
-  const [timeframe, setTimeframe] = useState(searchParams.get("tf") || "1h")
-  const [sector, setSector] = useState(searchParams.get("sector") || "all")
+  const [timeframe, setTimeframe] = useState(searchParams?.get("tf") || "1h")
+  const [sector, setSector] = useState(searchParams?.get("sector") || "all")
   const [data, setData] = useState<HeatmapItem[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
