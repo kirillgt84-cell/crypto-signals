@@ -100,3 +100,27 @@ CREATE TABLE IF NOT EXISTS heatmap_snapshots (
 
 CREATE INDEX IF NOT EXISTS idx_heatmap_time ON heatmap_snapshots(snapshot_time);
 CREATE INDEX IF NOT EXISTS idx_heatmap_symbol_time ON heatmap_snapshots(symbol, snapshot_time);
+
+-- Anomaly signals table (Volume Spike / OI Anomaly Scanner)
+CREATE TABLE IF NOT EXISTS anomaly_signals (
+    id SERIAL PRIMARY KEY,
+    symbol VARCHAR(20) NOT NULL,
+    base_asset VARCHAR(20),
+    category VARCHAR(30),
+    direction VARCHAR(10) NOT NULL,
+    score INTEGER NOT NULL,
+    volume_ratio DOUBLE PRECISION,
+    oi_change_pct DOUBLE PRECISION,
+    price_change_24h_pct DOUBLE PRECISION,
+    price DOUBLE PRECISION,
+    quote_volume_24h DOUBLE PRECISION,
+    confidence VARCHAR(10) NOT NULL,
+    details TEXT,
+    triggered_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    expires_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(symbol, triggered_at)
+);
+
+CREATE INDEX IF NOT EXISTS idx_anomaly_active ON anomaly_signals(expires_at, score DESC);
+CREATE INDEX IF NOT EXISTS idx_anomaly_symbol ON anomaly_signals(symbol, triggered_at DESC);
+CREATE INDEX IF NOT EXISTS idx_anomaly_category ON anomaly_signals(category, score DESC);

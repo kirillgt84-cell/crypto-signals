@@ -13,7 +13,8 @@ import {
   Settings,
   BarChart3,
   User,
-  Flame
+  Flame,
+  Zap
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Logo } from '../Logo';
@@ -28,6 +29,7 @@ interface SidebarProps {
 const baseNavItems = [
   { href: '/', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/heatmap', label: 'Heatmap', icon: Flame },
+  { href: '/signals', label: 'Signals', icon: Zap },
   { href: '/etf', label: 'ETF Analytics', icon: BarChart3 },
 ];
 
@@ -43,7 +45,10 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
   const { user } = useAuth();
   const isAdmin = user?.subscription_tier === 'admin';
   
-  const topNavItems = isAdmin ? [...baseNavItems, adminNavItem] : baseNavItems;
+  const topNavItems = [
+    ...baseNavItems,
+    ...(isAdmin ? [adminNavItem] : []),
+  ];
 
   return (
     <>
@@ -125,7 +130,16 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
                   )}
                 >
                   <Icon className={cn("h-5 w-5 flex-shrink-0", isActive && "text-indigo-600 dark:text-indigo-300")} />
-                  {!collapsed && <span>{item.label}</span>}
+                  {!collapsed && (
+                    <span className="flex items-center gap-2">
+                      {item.label}
+                      {item.label === 'Signals' && (
+                        <span className="rounded bg-amber-500/20 px-1.5 py-0.5 text-[10px] font-bold text-amber-400">
+                          PRO
+                        </span>
+                      )}
+                    </span>
+                  )}
                 </Link>
               );
             })}

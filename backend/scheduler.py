@@ -358,8 +358,17 @@ def start_scheduler():
         replace_existing=True
     )
 
+    # Anomaly scanner every 5 minutes
+    scheduler.add_job(
+        run_anomaly_scan,
+        'interval',
+        minutes=5,
+        id='anomaly_scan',
+        replace_existing=True
+    )
+
     scheduler.start()
-    logger.info("[Scheduler] Started - OI snapshot every 5 minutes, Heatmap every 15 minutes, Fundamentals daily at 02:30, ETF flows at 21:30, Reports at 08:00, Telegram alerts hourly")
+    logger.info("[Scheduler] Started - OI snapshot every 5 minutes, Heatmap every 15 minutes, Anomaly scan every 5 minutes, Fundamentals daily at 02:30, ETF flows at 21:30, Reports at 08:00, Telegram alerts hourly")
     return scheduler
 
 def stop_scheduler(scheduler):
@@ -367,3 +376,11 @@ def stop_scheduler(scheduler):
     if scheduler:
         scheduler.shutdown()
         logger.info("[Scheduler] Stopped")
+
+async def run_anomaly_scan():
+    """Scheduled anomaly scanner job."""
+    try:
+        from scanners.anomaly_scanner import run_scanner_job
+        await run_scanner_job()
+    except Exception as e:
+        logger.error(f"[Scheduler] Anomaly scan failed: {e}")

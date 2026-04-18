@@ -96,3 +96,13 @@ CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
 CREATE INDEX IF NOT EXISTS idx_oauth_provider ON oauth_accounts(provider, provider_user_id);
 CREATE INDEX IF NOT EXISTS idx_refresh_tokens_user ON refresh_tokens(user_id);
 CREATE INDEX IF NOT EXISTS idx_refresh_tokens_hash ON refresh_tokens(token_hash);
+
+-- User scanner alert settings
+CREATE TABLE IF NOT EXISTS user_scanner_settings (
+    user_id INTEGER PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+    min_score INTEGER DEFAULT 8,
+    email_alerts BOOLEAN DEFAULT FALSE,
+    telegram_alerts BOOLEAN DEFAULT FALSE,
+    push_alerts BOOLEAN DEFAULT FALSE,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
