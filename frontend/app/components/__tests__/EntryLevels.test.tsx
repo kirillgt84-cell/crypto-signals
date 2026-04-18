@@ -22,7 +22,7 @@ jest.mock("../../context/AuthContext", () => ({
 describe("EntryLevels", () => {
   it("renders loading skeleton", () => {
     render(<EntryLevels data={{ price: 0 } as any} loading={true} />)
-    expect(screen.getByText("KEY WATCH LEVELS")).toBeInTheDocument()
+    expect(screen.getByText("SHORT TERM POINTS")).toBeInTheDocument()
   })
 
   it("shows select symbol message when no price", () => {
@@ -42,7 +42,7 @@ describe("EntryLevels", () => {
 
     render(<EntryLevels data={data} loading={false} />)
 
-    expect(screen.getByText("KEY WATCH LEVELS")).toBeInTheDocument()
+    expect(screen.getByText("SHORT TERM POINTS")).toBeInTheDocument()
     
     // Check level names appear (POC may appear in tooltip too)
     expect(screen.getByText("VAH")).toBeInTheDocument()

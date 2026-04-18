@@ -101,7 +101,7 @@ describe('Dashboard Integration', () => {
 
     await waitFor(() => {
       // Dashboard has no "Dashboard" heading, check for main content instead
-      expect(screen.getByText('KEY WATCH LEVELS')).toBeInTheDocument()
+      expect(screen.getByText('SHORT TERM POINTS')).toBeInTheDocument()
     }, { timeout: 3000 })
   })
 

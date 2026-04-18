@@ -164,61 +164,6 @@ function MetricCard({
   )
 }
 
-// Row 0.5: Sentiment Cards (Free)
-function SentimentCards({ data, loading }: { data: MarketData; loading: boolean }) {
-  const s = data.sentiment
-  const signalColor = s.sentiment_signal === "bullish" ? "text-emerald-600" : s.sentiment_signal === "bearish" ? "text-red-600" : "text-amber-600"
-  const signalBg = s.sentiment_signal === "bullish" ? "bg-emerald-500/10 border-emerald-500/20" : s.sentiment_signal === "bearish" ? "bg-red-500/10 border-red-500/20" : "bg-amber-500/10 border-amber-500/20"
-  
-  return (
-    <div className="grid grid-cols-1 gap-3 px-4 pb-2 sm:grid-cols-3 lg:px-6">
-      <Card className={cn("border", signalBg)}>
-        <CardHeader className="p-3 pb-2">
-          <CardDescription className="text-xs font-bold uppercase tracking-wide">Long/Short Ratio</CardDescription>
-          {loading ? (
-            <div className="h-7 flex items-center"><Loader2 className="h-4 w-4 animate-spin text-muted-foreground" /></div>
-          ) : (
-            <CardTitle className="text-lg font-bold tabular-nums">{s.long_short_ratio.toFixed(2)}</CardTitle>
-          )}
-        </CardHeader>
-        <CardContent className="px-3 pt-0 pb-3">
-          <p className="text-xs text-muted-foreground">Long: {s.long_accounts_pct.toFixed(1)}% · Short: {s.short_accounts_pct.toFixed(1)}%</p>
-        </CardContent>
-      </Card>
-      
-      <Card className={cn("border", signalBg)}>
-        <CardHeader className="p-3 pb-2">
-          <CardDescription className="text-xs font-bold uppercase tracking-wide">Top Trader L/S</CardDescription>
-          {loading ? (
-            <div className="h-7 flex items-center"><Loader2 className="h-4 w-4 animate-spin text-muted-foreground" /></div>
-          ) : (
-            <CardTitle className="text-lg font-bold tabular-nums">{s.top_trader_ratio.toFixed(2)}</CardTitle>
-          )}
-        </CardHeader>
-        <CardContent className="px-3 pt-0 pb-3">
-          <p className="text-xs text-muted-foreground">Long: {s.top_long_pct.toFixed(1)}% · Short: {s.top_short_pct.toFixed(1)}%</p>
-        </CardContent>
-      </Card>
-      
-      <Card className={cn("border", signalBg)}>
-        <CardHeader className="p-3 pb-2">
-          <CardDescription className="text-xs font-bold uppercase tracking-wide">Taker Buy/Sell</CardDescription>
-          {loading ? (
-            <div className="h-7 flex items-center"><Loader2 className="h-4 w-4 animate-spin text-muted-foreground" /></div>
-          ) : (
-            <CardTitle className="text-lg font-bold tabular-nums">{s.taker_volume_ratio.toFixed(2)}</CardTitle>
-          )}
-        </CardHeader>
-        <CardContent className="px-3 pt-0 pb-3">
-          <p className={cn("text-xs font-medium", signalColor)}>
-            {s.sentiment_signal === "bullish" ? "Bullish dominance" : s.sentiment_signal === "bearish" ? "Bearish dominance" : "Neutral balance"}
-          </p>
-        </CardContent>
-      </Card>
-    </div>
-  )
-}
-
 // Row 1: OI Analysis Cards
 function OIAnalysisCards({ data, loading, timeframe }: { data: MarketData; loading: boolean; timeframe: string }) {
   const price = data?.price || 0
@@ -845,9 +790,6 @@ export default function Dashboard() {
           </div>
         )}
 
-        {/* Row 0.5: Sentiment Cards */}
-        <SentimentCards data={marketData} loading={loading} />
-
         {/* Row 1: OI Analysis Cards */}
         <OIAnalysisCards data={marketData} loading={loading} timeframe={timeframe} />
 
@@ -873,16 +815,16 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Row 4: Entry Levels + Fundamentals */}
+        {/* Row 4: Short Term Points + Fundamentals */}
         <div className="grid grid-cols-1 gap-4 px-4 py-4 lg:grid-cols-2 lg:px-6 items-stretch">
           <Card className="flex flex-col">
             <CardHeader className="gap-2 pb-2">
-              <CardTitle>Entry Levels</CardTitle>
-              <CardDescription>Key support and resistance zones</CardDescription>
+              <CardTitle>Short Term Points</CardTitle>
+              <CardDescription>Key levels, sentiment &amp; market positioning</CardDescription>
             </CardHeader>
             <CardContent className="pt-0 flex-1">
               <ProBlurOverlay title="Pro Levels" description="Get exact entry, stop, and take-profit levels with scenario planning.">
-                <EntryLevels data={marketData} loading={loading} />
+                <EntryLevels data={marketData} sentiment={marketData.sentiment} loading={loading} />
               </ProBlurOverlay>
             </CardContent>
           </Card>
