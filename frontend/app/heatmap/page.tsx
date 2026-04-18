@@ -68,8 +68,9 @@ function formatVolume(v: number) {
 
 function TreemapCell(props: any) {
   const { x, y, width, height, name, payload } = props
-  const change = payload.volume_change_pct || 0
-  const maxChange = payload._maxChange || 50
+  if (!payload || width <= 0 || height <= 0) return null
+  const change = payload?.volume_change_pct || 0
+  const maxChange = payload?._maxChange || 50
   const bg = getColor(change, maxChange)
   const textColor = change > 0 ? "#dcfce7" : change < 0 ? "#ffe4e6" : "#e2e8f0"
 
@@ -227,8 +228,8 @@ function HeatmapContent() {
         )}
 
         {treemapData.length > 0 && (
-          <div className="w-full" style={{ height: "calc(100vh - 160px)" }}>
-            <ResponsiveContainer width="100%" height="100%">
+          <div className="w-full" style={{ height: "calc(100vh - 160px)", minHeight: 400 }}>
+            <ResponsiveContainer width="100%" height="100%" minHeight={400}>
               <Treemap
                 data={treemapData}
                 dataKey="size"
