@@ -18,8 +18,7 @@ import { Button } from "@/components/ui/button"
 import { TradingViewChart } from "./components/TradingViewChart"
 import { OITerminal } from "./components/OITerminal"
 import { EntryLevels } from "./components/EntryLevels"
-import { LiquidationMap } from "./components/LiquidationMap"
-import { OrderBook } from "./components/OrderBook"
+
 import { FundamentalsCard } from "./components/FundamentalsCard"
 import Sidebar from "./components/admin/Sidebar"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -92,24 +91,6 @@ interface OIAnalysis {
   volume_change_pct?: number
 }
 
-interface LiquidationHeatmap {
-  buckets: {
-    price: number
-    longSize: number
-    shortSize: number
-    totalSize: number
-    count: number
-  }[]
-  meta: {
-    maxSize: number
-    totalLongs: number
-    totalShorts: number
-    count: number
-    bucketSize: number
-    priceRange: [number, number]
-    source: string
-  }
-}
 
 function formatVolumeUSD(value: number): string {
   const abs = Math.abs(value)
@@ -528,7 +509,7 @@ export default function Dashboard() {
     },
   })
   const [oiAnalysis, setOiAnalysis] = useState<OIAnalysis | null>(null)
-  const [liquidationHeatmap, setLiquidationHeatmap] = useState<LiquidationHeatmap | null>(null)
+
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   // ETF card hidden until live data source is restored
@@ -712,13 +693,7 @@ export default function Dashboard() {
         } : null
         setOiAnalysis(enrichedAnalysis)
         
-        // Set liquidation heatmap from levels data
-        if (levelsData.liquidation_heatmap) {
-          setLiquidationHeatmap(levelsData.liquidation_heatmap)
-        } else {
-          setLiquidationHeatmap(null)
-        }
-        
+
       } catch (err) {
         console.error("Failed to fetch market data:", err)
         setError("API error. Using demo data.")
@@ -782,7 +757,7 @@ export default function Dashboard() {
         })
         
         const liqPrice = (!marketData || marketData.price === 0) ? fallbackPrice : marketData.price
-        setLiquidationHeatmap(null)
+
       } finally {
         setLoading(false)
         isFirstLoad.current = false
@@ -898,29 +873,7 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Row 4: Order Book + Liquidation Map */}
-        <div className="grid grid-cols-1 gap-4 px-4 py-4 lg:grid-cols-2 lg:px-6 items-stretch">
-          <Card className="flex flex-col">
-            <CardHeader className="gap-2 pb-2">
-              <CardTitle>Order Book</CardTitle>
-              <CardDescription>Large orders & whale walls visualization</CardDescription>
-            </CardHeader>
-            <CardContent className="pt-0 flex-1">
-              <OrderBook key={`ob-${symbol}`} symbol={symbol} currentPrice={marketData.price} loading={loading} />
-            </CardContent>
-          </Card>
-          <Card className="flex flex-col">
-            <CardHeader className="gap-2 pb-2">
-              <CardTitle>Liquidation Map</CardTitle>
-              <CardDescription>Historical liquidation density from OKX</CardDescription>
-            </CardHeader>
-            <CardContent className="pt-0 flex-1">
-              <LiquidationMap key={`liq-${symbol}`} heatmap={liquidationHeatmap} currentPrice={marketData.price} symbol={symbol} loading={loading} />
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Row 5: Entry Levels + Fundamentals */}
+        {/* Row 4: Entry Levels + Fundamentals */}
         <div className="grid grid-cols-1 gap-4 px-4 py-4 lg:grid-cols-2 lg:px-6 items-stretch">
           <Card className="flex flex-col">
             <CardHeader className="gap-2 pb-2">
