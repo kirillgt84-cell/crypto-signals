@@ -214,15 +214,10 @@ export default function HeatmapClient({ initialData }: { initialData: HeatmapIte
                   >
                     {showText && (
                       <div className="p-1.5">
-                        <div className="text-[10px] font-bold truncate" style={{ color: textColor }}>{cell.item.symbol}</div>
-                        <div className="text-[9px] opacity-90" style={{ color: textColor }}>
+                        <div className="text-[11px] font-bold truncate" style={{ color: textColor }}>{cell.item.symbol}</div>
+                        <div className="text-[10px] opacity-90" style={{ color: textColor }}>
                           {change > 0 ? "+" : ""}{change.toFixed(1)}%
                         </div>
-                        {cell.w > 70 && cell.h > 50 && (
-                          <div className="text-[8px] opacity-70 mt-0.5" style={{ color: textColor }}>
-                            Vol {formatVolume(cell.item.quote_volume_24h)}
-                          </div>
-                        )}
                       </div>
                     )}
                   </div>
