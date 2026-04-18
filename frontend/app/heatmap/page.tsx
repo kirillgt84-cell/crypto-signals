@@ -2,9 +2,9 @@
 
 import { useEffect, useState, useCallback, Suspense, useLayoutEffect } from "react"
 import { useSearchParams } from "next/navigation"
-import { Treemap, ResponsiveContainer } from "recharts"
 import { Loader2, Flame } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { hierarchy, treemap as d3Treemap } from "d3-hierarchy"
 
 const API_BASE_URL = "https://crypto-signals-production-ff4c.up.railway.app/api/v1"
 
@@ -47,12 +47,10 @@ interface HeatmapItem {
 function getColor(change: number, maxChange: number) {
   const intensity = Math.min(Math.abs(change) / (maxChange || 1), 1)
   if (change > 0) {
-    // emerald green
     const alpha = 0.25 + intensity * 0.75
     return `rgba(34, 197, 94, ${alpha})`
   }
   if (change < 0) {
-    // rose red
     const alpha = 0.25 + intensity * 0.75
     return `rgba(244, 63, 94, ${alpha})`
   }
@@ -66,38 +64,27 @@ function formatVolume(v: number) {
   return v.toFixed(0)
 }
 
-function TreemapCell(props: any) {
-  const { x, y, width, height, name, payload } = props
-  if (!payload || width <= 0 || height <= 0) return null
-  const change = payload?.volume_change_pct || 0
-  const maxChange = payload?._maxChange || 50
-  const bg = getColor(change, maxChange)
-  const textColor = change > 0 ? "#dcfce7" : change < 0 ? "#ffe4e6" : "#e2e8f0"
+function computeTreemapLayout(items: HeatmapItem[], width: number, height: number) {
+  if (!items.length || width <= 0 || height <= 0) return []
+  const root = hierarchy<any>({
+    children: items.map((item) => ({ value: Math.sqrt(item.quote_volume_24h || 0), item })),
+  })
+    .sum((d: any) => d.value || 0)
+    .sort((a: any, b: any) => (b.value || 0) - (a.value || 0))
 
-  if (width < 40 || height < 30) {
-    return (
-      <g>
-        <rect x={x} y={y} width={width} height={height} fill={bg} stroke="#0b0f19" strokeWidth={1.5} rx={3} />
-      </g>
-    )
-  }
+  d3Treemap<any>()
+    .size([width, height])
+    .paddingInner(1)
+    .paddingOuter(1)
+    .round(true)(root)
 
-  return (
-    <g>
-      <rect x={x} y={y} width={width} height={height} fill={bg} stroke="#0b0f19" strokeWidth={1.5} rx={3} />
-      <text x={x + 6} y={y + 16} fill={textColor} fontSize={11} fontWeight="bold">
-        {name}
-      </text>
-      <text x={x + 6} y={y + 30} fill={textColor} fontSize={9} opacity={0.85}>
-        {change > 0 ? "+" : ""}{change.toFixed(1)}%
-      </text>
-      {width > 70 && height > 45 && (
-        <text x={x + 6} y={y + 42} fill={textColor} fontSize={8} opacity={0.7}>
-          Vol {formatVolume(payload.quote_volume_24h)}
-        </text>
-      )}
-    </g>
-  )
+  return root.leaves().map((leaf: any) => ({
+    x: leaf.x0,
+    y: leaf.y0,
+    w: leaf.x1 - leaf.x0,
+    h: leaf.y1 - leaf.y0,
+    item: leaf.data.item as HeatmapItem,
+  }))
 }
 
 function HeatmapContent() {
@@ -108,6 +95,7 @@ function HeatmapContent() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [chartSize, setChartSize] = useState({ width: 800, height: 600 })
+  const [hovered, setHovered] = useState<HeatmapItem | null>(null)
 
   useLayoutEffect(() => {
     const update = () => {
@@ -143,22 +131,12 @@ function HeatmapContent() {
     return () => clearInterval(interval)
   }, [fetchData])
 
-  // Prepare treemap data
-  const maxChange = Math.max(
-    1,
-    ...data.map((d) => Math.abs(d.volume_change_pct || 0))
-  )
+  const maxChange = Math.max(1, ...data.map((d) => Math.abs(d.volume_change_pct || 0)))
 
-  const treemapData = data.map((item) => ({
-    name: item.symbol,
-    size: Math.sqrt(item.quote_volume_24h || 0),
-    ...item,
-    _maxChange: maxChange,
-  }))
+  const layout = computeTreemapLayout(data, chartSize.width, chartSize.height)
 
   return (
     <div className="min-h-screen bg-[#0b0f19] text-white font-mono">
-      {/* Header */}
       <header className="border-b border-slate-800 px-4 py-4">
         <div className="flex items-center gap-3 mb-4">
           <Flame className="w-6 h-6 text-amber-500" />
@@ -169,9 +147,7 @@ function HeatmapContent() {
           <span className="text-[10px] text-slate-600">(excl. BTC, ETH, SOL, BNB)</span>
         </div>
 
-        {/* Controls */}
         <div className="flex flex-wrap items-center gap-3">
-          {/* Timeframes */}
           <div className="flex items-center gap-1">
             {TIMEFRAMES.map((tf) => (
               <button
@@ -191,7 +167,6 @@ function HeatmapContent() {
 
           <div className="w-px h-5 bg-slate-700" />
 
-          {/* Sectors */}
           <select
             value={sector}
             onChange={(e) => setSector(e.target.value)}
@@ -206,7 +181,6 @@ function HeatmapContent() {
 
           <div className="flex-1" />
 
-          {/* Legend */}
           <div className="flex items-center gap-3 text-[10px] text-slate-400">
             <span className="flex items-center gap-1">
               <span className="w-3 h-3 rounded bg-emerald-500/60" />
@@ -220,7 +194,6 @@ function HeatmapContent() {
         </div>
       </header>
 
-      {/* Content */}
       <main className="p-4">
         {error && (
           <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-lg text-sm text-red-400">
@@ -228,7 +201,7 @@ function HeatmapContent() {
           </div>
         )}
 
-        <div className="w-full relative" style={{ height: chartSize.height || 400 }}>
+        <div className="w-full relative" style={{ height: chartSize.height }}>
           {loading && data.length === 0 && (
             <div className="absolute inset-0 flex items-center justify-center">
               <Loader2 className="w-8 h-8 animate-spin text-amber-500" />
@@ -241,18 +214,61 @@ function HeatmapContent() {
             </div>
           )}
 
-          {treemapData.length > 0 && (
-            <Treemap
-              width={chartSize.width}
-              height={chartSize.height}
-              data={treemapData}
-              dataKey="size"
-              aspectRatio={4 / 3}
-              stroke="#0b0f19"
-              fill="#8884d8"
-            />
+          {layout.length > 0 && (
+            <div className="relative w-full h-full">
+              {layout.map((cell) => {
+                const change = cell.item.volume_change_pct || 0
+                const bg = getColor(change, maxChange)
+                const textColor = change > 0 ? "#dcfce7" : change < 0 ? "#ffe4e6" : "#e2e8f0"
+                const showText = cell.w > 50 && cell.h > 35
+                return (
+                  <div
+                    key={cell.item.symbol}
+                    className="absolute border border-[#0b0f19] overflow-hidden cursor-pointer transition-opacity hover:opacity-80"
+                    style={{
+                      left: cell.x,
+                      top: cell.y,
+                      width: cell.w,
+                      height: cell.h,
+                      backgroundColor: bg,
+                    }}
+                    onMouseEnter={() => setHovered(cell.item)}
+                    onMouseLeave={() => setHovered(null)}
+                  >
+                    {showText && (
+                      <div className="p-1.5">
+                        <div className="text-[10px] font-bold truncate" style={{ color: textColor }}>
+                          {cell.item.symbol}
+                        </div>
+                        <div className="text-[9px] opacity-90" style={{ color: textColor }}>
+                          {change > 0 ? "+" : ""}
+                          {change.toFixed(1)}%
+                        </div>
+                        {cell.w > 70 && cell.h > 50 && (
+                          <div className="text-[8px] opacity-70 mt-0.5" style={{ color: textColor }}>
+                            Vol {formatVolume(cell.item.quote_volume_24h)}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
           )}
         </div>
+
+        {hovered && (
+          <div className="mt-3 p-3 bg-slate-800/50 border border-slate-700 rounded text-xs text-slate-300 flex flex-wrap gap-x-6 gap-y-1">
+            <span className="font-bold text-amber-400">{hovered.symbol}</span>
+            <span>Price: ${hovered.price.toFixed(hovered.price < 1 ? 4 : 2)}</span>
+            <span>24h: {hovered.price_change_pct > 0 ? "+" : ""}{hovered.price_change_pct.toFixed(2)}%</span>
+            <span>Vol Δ: {hovered.volume_change_pct > 0 ? "+" : ""}{hovered.volume_change_pct.toFixed(1)}%</span>
+            <span>OI: {formatVolume(hovered.oi)}</span>
+            <span>OI Δ: {hovered.oi_change_pct > 0 ? "+" : ""}{hovered.oi_change_pct.toFixed(1)}%</span>
+            <span className="text-slate-500">{hovered.category}</span>
+          </div>
+        )}
       </main>
     </div>
   )
@@ -260,11 +276,13 @@ function HeatmapContent() {
 
 export default function HeatmapPage() {
   return (
-    <Suspense fallback={
-      <div className="min-h-screen bg-[#0b0f19] flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-amber-500" />
-      </div>
-    }>
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-[#0b0f19] flex items-center justify-center">
+          <Loader2 className="w-8 h-8 animate-spin text-amber-500" />
+        </div>
+      }
+    >
       <HeatmapContent />
     </Suspense>
   )
