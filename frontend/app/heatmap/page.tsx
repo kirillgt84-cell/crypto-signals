@@ -224,44 +224,42 @@ function HeatmapContent() {
 
       {/* Content */}
       <main className="p-4">
-        {loading && data.length === 0 && (
-          <div className="flex items-center justify-center h-[60vh]">
-            <Loader2 className="w-8 h-8 animate-spin text-amber-500" />
-          </div>
-        )}
-
         {error && (
           <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-lg text-sm text-red-400">
             Error: {error}
           </div>
         )}
 
-        {!loading && data.length === 0 && !error && (
-          <div className="flex items-center justify-center h-[60vh] text-slate-500 text-sm">
-            No data available. Try a different sector or wait for the next snapshot.
-          </div>
-        )}
+        <div
+          ref={chartRef}
+          className="w-full relative"
+          style={{ height: "calc(100vh - 160px)", minHeight: 400 }}
+        >
+          {loading && data.length === 0 && (
+            <div className="absolute inset-0 flex items-center justify-center">
+              <Loader2 className="w-8 h-8 animate-spin text-amber-500" />
+            </div>
+          )}
 
-        {treemapData.length > 0 && (
-          <div
-            ref={chartRef}
-            className="w-full"
-            style={{ height: "calc(100vh - 160px)", minHeight: 400 }}
-          >
-            {chartSize.width > 0 && chartSize.height > 0 && (
-              <ResponsiveContainer width="100%" height="100%">
-                <Treemap
-                  data={treemapData}
-                  dataKey="size"
-                  aspectRatio={4 / 3}
-                  stroke="#0b0f19"
-                  fill="#8884d8"
-                  content={<TreemapCell />}
-                />
-              </ResponsiveContainer>
-            )}
-          </div>
-        )}
+          {!loading && data.length === 0 && !error && (
+            <div className="absolute inset-0 flex items-center justify-center text-slate-500 text-sm">
+              No data available. Try a different sector or wait for the next snapshot.
+            </div>
+          )}
+
+          {treemapData.length > 0 && chartSize.width > 0 && chartSize.height > 0 && (
+            <ResponsiveContainer width="100%" height="100%">
+              <Treemap
+                data={treemapData}
+                dataKey="size"
+                aspectRatio={4 / 3}
+                stroke="#0b0f19"
+                fill="#8884d8"
+                content={<TreemapCell />}
+              />
+            </ResponsiveContainer>
+          )}
+        </div>
       </main>
     </div>
   )
