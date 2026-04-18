@@ -92,10 +92,23 @@ interface OIAnalysis {
   volume_change_pct?: number
 }
 
-interface LiquidationLevel {
-  price: number
-  side: "Long" | "Short"
-  size: number
+interface LiquidationHeatmap {
+  buckets: {
+    price: number
+    longSize: number
+    shortSize: number
+    totalSize: number
+    count: number
+  }[]
+  meta: {
+    maxSize: number
+    totalLongs: number
+    totalShorts: number
+    count: number
+    bucketSize: number
+    priceRange: [number, number]
+    source: string
+  }
 }
 
 function formatVolumeUSD(value: number): string {
@@ -515,7 +528,7 @@ export default function Dashboard() {
     },
   })
   const [oiAnalysis, setOiAnalysis] = useState<OIAnalysis | null>(null)
-  const [liquidations, setLiquidations] = useState<LiquidationLevel[]>([])
+  const [liquidationHeatmap, setLiquidationHeatmap] = useState<LiquidationHeatmap | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   // ETF card hidden until live data source is restored
@@ -699,33 +712,11 @@ export default function Dashboard() {
         } : null
         setOiAnalysis(enrichedAnalysis)
         
-        // Set liquidations from levels data - use real sizes from OKX if available
-        if (levelsData.liquidation_levels) {
-          const liqData = levelsData.liquidation_levels
-          const isRealData = liqData.source === "okx"
-          const formattedLiquidations = [
-            ...(liqData.long_liquidations || []).map((l: any) => ({
-              price: l.price,
-              side: "Long" as const,
-              size: l.size != null ? (isRealData ? l.size * combinedData.price : l.size) : 0,
-              source: liqData.source || "unknown",
-            })),
-            ...(liqData.short_liquidations || []).map((l: any) => ({
-              price: l.price,
-              side: "Short" as const,
-              size: l.size != null ? (isRealData ? l.size * combinedData.price : l.size) : 0,
-              source: liqData.source || "unknown",
-            }))
-          ]
-          setLiquidations(formattedLiquidations)
-        } else if (levelsData.liquidations) {
-          setLiquidations(levelsData.liquidations)
+        // Set liquidation heatmap from levels data
+        if (levelsData.liquidation_heatmap) {
+          setLiquidationHeatmap(levelsData.liquidation_heatmap)
         } else {
-          // Fallback: price levels only, no fabricated volume
-          setLiquidations([
-            { price: combinedData.price * 0.97, side: "Long", size: 0, source: "fallback" },
-            { price: combinedData.price * 1.03, side: "Short", size: 0, source: "fallback" },
-          ])
+          setLiquidationHeatmap(null)
         }
         
       } catch (err) {
@@ -791,10 +782,7 @@ export default function Dashboard() {
         })
         
         const liqPrice = (!marketData || marketData.price === 0) ? fallbackPrice : marketData.price
-        setLiquidations([
-          { price: liqPrice * 0.97, side: "Long", size: 0, source: "fallback" },
-          { price: liqPrice * 1.03, side: "Short", size: 0, source: "fallback" },
-        ])
+        setLiquidationHeatmap(null)
       } finally {
         setLoading(false)
         isFirstLoad.current = false
@@ -924,10 +912,10 @@ export default function Dashboard() {
           <Card className="flex flex-col">
             <CardHeader className="gap-2 pb-2">
               <CardTitle>Liquidation Map</CardTitle>
-              <CardDescription>Estimated liquidation clusters by price</CardDescription>
+              <CardDescription>Historical liquidation density from OKX</CardDescription>
             </CardHeader>
             <CardContent className="pt-0 flex-1">
-              <LiquidationMap key={`liq-${symbol}`} liquidations={liquidations} currentPrice={marketData.price} symbol={symbol} loading={loading} />
+              <LiquidationMap key={`liq-${symbol}`} heatmap={liquidationHeatmap} currentPrice={marketData.price} symbol={symbol} loading={loading} />
             </CardContent>
           </Card>
         </div>

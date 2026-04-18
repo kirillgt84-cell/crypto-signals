@@ -2,7 +2,8 @@
 Router для market data (OI, CVD, Clusters, Checklist)
 """
 from datetime import datetime, timedelta
-from typing import Dict
+from typing import Dict, Optional
+from collections import defaultdict
 from fastapi import APIRouter, HTTPException, Query
 from fetchers.binance_futures import BinanceFuturesFetcher
 from fetchers.okx import OKXFetcher
@@ -50,6 +51,92 @@ async def get_liquidation_levels_enriched(symbol: str) -> Dict:
         "closest_short": round(closest_short, 2),
         "funding_signal": base_data.get("funding_signal", "neutral"),
         "source": "okx"
+    }
+
+
+async def get_liquidation_heatmap(symbol: str, bucket_size: Optional[float] = None) -> Dict:
+    """
+    Aggregates OKX liquidation data into price buckets for heatmap visualization.
+    Sizes are converted to USDT value for consistent comparison.
+    """
+    okx_items_raw = await okx_fetcher.get_liquidation_data(symbol)
+
+    if not okx_items_raw:
+        return {
+            "buckets": [],
+            "meta": {
+                "maxSize": 0,
+                "totalLongs": 0,
+                "totalShorts": 0,
+                "count": 0,
+                "bucketSize": 0,
+                "priceRange": [0, 0],
+                "source": "none"
+            }
+        }
+
+    # Convert sizes to USDT value (sz * price)
+    okx_items = []
+    for item in okx_items_raw:
+        okx_items.append({
+            "price": item["price"],
+            "size": item["size"] * item["price"],
+            "side": item["side"],
+        })
+
+    prices = [item["price"] for item in okx_items]
+    min_p, max_p = min(prices), max(prices)
+
+    if bucket_size is None:
+        if min_p >= 20000:
+            bucket_size = 100
+        elif min_p >= 1000:
+            bucket_size = 10
+        elif min_p >= 100:
+            bucket_size = 1
+        elif min_p >= 1:
+            bucket_size = 0.1
+        else:
+            bucket_size = 0.01
+
+    buckets = defaultdict(lambda: {"longSize": 0.0, "shortSize": 0.0, "totalSize": 0.0, "count": 0})
+    for item in okx_items:
+        bucket_price = round(item["price"] / bucket_size) * bucket_size
+        b = buckets[bucket_price]
+        b["totalSize"] += item["size"]
+        b["count"] += 1
+        if item["side"] == "Long":
+            b["longSize"] += item["size"]
+        else:
+            b["shortSize"] += item["size"]
+
+    # Sort high to low (descending price) for vertical display
+    sorted_buckets = []
+    for price in sorted(buckets.keys(), reverse=True):
+        b = buckets[price]
+        sorted_buckets.append({
+            "price": round(price, 4),
+            "longSize": round(b["longSize"], 2),
+            "shortSize": round(b["shortSize"], 2),
+            "totalSize": round(b["totalSize"], 2),
+            "count": b["count"]
+        })
+
+    max_size = max((b["totalSize"] for b in sorted_buckets), default=0)
+    total_longs = sum(b["longSize"] for b in sorted_buckets)
+    total_shorts = sum(b["shortSize"] for b in sorted_buckets)
+
+    return {
+        "buckets": sorted_buckets,
+        "meta": {
+            "maxSize": round(max_size, 2),
+            "totalLongs": round(total_longs, 2),
+            "totalShorts": round(total_shorts, 2),
+            "count": len(okx_items),
+            "bucketSize": bucket_size,
+            "priceRange": [round(min_p, 2), round(max_p, 2)],
+            "source": "okx"
+        }
     }
 
 def clean_json(obj):
@@ -384,7 +471,7 @@ async def get_levels(
     symbol: str,
     timeframe: str = Query("1h", description="Timeframe: 1h, 4h, 1d")
 ):
-    """Ликвидационные уровни и EMA"""
+    """Ликвидационные уровни, heatmap и EMA"""
     try:
         # Добавляем USDT к символу если его нет
         symbol_upper = symbol.upper()
@@ -392,12 +479,14 @@ async def get_levels(
             symbol_upper = f"{symbol_upper}USDT"
         
         liquidation = await get_liquidation_levels_enriched(symbol_upper)
+        heatmap = await get_liquidation_heatmap(symbol_upper)
         ema = await fetcher.get_ema_levels(symbol_upper, timeframe)
         
         return {
             "symbol": symbol,
             "timeframe": timeframe,
             "liquidation_levels": liquidation,
+            "liquidation_heatmap": heatmap,
             "ema_levels": ema,
             "timestamp": datetime.utcnow().isoformat()
         }
