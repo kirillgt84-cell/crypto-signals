@@ -527,4 +527,84 @@ async def get_sentiment(
         return clean_json(data)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/heatmap")
+async def get_heatmap(
+    timeframe: str = Query("1h", description="Timeframe: m15, 1h, 4h, 1d"),
+    sector: str = Query("all", description="Sector filter: all, meme, defi, ai, gaming, layer-1, layer-2, infra, pow, metaverse, storage, nft, payment, rwa"),
+    limit: int = Query(100, ge=1, le=300),
+    min_volume: float = Query(1_000_000, ge=0, description="Minimum 24h quote volume in USDT"),
+):
+    """
+    Heatmap data: volume & OI changes across Binance Futures pairs (excludes BTC, ETH, SOL, BNB).
+    Compares current snapshot with historical snapshot based on timeframe.
+    """
+    from datetime import timedelta
+    try:
+        db = get_db()
+
+        # Map timeframe to minutes
+        tf_minutes = {"m15": 15, "1h": 60, "4h": 240, "1d": 1440}
+        minutes = tf_minutes.get(timeframe, 60)
+
+        # Get latest snapshot for each symbol
+        latest_rows = await db.query(
+            """SELECT DISTINCT ON (symbol)
+                  symbol, category, price, volume_24h, quote_volume_24h, price_change_pct, oi, snapshot_time
+               FROM heatmap_snapshots
+               WHERE quote_volume_24h >= $1
+               ORDER BY symbol, snapshot_time DESC""",
+            [min_volume]
+        )
+
+        if not latest_rows:
+            return clean_json({"timeframe": timeframe, "sector": sector, "items": []})
+
+        # Find previous snapshot for each symbol
+        items = []
+        for row in latest_rows:
+            sym = row["symbol"]
+            prev_rows = await db.query(
+                """SELECT volume_24h, quote_volume_24h, oi
+                   FROM heatmap_snapshots
+                   WHERE symbol = $1 AND snapshot_time <= NOW() - INTERVAL '%s minutes'
+                   ORDER BY snapshot_time DESC LIMIT 1""" % minutes,
+                [sym]
+            )
+
+            prev_vol = prev_rows[0]["quote_volume_24h"] if prev_rows else row["quote_volume_24h"]
+            prev_oi = prev_rows[0]["oi"] if prev_rows else row["oi"]
+
+            vol_change_pct = ((row["quote_volume_24h"] - prev_vol) / prev_vol * 100) if prev_vol and prev_vol > 0 else 0
+            oi_change_pct = ((row["oi"] - prev_oi) / prev_oi * 100) if prev_oi and prev_oi > 0 else 0
+
+            # Sector filter
+            cat = row["category"] or "Other"
+            if sector != "all" and cat.lower() != sector.lower():
+                continue
+
+            items.append({
+                "symbol": sym,
+                "category": cat,
+                "price": float(row["price"] or 0),
+                "price_change_pct": float(row["price_change_pct"] or 0),
+                "quote_volume_24h": float(row["quote_volume_24h"] or 0),
+                "volume_change_pct": round(vol_change_pct, 2),
+                "oi": float(row["oi"] or 0),
+                "oi_change_pct": round(oi_change_pct, 2),
+            })
+
+        # Sort by absolute volume change desc, then by absolute OI change
+        items.sort(key=lambda x: (abs(x["volume_change_pct"]), abs(x["oi_change_pct"])), reverse=True)
+
+        return clean_json({
+            "timeframe": timeframe,
+            "sector": sector,
+            "count": len(items),
+            "items": items[:limit],
+        })
+    except Exception as e:
+        import traceback
+        raise HTTPException(status_code=500, detail=f"{str(e)}\n{traceback.format_exc()}")
 # Deploy timestamp: Sun Apr 12 09:39:12 CEST 2026

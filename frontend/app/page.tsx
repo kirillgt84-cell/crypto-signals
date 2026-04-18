@@ -747,6 +747,9 @@ export default function Dashboard() {
         <header className="flex h-16 items-center justify-between border-b border-border px-4 lg:px-6">
           <div className="flex items-center gap-4">
             <h1 className="text-xl font-semibold">Fast Lane</h1>
+            <Link href="/heatmap" className="text-xs font-bold text-amber-500 hover:text-amber-400 border border-amber-500/30 rounded px-2 py-1 transition-colors">
+              🔥 Heatmap
+            </Link>
             <Select value={symbol} onValueChange={setSymbol}>
               <SelectTrigger className="w-24">
                 <SelectValue placeholder="Symbol" />

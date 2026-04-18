@@ -9,6 +9,7 @@ from fetchers.binance_futures import BinanceFuturesFetcher
 from database import get_db
 from services.notifications import send_daily_reports, send_weekly_reports, send_telegram_alerts
 from fetchers.etf_farside import FarsideETFFetcher
+from fetchers.binance_heatmap import BinanceHeatmapFetcher
 
 logger = logging.getLogger(__name__)
 
@@ -79,6 +80,47 @@ async def run_weekly_reports():
         logger.info("[Scheduler] Weekly reports job completed")
     except Exception as e:
         logger.error(f"[Scheduler] Weekly reports failed: {e}")
+
+async def save_heatmap_snapshot():
+    """Сохраняет snapshot всех Binance Futures пар для heatmap"""
+    try:
+        fetcher = BinanceHeatmapFetcher()
+        db = get_db()
+
+        snapshot = await fetcher.get_snapshot()
+        inserted = 0
+        for item in snapshot:
+            try:
+                await db.execute(
+                    """INSERT INTO heatmap_snapshots
+                       (symbol, category, price, volume_24h, quote_volume_24h, price_change_pct, oi, snapshot_time)
+                       VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())
+                       ON CONFLICT (symbol, snapshot_time) DO NOTHING""",
+                    [
+                        item["symbol"],
+                        item["category"],
+                        item["price"],
+                        item["volume_24h"],
+                        item["quote_volume_24h"],
+                        item["price_change_pct"],
+                        item["oi"],
+                    ]
+                )
+                inserted += 1
+            except Exception as e:
+                logger.error(f"[Scheduler] Heatmap insert error for {item.get('symbol')}: {e}")
+                continue
+
+        # Cleanup old snapshots (> 7 days)
+        await db.execute(
+            "DELETE FROM heatmap_snapshots WHERE snapshot_time < NOW() - INTERVAL '7 days'"
+        )
+
+        await fetcher.close()
+        logger.info(f"[Scheduler] Heatmap snapshot saved: {inserted}/{len(snapshot)} symbols")
+    except Exception as e:
+        logger.error(f"[Scheduler] Heatmap snapshot failed: {e}")
+
 
 async def save_etf_snapshot():
     """Собирает Bitcoin ETF flow данные с Farside"""
@@ -307,8 +349,17 @@ def start_scheduler():
         replace_existing=True
     )
     
+    # Heatmap snapshot every 15 minutes
+    scheduler.add_job(
+        save_heatmap_snapshot,
+        'interval',
+        minutes=15,
+        id='heatmap_snapshot',
+        replace_existing=True
+    )
+
     scheduler.start()
-    logger.info("[Scheduler] Started - OI snapshot every 5 minutes, Fundamentals daily at 02:30, ETF flows at 21:30, Reports at 08:00, Telegram alerts hourly")
+    logger.info("[Scheduler] Started - OI snapshot every 5 minutes, Heatmap every 15 minutes, Fundamentals daily at 02:30, ETF flows at 21:30, Reports at 08:00, Telegram alerts hourly")
     return scheduler
 
 def stop_scheduler(scheduler):

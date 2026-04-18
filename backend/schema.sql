@@ -83,3 +83,20 @@ CREATE TABLE IF NOT EXISTS etf_daily_summary (
 );
 
 CREATE INDEX IF NOT EXISTS idx_etf_daily_summary_date ON etf_daily_summary(date DESC);
+
+-- Heatmap snapshots for volume/OI change tracking (Binance Futures)
+CREATE TABLE IF NOT EXISTS heatmap_snapshots (
+    id SERIAL PRIMARY KEY,
+    symbol VARCHAR(20) NOT NULL,
+    category VARCHAR(30),
+    price DOUBLE PRECISION,
+    volume_24h DOUBLE PRECISION,
+    quote_volume_24h DOUBLE PRECISION,
+    price_change_pct DOUBLE PRECISION,
+    oi DOUBLE PRECISION,
+    snapshot_time TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(symbol, snapshot_time)
+);
+
+CREATE INDEX IF NOT EXISTS idx_heatmap_time ON heatmap_snapshots(snapshot_time);
+CREATE INDEX IF NOT EXISTS idx_heatmap_symbol_time ON heatmap_snapshots(symbol, snapshot_time);
