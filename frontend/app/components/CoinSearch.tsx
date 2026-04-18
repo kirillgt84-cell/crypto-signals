@@ -155,14 +155,13 @@ export default function CoinSearch({ onSelect, currentSymbol = "BTCUSDT" }: Coin
           className="w-full pl-10 pr-14 py-2 bg-transparent text-white font-mono text-sm placeholder-slate-500 focus:outline-none"
         />
         {!isOpen && selectedCoin && (
-          <div className="absolute right-8 flex items-center gap-1 text-xs">
+          <div className="absolute right-3 flex items-center gap-1 text-xs">
             <span className={selectedCoin.priceChangePercent >= 0 ? "text-emerald-400" : "text-rose-400"}>
               {selectedCoin.priceChangePercent >= 0 ? "+" : ""}
               {selectedCoin.priceChangePercent.toFixed(2)}%
             </span>
           </div>
         )}
-        <span className="absolute right-2 text-[10px] text-slate-500 font-mono">USDT</span>
       </div>
 
       <AnimatePresence>
