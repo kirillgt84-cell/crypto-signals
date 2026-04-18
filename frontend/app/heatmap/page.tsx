@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState, useCallback } from "react"
+import { useEffect, useState, useCallback, Suspense } from "react"
 import { useSearchParams } from "next/navigation"
 import { Treemap, ResponsiveContainer } from "recharts"
 import { Loader2, Flame } from "lucide-react"
@@ -99,7 +99,7 @@ function TreemapCell(props: any) {
   )
 }
 
-export default function HeatmapPage() {
+function HeatmapContent() {
   const searchParams = useSearchParams()
   const [timeframe, setTimeframe] = useState(searchParams.get("tf") || "1h")
   const [sector, setSector] = useState(searchParams.get("sector") || "all")
@@ -242,5 +242,17 @@ export default function HeatmapPage() {
         )}
       </main>
     </div>
+  )
+}
+
+export default function HeatmapPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-[#0b0f19] flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-amber-500" />
+      </div>
+    }>
+      <HeatmapContent />
+    </Suspense>
   )
 }
