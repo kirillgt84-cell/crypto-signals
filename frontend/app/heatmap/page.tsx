@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState, useCallback, Suspense } from "react"
+import { useEffect, useState, useCallback, Suspense, useLayoutEffect } from "react"
 import { useSearchParams } from "next/navigation"
 import { Treemap, ResponsiveContainer } from "recharts"
 import { Loader2, Flame } from "lucide-react"
@@ -107,12 +107,12 @@ function HeatmapContent() {
   const [data, setData] = useState<HeatmapItem[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [chartSize, setChartSize] = useState({ width: 0, height: 0 })
+  const [chartSize, setChartSize] = useState({ width: 800, height: 600 })
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const update = () => {
       setChartSize({
-        width: window.innerWidth - 32,
+        width: Math.max(320, window.innerWidth - 32),
         height: Math.max(400, window.innerHeight - 180),
       })
     }
@@ -241,7 +241,7 @@ function HeatmapContent() {
             </div>
           )}
 
-          {treemapData.length > 0 && chartSize.width > 0 && chartSize.height > 0 && (
+          {treemapData.length > 0 && (
             <Treemap
               width={chartSize.width}
               height={chartSize.height}
