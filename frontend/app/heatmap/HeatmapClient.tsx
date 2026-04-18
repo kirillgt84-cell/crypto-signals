@@ -1,9 +1,35 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { hierarchy, treemap as d3Treemap } from "d3-hierarchy"
+import { cn } from "@/lib/utils"
 
 const API_BASE_URL = "https://crypto-signals-production-ff4c.up.railway.app/api/v1"
+
+const TIMEFRAMES = [
+  { value: "m15", label: "M15" },
+  { value: "1h", label: "1H" },
+  { value: "4h", label: "4H" },
+  { value: "1d", label: "1D" },
+]
+
+const SECTORS = [
+  { value: "all", label: "All Sectors" },
+  { value: "Meme", label: "Meme" },
+  { value: "DeFi", label: "DeFi" },
+  { value: "AI", label: "AI" },
+  { value: "Gaming", label: "Gaming" },
+  { value: "Layer-1", label: "Layer-1" },
+  { value: "Layer-2", label: "Layer-2" },
+  { value: "Infrastructure", label: "Infra" },
+  { value: "PoW", label: "PoW" },
+  { value: "Metaverse", label: "Metaverse" },
+  { value: "Storage", label: "Storage" },
+  { value: "NFT", label: "NFT" },
+  { value: "Payment", label: "Payment" },
+  { value: "RWA", label: "RWA" },
+  { value: "Alpha", label: "Alpha" },
+]
 
 interface HeatmapItem {
   symbol: string
@@ -20,7 +46,7 @@ function getColor(change: number, maxChange: number) {
   const intensity = Math.min(Math.abs(change) / (maxChange || 1), 1)
   if (change > 0) return `rgba(34, 197, 94, ${0.25 + intensity * 0.75})`
   if (change < 0) return `rgba(244, 63, 94, ${0.25 + intensity * 0.75})`
-  return "rgba(100, 116, 139, 0.3)"
+  return "rgba(100, 116, 139, 0.55)"
 }
 
 function formatVolume(v: number) {
@@ -54,7 +80,11 @@ function computeLayout(items: HeatmapItem[], width: number, height: number) {
 }
 
 export default function HeatmapClient({ initialData }: { initialData: HeatmapItem[] }) {
+  const [timeframe, setTimeframe] = useState("m15")
+  const [sector, setSector] = useState("all")
   const [data, setData] = useState<HeatmapItem[]>(initialData)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   const [hovered, setHovered] = useState<HeatmapItem | null>(null)
   const [dims, setDims] = useState({ width: 800, height: 600 })
 
@@ -70,19 +100,27 @@ export default function HeatmapClient({ initialData }: { initialData: HeatmapIte
     return () => window.removeEventListener("resize", update)
   }, [])
 
-  // Auto-refresh every 60s
+  const fetchData = useCallback(async () => {
+    setLoading(true)
+    setError(null)
+    try {
+      const url = `${API_BASE_URL}/market/heatmap?timeframe=${timeframe}&sector=${sector}&limit=200&min_volume=500000`
+      const res = await fetch(url)
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      const json = await res.json()
+      setData(json.items || [])
+    } catch (e: any) {
+      setError(e.message)
+    } finally {
+      setLoading(false)
+    }
+  }, [timeframe, sector])
+
   useEffect(() => {
-    const interval = setInterval(async () => {
-      try {
-        const res = await fetch(`${API_BASE_URL}/market/heatmap?timeframe=1d&sector=all&limit=200&min_volume=500000`)
-        if (res.ok) {
-          const json = await res.json()
-          setData(json.items || [])
-        }
-      } catch {}
-    }, 60000)
+    fetchData()
+    const interval = setInterval(fetchData, 60000)
     return () => clearInterval(interval)
-  }, [])
+  }, [fetchData])
 
   const maxChange = Math.max(1, ...data.map((d) => Math.abs(d.volume_change_pct || 0)))
   const layout = computeLayout(data, dims.width, dims.height)
@@ -90,25 +128,75 @@ export default function HeatmapClient({ initialData }: { initialData: HeatmapIte
   return (
     <div className="min-h-screen bg-[#0b0f19] text-white font-mono">
       <header className="border-b border-slate-800 px-4 py-4">
-        <div className="flex items-center gap-3 mb-2">
+        <div className="flex items-center gap-3 mb-4">
           <span className="text-xl">🔥</span>
           <h1 className="text-xl font-bold tracking-widest text-amber-500">VOLUME & OI HEATMAP</h1>
           <span className="text-xs text-slate-500">Binance Futures</span>
           <span className="text-[10px] text-slate-600">(excl. BTC, ETH, SOL, BNB)</span>
         </div>
-        <div className="flex items-center gap-4 text-[10px] text-slate-400">
-          <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-emerald-500/60" />Volume Up</span>
-          <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-rose-500/60" />Volume Down</span>
-          <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-slate-500/60" />Neutral</span>
+
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="flex items-center gap-1">
+            {TIMEFRAMES.map((tf) => (
+              <button
+                key={tf.value}
+                onClick={() => setTimeframe(tf.value)}
+                className={cn(
+                  "px-3 py-1 text-xs font-bold rounded border transition-colors",
+                  timeframe === tf.value
+                    ? "bg-amber-500 text-black border-amber-500"
+                    : "bg-[#0b0f19] text-slate-400 border-slate-700 hover:border-amber-500/50"
+                )}
+              >
+                {tf.label}
+              </button>
+            ))}
+          </div>
+
+          <div className="w-px h-5 bg-slate-700" />
+
+          <select
+            value={sector}
+            onChange={(e) => setSector(e.target.value)}
+            className="bg-[#0b0f19] text-xs text-slate-300 border border-slate-700 rounded px-2 py-1 focus:outline-none focus:border-amber-500"
+          >
+            {SECTORS.map((s) => (
+              <option key={s.value} value={s.value}>
+                {s.label}
+              </option>
+            ))}
+          </select>
+
+          <div className="flex-1" />
+
+          <div className="flex items-center gap-3 text-[10px] text-slate-400">
+            <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-emerald-500/60" />Volume Up</span>
+            <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-rose-500/60" />Volume Down</span>
+            <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-slate-500/60" />Neutral</span>
+          </div>
         </div>
       </header>
 
       <main className="p-4">
-        {data.length === 0 ? (
+        {error && (
+          <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-lg text-sm text-red-400 mb-4">
+            Error: {error}
+          </div>
+        )}
+
+        {loading && data.length === 0 && (
+          <div className="flex items-center justify-center h-[60vh]">
+            <span className="text-amber-500 animate-pulse">Loading...</span>
+          </div>
+        )}
+
+        {!loading && data.length === 0 && !error && (
           <div className="flex items-center justify-center h-[60vh] text-slate-500 text-sm">
             No data available. Try a different sector or wait for the next snapshot.
           </div>
-        ) : (
+        )}
+
+        {data.length > 0 && (
           <>
             <div className="relative w-full" style={{ height: dims.height }}>
               {layout.map((cell) => {

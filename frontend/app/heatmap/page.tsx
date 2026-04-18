@@ -5,7 +5,7 @@ const API_BASE_URL = "https://crypto-signals-production-ff4c.up.railway.app/api/
 async function getHeatmapData() {
   try {
     const res = await fetch(
-      `${API_BASE_URL}/market/heatmap?timeframe=1d&sector=all&limit=200&min_volume=500000`,
+      `${API_BASE_URL}/market/heatmap?timeframe=m15&sector=all&limit=200&min_volume=500000`,
       { next: { revalidate: 60 } }
     )
     if (!res.ok) return []
