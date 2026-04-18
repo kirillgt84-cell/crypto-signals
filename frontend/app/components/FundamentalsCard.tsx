@@ -237,9 +237,6 @@ export function FundamentalsCard({ symbol, loading: parentLoading }: Fundamental
           <Activity className="w-4 h-4" />
           FUNDAMENTAL HEALTH
         </CardTitle>
-        <CardDescription className="text-[10px] text-muted-foreground">
-          MVRV + NUPL + Funding composite index
-        </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         {/* Composite Score */}

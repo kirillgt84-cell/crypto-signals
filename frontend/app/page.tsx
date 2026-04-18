@@ -276,13 +276,6 @@ function ChartSection({ symbol, timeframe, data, loading, className }: { symbol:
     <Card className={cn("flex flex-col", className)}>
       <CardHeader className="gap-2 shrink-0">
         <CardTitle>Real-time chart</CardTitle>
-        <CardDescription>
-          {loading ? (
-            "Loading market data..."
-          ) : (
-            <><strong>{symbol}</strong> at <span className="font-mono font-bold">${price > 0 ? price.toLocaleString(undefined, {minimumFractionDigits: decimals, maximumFractionDigits: decimals}) : "--"}</span> on {timeframes.find(tf => tf.value === timeframe)?.label}</>
-          )}
-        </CardDescription>
       </CardHeader>
       <CardContent className="flex-1 min-h-0 px-2 sm:px-6 flex flex-col">
         <div className="mb-4 min-h-[300px] flex-1">
@@ -800,9 +793,6 @@ export default function Dashboard() {
                 <Radio className="w-4 h-4" />
                 OI ANALYSIS
               </CardTitle>
-              <CardDescription className="text-[10px] text-muted-foreground">
-                Open Interest + Price + Volume
-              </CardDescription>
               </CardHeader>
               <CardContent className="flex-1 pt-0 min-h-0 flex flex-col">
                 <OITerminal analysis={oiAnalysis} loading={loading} />
@@ -819,7 +809,6 @@ export default function Dashboard() {
                 <Target className="w-4 h-4" />
                 SHORT TERM POINTS
               </CardTitle>
-              <CardDescription className="text-[10px] text-muted-foreground">Key levels, sentiment &amp; market positioning</CardDescription>
             </CardHeader>
             <CardContent className="pt-0 flex-1">
               <ProBlurOverlay title="Pro Levels" description="Get exact entry, stop, and take-profit levels with scenario planning.">
