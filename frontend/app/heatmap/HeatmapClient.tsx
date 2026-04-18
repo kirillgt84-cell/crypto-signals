@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect, useCallback, useMemo } from "react"
 import { hierarchy, treemap as d3Treemap } from "d3-hierarchy"
 import { cn } from "@/lib/utils"
 
@@ -49,13 +49,6 @@ function getColor(change: number, maxChange: number) {
   return "rgba(100, 116, 139, 0.55)"
 }
 
-function formatVolume(v: number) {
-  if (v >= 1e9) return `${(v / 1e9).toFixed(1)}B`
-  if (v >= 1e6) return `${(v / 1e6).toFixed(1)}M`
-  if (v >= 1e3) return `${(v / 1e3).toFixed(1)}K`
-  return v.toFixed(0)
-}
-
 function computeLayout(items: HeatmapItem[], width: number, height: number) {
   if (!items.length || width <= 0 || height <= 0) return []
   const root = hierarchy<any>({
@@ -86,19 +79,6 @@ export default function HeatmapClient({ initialData }: { initialData: HeatmapIte
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [hovered, setHovered] = useState<HeatmapItem | null>(null)
-  const [dims, setDims] = useState({ width: 800, height: 600 })
-
-  useEffect(() => {
-    const update = () => {
-      setDims({
-        width: Math.max(320, window.innerWidth - 32),
-        height: Math.max(400, window.innerHeight - 180),
-      })
-    }
-    update()
-    window.addEventListener("resize", update)
-    return () => window.removeEventListener("resize", update)
-  }, [])
 
   const fetchData = useCallback(async () => {
     setLoading(true)
@@ -122,15 +102,33 @@ export default function HeatmapClient({ initialData }: { initialData: HeatmapIte
     return () => clearInterval(interval)
   }, [fetchData])
 
-  const maxChange = Math.max(1, ...data.map((d) => Math.abs(d.volume_change_pct || 0)))
-  const layout = computeLayout(data, dims.width, dims.height)
+  const filteredData = useMemo(() => {
+    if (sector === "all") return data
+    return data.filter((d) => d.category === sector)
+  }, [data, sector])
+
+  const groupedBySector = useMemo(() => {
+    const map = new Map<string, HeatmapItem[]>()
+    for (const item of filteredData) {
+      const cat = item.category || "Other"
+      if (!map.has(cat)) map.set(cat, [])
+      map.get(cat)!.push(item)
+    }
+    return Array.from(map.entries())
+      .map(([name, items]) => ({ name, items }))
+      .sort((a, b) => b.items.length - a.items.length)
+  }, [filteredData])
+
+  const maxChange = Math.max(1, ...filteredData.map((d) => Math.abs(d.volume_change_pct || 0)))
+
+  const isSingleSector = sector !== "all"
 
   return (
     <div className="min-h-screen bg-[#0b0f19] text-white font-mono">
       <header className="border-b border-slate-800 px-4 py-4">
         <div className="flex items-center gap-3 mb-4">
           <span className="text-xl">🔥</span>
-          <h1 className="text-xl font-bold tracking-widest text-amber-500">VOLUME & OI HEATMAP</h1>
+          <h1 className="text-xl font-bold tracking-widest text-amber-500">VOLUME HEATMAP</h1>
           <span className="text-xs text-slate-500">Binance Futures</span>
           <span className="text-[10px] text-slate-600">(excl. BTC, ETH, SOL, BNB)</span>
         </div>
@@ -196,48 +194,96 @@ export default function HeatmapClient({ initialData }: { initialData: HeatmapIte
           </div>
         )}
 
-        {data.length > 0 && (
-          <>
-            <div className="relative w-full" style={{ height: dims.height }}>
-              {layout.map((cell) => {
-                const change = cell.item.volume_change_pct || 0
-                const bg = getColor(change, maxChange)
-                const textColor = change > 0 ? "#dcfce7" : change < 0 ? "#ffe4e6" : "#e2e8f0"
-                const showText = cell.w > 50 && cell.h > 35
-                return (
-                  <div
-                    key={cell.item.symbol}
-                    className="absolute border border-[#0b0f19] overflow-hidden cursor-pointer transition-opacity hover:opacity-80"
-                    style={{ left: cell.x, top: cell.y, width: cell.w, height: cell.h, backgroundColor: bg }}
-                    onMouseEnter={() => setHovered(cell.item)}
-                    onMouseLeave={() => setHovered(null)}
-                  >
-                    {showText && (
-                      <div className="p-1.5">
-                        <div className="text-[11px] font-bold truncate" style={{ color: textColor }}>{cell.item.symbol}</div>
-                        <div className="text-[10px] opacity-90" style={{ color: textColor }}>
-                          {change > 0 ? "+" : ""}{change.toFixed(1)}%
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                )
-              })}
-            </div>
+        {isSingleSector ? (
+          <SectorTreemap
+            name={sector}
+            items={filteredData}
+            maxChange={maxChange}
+            height={600}
+            onHover={setHovered}
+          />
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {groupedBySector.map((group) => (
+              <SectorTreemap
+                key={group.name}
+                name={group.name}
+                items={group.items}
+                maxChange={maxChange}
+                height={280}
+                onHover={setHovered}
+              />
+            ))}
+          </div>
+        )}
 
-            {hovered && (
-              <div className="mt-3 p-3 bg-slate-800/50 border border-slate-700 rounded text-xs text-slate-300 flex flex-wrap gap-x-6 gap-y-1">
-                <span className="font-bold text-amber-400">{hovered.symbol}</span>
-                <span>Price: ${hovered.price.toFixed(hovered.price < 1 ? 4 : 2)}</span>
-                <span>24h: {hovered.price_change_pct > 0 ? "+" : ""}{hovered.price_change_pct.toFixed(2)}%</span>
-                <span>Vol Δ: {hovered.volume_change_pct > 0 ? "+" : ""}{hovered.volume_change_pct.toFixed(1)}%</span>
-                <span>OI: {formatVolume(hovered.oi)}</span>
-                <span className="text-slate-500">{hovered.category}</span>
-              </div>
-            )}
-          </>
+        {hovered && (
+          <div className="mt-3 p-3 bg-slate-800/50 border border-slate-700 rounded text-xs text-slate-300 flex flex-wrap gap-x-6 gap-y-1">
+            <span className="font-bold text-amber-400">{hovered.symbol}</span>
+            <span>Price: ${hovered.price.toFixed(hovered.price < 1 ? 4 : 2)}</span>
+            <span>24h: {hovered.price_change_pct > 0 ? "+" : ""}{hovered.price_change_pct.toFixed(2)}%</span>
+            <span>Vol Δ: {hovered.volume_change_pct > 0 ? "+" : ""}{hovered.volume_change_pct.toFixed(1)}%</span>
+            <span>OI: {hovered.oi >= 1e6 ? `${(hovered.oi / 1e6).toFixed(1)}M` : hovered.oi >= 1e3 ? `${(hovered.oi / 1e3).toFixed(1)}K` : hovered.oi.toFixed(0)}</span>
+            <span className="text-slate-500">{hovered.category}</span>
+          </div>
         )}
       </main>
+    </div>
+  )
+}
+
+function SectorTreemap({
+  name,
+  items,
+  maxChange,
+  height,
+  onHover,
+}: {
+  name: string
+  items: HeatmapItem[]
+  maxChange: number
+  height: number
+  onHover: (item: HeatmapItem | null) => void
+}) {
+  const [width, setWidth] = useState(400)
+  const ref = useCallback((node: HTMLDivElement | null) => {
+    if (node) setWidth(node.getBoundingClientRect().width)
+  }, [])
+
+  const layout = useMemo(() => computeLayout(items, width, height), [items, width, height])
+
+  return (
+    <div ref={ref} className="border border-slate-800 rounded-lg overflow-hidden">
+      <div className="px-3 py-2 bg-slate-800/40 border-b border-slate-800">
+        <span className="text-xs font-bold text-amber-400 uppercase tracking-wider">{name}</span>
+        <span className="text-[10px] text-slate-500 ml-2">{items.length} coins</span>
+      </div>
+      <div className="relative" style={{ height }}>
+        {layout.map((cell) => {
+          const change = cell.item.volume_change_pct || 0
+          const bg = getColor(change, maxChange)
+          const textColor = change > 0 ? "#dcfce7" : change < 0 ? "#ffe4e6" : "#e2e8f0"
+          const showText = cell.w > 55 && cell.h > 38
+          return (
+            <div
+              key={cell.item.symbol}
+              className="absolute border border-[#0b0f19] overflow-hidden cursor-pointer transition-opacity hover:opacity-80"
+              style={{ left: cell.x, top: cell.y, width: cell.w, height: cell.h, backgroundColor: bg }}
+              onMouseEnter={() => onHover(cell.item)}
+              onMouseLeave={() => onHover(null)}
+            >
+              {showText && (
+                <div className="p-1">
+                  <div className="text-[11px] font-bold truncate" style={{ color: textColor }}>{cell.item.symbol}</div>
+                  <div className="text-[10px] opacity-90" style={{ color: textColor }}>
+                    {change > 0 ? "+" : ""}{change.toFixed(1)}%
+                  </div>
+                </div>
+              )}
+            </div>
+          )
+        })}
+      </div>
     </div>
   )
 }
