@@ -15,7 +15,8 @@ import {
   User,
   Flame,
   Zap,
-  Crown
+  Crown,
+  Wallet
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Logo } from '../Logo';
@@ -29,6 +30,7 @@ interface SidebarProps {
 
 const baseNavItems = [
   { href: '/', label: 'Dashboard', icon: LayoutDashboard },
+  { href: '/portfolio', label: 'Portfolio', icon: Wallet },
   { href: '/signals', label: 'Signals', icon: Zap },
   { href: '/pricing', label: 'Pricing', icon: Crown },
 ];

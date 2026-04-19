@@ -177,3 +177,139 @@ VALUES
     ('Pro Yearly', 'Yearly Pro subscription (save 20%)', 279.00, 'USD', 'subscription', 'pro'),
     ('Pro Lifetime', 'One-time lifetime Pro access', 499.00, 'USD', 'one_time', 'pro')
 ON CONFLICT DO NOTHING;
+
+-- Portfolio Module Schema
+
+-- Account sources (CEX, WALLET, MANUAL)
+CREATE TABLE IF NOT EXISTS account_sources (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+    type VARCHAR(20) NOT NULL CHECK (type IN ('cex', 'wallet', 'manual')),
+    provider VARCHAR(50),          -- binance, bybit, okx, metamask, manual
+    label VARCHAR(100),
+    api_key_encrypted TEXT,        -- for CEX
+    api_secret_encrypted TEXT,     -- for CEX
+    wallet_address VARCHAR(100),   -- for WALLET
+    is_active BOOLEAN DEFAULT TRUE,
+    last_sync_at TIMESTAMP,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_account_sources_user ON account_sources(user_id);
+
+-- System categories (admin-managed)
+CREATE TABLE IF NOT EXISTS categories (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(50) NOT NULL UNIQUE,
+    description TEXT,
+    color VARCHAR(7) DEFAULT '#6366f1',
+    is_active BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Seed system categories
+INSERT INTO categories (name, description, color) VALUES
+    ('Layer-1', 'Base layer blockchains', '#10b981'),
+    ('DeFi', 'Decentralized finance', '#6366f1'),
+    ('AI', 'Artificial intelligence tokens', '#f59e0b'),
+    ('RWA', 'Real world assets', '#ec4899'),
+    ('Meme', 'Meme coins', '#8b5cf6'),
+    ('Gaming', 'Gaming and metaverse', '#06b6d4'),
+    ('Stablecoins', 'Stable value assets', '#22c55e'),
+    ('Equities', 'Stock indices and equities', '#3b82f6'),
+    ('Commodities', 'Gold, silver, oil', '#eab308'),
+    ('Other', 'Uncategorized', '#64748b')
+ON CONFLICT (name) DO NOTHING;
+
+-- User-defined categories
+CREATE TABLE IF NOT EXISTS user_categories (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+    name VARCHAR(50) NOT NULL,
+    color VARCHAR(7) DEFAULT '#6366f1',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(user_id, name)
+);
+
+-- Asset category mappings (user override has priority)
+CREATE TABLE IF NOT EXISTS asset_categories (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+    asset_symbol VARCHAR(20) NOT NULL,
+    system_category_id INTEGER REFERENCES categories(id),
+    user_category_id INTEGER REFERENCES user_categories(id),
+    UNIQUE(user_id, asset_symbol)
+);
+
+-- Portfolio models (risk profiles)
+CREATE TABLE IF NOT EXISTS portfolio_models (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(50) NOT NULL,
+    description TEXT,
+    risk_level VARCHAR(20) CHECK (risk_level IN ('conservative', 'balanced', 'aggressive')),
+    is_active BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Model target allocations
+CREATE TABLE IF NOT EXISTS portfolio_model_allocations (
+    id SERIAL PRIMARY KEY,
+    model_id INTEGER REFERENCES portfolio_models(id) ON DELETE CASCADE,
+    category_id INTEGER REFERENCES categories(id) ON DELETE CASCADE,
+    target_weight DECIMAL(5, 2) NOT NULL, -- 0-100%
+    UNIQUE(model_id, category_id)
+);
+
+-- Seed portfolio models
+INSERT INTO portfolio_models (name, description, risk_level) VALUES
+    ('Conservative', 'Low risk, stable assets heavy', 'conservative'),
+    ('Balanced', 'Medium risk, diversified', 'balanced'),
+    ('Aggressive', 'High risk, growth assets heavy', 'aggressive')
+ON CONFLICT DO NOTHING;
+
+-- Portfolio snapshots (assets per sync)
+CREATE TABLE IF NOT EXISTS portfolio_assets (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+    source_id INTEGER REFERENCES account_sources(id) ON DELETE CASCADE,
+    asset_symbol VARCHAR(20) NOT NULL,
+    asset_name VARCHAR(100),
+    amount DECIMAL(20, 8) NOT NULL DEFAULT 0,
+    avg_entry_price DECIMAL(20, 8),
+    current_price DECIMAL(20, 8),
+    unrealized_pnl DECIMAL(20, 2),
+    unrealized_pnl_pct DECIMAL(10, 4),
+    realized_pnl DECIMAL(20, 2),
+    margin DECIMAL(20, 2),
+    notional DECIMAL(20, 2),
+    leverage INTEGER DEFAULT 1,
+    side VARCHAR(10), -- LONG / SHORT / SPOT
+    category_override INTEGER REFERENCES user_categories(id),
+    sync_id UUID,
+    synced_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_portfolio_assets_user ON portfolio_assets(user_id);
+CREATE INDEX IF NOT EXISTS idx_portfolio_assets_symbol ON portfolio_assets(asset_symbol);
+CREATE INDEX IF NOT EXISTS idx_portfolio_assets_sync ON portfolio_assets(sync_id);
+
+-- Portfolio history (aggregated per day)
+CREATE TABLE IF NOT EXISTS portfolio_history (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+    date DATE NOT NULL,
+    total_notional DECIMAL(20, 2),
+    total_unrealized_pnl DECIMAL(20, 2),
+    total_margin DECIMAL(20, 2),
+    UNIQUE(user_id, date)
+);
+
+CREATE INDEX IF NOT EXISTS idx_portfolio_history_user_date ON portfolio_history(user_id, date);
+
+-- User model selection
+CREATE TABLE IF NOT EXISTS user_portfolio_settings (
+    user_id INTEGER PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+    selected_model_id INTEGER REFERENCES portfolio_models(id),
+    manual_portfolio_enabled BOOLEAN DEFAULT FALSE,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);

@@ -124,3 +124,154 @@ CREATE TABLE IF NOT EXISTS anomaly_signals (
 CREATE INDEX IF NOT EXISTS idx_anomaly_active ON anomaly_signals(expires_at, score DESC);
 CREATE INDEX IF NOT EXISTS idx_anomaly_symbol ON anomaly_signals(symbol, triggered_at DESC);
 CREATE INDEX IF NOT EXISTS idx_anomaly_category ON anomaly_signals(category, score DESC);
+
+-- ========== PORTFOLIO MODULE ==========
+
+CREATE TABLE IF NOT EXISTS account_sources (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    type VARCHAR(20) NOT NULL, -- 'cex', 'web3', 'manual'
+    provider VARCHAR(30) NOT NULL, -- 'binance', 'bybit', 'okx', 'metamask', 'manual', etc.
+    label VARCHAR(100),
+    api_key_encrypted TEXT,
+    api_secret_encrypted TEXT,
+    wallet_address VARCHAR(100),
+    is_active BOOLEAN DEFAULT TRUE,
+    last_sync_at TIMESTAMP,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_account_sources_user ON account_sources(user_id);
+
+CREATE TABLE IF NOT EXISTS portfolio_assets (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    source_id INTEGER REFERENCES account_sources(id) ON DELETE SET NULL,
+    asset_symbol VARCHAR(30) NOT NULL,
+    asset_name VARCHAR(100),
+    amount DOUBLE PRECISION NOT NULL,
+    avg_entry_price DOUBLE PRECISION DEFAULT 0,
+    current_price DOUBLE PRECISION DEFAULT 0,
+    unrealized_pnl DOUBLE PRECISION DEFAULT 0,
+    unrealized_pnl_pct DOUBLE PRECISION DEFAULT 0,
+    notional DOUBLE PRECISION DEFAULT 0,
+    margin DOUBLE PRECISION DEFAULT 0,
+    leverage DOUBLE PRECISION DEFAULT 1,
+    side VARCHAR(10) DEFAULT 'LONG',
+    sync_id VARCHAR(50),
+    synced_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(user_id, source_id, asset_symbol, sync_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_portfolio_assets_user ON portfolio_assets(user_id);
+CREATE INDEX IF NOT EXISTS idx_portfolio_assets_sync ON portfolio_assets(sync_id);
+
+CREATE TABLE IF NOT EXISTS portfolio_history (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    date DATE NOT NULL,
+    total_notional DOUBLE PRECISION DEFAULT 0,
+    total_unrealized_pnl DOUBLE PRECISION DEFAULT 0,
+    total_margin DOUBLE PRECISION DEFAULT 0,
+    UNIQUE(user_id, date)
+);
+
+CREATE INDEX IF NOT EXISTS idx_portfolio_history_user_date ON portfolio_history(user_id, date DESC);
+
+CREATE TABLE IF NOT EXISTS categories (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(50) NOT NULL UNIQUE,
+    description TEXT,
+    color VARCHAR(20) DEFAULT '#6366f1',
+    is_active BOOLEAN DEFAULT TRUE
+);
+
+INSERT INTO categories (name, description, color) VALUES
+    ('L1', 'Layer 1 blockchains', '#ef4444'),
+    ('DeFi', 'Decentralized Finance', '#22c55e'),
+    ('RWA', 'Real World Assets', '#f59e0b'),
+    ('AI', 'Artificial Intelligence tokens', '#3b82f6'),
+    ('Gaming', 'Gaming & Metaverse', '#8b5cf6'),
+    ('Meme', 'Meme coins', '#ec4899'),
+    ('Infrastructure', 'Web3 Infrastructure', '#06b6d4'),
+    ('Stablecoins', 'Stablecoins', '#10b981'),
+    ('Other', 'Uncategorized', '#9ca3af')
+ON CONFLICT (name) DO NOTHING;
+
+CREATE TABLE IF NOT EXISTS user_categories (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    name VARCHAR(50) NOT NULL,
+    color VARCHAR(20) DEFAULT '#6366f1',
+    UNIQUE(user_id, name)
+);
+
+CREATE TABLE IF NOT EXISTS asset_categories (
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    asset_symbol VARCHAR(30) NOT NULL,
+    system_category_id INTEGER REFERENCES categories(id),
+    user_category_id INTEGER REFERENCES user_categories(id),
+    PRIMARY KEY (user_id, asset_symbol)
+);
+
+CREATE TABLE IF NOT EXISTS portfolio_models (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(50) NOT NULL UNIQUE,
+    description TEXT,
+    risk_level VARCHAR(20) NOT NULL, -- 'conservative', 'balanced', 'aggressive'
+    is_active BOOLEAN DEFAULT TRUE
+);
+
+INSERT INTO portfolio_models (name, description, risk_level) VALUES
+    ('Conservative', 'Focus on stablecoins and blue-chip L1s', 'conservative'),
+    ('Balanced', 'Diversified across DeFi, L1, and infrastructure', 'balanced'),
+    ('Aggressive', 'High exposure to AI, gaming, and emerging sectors', 'aggressive')
+ON CONFLICT (name) DO NOTHING;
+
+CREATE TABLE IF NOT EXISTS portfolio_model_allocations (
+    id SERIAL PRIMARY KEY,
+    model_id INTEGER NOT NULL REFERENCES portfolio_models(id) ON DELETE CASCADE,
+    category_id INTEGER NOT NULL REFERENCES categories(id),
+    target_weight DOUBLE PRECISION NOT NULL, -- percentage (e.g., 40.0)
+    UNIQUE(model_id, category_id)
+);
+
+INSERT INTO portfolio_model_allocations (model_id, category_id, target_weight)
+SELECT m.id, c.id, w.weight
+FROM (VALUES
+    ('Conservative', 'Stablecoins', 50.0),
+    ('Conservative', 'L1', 30.0),
+    ('Conservative', 'DeFi', 10.0),
+    ('Conservative', 'Infrastructure', 10.0),
+    ('Balanced', 'L1', 30.0),
+    ('Balanced', 'DeFi', 25.0),
+    ('Balanced', 'Infrastructure', 15.0),
+    ('Balanced', 'Stablecoins', 10.0),
+    ('Balanced', 'AI', 10.0),
+    ('Balanced', 'Gaming', 5.0),
+    ('Balanced', 'RWA', 5.0),
+    ('Aggressive', 'AI', 25.0),
+    ('Aggressive', 'Gaming', 20.0),
+    ('Aggressive', 'DeFi', 15.0),
+    ('Aggressive', 'L1', 15.0),
+    ('Aggressive', 'Meme', 10.0),
+    ('Aggressive', 'Infrastructure', 10.0),
+    ('Aggressive', 'RWA', 5.0)
+) AS w(model, category, weight)
+JOIN portfolio_models m ON m.name = w.model
+JOIN categories c ON c.name = w.category
+ON CONFLICT (model_id, category_id) DO NOTHING;
+
+CREATE TABLE IF NOT EXISTS user_portfolio_settings (
+    user_id INTEGER PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+    selected_model_id INTEGER REFERENCES portfolio_models(id),
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS portfolio_rebalance_suggestions (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    model_id INTEGER REFERENCES portfolio_models(id),
+    suggestions JSONB NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
