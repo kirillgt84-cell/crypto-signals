@@ -14,7 +14,8 @@ import {
   BarChart3,
   User,
   Flame,
-  Zap
+  Zap,
+  Crown
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Logo } from '../Logo';
@@ -31,6 +32,7 @@ const baseNavItems = [
   { href: '/heatmap', label: 'Heatmap', icon: Flame },
   { href: '/signals', label: 'Signals', icon: Zap },
   { href: '/etf', label: 'ETF Analytics', icon: BarChart3 },
+  { href: '/pricing', label: 'Pricing', icon: Crown },
 ];
 
 const bottomNavItems = [

@@ -25,6 +25,7 @@ from routers.telegram import router as telegram_router
 from routers.admin import router as admin_router
 from routers.etf import router as etf_router
 from routers.scanner import router as scanner_router
+from routers.payments import router as payments_router
 from scheduler import start_scheduler, stop_scheduler
 
 # Глобальная переменная для scheduler
@@ -169,6 +170,7 @@ app.include_router(telegram_router)
 app.include_router(admin_router)
 app.include_router(etf_router)
 app.include_router(scanner_router)
+app.include_router(payments_router)
 
 # ============= Health Check =============
 @app.get("/health")

@@ -59,6 +59,8 @@ export default function AdminPage() {
   const [reportStatus, setReportStatus] = useState<ReportStatus | null>(null)
   const [sendingTest, setSendingTest] = useState(false)
   const [testResult, setTestResult] = useState<string | null>(null)
+  const [payments, setPayments] = useState<any[]>([])
+  const [subscriptions, setSubscriptions] = useState<any[]>([])
 
   useEffect(() => {
     if (!isLoading && user?.subscription_tier !== "admin") {
@@ -88,6 +90,12 @@ export default function AdminPage() {
         if (reportsRes.ok) {
           setReportStatus(await reportsRes.json())
         }
+        const [payRes, subRes] = await Promise.all([
+          fetch(`${API_BASE_URL}/payments/admin/payments`, { cache: "no-store", headers: { Authorization: `Bearer ${token}` } }),
+          fetch(`${API_BASE_URL}/payments/admin/subscriptions`, { cache: "no-store", headers: { Authorization: `Bearer ${token}` } }),
+        ])
+        if (payRes.ok) setPayments(await payRes.json())
+        if (subRes.ok) setSubscriptions(await subRes.json())
       } catch (e: any) {
         setError(e.message)
       } finally {
@@ -446,6 +454,60 @@ export default function AdminPage() {
                     <TableRow>
                       <TableCell colSpan={5} className="py-8 text-center text-muted-foreground">
                         No users found.
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Payments */}
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base font-semibold">Payments</CardTitle>
+            <CardDescription>Recent PayPal transactions</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>User</TableHead>
+                    <TableHead>Plan</TableHead>
+                    <TableHead>Amount</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Date</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {payments.slice(0, 10).map((p) => (
+                    <TableRow key={p.id}>
+                      <TableCell>
+                        <div className="text-sm">{p.username}</div>
+                        <div className="text-xs text-muted-foreground">{p.email}</div>
+                      </TableCell>
+                      <TableCell className="text-sm">{p.plan_name}</TableCell>
+                      <TableCell className="text-sm">${p.amount} {p.currency}</TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className={
+                          p.status === "captured" ? "border-emerald-200 text-emerald-600" :
+                          p.status === "failed" ? "border-red-200 text-red-600" :
+                          "border-slate-200 text-slate-600"
+                        }>
+                          {p.status}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-sm text-muted-foreground">
+                        {new Date(p.created_at).toLocaleDateString()}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                  {payments.length === 0 && (
+                    <TableRow>
+                      <TableCell colSpan={5} className="py-8 text-center text-muted-foreground">
+                        No payments yet.
                       </TableCell>
                     </TableRow>
                   )}

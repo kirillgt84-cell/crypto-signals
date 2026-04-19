@@ -106,3 +106,74 @@ CREATE TABLE IF NOT EXISTS user_scanner_settings (
     push_alerts BOOLEAN DEFAULT FALSE,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+-- PayPal Payment Module Schema
+
+-- Plans / Pricing tiers
+CREATE TABLE IF NOT EXISTS plans (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(50) NOT NULL,
+    description TEXT,
+    price DECIMAL(10, 2) NOT NULL,
+    currency VARCHAR(3) DEFAULT 'USD',
+    type VARCHAR(20) NOT NULL CHECK (type IN ('one_time', 'subscription')),
+    paypal_plan_id VARCHAR(100),
+    tier VARCHAR(20) DEFAULT 'pro',
+    is_active BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Payments (one-time)
+CREATE TABLE IF NOT EXISTS payments (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+    plan_id INTEGER REFERENCES plans(id),
+    paypal_order_id VARCHAR(100) UNIQUE,
+    status VARCHAR(20) DEFAULT 'created' CHECK (status IN ('created', 'approved', 'captured', 'failed', 'refunded')),
+    amount DECIMAL(10, 2),
+    currency VARCHAR(3),
+    captured_at TIMESTAMP,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_payments_user ON payments(user_id);
+CREATE INDEX IF NOT EXISTS idx_payments_order ON payments(paypal_order_id);
+CREATE INDEX IF NOT EXISTS idx_payments_status ON payments(status);
+
+-- Subscriptions
+CREATE TABLE IF NOT EXISTS subscriptions (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+    plan_id INTEGER REFERENCES plans(id),
+    paypal_subscription_id VARCHAR(100) UNIQUE,
+    status VARCHAR(20) DEFAULT 'created' CHECK (status IN ('created', 'active', 'cancelled', 'suspended', 'expired', 'payment_failed')),
+    current_period_start TIMESTAMP,
+    current_period_end TIMESTAMP,
+    cancelled_at TIMESTAMP,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_subscriptions_user ON subscriptions(user_id);
+CREATE INDEX IF NOT EXISTS idx_subscriptions_paypal ON subscriptions(paypal_subscription_id);
+CREATE INDEX IF NOT EXISTS idx_subscriptions_status ON subscriptions(status);
+
+-- Webhook events log (idempotency + audit)
+CREATE TABLE IF NOT EXISTS paypal_webhook_events (
+    id SERIAL PRIMARY KEY,
+    event_id VARCHAR(100) UNIQUE NOT NULL,
+    event_type VARCHAR(100) NOT NULL,
+    resource_type VARCHAR(50),
+    resource_id VARCHAR(100),
+    payload JSONB,
+    processed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_webhook_events_id ON paypal_webhook_events(event_id);
+
+-- Seed default plans
+INSERT INTO plans (name, description, price, currency, type, tier)
+VALUES 
+    ('Pro Monthly', 'Monthly Pro subscription', 29.00, 'USD', 'subscription', 'pro'),
+    ('Pro Yearly', 'Yearly Pro subscription (save 20%)', 279.00, 'USD', 'subscription', 'pro'),
+    ('Pro Lifetime', 'One-time lifetime Pro access', 499.00, 'USD', 'one_time', 'pro')
+ON CONFLICT DO NOTHING;

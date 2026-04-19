@@ -1,0 +1,358 @@
+"""
+Payment router: PayPal integration for one-time and subscription payments.
+Manages user access (subscription_tier) automatically via webhooks.
+"""
+from typing import Optional
+from fastapi import APIRouter, HTTPException, Depends, Request, Header
+from pydantic import BaseModel
+from database import get_db
+from routers.auth import get_current_user
+from services.paypal import get_paypal_api
+import logging
+
+logger = logging.getLogger(__name__)
+router = APIRouter(prefix="/api/v1/payments", tags=["payments"])
+
+
+# ============= MODELS =============
+
+class CreateOrderRequest(BaseModel):
+    plan_id: int
+
+
+class CreateSubscriptionRequest(BaseModel):
+    plan_id: int
+
+
+# ============= HELPERS =============
+
+async def _require_pro_or_admin(current_user: dict = Depends(get_current_user)) -> dict:
+    # Anyone authenticated can purchase; this is just for viewing admin data
+    return current_user
+
+
+async def _get_plan(plan_id: int) -> Optional[dict]:
+    db = get_db()
+    rows = await db.query("SELECT * FROM plans WHERE id = $1 AND is_active = TRUE", [plan_id])
+    return dict(rows[0]) if rows else None
+
+
+async def _record_webhook_event(event_id: str, event_type: str, resource_type: str, resource_id: str, payload: dict) -> bool:
+    """Returns True if event was already processed (idempotency)."""
+    db = get_db()
+    existing = await db.query("SELECT 1 FROM paypal_webhook_events WHERE event_id = $1 LIMIT 1", [event_id])
+    if existing:
+        return True
+    await db.execute(
+        "INSERT INTO paypal_webhook_events (event_id, event_type, resource_type, resource_id, payload) VALUES ($1, $2, $3, $4, $5)",
+        [event_id, event_type, resource_type, resource_id, str(payload)],
+    )
+    return False
+
+
+async def _grant_access(user_id: int, tier: str = "pro"):
+    db = get_db()
+    await db.execute(
+        "UPDATE users SET subscription_tier = $1, updated_at = NOW() WHERE id = $2",
+        [tier, user_id],
+    )
+    logger.info(f"[Payments] Granted {tier} access to user {user_id}")
+
+
+async def _revoke_access(user_id: int):
+    db = get_db()
+    await db.execute(
+        "UPDATE users SET subscription_tier = 'free', updated_at = NOW() WHERE id = $1",
+        [user_id],
+    )
+    logger.info(f"[Payments] Revoked access from user {user_id}")
+
+
+# ============= PUBLIC ENDPOINTS =============
+
+@router.get("/plans")
+async def list_plans():
+    """List active pricing plans."""
+    db = get_db()
+    rows = await db.query("SELECT * FROM plans WHERE is_active = TRUE ORDER BY price ASC", [])
+    return [dict(r) for r in rows]
+
+
+@router.post("/create-order")
+async def create_order(
+    req: CreateOrderRequest,
+    current_user: dict = Depends(get_current_user),
+):
+    """Create a one-time PayPal order."""
+    plan = await _get_plan(req.plan_id)
+    if not plan:
+        raise HTTPException(status_code=404, detail="Plan not found")
+
+    paypal = get_paypal_api()
+    result = await paypal.create_order(
+        amount=float(plan["price"]),
+        currency=plan["currency"],
+        reference_id=f"plan_{plan['id']}_user_{current_user['id']}",
+    )
+
+    if result.get("status_code", 200) >= 400:
+        raise HTTPException(status_code=502, detail="PayPal order creation failed")
+
+    # Record pending payment
+    db = get_db()
+    order_id = result.get("id")
+    await db.execute(
+        """INSERT INTO payments (user_id, plan_id, paypal_order_id, status, amount, currency)
+           VALUES ($1, $2, $3, 'created', $4, $5)""",
+        [current_user["id"], plan["id"], order_id, plan["price"], plan["currency"]],
+    )
+
+    # Extract approval link
+    approval_url = None
+    for link in result.get("links", []):
+        if link.get("rel") == "approve":
+            approval_url = link.get("href")
+            break
+
+    return {"order_id": order_id, "approval_url": approval_url}
+
+
+@router.post("/capture-order")
+async def capture_order(
+    body: dict,
+    current_user: dict = Depends(get_current_user),
+):
+    """Capture an approved order (client-side after user approves)."""
+    order_id = body.get("order_id")
+    if not order_id:
+        raise HTTPException(status_code=400, detail="order_id required")
+
+    paypal = get_paypal_api()
+    result = await paypal.capture_order(order_id)
+
+    status = result.get("status", "").upper()
+    db = get_db()
+
+    if status == "COMPLETED":
+        await db.execute(
+            "UPDATE payments SET status = 'captured', captured_at = NOW() WHERE paypal_order_id = $1",
+            [order_id],
+        )
+        # Find plan tier and grant access
+        pay = await db.query("SELECT plan_id FROM payments WHERE paypal_order_id = $1", [order_id])
+        if pay:
+            plan = await db.query("SELECT tier FROM plans WHERE id = $1", [pay[0]["plan_id"]])
+            if plan:
+                await _grant_access(current_user["id"], plan[0]["tier"])
+        return {"success": True, "status": "captured"}
+    else:
+        await db.execute(
+            "UPDATE payments SET status = 'failed' WHERE paypal_order_id = $1",
+            [order_id],
+        )
+        raise HTTPException(status_code=400, detail=f"Payment not completed: {status}")
+
+
+@router.post("/create-subscription")
+async def create_subscription(
+    req: CreateSubscriptionRequest,
+    current_user: dict = Depends(get_current_user),
+):
+    """Create a PayPal subscription (returns approval link)."""
+    plan = await _get_plan(req.plan_id)
+    if not plan:
+        raise HTTPException(status_code=404, detail="Plan not found")
+    if not plan.get("paypal_plan_id"):
+        raise HTTPException(status_code=400, detail="Plan is not configured for PayPal subscriptions")
+
+    paypal = get_paypal_api()
+    result = await paypal.create_subscription(plan_id=plan["paypal_plan_id"])
+
+    if result.get("status_code", 200) >= 400:
+        raise HTTPException(status_code=502, detail="PayPal subscription creation failed")
+
+    sub_id = result.get("id")
+    db = get_db()
+    await db.execute(
+        """INSERT INTO subscriptions (user_id, plan_id, paypal_subscription_id, status)
+           VALUES ($1, $2, $3, 'created')""",
+        [current_user["id"], plan["id"], sub_id],
+    )
+
+    approval_url = None
+    for link in result.get("links", []):
+        if link.get("rel") == "approve":
+            approval_url = link.get("href")
+            break
+
+    return {"subscription_id": sub_id, "approval_url": approval_url, "status": result.get("status")}
+
+
+@router.get("/my-subscription")
+async def my_subscription(current_user: dict = Depends(get_current_user)):
+    """Get current user's active subscription."""
+    db = get_db()
+    rows = await db.query(
+        """SELECT s.*, p.name as plan_name, p.price, p.currency, p.type
+           FROM subscriptions s
+           JOIN plans p ON p.id = s.plan_id
+           WHERE s.user_id = $1 AND s.status IN ('created', 'active')
+           ORDER BY s.created_at DESC LIMIT 1""",
+        [current_user["id"]],
+    )
+    return dict(rows[0]) if rows else None
+
+
+@router.get("/history")
+async def payment_history(current_user: dict = Depends(get_current_user)):
+    """Get user's payment history."""
+    db = get_db()
+    payments = await db.query(
+        """SELECT p.*, pl.name as plan_name FROM payments p
+           JOIN plans pl ON pl.id = p.plan_id
+           WHERE p.user_id = $1 ORDER BY p.created_at DESC""",
+        [current_user["id"]],
+    )
+    subs = await db.query(
+        """SELECT s.*, pl.name as plan_name FROM subscriptions s
+           JOIN plans pl ON pl.id = s.plan_id
+           WHERE s.user_id = $1 ORDER BY s.created_at DESC""",
+        [current_user["id"]],
+    )
+    return {"payments": [dict(r) for r in payments], "subscriptions": [dict(r) for r in subs]}
+
+
+# ============= WEBHOOK =============
+
+@router.post("/webhook/paypal")
+async def paypal_webhook(
+    request: Request,
+    paypal_transmission_id: Optional[str] = Header(None),
+    paypal_cert_url: Optional[str] = Header(None),
+    paypal_auth_algo: Optional[str] = Header(None),
+    paypal_transmission_sig: Optional[str] = Header(None),
+    paypal_transmission_time: Optional[str] = Header(None),
+):
+    """Handle PayPal webhooks for orders and subscriptions."""
+    body = await request.body()
+    body_str = body.decode("utf-8")
+    payload = await request.json()
+
+    event_id = payload.get("id")
+    event_type = payload.get("event_type", "")
+    resource = payload.get("resource", {})
+    resource_type = payload.get("resource_type", "")
+    resource_id = resource.get("id", "")
+
+    # Idempotency check
+    already_processed = await _record_webhook_event(event_id, event_type, resource_type, resource_id, payload)
+    if already_processed:
+        return {"status": "already_processed"}
+
+    # Verify signature
+    paypal = get_paypal_api()
+    if paypal_auth_algo and paypal_transmission_sig:
+        verified = await paypal.verify_webhook_signature(
+            auth_algo=paypal_auth_algo,
+            cert_url=paypal_cert_url or "",
+            transmission_id=paypal_transmission_id or "",
+            transmission_sig=paypal_transmission_sig,
+            transmission_time=paypal_transmission_time or "",
+            webhook_body=body_str,
+        )
+        if not verified:
+            raise HTTPException(status_code=400, detail="Webhook verification failed")
+
+    db = get_db()
+
+    # --- PAYMENT CAPTURE ---
+    if event_type == "PAYMENT.CAPTURE.COMPLETED":
+        order_id = resource.get("supplementary_data", {}).get("related_ids", {}).get("order_id")
+        if order_id:
+            await db.execute(
+                "UPDATE payments SET status = 'captured', captured_at = NOW() WHERE paypal_order_id = $1",
+                [order_id],
+            )
+            pay = await db.query("SELECT user_id, plan_id FROM payments WHERE paypal_order_id = $1", [order_id])
+            if pay:
+                plan = await db.query("SELECT tier FROM plans WHERE id = $1", [pay[0]["plan_id"]])
+                if plan:
+                    await _grant_access(pay[0]["user_id"], plan[0]["tier"])
+
+    elif event_type == "PAYMENT.CAPTURE.DENIED":
+        order_id = resource.get("supplementary_data", {}).get("related_ids", {}).get("order_id")
+        if order_id:
+            await db.execute("UPDATE payments SET status = 'failed' WHERE paypal_order_id = $1", [order_id])
+
+    # --- SUBSCRIPTIONS ---
+    elif event_type == "BILLING.SUBSCRIPTION.ACTIVATED":
+        sub_id = resource_id
+        await db.execute(
+            "UPDATE subscriptions SET status = 'active', current_period_start = NOW() WHERE paypal_subscription_id = $1",
+            [sub_id],
+        )
+        sub = await db.query("SELECT user_id, plan_id FROM subscriptions WHERE paypal_subscription_id = $1", [sub_id])
+        if sub:
+            plan = await db.query("SELECT tier FROM plans WHERE id = $1", [sub[0]["plan_id"]])
+            if plan:
+                await _grant_access(sub[0]["user_id"], plan[0]["tier"])
+
+    elif event_type == "BILLING.SUBSCRIPTION.CANCELLED":
+        sub_id = resource_id
+        await db.execute(
+            "UPDATE subscriptions SET status = 'cancelled', cancelled_at = NOW() WHERE paypal_subscription_id = $1",
+            [sub_id],
+        )
+        sub = await db.query("SELECT user_id FROM subscriptions WHERE paypal_subscription_id = $1", [sub_id])
+        if sub:
+            await _revoke_access(sub[0]["user_id"])
+
+    elif event_type == "BILLING.SUBSCRIPTION.EXPIRED":
+        sub_id = resource_id
+        await db.execute("UPDATE subscriptions SET status = 'expired' WHERE paypal_subscription_id = $1", [sub_id])
+        sub = await db.query("SELECT user_id FROM subscriptions WHERE paypal_subscription_id = $1", [sub_id])
+        if sub:
+            await _revoke_access(sub[0]["user_id"])
+
+    elif event_type == "BILLING.SUBSCRIPTION.PAYMENT.FAILED":
+        sub_id = resource_id
+        await db.execute("UPDATE subscriptions SET status = 'payment_failed' WHERE paypal_subscription_id = $1", [sub_id])
+
+    logger.info(f"[Payments] Processed PayPal webhook: {event_type} ({event_id})")
+    return {"status": "processed"}
+
+
+# ============= ADMIN ENDPOINTS =============
+
+@router.get("/admin/payments")
+async def admin_payments(current_user: dict = Depends(get_current_user)):
+    """List all payments (admin only)."""
+    if current_user.get("subscription_tier") != "admin":
+        raise HTTPException(status_code=403, detail="Admin only")
+    db = get_db()
+    rows = await db.query(
+        """SELECT p.*, u.email, u.username, pl.name as plan_name
+           FROM payments p
+           JOIN users u ON u.id = p.user_id
+           JOIN plans pl ON pl.id = p.plan_id
+           ORDER BY p.created_at DESC LIMIT 200""",
+        [],
+    )
+    return [dict(r) for r in rows]
+
+
+@router.get("/admin/subscriptions")
+async def admin_subscriptions(current_user: dict = Depends(get_current_user)):
+    """List all subscriptions (admin only)."""
+    if current_user.get("subscription_tier") != "admin":
+        raise HTTPException(status_code=403, detail="Admin only")
+    db = get_db()
+    rows = await db.query(
+        """SELECT s.*, u.email, u.username, pl.name as plan_name
+           FROM subscriptions s
+           JOIN users u ON u.id = s.user_id
+           JOIN plans pl ON pl.id = s.plan_id
+           ORDER BY s.created_at DESC LIMIT 200""",
+        [],
+    )
+    return [dict(r) for r in rows]
