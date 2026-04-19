@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useMemo } from "react"
 import { hierarchy, treemap as d3Treemap } from "d3-hierarchy"
 import { cn } from "@/lib/utils"
 import { ArrowLeft } from "lucide-react"
+import Sidebar from "../components/admin/Sidebar"
 
 const API_BASE_URL = "https://crypto-signals-production-ff4c.up.railway.app/api/v1"
 
@@ -74,6 +75,7 @@ function computeLayout(items: HeatmapItem[], width: number, height: number) {
 }
 
 export default function HeatmapClient({ initialData }: { initialData: HeatmapItem[] }) {
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(true)
   const [timeframe, setTimeframe] = useState("m15")
   const [sector, setSector] = useState("all")
   const [minVolume, setMinVolume] = useState(500000)
@@ -126,7 +128,9 @@ export default function HeatmapClient({ initialData }: { initialData: HeatmapIte
   const isSingleSector = sector !== "all"
 
   return (
-    <div className="min-h-screen bg-[#0b0f19] text-white font-mono">
+    <div className="flex min-h-screen bg-[#0b0f19] text-white font-mono">
+      <Sidebar collapsed={sidebarCollapsed} onToggle={() => setSidebarCollapsed(!sidebarCollapsed)} />
+      <main className={cn("flex-1 overflow-hidden transition-all duration-300", sidebarCollapsed ? "lg:ml-16" : "lg:ml-64")}>
       <header className="border-b border-slate-800 px-4 py-4">
         <div className="flex items-center gap-3 mb-4">
           <span className="text-xl">🔥</span>
@@ -195,7 +199,7 @@ export default function HeatmapClient({ initialData }: { initialData: HeatmapIte
         </div>
       </header>
 
-      <main className="p-4">
+      <div className="p-4">
         {error && (
           <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-lg text-sm text-red-400 mb-4">
             Error: {error}
@@ -257,8 +261,9 @@ export default function HeatmapClient({ initialData }: { initialData: HeatmapIte
             <span className="text-slate-500">{hovered.category}</span>
           </div>
         )}
-      </main>
-    </div>
+      </div>
+    </main>
+  </div>
   )
 }
 
