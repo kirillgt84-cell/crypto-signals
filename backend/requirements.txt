@@ -16,3 +16,4 @@ httpx>=0.27.0
 email-validator>=2.1.0
 # Cache bust: Sun Apr 12 11:09:35 CEST 2026
 cryptography>=42.0.0
+yfinance>=1.3.0

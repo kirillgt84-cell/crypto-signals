@@ -10,6 +10,7 @@ from database import get_db
 from services.notifications import send_daily_reports, send_weekly_reports, send_telegram_alerts
 from fetchers.etf_farside import FarsideETFFetcher
 from fetchers.binance_heatmap import BinanceHeatmapFetcher
+from services.macro_sync import sync_macro_prices, calculate_correlations
 
 logger = logging.getLogger(__name__)
 
@@ -267,6 +268,16 @@ async def _save_etf_daily_summary(db, btc_price: float):
         logger.error(f"[Scheduler] ETF daily summary failed: {e}")
 
 
+async def run_macro_sync():
+    """Sync macro asset prices and calculate correlations."""
+    try:
+        await sync_macro_prices()
+        await calculate_correlations()
+        logger.info("[Scheduler] Macro sync completed")
+    except Exception as e:
+        logger.error(f"[Scheduler] Macro sync failed: {e}")
+
+
 async def run_telegram_alerts():
     """Wrapper for Telegram alerts"""
     try:
@@ -364,6 +375,15 @@ def start_scheduler():
         'interval',
         minutes=5,
         id='anomaly_scan',
+        replace_existing=True
+    )
+
+    # Macro assets sync every 4 hours (after US market close + morning)
+    scheduler.add_job(
+        run_macro_sync,
+        'interval',
+        hours=4,
+        id='macro_sync',
         replace_existing=True
     )
 

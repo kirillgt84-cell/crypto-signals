@@ -324,3 +324,48 @@ CREATE TABLE IF NOT EXISTS app_settings (
 
 INSERT INTO app_settings (key, value) VALUES ('scanner_min_score', '5')
 ON CONFLICT (key) DO NOTHING;
+
+-- ========== MACRO CORRELATIONS MODULE ==========
+
+CREATE TABLE IF NOT EXISTS macro_assets (
+    id SERIAL PRIMARY KEY,
+    key VARCHAR(20) NOT NULL UNIQUE,
+    name VARCHAR(50) NOT NULL,
+    yahoo_symbol VARCHAR(20) NOT NULL,
+    category VARCHAR(30) NOT NULL,
+    is_active BOOLEAN DEFAULT TRUE
+);
+
+INSERT INTO macro_assets (key, name, yahoo_symbol, category) VALUES
+    ('spx500', 'S&P 500', '^GSPC', 'index'),
+    ('gold', 'Gold Futures', 'GC=F', 'commodity'),
+    ('vix', 'VIX', '^VIX', 'volatility')
+ON CONFLICT (key) DO NOTHING;
+
+CREATE TABLE IF NOT EXISTS macro_prices (
+    id SERIAL PRIMARY KEY,
+    asset_id INTEGER NOT NULL REFERENCES macro_assets(id),
+    time TIMESTAMP NOT NULL,
+    open_price DOUBLE PRECISION,
+    high_price DOUBLE PRECISION,
+    low_price DOUBLE PRECISION,
+    close_price DOUBLE PRECISION NOT NULL,
+    volume DOUBLE PRECISION,
+    UNIQUE(asset_id, time)
+);
+
+CREATE INDEX IF NOT EXISTS idx_macro_prices_time ON macro_prices(asset_id, time DESC);
+
+CREATE TABLE IF NOT EXISTS macro_correlations (
+    id SERIAL PRIMARY KEY,
+    date DATE NOT NULL UNIQUE,
+    btc_spx_correlation DOUBLE PRECISION,
+    gold_btc_correlation DOUBLE PRECISION,
+    vix_level DOUBLE PRECISION,
+    btc_price DOUBLE PRECISION,
+    spx_price DOUBLE PRECISION,
+    gold_price DOUBLE PRECISION,
+    calculated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_macro_correlations_date ON macro_correlations(date DESC);
