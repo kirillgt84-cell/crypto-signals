@@ -16,6 +16,8 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Zap, RefreshCw, ArrowUpRight, ArrowDownRight, Filter } from "lucide-react";
+import Sidebar from "../components/admin/Sidebar";
+import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 
 interface AnomalySignal {
@@ -43,6 +45,7 @@ export default function SignalsClient() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
   const [minScore, setMinScore] = useState(8);
   const [direction, setDirection] = useState<string>("all");
   const [confidence, setConfidence] = useState<string>("all");
@@ -122,7 +125,9 @@ export default function SignalsClient() {
   const categories = Array.from(new Set(signals.map((s) => s.category)));
 
   return (
-    <div className="min-h-screen bg-[#0b0f19] text-slate-200">
+    <div className="flex min-h-screen bg-[#0b0f19] text-slate-200">
+      <Sidebar collapsed={sidebarCollapsed} onToggle={() => setSidebarCollapsed(!sidebarCollapsed)} />
+      <main className={cn("flex-1 overflow-hidden transition-all duration-300", sidebarCollapsed ? "lg:ml-16" : "lg:ml-64")}>
       <div className="mx-auto max-w-7xl px-4 py-8">
         {/* Header */}
         <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
@@ -355,6 +360,7 @@ export default function SignalsClient() {
           </>
         )}
       </div>
+      </main>
     </div>
   );
 }
