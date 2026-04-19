@@ -76,6 +76,7 @@ function computeLayout(items: HeatmapItem[], width: number, height: number) {
 export default function HeatmapClient({ initialData }: { initialData: HeatmapItem[] }) {
   const [timeframe, setTimeframe] = useState("m15")
   const [sector, setSector] = useState("all")
+  const [minVolume, setMinVolume] = useState(500000)
   const [data, setData] = useState<HeatmapItem[]>(initialData)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -85,7 +86,7 @@ export default function HeatmapClient({ initialData }: { initialData: HeatmapIte
     setLoading(true)
     setError(null)
     try {
-      const url = `${API_BASE_URL}/market/heatmap?timeframe=${timeframe}&sector=${sector}&limit=200&min_volume=500000`
+      const url = `${API_BASE_URL}/market/heatmap?timeframe=${timeframe}&sector=${sector}&limit=200&min_volume=${minVolume}`
       const res = await fetch(url)
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
       const json = await res.json()
@@ -95,7 +96,7 @@ export default function HeatmapClient({ initialData }: { initialData: HeatmapIte
     } finally {
       setLoading(false)
     }
-  }, [timeframe, sector])
+  }, [timeframe, sector, minVolume])
 
   useEffect(() => {
     fetchData()
@@ -165,6 +166,24 @@ export default function HeatmapClient({ initialData }: { initialData: HeatmapIte
               </option>
             ))}
           </select>
+
+          <div className="w-px h-5 bg-slate-700" />
+
+          <div className="flex items-center gap-2">
+            <span className="text-[10px] text-slate-500">Min Vol</span>
+            <input
+              type="range"
+              min={0}
+              max={10000000}
+              step={100000}
+              value={minVolume}
+              onChange={(e) => setMinVolume(Number(e.target.value))}
+              className="w-24 h-1 cursor-pointer accent-amber-500 bg-slate-700 rounded appearance-none"
+            />
+            <span className="text-[10px] text-slate-400 w-12 text-right">
+              ${(minVolume / 1e6).toFixed(1)}M
+            </span>
+          </div>
 
           <div className="flex-1" />
 
