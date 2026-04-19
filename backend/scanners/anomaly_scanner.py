@@ -130,7 +130,7 @@ async def _get_baselines(symbols: List[str]) -> Dict[str, Dict[str, Any]]:
         f"""SELECT symbol, AVG(quote_volume_24h) as avg_quote_volume
             FROM heatmap_snapshots
             WHERE symbol IN ({placeholders})
-              AND snapshot_time > NOW() - INTERVAL '7 days'
+              AND snapshot_time > NOW() - INTERVAL '1 days'
             GROUP BY symbol""",
         symbols,
     )
@@ -193,6 +193,7 @@ async def scan_anomalies(min_score: int = DEFAULT_MIN_SCORE) -> List[Dict[str, A
         oi_1h = baseline.get("oi_1h_ago", 0.0)
 
         if avg_vol <= 0:
+            logger.debug(f"[Scanner] {sym}: no baseline volume, skipping")
             continue
 
         volume_ratio = item["quote_volume_24h"] / avg_vol
@@ -236,7 +237,7 @@ async def scan_anomalies(min_score: int = DEFAULT_MIN_SCORE) -> List[Dict[str, A
         })
 
     signals.sort(key=lambda x: x["score"], reverse=True)
-    logger.info(f"[Scanner] Found {len(signals)} anomalies (min_score={min_score})")
+    logger.info(f"[Scanner] Checked {len(current_data)} symbols, found {len(signals)} anomalies (min_score={min_score})")
     return signals
 
 
