@@ -21,6 +21,8 @@ import {
   ChevronDown,
   ChevronUp,
   Bot,
+  Bell,
+  Settings2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -56,6 +58,13 @@ import {
   ResponsiveContainer,
   Tooltip as ReTooltip,
   Legend,
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  AreaChart,
+  Area,
 } from "recharts";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -133,7 +142,12 @@ export default function PortfolioClient() {
   const [manualAmount, setManualAmount] = useState("");
   const [manualPrice, setManualPrice] = useState("");
   const [manualSide, setManualSide] = useState("LONG");
-  const [activeTab, setActiveTab] = useState<"assets" | "allocation" | "models">("assets");
+  const [activeTab, setActiveTab] = useState<"assets" | "allocation" | "models" | "history">("assets");
+  const [marketType, setMarketType] = useState("futures");
+  const [alerts, setAlerts] = useState<any[]>([]);
+  const [alertOpen, setAlertOpen] = useState(false);
+  const [alertSettings, setAlertSettings] = useState<any[]>([]);
+  const [equityTimeframe, setEquityTimeframe] = useState<"daily" | "weekly">("daily");
 
   const headers = {
     Authorization: `Bearer ${token || ""}`,
@@ -186,12 +200,34 @@ export default function PortfolioClient() {
     }
   }, [token]);
 
+  const fetchAlerts = useCallback(async () => {
+    if (!token) return;
+    try {
+      const res = await fetch(`${API_BASE_URL}/portfolio/alerts`, { headers });
+      if (res.ok) setAlerts(await res.json());
+    } catch (e) {
+      console.error("Failed to fetch alerts", e);
+    }
+  }, [token]);
+
+  const fetchAlertSettings = useCallback(async () => {
+    if (!token) return;
+    try {
+      const res = await fetch(`${API_BASE_URL}/portfolio/alerts/settings`, { headers });
+      if (res.ok) setAlertSettings(await res.json());
+    } catch (e) {
+      console.error("Failed to fetch alert settings", e);
+    }
+  }, [token]);
+
   useEffect(() => {
     fetchSummary();
     fetchHistory();
     fetchModels();
     fetchDeviation();
-  }, [fetchSummary, fetchHistory, fetchModels, fetchDeviation]);
+    fetchAlerts();
+    fetchAlertSettings();
+  }, [fetchSummary, fetchHistory, fetchModels, fetchDeviation, fetchAlerts, fetchAlertSettings]);
 
   const handleSync = async () => {
     if (!token) return;
@@ -217,7 +253,7 @@ export default function PortfolioClient() {
       const res = await fetch(`${API_BASE_URL}/portfolio/connect/binance`, {
         method: "POST",
         headers,
-        body: JSON.stringify({ api_key: apiKey.trim(), api_secret: apiSecret.trim() }),
+        body: JSON.stringify({ api_key: apiKey.trim(), api_secret: apiSecret.trim(), market_type: marketType }),
       });
       if (res.ok) {
         setConnectOpen(false);
@@ -235,8 +271,8 @@ export default function PortfolioClient() {
 
   const handleDisconnect = async () => {
     if (!token) return;
-    if (!confirm("Disconnect Binance?")) return;
-    await fetch(`${API_BASE_URL}/portfolio/disconnect/binance`, { method: "DELETE", headers });
+    if (!confirm(`Disconnect Binance ${marketType}?`)) return;
+    await fetch(`${API_BASE_URL}/portfolio/disconnect/binance?market_type=${marketType}`, { method: "DELETE", headers });
     await fetchSummary();
   };
 
@@ -335,6 +371,41 @@ export default function PortfolioClient() {
               </p>
             </div>
             <div className="flex items-center gap-2">
+              {alerts.filter((a: any) => !a.is_read).length > 0 && (
+                <Dialog open={alertOpen} onOpenChange={setAlertOpen}>
+                  <DialogTrigger asChild>
+                    <Button variant="outline" size="sm" className="relative">
+                      <Bell className="h-4 w-4" />
+                      <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-red-500 text-[10px] text-white flex items-center justify-center">
+                        {alerts.filter((a: any) => !a.is_read).length}
+                      </span>
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="sm:max-w-md">
+                    <DialogHeader>
+                      <DialogTitle>Portfolio Alerts</DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-2 py-2 max-h-[400px] overflow-auto">
+                      {alerts.length === 0 && <p className="text-sm text-muted-foreground">No alerts</p>}
+                      {alerts.map((alert: any) => (
+                        <div key={alert.id} className={cn("p-3 rounded-lg border text-sm", !alert.is_read ? "bg-amber-500/5 border-amber-200" : "bg-muted/30")}>
+                          <p className="font-medium">{alert.asset_symbol}</p>
+                          <p className="text-muted-foreground">{alert.message}</p>
+                          <p className="text-xs text-muted-foreground mt-1">{new Date(alert.created_at).toLocaleString()}</p>
+                        </div>
+                      ))}
+                    </div>
+                    <DialogFooter>
+                      <Button size="sm" variant="outline" onClick={async () => {
+                        await fetch(`${API_BASE_URL}/portfolio/alerts/read`, { method: "POST", headers });
+                        fetchAlerts();
+                      }}>
+                        Mark all read
+                      </Button>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
+              )}
               <Button variant="outline" size="sm" onClick={handleSync} disabled={syncing}>
                 <RefreshCw className={cn("h-4 w-4 mr-1", syncing && "animate-spin")} />
                 {syncing ? "Syncing..." : "Sync"}
@@ -348,12 +419,24 @@ export default function PortfolioClient() {
                 </DialogTrigger>
                 <DialogContent className="sm:max-w-md">
                   <DialogHeader>
-                    <DialogTitle>Connect Binance Futures (Read-Only)</DialogTitle>
+                    <DialogTitle>Connect Binance (Read-Only)</DialogTitle>
                   </DialogHeader>
                   <div className="space-y-4 py-2">
                     <div className="text-xs text-muted-foreground bg-amber-500/10 text-amber-600 p-3 rounded">
                       Your API keys are encrypted with AES-256 and never exposed to the frontend after saving.
-                      Create a read-only API key on Binance with <b>Futures</b> permissions only.
+                      Create a read-only API key on Binance with permissions for the selected market type.
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Market Type</Label>
+                      <Select value={marketType} onValueChange={setMarketType}>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="futures">Futures</SelectItem>
+                          <SelectItem value="spot">Spot</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
                     <div className="space-y-2">
                       <Label>API Key</Label>
@@ -407,7 +490,7 @@ export default function PortfolioClient() {
 
           {/* Tabs */}
           <div className="flex items-center gap-2 mb-6 border-b">
-            {(["assets", "allocation", "models"] as const).map((tab) => (
+            {(["assets", "allocation", "models", "history"] as const).map((tab) => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
@@ -421,6 +504,7 @@ export default function PortfolioClient() {
                 {tab === "assets" && "Assets"}
                 {tab === "allocation" && "Allocation"}
                 {tab === "models" && "Model Portfolios"}
+                {tab === "history" && "History"}
               </button>
             ))}
           </div>
@@ -628,6 +712,43 @@ export default function PortfolioClient() {
           )}
 
           {/* Models Tab */}
+          {activeTab === "history" && (
+            <div className="space-y-6">
+              <div className="flex items-center justify-between">
+                <h2 className="text-lg font-semibold">Equity Curve</h2>
+                <div className="flex items-center gap-2">
+                  <Button size="sm" variant={equityTimeframe === "daily" ? "default" : "outline"} onClick={() => setEquityTimeframe("daily")}>Daily</Button>
+                  <Button size="sm" variant={equityTimeframe === "weekly" ? "default" : "outline"} onClick={() => setEquityTimeframe("weekly")}>Weekly</Button>
+                </div>
+              </div>
+              <div className="rounded-xl border bg-card p-6">
+                {history.length > 0 ? (
+                  <ResponsiveContainer width="100%" height={400}>
+                    <AreaChart data={history.slice().reverse()}>
+                      <defs>
+                        <linearGradient id="colorNotional" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#6366f1" stopOpacity={0.3}/>
+                          <stop offset="95%" stopColor="#6366f1" stopOpacity={0}/>
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
+                      <XAxis dataKey="date" tick={{fontSize: 12}} />
+                      <YAxis tick={{fontSize: 12}} tickFormatter={(v: number) => `$${v?.toLocaleString?.() || v}`} />
+                      <ReTooltip formatter={(value: number, name: string) => [`$${Number(value).toLocaleString(undefined, {minimumFractionDigits: 2})}`, name === "total_notional" ? "Portfolio Value" : name]} />
+                      <Legend />
+                      <Area type="monotone" dataKey="total_notional" name="Portfolio Value" stroke="#6366f1" fillOpacity={1} fill="url(#colorNotional)" strokeWidth={2} />
+                      <Line type="monotone" dataKey="total_unrealized_pnl" name="Unrealized PnL" stroke="#22c55e" strokeWidth={2} dot={false} />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div className="text-center py-16 text-muted-foreground">
+                    No history yet. Sync your portfolio to start tracking.
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
           {activeTab === "models" && (
             <div className="space-y-8">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -708,6 +829,45 @@ export default function PortfolioClient() {
                   </div>
                 </div>
               )}
+
+              {/* Alert Settings */}
+              <div className="rounded-xl border bg-card p-6">
+                <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                  <Settings2 className="h-5 w-5 text-indigo-500" />
+                  Alert Settings
+                </h3>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  {[
+                    { key: "liquidation", label: "Liquidation Warning", desc: "% distance to liq" },
+                    { key: "pnl_up", label: "PnL Up", desc: "% gain threshold" },
+                    { key: "pnl_down", label: "PnL Down", desc: "% loss threshold" },
+                  ].map((item) => {
+                    const setting = alertSettings.find((s: any) => s.alert_type === item.key);
+                    return (
+                      <div key={item.key} className="space-y-2">
+                        <Label className="text-sm font-medium">{item.label}</Label>
+                        <p className="text-xs text-muted-foreground">{item.desc}</p>
+                        <Input
+                          type="number"
+                          placeholder="10"
+                          defaultValue={setting?.threshold || ""}
+                          onBlur={async (e) => {
+                            const val = parseFloat(e.target.value);
+                            if (!isNaN(val)) {
+                              await fetch(`${API_BASE_URL}/portfolio/alerts/settings`, {
+                                method: "POST",
+                                headers,
+                                body: JSON.stringify({ alert_type: item.key, threshold: val, enabled: true }),
+                              });
+                              fetchAlertSettings();
+                            }
+                          }}
+                        />
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
 
               {/* AI Insight */}
               <div className="rounded-xl border bg-card p-6">

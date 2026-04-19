@@ -1,8 +1,7 @@
 """
-Binance Futures read-only portfolio fetcher.
+Binance read-only portfolio fetcher (Futures + Spot).
 Uses HMAC-SHA256 signed requests with API key + secret.
 """
-import asyncio
 import hashlib
 import hmac
 import time
@@ -13,6 +12,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 BINANCE_FAPI = "https://fapi.binance.com"
+BINANCE_SPOT = "https://api.binance.com"
 
 
 class BinancePortfolioFetcher:
@@ -33,7 +33,7 @@ class BinancePortfolioFetcher:
             hashlib.sha256,
         ).hexdigest()
 
-    async def _get(self, path: str, params: Optional[Dict] = None) -> Dict:
+    async def _get(self, path: str, params: Optional[Dict] = None, base_url: str = BINANCE_FAPI) -> Dict:
         client = await self._get_client()
         ts = str(int(time.time() * 1000))
         qs = f"timestamp={ts}"
@@ -41,7 +41,7 @@ class BinancePortfolioFetcher:
             for k, v in sorted(params.items()):
                 qs += f"&{k}={v}"
         signature = self._sign(qs)
-        url = f"{BINANCE_FAPI}{path}?{qs}&signature={signature}"
+        url = f"{base_url}{path}?{qs}&signature={signature}"
         resp = await client.get(
             url,
             headers={"X-MBX-APIKEY": self.api_key},
@@ -52,7 +52,9 @@ class BinancePortfolioFetcher:
             raise RuntimeError(f"Binance API error: {data.get('msg', 'Unknown')}")
         return data
 
-    async def get_account(self) -> Dict:
+    # ============= FUTURES =============
+
+    async def get_futures_account(self) -> Dict:
         """Get futures account info (balances, positions)."""
         return await self._get("/fapi/v2/account")
 
@@ -63,16 +65,10 @@ class BinancePortfolioFetcher:
             params["symbol"] = symbol
         return await self._get("/fapi/v2/positionRisk", params)
 
-    async def close(self):
-        if self.client:
-            await self.client.close()
-            self.client = None
-
     @staticmethod
     def parse_positions(account: Dict, position_risks: List[Dict]) -> List[Dict]:
-        """Normalize Binance data into unified portfolio asset format."""
+        """Normalize Binance Futures data into unified portfolio asset format."""
         assets = []
-        # Account positions (snapshot)
         for pos in account.get("positions", []):
             amt = float(pos.get("positionAmt", 0))
             if abs(amt) < 1e-12:
@@ -97,7 +93,6 @@ class BinancePortfolioFetcher:
                 "side": side,
             })
 
-        # Position risk (more accurate PnL)
         risk_map = {r.get("symbol"): r for r in position_risks}
         for asset in assets:
             risk = risk_map.get(asset["symbol"])
@@ -112,3 +107,65 @@ class BinancePortfolioFetcher:
                     asset["unrealized_pnl_pct"] = ((mark - entry) / entry * 100) * (1 if asset["side"] == "LONG" else -1)
 
         return assets
+
+    # ============= SPOT =============
+
+    async def get_spot_account(self) -> Dict:
+        """Get spot account info (balances)."""
+        return await self._get("/api/v3/account", base_url=BINANCE_SPOT)
+
+    async def get_spot_prices(self, symbols: List[str]) -> Dict[str, float]:
+        """Get current spot prices for symbols (no auth required)."""
+        client = await self._get_client()
+        if not symbols:
+            return {}
+        # Batch via ticker/price? For multiple symbols we can use /api/v3/ticker/price
+        # But simpler: get all and filter
+        resp = await client.get(f"{BINANCE_SPOT}/api/v3/ticker/price")
+        data = resp.json() if resp.status_code == 200 else []
+        prices = {}
+        for item in data:
+            sym = item.get("symbol", "")
+            if sym in symbols:
+                prices[sym] = float(item.get("price", 0))
+        return prices
+
+    @staticmethod
+    def parse_spot_balances(account: Dict, prices: Dict[str, float]) -> List[Dict]:
+        """Normalize Binance Spot balances into unified portfolio asset format."""
+        assets = []
+        for bal in account.get("balances", []):
+            free = float(bal.get("free", 0))
+            locked = float(bal.get("locked", 0))
+            amt = free + locked
+            if amt < 1e-12:
+                continue
+            asset = bal.get("asset", "")
+            # Skip stablecoins unless they have significant value? Keep them.
+            symbol = f"{asset}USDT"
+            price = prices.get(symbol, 0)
+            if price == 0 and asset == "USDT":
+                price = 1.0
+            notional = amt * price
+            # Skip dust (< $1)
+            if notional < 1:
+                continue
+            assets.append({
+                "symbol": symbol,
+                "asset_name": asset,
+                "amount": amt,
+                "avg_entry_price": 0,  # Not available via spot account endpoint
+                "current_price": price,
+                "unrealized_pnl": 0,
+                "unrealized_pnl_pct": 0,
+                "notional": notional,
+                "margin": 0,
+                "leverage": 1,
+                "side": "LONG",
+            })
+        return assets
+
+    async def close(self):
+        if self.client:
+            await self.client.close()
+            self.client = None

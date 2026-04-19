@@ -275,3 +275,29 @@ CREATE TABLE IF NOT EXISTS portfolio_rebalance_suggestions (
     suggestions JSONB NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+-- Add market_type to account_sources for spot/futures distinction
+ALTER TABLE account_sources ADD COLUMN IF NOT EXISTS market_type VARCHAR(20) DEFAULT 'futures';
+
+-- ========== PORTFOLIO ALERTS ==========
+
+CREATE TABLE IF NOT EXISTS portfolio_alert_settings (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    alert_type VARCHAR(30) NOT NULL, -- 'liquidation', 'pnl_up', 'pnl_down'
+    threshold DOUBLE PRECISION NOT NULL, -- pct for pnl, distance pct for liquidation
+    enabled BOOLEAN DEFAULT TRUE,
+    UNIQUE(user_id, alert_type)
+);
+
+CREATE TABLE IF NOT EXISTS portfolio_alerts (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    asset_symbol VARCHAR(30) NOT NULL,
+    alert_type VARCHAR(30) NOT NULL,
+    message TEXT NOT NULL,
+    is_read BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_portfolio_alerts_user ON portfolio_alerts(user_id, is_read, created_at DESC);

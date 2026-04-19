@@ -20,7 +20,8 @@ router = APIRouter(prefix="/api/v1/portfolio", tags=["portfolio"])
 class ConnectBinanceRequest(BaseModel):
     api_key: str
     api_secret: str
-    label: Optional[str] = "Binance Futures"
+    label: Optional[str] = "Binance"
+    market_type: Optional[str] = "futures"  # futures | spot
 
 
 class ManualAssetRequest(BaseModel):
@@ -61,39 +62,45 @@ async def _get_user_source(user_id: int, provider: str = "binance") -> Optional[
 
 @router.post("/connect/binance")
 async def connect_binance(req: ConnectBinanceRequest, current_user: dict = Depends(get_current_user)):
-    """Save encrypted Binance API credentials and test connection."""
-    # Test connection first
+    """Save encrypted Binance API credentials and test connection (Futures or Spot)."""
+    market_type = req.market_type or "futures"
+    if market_type not in ("futures", "spot"):
+        raise HTTPException(status_code=400, detail="market_type must be 'futures' or 'spot'")
+
     fetcher = BinancePortfolioFetcher(req.api_key, req.api_secret)
     try:
-        await fetcher.get_account()
+        if market_type == "spot":
+            await fetcher.get_spot_account()
+        else:
+            await fetcher.get_futures_account()
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Invalid API credentials or insufficient permissions: {e}")
     finally:
         await fetcher.close()
 
     db = get_db()
-    # Deactivate old source
+    # Deactivate old source of same market type
     await db.execute(
-        "UPDATE account_sources SET is_active = FALSE WHERE user_id = $1 AND provider = 'binance'",
-        [current_user["id"]],
+        "UPDATE account_sources SET is_active = FALSE WHERE user_id = $1 AND provider = 'binance' AND market_type = $2",
+        [current_user["id"], market_type],
     )
     # Insert new
     await db.execute(
-        """INSERT INTO account_sources (user_id, type, provider, label, api_key_encrypted, api_secret_encrypted, is_active)
-           VALUES ($1, 'cex', 'binance', $2, $3, $4, TRUE)""",
-        [current_user["id"], req.label, encrypt(req.api_key), encrypt(req.api_secret)],
+        """INSERT INTO account_sources (user_id, type, provider, market_type, label, api_key_encrypted, api_secret_encrypted, is_active)
+           VALUES ($1, 'cex', 'binance', $2, $3, $4, $5, TRUE)""",
+        [current_user["id"], market_type, req.label, encrypt(req.api_key), encrypt(req.api_secret)],
     )
-    return {"message": "Binance connected successfully"}
+    return {"message": f"Binance {market_type.capitalize()} connected successfully"}
 
 
 @router.delete("/disconnect/binance")
-async def disconnect_binance(current_user: dict = Depends(get_current_user)):
+async def disconnect_binance(current_user: dict = Depends(get_current_user), market_type: Optional[str] = "futures"):
     db = get_db()
     await db.execute(
-        "UPDATE account_sources SET is_active = FALSE WHERE user_id = $1 AND provider = 'binance'",
-        [current_user["id"]],
+        "UPDATE account_sources SET is_active = FALSE WHERE user_id = $1 AND provider = 'binance' AND market_type = $2",
+        [current_user["id"], market_type],
     )
-    return {"message": "Binance disconnected"}
+    return {"message": f"Binance {market_type.capitalize()} disconnected"}
 
 
 # ============= SYNC =============
@@ -280,6 +287,59 @@ async def get_deviation(current_user: dict = Depends(get_current_user)):
         })
 
     return {"model_id": model_id, "deviations": deviations}
+
+
+# ============= ALERTS =============
+
+class AlertSettingRequest(BaseModel):
+    alert_type: str  # liquidation, pnl_up, pnl_down
+    threshold: float
+    enabled: bool = True
+
+
+@router.get("/alerts")
+async def list_alerts(current_user: dict = Depends(get_current_user)):
+    """Get unread portfolio alerts."""
+    db = get_db()
+    rows = await db.query(
+        "SELECT * FROM portfolio_alerts WHERE user_id = $1 ORDER BY is_read ASC, created_at DESC LIMIT 50",
+        [current_user["id"]],
+    )
+    return [dict(r) for r in rows]
+
+
+@router.post("/alerts/read")
+async def mark_alerts_read(current_user: dict = Depends(get_current_user)):
+    db = get_db()
+    await db.execute(
+        "UPDATE portfolio_alerts SET is_read = TRUE WHERE user_id = $1",
+        [current_user["id"]],
+    )
+    return {"message": "Alerts marked as read"}
+
+
+@router.get("/alerts/settings")
+async def get_alert_settings(current_user: dict = Depends(get_current_user)):
+    db = get_db()
+    rows = await db.query(
+        "SELECT alert_type, threshold, enabled FROM portfolio_alert_settings WHERE user_id = $1",
+        [current_user["id"]],
+    )
+    return [dict(r) for r in rows]
+
+
+@router.post("/alerts/settings")
+async def set_alert_setting(req: AlertSettingRequest, current_user: dict = Depends(get_current_user)):
+    db = get_db()
+    await db.execute(
+        """INSERT INTO portfolio_alert_settings (user_id, alert_type, threshold, enabled)
+           VALUES ($1, $2, $3, $4)
+           ON CONFLICT (user_id, alert_type) DO UPDATE SET
+             threshold = EXCLUDED.threshold,
+             enabled = EXCLUDED.enabled""",
+        [current_user["id"], req.alert_type, req.threshold, req.enabled],
+    )
+    return {"message": "Alert setting saved"}
 
 
 # ============= ADMIN =============
