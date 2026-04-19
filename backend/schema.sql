@@ -314,3 +314,13 @@ CREATE TABLE IF NOT EXISTS scanner_run_logs (
 );
 
 CREATE INDEX IF NOT EXISTS idx_scanner_run_logs_at ON scanner_run_logs(run_at DESC);
+
+-- Global app settings
+CREATE TABLE IF NOT EXISTS app_settings (
+    key VARCHAR(50) PRIMARY KEY,
+    value TEXT NOT NULL,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+INSERT INTO app_settings (key, value) VALUES ('scanner_min_score', '5')
+ON CONFLICT (key) DO NOTHING;

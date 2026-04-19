@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import { Loader2, Users, Crown, UserCheck, TrendingUp, Search, Ban, CheckCircle2, Mail, Send } from "lucide-react"
+import { Loader2, Users, Crown, UserCheck, TrendingUp, Search, Ban, CheckCircle2, Mail, Send, Zap, Activity, Play } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid } from "recharts"
 
@@ -61,6 +61,9 @@ export default function AdminPage() {
   const [testResult, setTestResult] = useState<string | null>(null)
   const [payments, setPayments] = useState<any[]>([])
   const [subscriptions, setSubscriptions] = useState<any[]>([])
+  const [scannerStatus, setScannerStatus] = useState<any>(null)
+  const [scannerLogs, setScannerLogs] = useState<any[]>([])
+  const [scannerLoading, setScannerLoading] = useState(false)
 
   useEffect(() => {
     if (!isLoading && user?.subscription_tier !== "admin") {
@@ -90,12 +93,16 @@ export default function AdminPage() {
         if (reportsRes.ok) {
           setReportStatus(await reportsRes.json())
         }
-        const [payRes, subRes] = await Promise.all([
+        const [payRes, subRes, scanStatusRes, scanLogsRes] = await Promise.all([
           fetch(`${API_BASE_URL}/payments/admin/payments`, { cache: "no-store", headers: { Authorization: `Bearer ${token}` } }),
           fetch(`${API_BASE_URL}/payments/admin/subscriptions`, { cache: "no-store", headers: { Authorization: `Bearer ${token}` } }),
+          fetch(`${API_BASE_URL}/admin/scanner/status`, { cache: "no-store", headers: { Authorization: `Bearer ${token}` } }),
+          fetch(`${API_BASE_URL}/admin/scanner/logs`, { cache: "no-store", headers: { Authorization: `Bearer ${token}` } }),
         ])
         if (payRes.ok) setPayments(await payRes.json())
         if (subRes.ok) setSubscriptions(await subRes.json())
+        if (scanStatusRes.ok) setScannerStatus(await scanStatusRes.json())
+        if (scanLogsRes.ok) setScannerLogs(await scanLogsRes.json())
       } catch (e: any) {
         setError(e.message)
       } finally {
@@ -301,6 +308,104 @@ export default function AdminPage() {
                   {reportStatus.last_daily_send.status}
                 </span>
               </p>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Scanner Management */}
+        <Card>
+          <CardHeader className="pb-2">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <CardTitle className="text-base font-semibold">Scanner Management</CardTitle>
+                <CardDescription>Anomaly scanner status and controls</CardDescription>
+              </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={scannerLoading}
+                  onClick={async () => {
+                    setScannerLoading(true)
+                    try {
+                      const token = localStorage.getItem("access_token")
+                      const res = await fetch(`${API_BASE_URL}/admin/scanner/run`, {
+                        method: "POST",
+                        headers: { Authorization: `Bearer ${token}` },
+                      })
+                      if (res.ok) alert("Scanner job triggered")
+                    } finally {
+                      setScannerLoading(false)
+                    }
+                  }}
+                >
+                  <Play className="mr-2 h-4 w-4" />
+                  Run Now
+                </Button>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-4">
+              <MetricCard
+                title="Min Score"
+                value={scannerStatus?.min_score ?? 5}
+                icon={Zap}
+                tone="amber"
+              />
+              <MetricCard
+                title="Active Signals"
+                value={scannerStatus?.active_signals ?? 0}
+                icon={Activity}
+                tone="emerald"
+              />
+              <MetricCard
+                title="Scans (24h)"
+                value={scannerStatus?.runs_24h ?? 0}
+                icon={CheckCircle2}
+                tone="indigo"
+              />
+              <MetricCard
+                title="Signals (24h)"
+                value={scannerStatus?.anomalies_24h ?? 0}
+                icon={Zap}
+                tone="slate"
+              />
+            </div>
+            {scannerStatus?.last_run && (
+              <p className="mt-3 text-xs text-muted-foreground">
+                Last scan: {new Date(scannerStatus.last_run.run_at).toLocaleString()} · 
+                Checked {scannerStatus.last_run.symbols_checked} symbols · 
+                Found {scannerStatus.last_run.anomalies_found} anomalies · 
+                Duration {scannerStatus.last_run.duration_ms}ms
+                {scannerStatus.last_run.error && <span className="text-red-500 ml-2">Error: {scannerStatus.last_run.error}</span>}
+              </p>
+            )}
+            {scannerLogs.length > 0 && (
+              <div className="mt-4 overflow-auto max-h-[200px]">
+                <table className="w-full text-xs">
+                  <thead>
+                    <tr className="border-b text-left text-muted-foreground">
+                      <th className="py-1">Time</th>
+                      <th className="py-1">Checked</th>
+                      <th className="py-1">Found</th>
+                      <th className="py-1">Min</th>
+                      <th className="py-1">Duration</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {scannerLogs.slice(0, 10).map((log: any) => (
+                      <tr key={log.id} className="border-b border-muted">
+                        <td className="py-1">{new Date(log.run_at).toLocaleTimeString()}</td>
+                        <td className="py-1">{log.symbols_checked}</td>
+                        <td className="py-1">{log.anomalies_found}</td>
+                        <td className="py-1">{log.min_score}</td>
+                        <td className="py-1">{log.duration_ms}ms</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             )}
           </CardContent>
         </Card>
@@ -530,13 +635,14 @@ function MetricCard({
   title: string
   value: number
   icon: React.ElementType
-  tone: "indigo" | "violet" | "slate" | "emerald"
+  tone: "indigo" | "violet" | "slate" | "emerald" | "amber"
 }) {
   const toneClasses: Record<string, string> = {
     indigo: "border-indigo-500/20 bg-indigo-500/5 text-indigo-600",
     violet: "border-violet-500/20 bg-violet-500/5 text-violet-600",
     slate: "border-slate-500/20 bg-slate-500/5 text-slate-600",
     emerald: "border-emerald-500/20 bg-emerald-500/5 text-emerald-600",
+    amber: "border-amber-500/20 bg-amber-500/5 text-amber-600",
   }
   return (
     <Card className={cn("border", toneClasses[tone])}>

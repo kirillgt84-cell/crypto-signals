@@ -18,6 +18,17 @@ SCAN_TOP_N = 150
 DEFAULT_MIN_SCORE = 5
 
 
+async def get_min_score() -> int:
+    try:
+        db = get_db()
+        row = await db.query("SELECT value FROM app_settings WHERE key = 'scanner_min_score' LIMIT 1", [])
+        if row:
+            return int(row[0]["value"])
+    except Exception:
+        pass
+    return DEFAULT_MIN_SCORE
+
+
 def _score_volume_ratio(ratio: float) -> int:
     if ratio < 1.5:
         return 0
@@ -281,8 +292,9 @@ async def run_scanner_job():
     symbols_checked = 0
     anomalies_found = 0
     error_msg = None
+    min_score = await get_min_score()
     try:
-        signals = await scan_anomalies(min_score=DEFAULT_MIN_SCORE)
+        signals = await scan_anomalies(min_score=min_score)
         anomalies_found = len(signals)
         symbols_checked = SCAN_TOP_N
         if signals:
@@ -298,7 +310,7 @@ async def run_scanner_job():
         try:
             await db.execute(
                 "INSERT INTO scanner_run_logs (symbols_checked, anomalies_found, min_score, duration_ms, error) VALUES ($1, $2, $3, $4, $5)",
-                [symbols_checked, anomalies_found, DEFAULT_MIN_SCORE, duration, error_msg],
+                [symbols_checked, anomalies_found, min_score, duration, error_msg],
             )
         except Exception as e:
             logger.error(f"[Scanner] Failed to write run log: {e}")

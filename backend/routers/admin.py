@@ -173,3 +173,56 @@ async def send_test_report(
         raise HTTPException(status_code=500, detail=result.get("error", "Failed to send email"))
     
     return {"message": f"Test {report_type} report sent", "email": admin_email, "id": result.get("id")}
+
+
+# ============= SCANNER ADMIN =============
+
+@router.get("/scanner/status")
+async def admin_scanner_status(admin: dict = Depends(require_admin)):
+    db = get_db()
+    last_run = await db.query("SELECT * FROM scanner_run_logs ORDER BY run_at DESC LIMIT 1", [])
+    runs_24h = await db.query(
+        "SELECT COUNT(*) as cnt, COALESCE(SUM(anomalies_found), 0) as total FROM scanner_run_logs WHERE run_at > NOW() - INTERVAL '24 hours'",
+        [],
+    )
+    active_signals = await db.query("SELECT COUNT(*) as cnt FROM anomaly_signals WHERE expires_at > NOW()", [])
+    settings = await db.query("SELECT value FROM app_settings WHERE key = 'scanner_min_score' LIMIT 1", [])
+    return {
+        "last_run": dict(last_run[0]) if last_run else None,
+        "runs_24h": runs_24h[0]["cnt"] if runs_24h else 0,
+        "anomalies_24h": int(runs_24h[0]["total"]) if runs_24h else 0,
+        "active_signals": active_signals[0]["cnt"] if active_signals else 0,
+        "min_score": int(settings[0]["value"]) if settings else 5,
+    }
+
+
+@router.get("/scanner/logs")
+async def admin_scanner_logs(limit: int = 20, admin: dict = Depends(require_admin)):
+    db = get_db()
+    rows = await db.query(
+        "SELECT * FROM scanner_run_logs ORDER BY run_at DESC LIMIT $1",
+        [limit],
+    )
+    return [dict(r) for r in rows]
+
+
+@router.post("/scanner/run")
+async def admin_scanner_run(admin: dict = Depends(require_admin)):
+    from scanners.anomaly_scanner import run_scanner_job
+    import asyncio
+    asyncio.create_task(run_scanner_job())
+    return {"message": "Scanner job triggered"}
+
+
+@router.patch("/scanner/settings")
+async def admin_scanner_settings(body: dict, admin: dict = Depends(require_admin)):
+    db = get_db()
+    min_score = body.get("min_score")
+    if min_score is not None:
+        if not isinstance(min_score, int) or min_score < 1 or min_score > 13:
+            raise HTTPException(status_code=400, detail="min_score must be 1-13")
+        await db.execute(
+            "INSERT INTO app_settings (key, value) VALUES ('scanner_min_score', $1) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = NOW()",
+            [str(min_score)],
+        )
+    return {"message": "Settings updated"}
