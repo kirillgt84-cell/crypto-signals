@@ -8,6 +8,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Check, Zap, Crown, Loader2 } from "lucide-react";
+import Sidebar from "../components/admin/Sidebar";
+import { cn } from "@/lib/utils";
 import { useSearchParams } from "next/navigation";
 
 interface Plan {
@@ -23,6 +25,7 @@ interface Plan {
 const API_BASE = "https://crypto-signals-production-ff4c.up.railway.app/api/v1";
 
 export default function PricingClient() {
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
   const { user, isAuthenticated } = useAuth();
   const searchParams = useSearchParams();
   const [plans, setPlans] = useState<Plan[]>([]);
@@ -118,7 +121,9 @@ export default function PricingClient() {
   const isPro = user?.subscription_tier === "pro" || user?.subscription_tier === "admin";
 
   return (
-    <div className="min-h-screen bg-[#0b0f19] text-slate-200">
+    <div className="flex min-h-screen bg-[#0b0f19] text-slate-200">
+      <Sidebar collapsed={sidebarCollapsed} onToggle={() => setSidebarCollapsed(!sidebarCollapsed)} />
+      <main className={cn("flex-1 overflow-hidden transition-all duration-300", sidebarCollapsed ? "lg:ml-16" : "lg:ml-64")}>
       <div className="mx-auto max-w-5xl px-4 py-12">
         {/* Header */}
         <div className="text-center mb-10">
@@ -230,6 +235,7 @@ export default function PricingClient() {
           )}
         </div>
       </div>
+      </main>
     </div>
   );
 }
