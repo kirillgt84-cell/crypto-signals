@@ -9,7 +9,7 @@ from typing import Dict, List, Optional
 
 logger = logging.getLogger(__name__)
 
-EXCLUDED_BASES = {"BTC", "ETH", "SOL", "BNB"}
+EXCLUDED_BASES = set()
 
 
 class BinanceHeatmapFetcher:
@@ -123,7 +123,7 @@ class BinanceHeatmapFetcher:
             oi = oi_data.get(sym, 0)
 
             snapshot.append({
-                "symbol": info["baseAsset"],
+                "symbol": sym,
                 "category": info["category"],
                 "price": float(ticker.get("lastPrice", 0) or 0),
                 "volume_24h": float(ticker.get("volume", 0) or 0),
