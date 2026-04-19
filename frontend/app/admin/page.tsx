@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import { Loader2, Users, Crown, UserCheck, TrendingUp, Search, Ban, CheckCircle2 } from "lucide-react"
+import { Loader2, Users, Crown, UserCheck, TrendingUp, Search, Ban, CheckCircle2, Mail, Send } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid } from "recharts"
 
@@ -34,6 +34,14 @@ interface Stats {
   registrations_by_day: { date: string; count: number }[]
 }
 
+interface ReportStatus {
+  daily_subscribers: number
+  weekly_subscribers: number
+  last_daily_send: { sent_at: string; status: string } | null
+  daily_sent_24h: number
+  daily_failed_24h: number
+}
+
 function formatDateLabel(dateStr: string) {
   const d = new Date(dateStr)
   return d.toLocaleDateString(undefined, { month: "short", day: "numeric" })
@@ -48,6 +56,9 @@ export default function AdminPage() {
   const [error, setError] = useState<string | null>(null)
   const [search, setSearch] = useState("")
   const [tierFilter, setTierFilter] = useState<string>("all")
+  const [reportStatus, setReportStatus] = useState<ReportStatus | null>(null)
+  const [sendingTest, setSendingTest] = useState(false)
+  const [testResult, setTestResult] = useState<string | null>(null)
 
   useEffect(() => {
     if (!isLoading && user?.subscription_tier !== "admin") {
@@ -61,9 +72,10 @@ export default function AdminPage() {
 
     const fetchData = async () => {
       try {
-        const [usersRes, statsRes] = await Promise.all([
+        const [usersRes, statsRes, reportsRes] = await Promise.all([
           fetch(`${API_BASE_URL}/admin/users`, { cache: "no-store", headers: { Authorization: `Bearer ${token}` } }),
           fetch(`${API_BASE_URL}/admin/stats`, { cache: "no-store", headers: { Authorization: `Bearer ${token}` } }),
+          fetch(`${API_BASE_URL}/admin/reports/status`, { cache: "no-store", headers: { Authorization: `Bearer ${token}` } }),
         ])
         if (!usersRes.ok || !statsRes.ok) {
           const err = await (usersRes.ok ? statsRes : usersRes).json()
@@ -73,6 +85,9 @@ export default function AdminPage() {
         const statsData = await statsRes.json()
         setUsers(usersData.users || [])
         setStats(statsData)
+        if (reportsRes.ok) {
+          setReportStatus(await reportsRes.json())
+        }
       } catch (e: any) {
         setError(e.message)
       } finally {
@@ -116,6 +131,27 @@ export default function AdminPage() {
       setUsers((prev) => prev.map((u) => (u.id === userId ? { ...u, subscription_tier: newTier } : u)))
     } catch (e: any) {
       setError(e.message)
+    }
+  }
+
+  const handleSendTest = async (type: "daily" | "weekly") => {
+    const token = localStorage.getItem("access_token")
+    setSendingTest(true)
+    setTestResult(null)
+    try {
+      const res = await fetch(`${API_BASE_URL}/admin/reports/send-test`, {
+        method: "POST",
+        cache: "no-store",
+        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ type }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.detail || "Failed")
+      setTestResult(`Test ${type} report sent to ${data.email}`)
+    } catch (e: any) {
+      setTestResult(`Error: ${e.message}`)
+    } finally {
+      setSendingTest(false)
     }
   }
 
@@ -193,6 +229,73 @@ export default function AdminPage() {
             tone="emerald"
           />
         </div>
+
+        {/* Daily Reports */}
+        <Card>
+          <CardHeader className="pb-2">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <CardTitle className="text-base font-semibold">Daily Reports</CardTitle>
+                <CardDescription>Email market overview subscriptions</CardDescription>
+              </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={sendingTest}
+                  onClick={() => handleSendTest("daily")}
+                >
+                  <Send className="mr-2 h-4 w-4" />
+                  Test daily
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={sendingTest}
+                  onClick={() => handleSendTest("weekly")}
+                >
+                  <Send className="mr-2 h-4 w-4" />
+                  Test weekly
+                </Button>
+              </div>
+            </div>
+            {testResult && (
+              <p className={cn("mt-2 text-xs", testResult.startsWith("Error") ? "text-red-500" : "text-emerald-600")}>
+                {testResult}
+              </p>
+            )}
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+              <MetricCard
+                title="Daily Subscribers"
+                value={reportStatus?.daily_subscribers ?? 0}
+                icon={Mail}
+                tone="indigo"
+              />
+              <MetricCard
+                title="Sent (24h)"
+                value={reportStatus?.daily_sent_24h ?? 0}
+                icon={CheckCircle2}
+                tone="emerald"
+              />
+              <MetricCard
+                title="Failed (24h)"
+                value={reportStatus?.daily_failed_24h ?? 0}
+                icon={Ban}
+                tone="slate"
+              />
+            </div>
+            {reportStatus?.last_daily_send && (
+              <p className="mt-3 text-xs text-muted-foreground">
+                Last send: {new Date(reportStatus.last_daily_send.sent_at).toLocaleString()} · Status: {" "}
+                <span className={reportStatus.last_daily_send.status === "sent" ? "text-emerald-600" : "text-red-600"}>
+                  {reportStatus.last_daily_send.status}
+                </span>
+              </p>
+            )}
+          </CardContent>
+        </Card>
 
         {/* Chart */}
         <Card>

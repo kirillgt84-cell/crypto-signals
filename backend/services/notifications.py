@@ -54,57 +54,247 @@ async def send_telegram_message(chat_id: str, text: str) -> dict:
         return {"success": False, "error": data.get("description", f"HTTP {resp.status_code}")}
 
 
-def _build_report_html(title: str, sections: List[Dict]) -> str:
-    rows = ""
-    for s in sections:
-        rows += f"""
-        <tr>
-          <td style="padding:12px;border-bottom:1px solid #e5e7eb;">
-            <p style="margin:0;font-size:14px;color:#6b7280;">{s.get('label','')}</p>
-            <p style="margin:4px 0 0;font-size:18px;font-weight:600;color:#111827;">{s.get('value','')}</p>
-            <p style="margin:4px 0 0;font-size:13px;color:#374151;">{s.get('detail','')}</p>
-          </td>
-        </tr>
-        """
-    return f"""
-    <html>
-      <body style="font-family:Arial,Helvetica,sans-serif;background:#f3f4f6;padding:24px;">
-        <table width="100%" cellpadding="0" cellspacing="0" style="max-width:600px;margin:0 auto;background:#ffffff;border-radius:8px;overflow:hidden;">
-          <tr><td style="background:#111827;padding:20px;color:#ffffff;font-size:20px;font-weight:bold;">{title}</td></tr>
-          {rows}
-          <tr><td style="padding:16px;font-size:12px;color:#9ca3af;">Sent by Fast Lane · <a href="https://crypto-signals-ff4c.vercel.app" style="color:#6b7280;">Open Dashboard</a></td></tr>
+def _pct_color(v: float) -> str:
+    return "#10b981" if v >= 0 else "#ef4444"
+
+
+def _build_report_html(title: str, content_blocks: List[str]) -> str:
+    blocks = "\n".join(content_blocks)
+    return f"""<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<body style="margin:0;padding:0;background:#0b0f19;font-family:Arial,Helvetica,sans-serif;color:#e2e8f0;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#0b0f19;padding:24px 12px;">
+    <tr>
+      <td align="center">
+        <table width="100%" cellpadding="0" cellspacing="0" style="max-width:640px;background:#111827;border-radius:12px;overflow:hidden;border:1px solid #1e293b;">
+          <tr>
+            <td style="background:#0f172a;padding:24px 20px;border-bottom:1px solid #1e293b;">
+              <p style="margin:0;font-size:12px;color:#94a3b8;letter-spacing:0.1em;text-transform:uppercase;">Fast Lane · Market Intelligence</p>
+              <h1 style="margin:6px 0 0;font-size:22px;font-weight:700;color:#f8fafc;">{title}</h1>
+            </td>
+          </tr>
+          <tr><td style="padding:20px;">{blocks}</td></tr>
+          <tr>
+            <td style="padding:16px 20px;border-top:1px solid #1e293b;text-align:center;">
+              <p style="margin:0;font-size:12px;color:#64748b;">
+                Sent by Fast Lane ·
+                <a href="https://crypto-signals-chi.vercel.app" style="color:#94a3b8;text-decoration:none;">Open Dashboard</a>
+              </p>
+            </td>
+          </tr>
         </table>
-      </body>
-    </html>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>"""
+
+
+def _html_section(heading: str, body: str) -> str:
+    return f"""
+    <h2 style="margin:0 0 10px;font-size:14px;font-weight:700;color:#f8fafc;text-transform:uppercase;letter-spacing:0.05em;">{heading}</h2>
+    <div style="margin-bottom:24px;">{body}</div>
     """
 
 
+def _html_two_col(label1: str, val1: str, label2: str, val2: str) -> str:
+    return f"""
+    <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:4px;">
+      <tr>
+        <td width="50%" style="padding:8px 0;font-size:13px;color:#94a3b8;">{label1}</td>
+        <td width="50%" align="right" style="padding:8px 0;font-size:14px;font-weight:600;color:#f8fafc;">{val1}</td>
+      </tr>
+      <tr>
+        <td width="50%" style="padding:8px 0;font-size:13px;color:#94a3b8;">{label2}</td>
+        <td width="50%" align="right" style="padding:8px 0;font-size:14px;font-weight:600;color:#f8fafc;">{val2}</td>
+      </tr>
+    </table>
+    """
+
+
+def _html_table(headers: List[str], rows: List[List[str]]) -> str:
+    ths = "".join(f'<th style="padding:8px 10px;font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:0.05em;text-align:left;border-bottom:1px solid #1e293b;">{h}</th>' for h in headers)
+    trs = ""
+    for r in rows:
+        tds = "".join(f'<td style="padding:8px 10px;font-size:13px;color:#e2e8f0;border-bottom:1px solid #1e293b;">{c}</td>' for c in r)
+        trs += f"<tr>{tds}</tr>"
+    return f'<table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;"><thead><tr>{ths}</tr></thead><tbody>{trs}</tbody></table>'
+
+
 async def generate_daily_report() -> dict:
-    """Generate daily market report from latest DB data"""
+    """Generate rich daily market report from latest DB data"""
     db = get_db()
+    blocks: List[str] = []
+    text_lines: List[str] = ["Daily Market Report"]
     try:
-        rows = await db.query(
+        # 1. BTC / ETH snapshot
+        majors = await db.query(
             """SELECT DISTINCT ON (symbol)
                symbol, open_interest, price, volume, funding_rate
                FROM oi_history
-               WHERE time > NOW() - INTERVAL '6 hours'
+               WHERE symbol IN ('BTCUSDT','ETHUSDT') AND time > NOW() - INTERVAL '6 hours'
                ORDER BY symbol, time DESC""",
             []
         )
-        sections = []
-        for r in rows:
-            sections.append({
-                "label": r["symbol"],
-                "value": f"${r['price']:,.2f}",
-                "detail": f"OI: ${(r['open_interest']*r['price']/1e9):.2f}B · Funding: {r['funding_rate']*100:.4f}%"
-            })
+        major_map = {r["symbol"]: r for r in majors}
 
-        if not sections:
-            sections.append({"label": "Market", "value": "No fresh data", "detail": "Check back later."})
+        # 24h ago for change calc
+        majors_24h = await db.query(
+            """SELECT DISTINCT ON (symbol)
+               symbol, price
+               FROM oi_history
+               WHERE symbol IN ('BTCUSDT','ETHUSDT') AND time < NOW() - INTERVAL '23 hours'
+               ORDER BY symbol, time DESC""",
+            []
+        )
+        old_price = {r["symbol"]: float(r["price"] or 0) for r in majors_24h}
 
-        html = _build_report_html("Daily Market Report", sections)
-        text = "Daily Market Report\n\n" + "\n".join(f"{s['label']}: {s['value']} ({s['detail']})" for s in sections)
-        return {"html": html, "text": text, "sections": sections}
+        major_body = ""
+        for sym in ("BTCUSDT", "ETHUSDT"):
+            r = major_map.get(sym)
+            if not r:
+                continue
+            price = float(r["price"] or 0)
+            prev = old_price.get(sym, price)
+            chg = ((price - prev) / prev * 100) if prev else 0
+            color = _pct_color(chg)
+            oi_usd = float(r["open_interest"] or 0) * price
+            major_body += _html_two_col(
+                sym.replace("USDT", ""),
+                f"${price:,.2f} <span style='color:{color};font-size:12px;'>({chg:+.2f}%)</span>",
+                "OI / Funding",
+                f"${oi_usd/1e9:.2f}B · {float(r['funding_rate'] or 0)*100:.4f}%"
+            )
+        if major_body:
+            blocks.append(_html_section("BTC & ETH", major_body))
+            text_lines.append(f"BTC: ${major_map.get('BTCUSDT',{}).get('price',0):,.2f}")
+
+        # 2. Funding extremes
+        funding = await db.query(
+            """SELECT DISTINCT ON (symbol)
+               symbol, funding_rate
+               FROM oi_history
+               WHERE time > NOW() - INTERVAL '6 hours' AND funding_rate IS NOT NULL
+               ORDER BY symbol, time DESC""",
+            []
+        )
+        funding_sorted = sorted(funding, key=lambda x: float(x["funding_rate"] or 0), reverse=True)
+        top_long = funding_sorted[:3]
+        top_short = funding_sorted[-3:][::-1]
+        if top_long:
+            rows = []
+            for r in top_long:
+                rows.append([r["symbol"].replace("USDT",""), f"{float(r['funding_rate'])*100:.4f}%"])
+            for r in top_short:
+                rows.append([r["symbol"].replace("USDT",""), f"{float(r['funding_rate'])*100:.4f}%"])
+            blocks.append(_html_section("Funding Extremes (Longs vs Shorts)", _html_table(["Symbol", "Funding"], rows)))
+
+        # 3. Gainers / Losers from heatmap
+        heatmap = await db.query(
+            """SELECT DISTINCT ON (symbol)
+               symbol, base_asset, price_change_pct, quote_volume_24h
+               FROM heatmap_snapshots
+               WHERE snapshot_time > NOW() - INTERVAL '2 hours'
+               ORDER BY symbol, snapshot_time DESC""",
+            []
+        )
+        heatmap_sorted = sorted(heatmap, key=lambda x: float(x["price_change_pct"] or 0), reverse=True)
+        gainers = heatmap_sorted[:5]
+        losers = heatmap_sorted[-5:][::-1]
+        if gainers:
+            rows = []
+            for g in gainers:
+                color = _pct_color(float(g["price_change_pct"] or 0))
+                rows.append([
+                    g.get("base_asset", g["symbol"].replace("USDT","")),
+                    f"<span style='color:{color};'>{float(g['price_change_pct']):+.2f}%</span>",
+                    f"${float(g['quote_volume_24h'])/1e6:.1f}M"
+                ])
+            blocks.append(_html_section("Top Gainers", _html_table(["Symbol", "24h", "Volume"], rows)))
+        if losers:
+            rows = []
+            for l in losers:
+                color = _pct_color(float(l["price_change_pct"] or 0))
+                rows.append([
+                    l.get("base_asset", l["symbol"].replace("USDT","")),
+                    f"<span style='color:{color};'>{float(l['price_change_pct']):+.2f}%</span>",
+                    f"${float(l['quote_volume_24h'])/1e6:.1f}M"
+                ])
+            blocks.append(_html_section("Top Losers", _html_table(["Symbol", "24h", "Volume"], rows)))
+
+        # 4. Top OI movers
+        oi_movers = await db.query(
+            """SELECT
+               symbol,
+               (MAX(open_interest) FILTER (WHERE time > NOW() - INTERVAL '2 hours') -
+                MIN(open_interest) FILTER (WHERE time < NOW() - INTERVAL '22 hours')) as oi_change,
+                MAX(price) FILTER (WHERE time > NOW() - INTERVAL '2 hours') as latest_price
+               FROM oi_history
+               WHERE time > NOW() - INTERVAL '24 hours'
+               GROUP BY symbol
+               HAVING COUNT(*) > 1
+               ORDER BY ABS(oi_change) DESC NULLS LAST
+               LIMIT 5""",
+            []
+        )
+        if oi_movers:
+            rows = []
+            for r in oi_movers:
+                chg = r["oi_change"] or 0
+                color = _pct_color(chg)
+                rows.append([
+                    r["symbol"].replace("USDT",""),
+                    f"<span style='color:{color};'>{chg/1e6:+.1f}M</span>",
+                    f"${float(r['latest_price']):,.2f}"
+                ])
+            blocks.append(_html_section("Top OI Movers (24h)", _html_table(["Symbol", "OI Δ", "Price"], rows)))
+
+        # 5. ETF Flows
+        etf = await db.query(
+            "SELECT * FROM etf_daily_summary ORDER BY date DESC LIMIT 1",
+            []
+        )
+        if etf:
+            e = etf[0]
+            flow = e.get("total_flow_usd", 0) or 0
+            color = _pct_color(flow)
+            etf_body = _html_two_col(
+                "Total Flow",
+                f"<span style='color:{color};'>${flow/1e6:+.1f}M</span>",
+                "Total AUM",
+                f"${(e.get('total_aum_usd',0) or 0)/1e9:.2f}B"
+            )
+            blocks.append(_html_section("Bitcoin ETF Flows", etf_body))
+            text_lines.append(f"ETF Flow: ${flow/1e6:+.1f}M")
+
+        # 6. Top anomalies
+        anomalies = await db.query(
+            """SELECT symbol, direction, score, volume_ratio, oi_change_pct, price_change_24h_pct, confidence
+               FROM anomaly_signals
+               WHERE triggered_at > NOW() - INTERVAL '24 hours'
+               ORDER BY score DESC LIMIT 5""",
+            []
+        )
+        if anomalies:
+            rows = []
+            for a in anomalies:
+                dir_color = "#10b981" if a["direction"] == "LONG" else "#ef4444"
+                rows.append([
+                    a["symbol"].replace("USDT",""),
+                    f"<span style='color:{dir_color};font-size:11px;font-weight:700;'>{a['direction']}</span>",
+                    str(a["score"]),
+                    f"{a['volume_ratio']}x",
+                    f"{a['oi_change_pct']:+.1f}%"
+                ])
+            blocks.append(_html_section("Top Anomaly Signals (24h)", _html_table(["Symbol", "Dir", "Score", "Vol", "OI"], rows)))
+
+        if not blocks:
+            blocks.append(_html_section("Market", "<p style='color:#94a3b8;'>No fresh data available. Check back later.</p>"))
+
+        html = _build_report_html("Daily Market Report", blocks)
+        text = "\n".join(text_lines)
+        return {"html": html, "text": text, "sections": blocks}
     except Exception as e:
         logger.error(f"Daily report generation failed: {e}")
         return {"html": "", "text": "", "sections": [], "error": str(e)}
