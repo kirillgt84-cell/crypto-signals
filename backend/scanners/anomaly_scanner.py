@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 
 MIN_QUOTE_VOLUME = 2_000_000.0
 SCAN_TOP_N = 150
-DEFAULT_MIN_SCORE = 8
+DEFAULT_MIN_SCORE = 5
 
 
 def _score_volume_ratio(ratio: float) -> int:

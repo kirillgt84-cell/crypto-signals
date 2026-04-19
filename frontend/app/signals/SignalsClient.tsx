@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Zap, RefreshCw, ArrowUpRight, ArrowDownRight, Filter, Play, Activity } from "lucide-react";
+import { Zap, RefreshCw, ArrowUpRight, ArrowDownRight, Filter, Play, Activity, Settings2, Mail, MessageCircle } from "lucide-react";
 import Sidebar from "../components/admin/Sidebar";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
@@ -52,6 +52,8 @@ export default function SignalsClient() {
   const [category, setCategory] = useState<string>("all");
   const [scannerStatus, setScannerStatus] = useState<any>(null);
   const [scanningNow, setScanningNow] = useState(false);
+  const [scannerSettings, setScannerSettings] = useState<any>(null);
+  const [settingsOpen, setSettingsOpen] = useState(false);
 
   const fetchSignals = useCallback(async () => {
     if (!isPro) return;
@@ -95,6 +97,36 @@ export default function SignalsClient() {
     }
   }, [isPro]);
 
+  const fetchScannerSettings = useCallback(async () => {
+    if (!isPro) return;
+    try {
+      const token = localStorage.getItem("access_token");
+      const res = await fetch(`${API_BASE}/scanner/settings`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.ok) setScannerSettings(await res.json());
+    } catch (e) {
+      console.error("Failed to fetch scanner settings", e);
+    }
+  }, [isPro]);
+
+  const saveScannerSettings = async (updates: any) => {
+    if (!isPro) return;
+    try {
+      const token = localStorage.getItem("access_token");
+      const res = await fetch(`${API_BASE}/scanner/settings`, {
+        method: "PATCH",
+        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+        body: JSON.stringify(updates),
+      });
+      if (res.ok) {
+        fetchScannerSettings();
+      }
+    } catch (e) {
+      console.error("Failed to save scanner settings", e);
+    }
+  };
+
   const handleScanNow = async () => {
     if (!isPro) return;
     setScanningNow(true);
@@ -120,12 +152,13 @@ export default function SignalsClient() {
   useEffect(() => {
     fetchSignals();
     fetchScannerStatus();
+    fetchScannerSettings();
     const interval = setInterval(() => {
       fetchSignals();
       fetchScannerStatus();
     }, 30000);
     return () => clearInterval(interval);
-  }, [fetchSignals, fetchScannerStatus]);
+  }, [fetchSignals, fetchScannerStatus, fetchScannerSettings]);
 
   const formatTimeAgo = (iso: string) => {
     const diff = Date.now() - new Date(iso).getTime();
@@ -301,6 +334,68 @@ export default function SignalsClient() {
                         ))}
                       </SelectContent>
                     </Select>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Scanner Settings */}
+            <Card className="mb-6 border-slate-800 bg-[#0f1420]">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm font-bold tracking-widest text-white flex items-center gap-2">
+                  <Settings2 className="h-4 w-4 text-slate-400" />
+                  SCANNER SETTINGS
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-medium text-slate-400">
+                      Default Min Score: <span className="text-white">{scannerSettings?.min_score ?? 8}</span>
+                    </label>
+                    <Input
+                      type="range"
+                      min={3}
+                      max={13}
+                      value={scannerSettings?.min_score ?? 8}
+                      onChange={(e) => {
+                        const val = Number(e.target.value);
+                        setScannerSettings((prev: any) => ({ ...prev, min_score: val }));
+                        saveScannerSettings({ min_score: val });
+                      }}
+                      className="h-2 cursor-pointer border-0 bg-slate-800 p-0 accent-amber-500"
+                    />
+                    <p className="text-[10px] text-slate-600">Lower = more signals, higher noise</p>
+                  </div>
+
+                  <div className="flex items-center gap-3">
+                    <Mail className="h-4 w-4 text-slate-400" />
+                    <label className="text-xs text-slate-300">Email Alerts</label>
+                    <input
+                      type="checkbox"
+                      checked={scannerSettings?.email_alerts ?? false}
+                      onChange={(e) => {
+                        const val = e.target.checked;
+                        setScannerSettings((prev: any) => ({ ...prev, email_alerts: val }));
+                        saveScannerSettings({ email_alerts: val });
+                      }}
+                      className="ml-auto h-4 w-4 accent-amber-500"
+                    />
+                  </div>
+
+                  <div className="flex items-center gap-3">
+                    <MessageCircle className="h-4 w-4 text-slate-400" />
+                    <label className="text-xs text-slate-300">Telegram Alerts</label>
+                    <input
+                      type="checkbox"
+                      checked={scannerSettings?.telegram_alerts ?? false}
+                      onChange={(e) => {
+                        const val = e.target.checked;
+                        setScannerSettings((prev: any) => ({ ...prev, telegram_alerts: val }));
+                        saveScannerSettings({ telegram_alerts: val });
+                      }}
+                      className="ml-auto h-4 w-4 accent-amber-500"
+                    />
                   </div>
                 </div>
               </CardContent>
