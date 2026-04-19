@@ -29,9 +29,7 @@ interface SidebarProps {
 
 const baseNavItems = [
   { href: '/', label: 'Dashboard', icon: LayoutDashboard },
-  { href: '/heatmap', label: 'Heatmap', icon: Flame },
   { href: '/signals', label: 'Signals', icon: Zap },
-  { href: '/etf', label: 'ETF Analytics', icon: BarChart3 },
   { href: '/pricing', label: 'Pricing', icon: Crown },
 ];
 

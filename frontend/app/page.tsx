@@ -741,9 +741,6 @@ export default function Dashboard() {
         <header className="flex h-16 items-center justify-between border-b border-border px-4 lg:px-6">
           <div className="flex items-center gap-4">
             <h1 className="text-xl font-semibold">Fast Lane</h1>
-            <Link href="/heatmap" className="text-xs font-bold text-amber-500 hover:text-amber-400 border border-amber-500/30 rounded px-2 py-1 transition-colors">
-              🔥 Heatmap
-            </Link>
             <CoinSearch onSelect={(sym) => setSymbol(sym.replace("USDT", ""))} currentSymbol={symbol + "USDT"} />
             <Select value={timeframe} onValueChange={setTimeframe}>
               <SelectTrigger className="w-20">
@@ -764,10 +761,6 @@ export default function Dashboard() {
             <Button variant="outline" size="sm" className="hidden sm:flex items-center gap-2">
               <Wallet className="h-4 w-4" />
               Connect
-            </Button>
-            <Button size="sm" className="bg-primary text-primary-foreground">
-              <Zap className="mr-1.5 h-4 w-4" />
-              Trade
             </Button>
           </div>
         </header>
