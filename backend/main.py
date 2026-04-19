@@ -98,6 +98,14 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         logger.error(f"Failed to run ETF snapshot on startup: {e}")
     
+    # Первоначальный скан аномалий
+    try:
+        from scheduler import run_anomaly_scan
+        logger.info("Triggering initial anomaly scan on startup...")
+        await run_anomaly_scan()
+    except Exception as e:
+        logger.error(f"Failed to run initial anomaly scan on startup: {e}")
+    
     yield
     
     # Shutdown
