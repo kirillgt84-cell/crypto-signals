@@ -275,12 +275,30 @@ async def save_anomaly_signals(signals: List[Dict[str, Any]]) -> int:
 
 
 async def run_scanner_job():
+    import time
+    start = time.time()
+    db = get_db()
+    symbols_checked = 0
+    anomalies_found = 0
+    error_msg = None
     try:
         signals = await scan_anomalies(min_score=DEFAULT_MIN_SCORE)
+        anomalies_found = len(signals)
+        symbols_checked = SCAN_TOP_N
         if signals:
             inserted = await save_anomaly_signals(signals)
             logger.info(f"[Scanner] Saved {inserted}/{len(signals)} anomaly signals")
         else:
             logger.info("[Scanner] No anomalies found")
     except Exception as e:
+        error_msg = str(e)
         logger.error(f"[Scanner] Job failed: {e}")
+    finally:
+        duration = int((time.time() - start) * 1000)
+        try:
+            await db.execute(
+                "INSERT INTO scanner_run_logs (symbols_checked, anomalies_found, min_score, duration_ms, error) VALUES ($1, $2, $3, $4, $5)",
+                [symbols_checked, anomalies_found, DEFAULT_MIN_SCORE, duration, error_msg],
+            )
+        except Exception as e:
+            logger.error(f"[Scanner] Failed to write run log: {e}")

@@ -117,6 +117,26 @@ async def trigger_scan(
     return {"count": len(signals), "signals": signals}
 
 
+@router.get("/status")
+async def scanner_status(current_user: dict = Depends(_require_pro)):
+    """Get scanner run status (last scan time, counts)."""
+    db = get_db()
+    last_run = await db.query(
+        "SELECT * FROM scanner_run_logs ORDER BY run_at DESC LIMIT 1",
+        [],
+    )
+    runs_24h = await db.query(
+        "SELECT COUNT(*) as cnt, COALESCE(SUM(anomalies_found), 0) as total_found FROM scanner_run_logs WHERE run_at > NOW() - INTERVAL '24 hours'",
+        [],
+    )
+    return {
+        "last_run": dict(last_run[0]) if last_run else None,
+        "runs_24h": runs_24h[0]["cnt"] if runs_24h else 0,
+        "anomalies_24h": int(runs_24h[0]["total_found"]) if runs_24h else 0,
+        "is_active": True,
+    }
+
+
 @router.get("/settings")
 async def get_scanner_settings(current_user: dict = Depends(_require_pro)):
     """Get user's scanner alert settings."""

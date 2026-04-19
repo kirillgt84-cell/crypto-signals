@@ -301,3 +301,16 @@ CREATE TABLE IF NOT EXISTS portfolio_alerts (
 );
 
 CREATE INDEX IF NOT EXISTS idx_portfolio_alerts_user ON portfolio_alerts(user_id, is_read, created_at DESC);
+
+-- Scanner run logs for status indication
+CREATE TABLE IF NOT EXISTS scanner_run_logs (
+    id SERIAL PRIMARY KEY,
+    run_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    symbols_checked INTEGER DEFAULT 0,
+    anomalies_found INTEGER DEFAULT 0,
+    min_score INTEGER DEFAULT 8,
+    duration_ms INTEGER DEFAULT 0,
+    error TEXT
+);
+
+CREATE INDEX IF NOT EXISTS idx_scanner_run_logs_at ON scanner_run_logs(run_at DESC);

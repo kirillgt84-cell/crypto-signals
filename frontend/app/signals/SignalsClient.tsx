@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Zap, RefreshCw, ArrowUpRight, ArrowDownRight, Filter } from "lucide-react";
+import { Zap, RefreshCw, ArrowUpRight, ArrowDownRight, Filter, Play, Activity } from "lucide-react";
 import Sidebar from "../components/admin/Sidebar";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
@@ -50,6 +50,8 @@ export default function SignalsClient() {
   const [direction, setDirection] = useState<string>("all");
   const [confidence, setConfidence] = useState<string>("all");
   const [category, setCategory] = useState<string>("all");
+  const [scannerStatus, setScannerStatus] = useState<any>(null);
+  const [scanningNow, setScanningNow] = useState(false);
 
   const fetchSignals = useCallback(async () => {
     if (!isPro) return;
@@ -80,11 +82,50 @@ export default function SignalsClient() {
     }
   }, [isPro, minScore, direction, confidence, category]);
 
+  const fetchScannerStatus = useCallback(async () => {
+    if (!isPro) return;
+    try {
+      const token = localStorage.getItem("access_token");
+      const res = await fetch(`${API_BASE}/scanner/status`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.ok) setScannerStatus(await res.json());
+    } catch (e) {
+      console.error("Failed to fetch scanner status", e);
+    }
+  }, [isPro]);
+
+  const handleScanNow = async () => {
+    if (!isPro) return;
+    setScanningNow(true);
+    try {
+      const token = localStorage.getItem("access_token");
+      const res = await fetch(`${API_BASE}/scanner/scan-now`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.ok) {
+        const data = await res.json();
+        alert(`Scan complete: ${data.count} anomalies found`);
+        await fetchSignals();
+        await fetchScannerStatus();
+      }
+    } catch (e: any) {
+      alert(e.message || "Scan failed");
+    } finally {
+      setScanningNow(false);
+    }
+  };
+
   useEffect(() => {
     fetchSignals();
-    const interval = setInterval(fetchSignals, 30000);
+    fetchScannerStatus();
+    const interval = setInterval(() => {
+      fetchSignals();
+      fetchScannerStatus();
+    }, 30000);
     return () => clearInterval(interval);
-  }, [fetchSignals]);
+  }, [fetchSignals, fetchScannerStatus]);
 
   const formatTimeAgo = (iso: string) => {
     const diff = Date.now() - new Date(iso).getTime();
@@ -139,17 +180,47 @@ export default function SignalsClient() {
             <p className="mt-1 text-sm text-slate-400">
               Volume Spike / OI Anomaly Scanner — Pro only
             </p>
+            {isPro && scannerStatus && (
+              <div className="mt-2 flex items-center gap-3 text-xs">
+                <span className="flex items-center gap-1 text-emerald-400">
+                  <Activity className="h-3 w-3" />
+                  Scanner Active
+                </span>
+                {scannerStatus.last_run && (
+                  <span className="text-slate-500">
+                    Last scan: {formatTimeAgo(scannerStatus.last_run.run_at)}
+                  </span>
+                )}
+                <span className="text-slate-500">
+                  {scannerStatus.runs_24h} scans / {scannerStatus.anomalies_24h} signals (24h)
+                </span>
+              </div>
+            )}
           </div>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={fetchSignals}
-            disabled={loading}
-            className="border-slate-700 bg-slate-900 text-slate-300 hover:bg-slate-800"
-          >
-            <RefreshCw className={`mr-2 h-4 w-4 ${loading ? "animate-spin" : ""}`} />
-            Refresh
-          </Button>
+          <div className="flex items-center gap-2">
+            {isPro && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleScanNow}
+                disabled={scanningNow}
+                className="border-slate-700 bg-slate-900 text-slate-300 hover:bg-slate-800"
+              >
+                <Play className={`mr-2 h-4 w-4 ${scanningNow ? "animate-pulse" : ""}`} />
+                {scanningNow ? "Scanning..." : "Scan Now"}
+              </Button>
+            )}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={fetchSignals}
+              disabled={loading}
+              className="border-slate-700 bg-slate-900 text-slate-300 hover:bg-slate-800"
+            >
+              <RefreshCw className={`mr-2 h-4 w-4 ${loading ? "animate-spin" : ""}`} />
+              Refresh
+            </Button>
+          </div>
         </div>
 
         {/* Content */}
@@ -271,9 +342,17 @@ export default function SignalsClient() {
                         <tr>
                           <td
                             colSpan={8}
-                            className="px-4 py-12 text-center text-slate-500"
+                            className="px-4 py-12 text-center"
                           >
-                            No active anomaly signals.
+                            <div className="space-y-2">
+                              <p className="text-slate-400">No active anomaly signals.</p>
+                              {scannerStatus?.last_run && (
+                                <p className="text-xs text-slate-600">
+                                  Scanner checked {scannerStatus.last_run.symbols_checked} symbols {formatTimeAgo(scannerStatus.last_run.run_at)}.
+                                  Market is calm — signals appear when volume or OI spikes.
+                                </p>
+                              )}
+                            </div>
                           </td>
                         </tr>
                       ) : (
