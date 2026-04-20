@@ -78,6 +78,19 @@ ALTER TABLE user_preferences ADD COLUMN IF NOT EXISTS weekly_report BOOLEAN DEFA
 ALTER TABLE user_preferences ADD COLUMN IF NOT EXISTS telegram_alerts BOOLEAN DEFAULT FALSE;
 ALTER TABLE user_preferences ADD COLUMN IF NOT EXISTS telegram_chat_id VARCHAR(50);
 
+-- Portfolio model migrations
+ALTER TABLE portfolio_models ADD COLUMN IF NOT EXISTS is_custom BOOLEAN DEFAULT FALSE;
+ALTER TABLE portfolio_models ADD COLUMN IF NOT EXISTS user_id INTEGER REFERENCES users(id) ON DELETE CASCADE;
+
+CREATE TABLE IF NOT EXISTS portfolio_model_assets (
+    id SERIAL PRIMARY KEY,
+    model_id INTEGER NOT NULL REFERENCES portfolio_models(id) ON DELETE CASCADE,
+    asset_symbol VARCHAR(20) NOT NULL,
+    asset_name VARCHAR(50),
+    target_weight DECIMAL(5, 2) NOT NULL,
+    UNIQUE(model_id, asset_symbol)
+);
+
 -- Sent reports tracking for idempotency
 CREATE TABLE IF NOT EXISTS sent_reports (
     id SERIAL PRIMARY KEY,
