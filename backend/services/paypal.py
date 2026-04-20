@@ -91,13 +91,76 @@ class PayPalAPI:
     async def get_order(self, order_id: str) -> Dict[str, Any]:
         return await self._api("GET", f"/v2/checkout/orders/{order_id}")
 
+    # ========== PRODUCTS & PLANS ==========
+
+    async def create_product(self, name: str, description: str, product_type: str = "SERVICE") -> Dict[str, Any]:
+        """Create a PayPal catalog product."""
+        payload = {
+            "name": name,
+            "description": description,
+            "type": product_type,
+            "category": "SOFTWARE",
+        }
+        return await self._api("POST", "/v1/catalogs/products", payload)
+
+    async def create_plan(
+        self,
+        product_id: str,
+        name: str,
+        amount: float,
+        currency: str = "USD",
+        trial_days: int = 7,
+        billing_cycle: str = "monthly",
+    ) -> Dict[str, Any]:
+        """Create a PayPal billing plan with a trial period."""
+        frequency = "MONTH" if billing_cycle == "monthly" else "YEAR"
+        trial_cycles = [{
+            "frequency": {"interval_unit": "DAY", "interval_count": 1},
+            "tenure_type": "TRIAL",
+            "sequence": 1,
+            "total_cycles": trial_days,
+            "pricing_scheme": {"fixed_price": {"value": "0", "currency_code": currency}},
+        }]
+        regular_cycles = [{
+            "frequency": {"interval_unit": frequency, "interval_count": 1},
+            "tenure_type": "REGULAR",
+            "sequence": 2,
+            "total_cycles": 0,
+            "pricing_scheme": {"fixed_price": {"value": f"{amount:.2f}", "currency_code": currency}},
+        }]
+        payload = {
+            "product_id": product_id,
+            "name": name,
+            "description": f"{name} with {trial_days}-day free trial",
+            "status": "ACTIVE",
+            "billing_cycles": trial_cycles + regular_cycles,
+            "payment_preferences": {
+                "auto_bill_outstanding": True,
+                "setup_fee_failure_action": "CONTINUE",
+                "payment_failure_threshold": 3,
+            },
+        }
+        return await self._api("POST", "/v1/billing/plans", payload)
+
     # ========== SUBSCRIPTIONS ==========
 
-    async def create_subscription(self, plan_id: str, start_time: Optional[str] = None) -> Dict[str, Any]:
+    async def create_subscription(
+        self,
+        plan_id: str,
+        start_time: Optional[str] = None,
+        return_url: Optional[str] = None,
+        cancel_url: Optional[str] = None,
+    ) -> Dict[str, Any]:
         """Create a PayPal subscription using a billing plan ID."""
-        payload = {"plan_id": plan_id}
+        payload: Dict[str, Any] = {"plan_id": plan_id}
         if start_time:
             payload["start_time"] = start_time
+        if return_url or cancel_url:
+            payload["application_context"] = {}
+            if return_url:
+                payload["application_context"]["return_url"] = return_url
+            if cancel_url:
+                payload["application_context"]["cancel_url"] = cancel_url
         return await self._api("POST", "/v1/billing/subscriptions", payload)
 
     async def get_subscription(self, subscription_id: str) -> Dict[str, Any]:

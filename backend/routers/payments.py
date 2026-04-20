@@ -24,6 +24,10 @@ class CreateSubscriptionRequest(BaseModel):
     plan_id: int
 
 
+class CreateTrialRequest(BaseModel):
+    billing_cycle: str  # "monthly" | "yearly"
+
+
 # ============= HELPERS =============
 
 async def _require_pro_or_admin(current_user: dict = Depends(get_current_user)) -> dict:
@@ -35,6 +39,55 @@ async def _get_plan(plan_id: int) -> Optional[dict]:
     db = get_db()
     rows = await db.query("SELECT * FROM plans WHERE id = $1 AND is_active = TRUE", [plan_id])
     return dict(rows[0]) if rows else None
+
+
+async def _get_or_create_trial_plan(billing_cycle: str) -> dict:
+    """Find or create a PayPal billing plan with a 7-day trial."""
+    db = get_db()
+    plan_name = f"Pro {billing_cycle.title()} Trial"
+    rows = await db.query("SELECT * FROM plans WHERE name = $1 AND is_active = TRUE", [plan_name])
+    if rows:
+        return dict(rows[0])
+
+    # Create PayPal product + plan
+    paypal = get_paypal_api()
+    product_res = await paypal.create_product(
+        name="Fast Lane Pro",
+        description="Fast Lane Pro subscription with 7-day free trial",
+    )
+    product_id = product_res.get("id")
+    if not product_id:
+        raise HTTPException(status_code=502, detail="PayPal product creation failed")
+
+    amount = 25.0 if billing_cycle == "monthly" else 228.0
+    plan_res = await paypal.create_plan(
+        product_id=product_id,
+        name=plan_name,
+        amount=amount,
+        currency="USD",
+        trial_days=7,
+        billing_cycle=billing_cycle,
+    )
+    paypal_plan_id = plan_res.get("id")
+    if not paypal_plan_id:
+        raise HTTPException(status_code=502, detail="PayPal plan creation failed")
+
+    # Save to DB
+    inserted = await db.query(
+        """INSERT INTO plans (name, description, price, currency, type, paypal_plan_id, tier, is_active)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, TRUE) RETURNING id""",
+        [plan_name, f"Pro {billing_cycle} with 7-day trial", amount, "USD", "subscription", paypal_plan_id, "pro"],
+    )
+    plan_id = inserted[0]["id"]
+    return {
+        "id": plan_id,
+        "name": plan_name,
+        "price": amount,
+        "currency": "USD",
+        "type": "subscription",
+        "paypal_plan_id": paypal_plan_id,
+        "tier": "pro",
+    }
 
 
 async def _record_webhook_event(event_id: str, event_type: str, resource_type: str, resource_id: str, payload: dict) -> bool:
@@ -339,6 +392,52 @@ async def admin_payments(current_user: dict = Depends(get_current_user)):
         [],
     )
     return [dict(r) for r in rows]
+
+
+@router.post("/create-trial")
+async def create_trial(
+    req: CreateTrialRequest,
+    current_user: dict = Depends(get_current_user),
+):
+    """Create a PayPal subscription with a 7-day free trial."""
+    if req.billing_cycle not in ("monthly", "yearly"):
+        raise HTTPException(status_code=400, detail="billing_cycle must be 'monthly' or 'yearly'")
+
+    # Prevent duplicate active trial for same user
+    db = get_db()
+    existing = await db.query(
+        """SELECT 1 FROM subscriptions
+           WHERE user_id = $1 AND status IN ('created', 'active') LIMIT 1""",
+        [current_user["id"]],
+    )
+    if existing:
+        raise HTTPException(status_code=400, detail="You already have an active subscription")
+
+    plan = await _get_or_create_trial_plan(req.billing_cycle)
+    paypal = get_paypal_api()
+    result = await paypal.create_subscription(
+        plan_id=plan["paypal_plan_id"],
+        return_url="https://crypto-signals-chi.vercel.app/pricing?payment=success",
+        cancel_url="https://crypto-signals-chi.vercel.app/pricing?payment=cancelled",
+    )
+
+    if result.get("status_code", 200) >= 400:
+        raise HTTPException(status_code=502, detail="PayPal subscription creation failed")
+
+    sub_id = result.get("id")
+    await db.execute(
+        """INSERT INTO subscriptions (user_id, plan_id, paypal_subscription_id, status, trial_ends_at)
+           VALUES ($1, $2, $3, 'created', NOW() + INTERVAL '7 days')""",
+        [current_user["id"], plan["id"], sub_id],
+    )
+
+    approval_url = None
+    for link in result.get("links", []):
+        if link.get("rel") == "approve":
+            approval_url = link.get("href")
+            break
+
+    return {"subscription_id": sub_id, "approval_url": approval_url, "status": result.get("status")}
 
 
 @router.get("/admin/subscriptions")

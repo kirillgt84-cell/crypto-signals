@@ -150,6 +150,7 @@ CREATE TABLE IF NOT EXISTS subscriptions (
     current_period_start TIMESTAMP,
     current_period_end TIMESTAMP,
     cancelled_at TIMESTAMP,
+    trial_ends_at TIMESTAMP,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
