@@ -10,6 +10,7 @@ import { Check, Zap, Crown, Loader2 } from "lucide-react";
 import Sidebar from "../components/admin/Sidebar";
 import { cn } from "@/lib/utils";
 import { useSearchParams } from "next/navigation";
+import { useLanguage } from "@/app/context/LanguageContext";
 
 const API_BASE = "https://crypto-signals-production-ff4c.up.railway.app/api/v1";
 
@@ -43,14 +44,15 @@ export default function PricingClient() {
   const [billingCycle, setBillingCycle] = useState<"monthly" | "yearly">("yearly");
   const [processing, setProcessing] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+  const { t } = useLanguage();
 
   const payment = searchParams.get("payment");
 
   useEffect(() => {
     if (payment === "success") {
-      setMessage("Subscription successful! Your 7-day free trial has started.");
+      setMessage(t("pricing.success"));
     } else if (payment === "cancelled") {
-      setMessage("Payment cancelled. You can try again.");
+      setMessage(t("pricing.cancel"));
     }
   }, [payment]);
 
@@ -107,14 +109,14 @@ export default function PricingClient() {
           <div className="text-center mb-10">
             <h1 className="text-3xl font-bold tracking-wider text-foreground flex items-center justify-center gap-3">
               <Crown className="h-8 w-8 text-amber-400" />
-              CHOOSE YOUR PLAN
+              {t("pricing.title")}
             </h1>
             <p className="mt-2 text-slate-400">
               Unlock the full potential of your trading analytics
             </p>
             {isPro && (
               <Badge className="mt-3 bg-emerald-500/20 text-emerald-400 border-emerald-500/30">
-                <Check className="mr-1 h-3 w-3" /> You are already Pro
+                <Check className="mr-1 h-3 w-3" /> {t("pricing.currentPlan")}
               </Badge>
             )}
           </div>
@@ -131,15 +133,15 @@ export default function PricingClient() {
             <Card>
               <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
-                  <CardTitle className="text-lg font-bold">FREE</CardTitle>
+                  <CardTitle className="text-lg font-bold">{t("pricing.freePlan")}</CardTitle>
                   <Badge className="bg-slate-700 text-slate-300 border-slate-600 text-[10px]">FOREVER FREE</Badge>
                 </div>
-                <p className="text-sm text-slate-400">Essential tools for every trader</p>
+                <p className="text-sm text-slate-400">{t("pricing.freeDescription")}</p>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="flex items-baseline gap-1">
                   <span className="text-3xl font-bold">$0</span>
-                  <span className="text-sm text-slate-500">/mo</span>
+                  <span className="text-sm text-slate-500">{t("pricing.perMonth")}</span>
                 </div>
                 <ul className="space-y-2 text-sm text-slate-300">
                   {freeFeatures.map((f) => (
@@ -164,12 +166,12 @@ export default function PricingClient() {
               </div>
               <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
-                  <CardTitle className="text-lg font-bold">PRO</CardTitle>
+                  <CardTitle className="text-lg font-bold">{t("pricing.proPlan")}</CardTitle>
                   <Badge className="bg-amber-500/20 text-amber-400 border-amber-500/30 text-[10px]">
                     <Zap className="mr-1 h-3 w-3" /> PRO
                   </Badge>
                 </div>
-                <p className="text-sm text-slate-400">Advanced signals & analytics</p>
+                <p className="text-sm text-slate-400">{t("pricing.proDescription")}</p>
               </CardHeader>
               <CardContent className="space-y-4">
                 {/* Billing toggle */}
@@ -181,7 +183,7 @@ export default function PricingClient() {
                       billingCycle === "monthly" ? "bg-secondary text-secondary-foreground" : "text-muted-foreground hover:text-foreground"
                     )}
                   >
-                    Monthly
+                    {t("pricing.monthly")}
                   </button>
                   <button
                     onClick={() => setBillingCycle("yearly")}
@@ -190,7 +192,7 @@ export default function PricingClient() {
                       billingCycle === "yearly" ? "bg-secondary text-secondary-foreground" : "text-muted-foreground hover:text-foreground"
                     )}
                   >
-                    Yearly
+                    {t("pricing.yearly")}
                   </button>
                 </div>
 
@@ -218,11 +220,11 @@ export default function PricingClient() {
                   {processing ? (
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   ) : isPro ? (
-                    "Already Pro"
+                    t("pricing.currentPlan")
                   ) : (
                     <>
                       <Zap className="mr-2 h-4 w-4" />
-                      Start 7-Day Free Trial
+                      {t("pricing.upgradeToPro")}
                     </>
                   )}
                 </Button>

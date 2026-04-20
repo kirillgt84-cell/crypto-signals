@@ -23,6 +23,8 @@ import {
 import { Button } from '@/components/ui/button';
 import { Logo } from '../Logo';
 import { useAuth } from '../../context/AuthContext';
+import { useLanguage } from '../../context/LanguageContext';
+import { LanguageSwitcher } from '../LanguageSwitcher';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 interface SidebarProps {
@@ -30,26 +32,27 @@ interface SidebarProps {
   onToggle: () => void;
 }
 
-const baseNavItems = [
-  { href: '/', label: 'Dashboard', icon: LayoutDashboard },
-  { href: '/portfolio', label: 'Portfolio', icon: Wallet },
-  { href: '/signals', label: 'Signals', icon: Zap },
-  { href: '/macro', label: 'Macro', icon: Globe },
-  { href: '/yield-curve', label: 'Yield Curve', icon: TrendingUp },
-  { href: '/pricing', label: 'Pricing', icon: Crown },
-];
-
-const bottomNavItems = [
-  { href: '/profile', label: 'Profile', icon: User },
-];
-
-const adminNavItem = { href: '/admin', label: 'Admin', icon: Shield };
-
 export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
   const { user } = useAuth();
+  const { t } = useLanguage();
   const isAdmin = user?.subscription_tier === 'admin';
+
+  const baseNavItems = [
+    { href: '/', label: t('sidebar.dashboard'), icon: LayoutDashboard },
+    { href: '/portfolio', label: t('sidebar.portfolio'), icon: Wallet },
+    { href: '/signals', label: t('sidebar.signals'), icon: Zap },
+    { href: '/macro', label: t('sidebar.macro'), icon: Globe },
+    { href: '/yield-curve', label: t('sidebar.yieldCurve'), icon: TrendingUp },
+    { href: '/pricing', label: t('sidebar.pricing'), icon: Crown },
+  ];
+
+  const bottomNavItems = [
+    { href: '/profile', label: t('sidebar.profile'), icon: User },
+  ];
+
+  const adminNavItem = { href: '/admin', label: t('sidebar.admin'), icon: Shield };
   
   const topNavItems = [
     ...baseNavItems,
@@ -139,7 +142,7 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
                   {!collapsed && (
                     <span className="flex items-center gap-2">
                       {item.label}
-                      {item.label === 'Signals' && (
+                      {item.href === '/signals' && (
                         <span className="rounded bg-amber-500/20 px-1.5 py-0.5 text-[10px] font-bold text-amber-400">
                           PRO
                         </span>
@@ -150,6 +153,13 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
               );
             })}
           </nav>
+
+          {/* Language Switcher */}
+          {!collapsed && (
+            <div className="px-3 py-2">
+              <LanguageSwitcher />
+            </div>
+          )}
 
           {/* Bottom Section */}
           <div className="border-t border-border p-3 space-y-1">

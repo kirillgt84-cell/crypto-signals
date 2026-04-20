@@ -8,6 +8,7 @@ import { UserMenu } from "./components/UserMenu"
 import { AuthModal } from "./components/AuthModal"
 import { ProBlurOverlay } from "./components/ProBlurOverlay"
 import { useAuth } from "./context/AuthContext"
+import { useLanguage } from "./context/LanguageContext"
 import { getRSIInterpretation, getMACDInterpretation, getFundingInterpretation, getExchangeFlowInterpretation, getCVDInterpretation } from "./lib/market-utils"
 import { Logo, LogoIcon } from "./components/Logo"
 import { ThemeToggle } from "./components/ThemeToggle"
@@ -182,13 +183,14 @@ function MetricCard({
 
 // Row 1: OI Analysis Cards
 function OIAnalysisCards({ data, loading, timeframe }: { data: MarketData; loading: boolean; timeframe: string }) {
+  const { t } = useLanguage()
   const price = data?.price || 0
   const decimals = price < 1 ? 4 : price < 100 ? 2 : 0
   
   return (
     <div className="grid grid-cols-1 gap-4 px-4 py-4 sm:grid-cols-2 lg:grid-cols-5 lg:gap-3 lg:px-6">
       <MetricCard
-        title="Price"
+        title={t("dashboard.price")}
         value={price > 0 ? `$${price.toLocaleString(undefined, {maximumFractionDigits: decimals})}` : "--"}
         subvalue={`24h: ${(data?.change_24h || 0) >= 0 ? "+" : ""}${(data?.change_24h || 0).toFixed(2)}%`}
         trend={(data?.change_24h || 0) >= 0 ? "Rising" : "Falling"}
@@ -197,7 +199,7 @@ function OIAnalysisCards({ data, loading, timeframe }: { data: MarketData; loadi
         loading={loading}
       />
       <MetricCard
-        title="Open Interest"
+        title={t("dashboard.openInterest")}
         value={formatVolumeUSD((data?.oi || 0) * (data?.price || 0))}
         subvalue={`${(data?.oi / 1e6)?.toFixed(2) || "0.00"}M contracts`}
         trend={data?.oi_change > 0 ? "Rising" : data?.oi_change < 0 ? "Falling" : "Stable"}
@@ -283,6 +285,7 @@ function ChartLegend({ data, loading }: { data: MarketData; loading: boolean }) 
 
 // Row 2: TradingView Chart with levels
 function ChartSection({ symbol, timeframe, data, loading, className }: { symbol: string; timeframe: string; data: MarketData; loading: boolean; className?: string }) {
+  const { t } = useLanguage()
   const price = data?.price || 0
   const decimals = price < 1 ? 4 : price < 100 ? 2 : 0
   const { theme } = useTheme()
@@ -290,7 +293,7 @@ function ChartSection({ symbol, timeframe, data, loading, className }: { symbol:
   return (
     <Card className={cn("flex flex-col", className)}>
       <CardHeader className="gap-2 shrink-0">
-        <CardTitle>Real-time chart</CardTitle>
+        <CardTitle>{t("dashboard.chart")}</CardTitle>
       </CardHeader>
       <CardContent className="flex-1 min-h-0 px-2 sm:px-6 flex flex-col">
         <div className="mb-4 min-h-[300px] flex-1">
@@ -312,6 +315,7 @@ function ChartSection({ symbol, timeframe, data, loading, className }: { symbol:
 
 // Row 3: Secondary Indicators
 function SecondaryIndicators({ data, timeframe, loading }: { data: MarketData; timeframe: string; loading: boolean }) {
+  const { t } = useLanguage()
   const rsi = data?.rsi || 50
   const macd = data?.macd || 0
   const macdSignal = data?.macd_signal || 0
@@ -329,7 +333,7 @@ function SecondaryIndicators({ data, timeframe, loading }: { data: MarketData; t
       {/* Funding Rate */}
       <Card className="bg-gradient-to-t from-orange-500/5 to-card">
         <CardHeader className="pb-2">
-          <CardDescription>Funding Rate (8h)</CardDescription>
+          <CardDescription>{t("dashboard.fundingRate")} (8h)</CardDescription>
           {loading ? (
             <div className="h-7 flex items-center">
               <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
@@ -415,6 +419,7 @@ export default function Dashboard() {
   const [authOpen, setAuthOpen] = useState(false)
   const isFirstLoad = useRef(true)
   const { isAuthenticated } = useAuth()
+  const { t } = useLanguage()
 
   useEffect(() => {
     const handler = () => setAuthOpen(true)
@@ -742,7 +747,7 @@ export default function Dashboard() {
           </div>
           <div className="text-center">
             <h2 className="text-xl font-bold tracking-tight uppercase">MIRKASO</h2>
-            <p className="text-sm text-muted-foreground mt-1">Loading market data...</p>
+            <p className="text-sm text-muted-foreground mt-1">{t("common.loading")}</p>
           </div>
         </div>
       </div>
@@ -807,16 +812,16 @@ export default function Dashboard() {
             <CardHeader className="gap-2 pb-2">
               <CardTitle className="flex items-center gap-2 text-sm font-bold tracking-widest text-amber-500">
                 <Target className="w-4 h-4" />
-                SHORT TERM POINTS
+                {t("dashboard.entryLevels")}
               </CardTitle>
             </CardHeader>
             <CardContent className="pt-0 flex-1">
-              <ProBlurOverlay title="Pro Levels" description="Get exact entry, stop, and take-profit levels with scenario planning.">
+              <ProBlurOverlay title={t("dashboard.entryLevels")} description="Get exact entry, stop, and take-profit levels with scenario planning.">
                 <EntryLevels data={marketData} sentiment={marketData.sentiment} loading={loading} />
               </ProBlurOverlay>
             </CardContent>
           </Card>
-          <ProBlurOverlay title="Pro Fundamentals" description="MVRV, NUPL, and funding context with trading interpretation.">
+          <ProBlurOverlay title={t("dashboard.fundamentals")} description="MVRV, NUPL, and funding context with trading interpretation.">
             <FundamentalsCard symbol={symbol} loading={loading} />
           </ProBlurOverlay>
         </div>

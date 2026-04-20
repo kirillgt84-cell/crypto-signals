@@ -6,6 +6,7 @@ import Sidebar from "../components/admin/Sidebar";
 import { cn } from "@/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { useLanguage } from "@/app/context/LanguageContext";
 import { Loader2, TrendingUp, TrendingDown, AlertTriangle, Activity, History, BarChart3, Lightbulb, ShieldCheck, ArrowUpRight, Minus, AlertOctagon, Skull, HelpCircle, Rocket, GitBranch, Shield, Info } from "lucide-react";
 import AssetCardTabs from "../components/AssetCardTabs";
 import TacticalWheel from "../components/TacticalWheel";
@@ -125,6 +126,7 @@ export default function YieldCurveClient() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [activeMetricIndex, setActiveMetricIndex] = useState(0);
+  const { t } = useLanguage();
 
   const fetchData = useCallback(async () => {
     try {
@@ -146,10 +148,10 @@ export default function YieldCurveClient() {
 
   const shapeLabel = (shape: string) => {
     switch (shape?.toLowerCase()) {
-      case "inverted": return "Инвертированная";
-      case "flat": return "Плоская";
-      case "normal": return "Нормальная";
-      case "humped": return "Горбатая";
+      case "inverted": return t("yieldCurve.inverted");
+      case "flat": return t("yieldCurve.flat");
+      case "normal": return t("yieldCurve.normal");
+      case "humped": return t("yieldCurve.humped");
       default: return shape;
     }
   };
@@ -230,17 +232,17 @@ export default function YieldCurveClient() {
           <div className="mb-8">
             <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2">
               <BarChart3 className="h-6 w-6 text-indigo-500" />
-              Yield Curve Intelligence
+              {t("yieldCurve.title")}
             </h1>
             <p className="text-muted-foreground text-sm mt-1">
-              US Treasury yields, recession models, historical analogs & cross-market regime
+              {t("yieldCurve.subtitle")}
             </p>
           </div>
 
           {loading ? (
             <div className="flex items-center justify-center py-20 text-muted-foreground gap-2">
               <Loader2 className="h-5 w-5 animate-spin" />
-              Loading yield curve data...
+              {t("common.loading")}
             </div>
           ) : error ? (
             <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-lg text-red-500 text-sm">
@@ -252,7 +254,7 @@ export default function YieldCurveClient() {
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 <Card>
                   <CardHeader className="pb-2">
-                    <CardTitle className="text-xs text-muted-foreground uppercase">Curve Shape</CardTitle>
+                    <CardTitle className="text-xs text-muted-foreground uppercase">{t("yieldCurve.curveShape")}</CardTitle>
                   </CardHeader>
                   <CardContent>
                     <Badge variant="outline" className={cn("text-sm font-bold", shapeColor(data.yield_curve.shape))}>
@@ -268,7 +270,7 @@ export default function YieldCurveClient() {
 
                 <Card>
                   <CardHeader className="pb-2">
-                    <CardTitle className="text-xs text-muted-foreground uppercase">10Y − 2Y Spread</CardTitle>
+                    <CardTitle className="text-xs text-muted-foreground uppercase">{t("yieldCurve.spread10Y2Y")}</CardTitle>
                   </CardHeader>
                   <CardContent>
                     <p className={cn("text-2xl font-bold", data.yield_curve.spreads["10Y_2Y"] < 0 ? "text-red-500" : "text-foreground")}>
@@ -279,7 +281,7 @@ export default function YieldCurveClient() {
 
                 <Card>
                   <CardHeader className="pb-2">
-                    <CardTitle className="text-xs text-muted-foreground uppercase">10Y − 3M Spread</CardTitle>
+                    <CardTitle className="text-xs text-muted-foreground uppercase">{t("yieldCurve.spread10Y3M")}</CardTitle>
                   </CardHeader>
                   <CardContent>
                     <p className={cn("text-2xl font-bold", data.yield_curve.spreads["10Y_3M"] < 0 ? "text-red-500" : "text-foreground")}>
@@ -290,7 +292,7 @@ export default function YieldCurveClient() {
 
                 <Card>
                   <CardHeader className="pb-2">
-                    <CardTitle className="text-xs text-muted-foreground uppercase">Recession Probability</CardTitle>
+                    <CardTitle className="text-xs text-muted-foreground uppercase">{t("yieldCurve.recessionProbability")}</CardTitle>
                   </CardHeader>
                   <CardContent>
                     <p className={cn("text-2xl font-bold", probColor(data.recession.probability_12m))}>
@@ -431,7 +433,7 @@ export default function YieldCurveClient() {
                               </div>
                               <p className="text-sm text-muted-foreground leading-relaxed mb-5">{metric.explanation}</p>
                               <div className="bg-muted/50 rounded-lg p-4">
-                                <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-2">Historical Context</p>
+                                <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-2">{t("yieldCurve.historicalContext")}</p>
                                 <p className="text-sm text-muted-foreground italic leading-relaxed">{metric.historical_context}</p>
                               </div>
                             </CardContent>
@@ -446,7 +448,7 @@ export default function YieldCurveClient() {
               {/* Yield Curve Chart */}
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-base">US Treasury Yield Curve</CardTitle>
+                  <CardTitle className="text-base">{t("yieldCurve.title")}</CardTitle>
                 </CardHeader>
                 <CardContent>
                   {yieldChartData.length > 0 ? (
@@ -503,7 +505,7 @@ export default function YieldCurveClient() {
                   <CardHeader>
                     <CardTitle className="text-base flex items-center gap-2">
                       <Activity className="w-4 h-4" />
-                      Market Regime
+                      {t("yieldCurve.marketRegime")}
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-3">
@@ -515,7 +517,7 @@ export default function YieldCurveClient() {
                     </div>
                     <p className="text-sm text-muted-foreground">{data.market_regime.narrative}</p>
                     <div className="text-xs text-muted-foreground">
-                      Risk Level: <span className="font-bold text-foreground">{data.market_regime.risk_level}</span>
+                      {t("yieldCurve.assessment")}: <span className="font-bold text-foreground">{data.market_regime.risk_level}</span>
                     </div>
                   </CardContent>
                 </Card>
@@ -524,7 +526,7 @@ export default function YieldCurveClient() {
                   <CardHeader>
                     <CardTitle className="text-base flex items-center gap-2">
                       <History className="w-4 h-4" />
-                      Top Historical Analog
+                      {t("yieldCurve.historicalAnalogs")}
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-3">
@@ -554,7 +556,7 @@ export default function YieldCurveClient() {
                   <CardHeader>
                     <CardTitle className="text-base flex items-center gap-2">
                       <AlertTriangle className="w-4 h-4 text-amber-500" />
-                      Active Signals ({data.signals.count})
+                      {t("yieldCurve.activeSignals")} ({data.signals.count})
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-2">
@@ -579,7 +581,7 @@ export default function YieldCurveClient() {
               {/* All Historical Analogs */}
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-base">All Historical Analogs</CardTitle>
+                  <CardTitle className="text-base">{t("yieldCurve.historicalAnalogs")}</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-3">

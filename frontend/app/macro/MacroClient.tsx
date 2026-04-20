@@ -19,6 +19,7 @@ import {
 } from "recharts";
 import { TrendingUp, TrendingDown, Activity, Globe, Gem, AlertTriangle } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useLanguage } from "@/app/context/LanguageContext";
 
 const API_BASE = "https://crypto-signals-production-ff4c.up.railway.app/api/v1";
 
@@ -44,6 +45,7 @@ export default function MacroClient() {
   const [spxPrices, setSpxPrices] = useState<MacroPrice[]>([]);
   const [goldPrices, setGoldPrices] = useState<MacroPrice[]>([]);
   const [loading, setLoading] = useState(true);
+  const { t } = useLanguage();
 
   const fetchData = useCallback(async () => {
     try {
@@ -119,57 +121,57 @@ export default function MacroClient() {
           <div className="mb-8">
             <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2">
               <Globe className="h-6 w-6 text-indigo-500" />
-              Macro Correlations
+              {t("macro.title")}
             </h1>
             <p className="text-muted-foreground text-sm mt-1">
-              BTC relationships with traditional markets
+              {t("macro.subtitle")}
             </p>
           </div>
 
           {loading ? (
-            <div className="text-center py-20 text-muted-foreground">Loading macro data...</div>
+            <div className="text-center py-20 text-muted-foreground">{t("common.loading")}</div>
           ) : (
             <div className="space-y-8">
               {/* Price Cards */}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 <Card>
                   <CardHeader className="pb-2">
-                    <CardTitle className="text-xs text-muted-foreground uppercase">S&P 500</CardTitle>
+                    <CardTitle className="text-xs text-muted-foreground uppercase">{t("macro.sp500")}</CardTitle>
                   </CardHeader>
                   <CardContent>
                     <p className="text-2xl font-bold">{prices.spx500?.price?.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 }) ?? "—"}</p>
-                    <p className="text-xs text-muted-foreground mt-1">US equities benchmark</p>
+                    <p className="text-xs text-muted-foreground mt-1">{t("macro.usEquitiesBenchmark")}</p>
                   </CardContent>
                 </Card>
                 <Card>
                   <CardHeader className="pb-2">
                     <CardTitle className="text-xs text-muted-foreground uppercase flex items-center gap-1">
-                      <Gem className="h-3 w-3" /> Gold
+                      <Gem className="h-3 w-3" /> {t("macro.gold")}
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
                     <p className="text-2xl font-bold">{prices.gold?.price?.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 }) ?? "—"}</p>
-                    <p className="text-xs text-muted-foreground mt-1">Safe-haven commodity</p>
+                    <p className="text-xs text-muted-foreground mt-1">{t("macro.safeHavenCommodity")}</p>
                   </CardContent>
                 </Card>
                 <Card>
                   <CardHeader className="pb-2">
                     <CardTitle className="text-xs text-muted-foreground uppercase flex items-center gap-1">
-                      <AlertTriangle className="h-3 w-3" /> VIX
+                      <AlertTriangle className="h-3 w-3" /> {t("macro.vix")}
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
                     <p className="text-2xl font-bold">{prices.vix?.price?.toFixed(1) ?? "—"}</p>
-                    <p className="text-xs text-muted-foreground mt-1">Volatility index</p>
+                    <p className="text-xs text-muted-foreground mt-1">{t("macro.volatilityIndex")}</p>
                   </CardContent>
                 </Card>
                 <Card>
                   <CardHeader className="pb-2">
-                    <CardTitle className="text-xs text-muted-foreground uppercase">BTC</CardTitle>
+                    <CardTitle className="text-xs text-muted-foreground uppercase">{t("macro.btc")}</CardTitle>
                   </CardHeader>
                   <CardContent>
                     <p className="text-2xl font-bold">{corr?.btc_price?.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 }) ?? "—"}</p>
-                    <p className="text-xs text-muted-foreground mt-1">Crypto benchmark</p>
+                    <p className="text-xs text-muted-foreground mt-1">{t("macro.cryptoBenchmark")}</p>
                   </CardContent>
                 </Card>
               </div>
@@ -178,7 +180,7 @@ export default function MacroClient() {
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <Card className="border-l-4 border-l-indigo-500">
                   <CardHeader className="pb-2">
-                    <CardTitle className="text-sm font-medium">BTC ↔ SPX Correlation</CardTitle>
+                    <CardTitle className="text-sm font-medium">{t("macro.btcSpxCorrelation")}</CardTitle>
                   </CardHeader>
                   <CardContent>
                     <p className={cn("text-3xl font-bold", corrColor(corr?.btc_spx_correlation))}>
@@ -186,16 +188,16 @@ export default function MacroClient() {
                     </p>
                     <p className="text-xs text-muted-foreground mt-1">
                       {Math.abs(corr?.btc_spx_correlation || 0) > 0.7
-                        ? "High correlation → crypto behaving as risk asset"
+                        ? t("macro.highCorrelation")
                         : Math.abs(corr?.btc_spx_correlation || 0) > 0.4
-                        ? "Moderate correlation"
-                        : "Low correlation → crypto independent"}
+                        ? t("macro.moderateCorrelation")
+                        : t("macro.lowCorrelation")}
                     </p>
                   </CardContent>
                 </Card>
                 <Card className="border-l-4 border-l-amber-500">
                   <CardHeader className="pb-2">
-                    <CardTitle className="text-sm font-medium">Gold ↔ BTC Correlation</CardTitle>
+                    <CardTitle className="text-sm font-medium">{t("macro.goldBtcCorrelation")}</CardTitle>
                   </CardHeader>
                   <CardContent>
                     <p className={cn("text-3xl font-bold", corrColor(corr?.gold_btc_correlation))}>
@@ -203,16 +205,16 @@ export default function MacroClient() {
                     </p>
                     <p className="text-xs text-muted-foreground mt-1">
                       {(corr?.gold_btc_correlation || 0) < -0.3
-                        ? "Negative → BTC as digital gold thesis"
+                        ? t("macro.negativeCorrelation")
                         : (corr?.gold_btc_correlation || 0) > 0.4
-                        ? "Positive → moving together"
-                        : "Neutral → no clear relationship"}
+                        ? t("macro.positiveCorrelation")
+                        : t("macro.neutralCorrelation")}
                     </p>
                   </CardContent>
                 </Card>
                 <Card className="border-l-4 border-l-rose-500">
                   <CardHeader className="pb-2">
-                    <CardTitle className="text-sm font-medium">VIX Level</CardTitle>
+                    <CardTitle className="text-sm font-medium">{t("macro.vixLevel")}</CardTitle>
                   </CardHeader>
                   <CardContent>
                     <p className={cn("text-3xl font-bold", (corr?.vix_level || 0) > 25 ? "text-red-500" : "text-emerald-500")}>
@@ -220,10 +222,10 @@ export default function MacroClient() {
                     </p>
                     <p className="text-xs text-muted-foreground mt-1">
                       {(corr?.vix_level || 0) > 25
-                        ? "Elevated fear on equity markets"
+                        ? t("macro.elevatedFear")
                         : (corr?.vix_level || 0) > 18
-                        ? "Normal volatility"
-                        : "Low fear / complacency"}
+                        ? t("macro.normalVolatility")
+                        : t("macro.lowFear")}
                     </p>
                   </CardContent>
                 </Card>
@@ -232,7 +234,7 @@ export default function MacroClient() {
               {/* Price Overlay Chart */}
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-base">Normalized Price Performance (%)</CardTitle>
+                  <CardTitle className="text-base">{t("macro.normalizedPrice")}</CardTitle>
                 </CardHeader>
                 <CardContent>
                   {mergedChart.length > 0 ? (
@@ -257,7 +259,7 @@ export default function MacroClient() {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <Card className="border-l-4 border-l-indigo-500">
                   <CardHeader className="pb-2">
-                    <CardTitle className="text-sm font-medium">What BTC ↔ SPX means</CardTitle>
+                    <CardTitle className="text-sm font-medium">{t("macro.btcSpxMeaning")}</CardTitle>
                   </CardHeader>
                   <CardContent>
                     <p className="text-xs text-muted-foreground leading-relaxed">
@@ -269,7 +271,7 @@ export default function MacroClient() {
                 </Card>
                 <Card className="border-l-4 border-l-amber-500">
                   <CardHeader className="pb-2">
-                    <CardTitle className="text-sm font-medium">What Gold ↔ BTC means</CardTitle>
+                    <CardTitle className="text-sm font-medium">{t("macro.goldBtcMeaning")}</CardTitle>
                   </CardHeader>
                   <CardContent>
                     <p className="text-xs text-muted-foreground leading-relaxed">
@@ -281,7 +283,7 @@ export default function MacroClient() {
                 </Card>
                 <Card className="border-l-4 border-l-rose-500">
                   <CardHeader className="pb-2">
-                    <CardTitle className="text-sm font-medium">What VIX means for crypto</CardTitle>
+                    <CardTitle className="text-sm font-medium">{t("macro.vixMeaning")}</CardTitle>
                   </CardHeader>
                   <CardContent>
                     <p className="text-xs text-muted-foreground leading-relaxed">
@@ -296,7 +298,7 @@ export default function MacroClient() {
               {/* Correlation History Chart */}
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-base">Correlation History (30-day rolling)</CardTitle>
+                  <CardTitle className="text-base">{t("macro.correlationHistory")}</CardTitle>
                 </CardHeader>
                 <CardContent>
                   {corrChart.length > 0 ? (

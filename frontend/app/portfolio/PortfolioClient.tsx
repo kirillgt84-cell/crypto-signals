@@ -70,6 +70,7 @@ import {
   Area,
 } from "recharts";
 import { motion, AnimatePresence } from "framer-motion";
+import { useLanguage } from "@/app/context/LanguageContext";
 
 const API_BASE_URL = "https://crypto-signals-production-ff4c.up.railway.app/api/v1";
 
@@ -134,6 +135,7 @@ export default function PortfolioClient() {
   const [token, setToken] = useState<string | null>(null);
   const [mounted, setMounted] = useState(false);
   const [summary, setSummary] = useState<PortfolioSummary | null>(null);
+  const { t } = useLanguage();
 
   useEffect(() => {
     setMounted(true);
@@ -406,7 +408,7 @@ export default function PortfolioClient() {
 
   const fetchAiInsight = async () => {
     if (!token || !summary) return;
-    setAiInsight("Analyzing your portfolio...");
+    setAiInsight(t("common.loading"));
     try {
       const res = await fetch(`${API_BASE_URL}/portfolio/ai-insight`, { headers });
       if (res.ok) {
@@ -453,7 +455,7 @@ export default function PortfolioClient() {
             <div>
               <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2">
                 <Wallet className="h-6 w-6 text-indigo-500" />
-                Portfolio
+                {t("portfolio.title")}
               </h1>
               <p className="text-muted-foreground text-sm mt-1">
                 Track positions across exchanges and wallets
@@ -498,7 +500,7 @@ export default function PortfolioClient() {
               )}
               <Button variant="outline" size="sm" onClick={handleSync} disabled={syncing}>
                 <RefreshCw className={cn("h-4 w-4 mr-1", syncing && "animate-spin")} />
-                {syncing ? "Syncing..." : "Sync"}
+                {syncing ? t("common.loading") : "Sync"}
               </Button>
               <Dialog open={connectOpen} onOpenChange={setConnectOpen}>
                 <DialogTrigger asChild>
@@ -549,7 +551,7 @@ export default function PortfolioClient() {
                   </div>
                   <DialogFooter>
                     <Button onClick={handleConnect} disabled={loading || !apiKey.trim() || !apiSecret.trim()}>
-                      {loading ? "Connecting..." : "Connect & Sync"}
+                      {loading ? t("common.loading") : "Connect & Sync"}
                     </Button>
                   </DialogFooter>
                 </DialogContent>
@@ -560,7 +562,7 @@ export default function PortfolioClient() {
           {/* Stats Cards */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
             <div className="rounded-xl border bg-card p-5">
-              <p className="text-xs text-muted-foreground uppercase tracking-wider">Total Value</p>
+              <p className="text-xs text-muted-foreground uppercase tracking-wider">{t("portfolio.totalValue")}</p>
               <p className="text-2xl font-bold mt-1">
                 ${(summary?.total_notional || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </p>
@@ -592,9 +594,9 @@ export default function PortfolioClient() {
                     : "border-transparent text-muted-foreground hover:text-foreground"
                 )}
               >
-                {tab === "assets" && "Assets"}
-                {tab === "allocation" && "Allocation"}
-                {tab === "models" && "Model Portfolios"}
+                {tab === "assets" && t("portfolio.positions")}
+                {tab === "allocation" && t("portfolio.allocation")}
+                {tab === "models" && t("portfolio.models")}
                 {tab === "history" && "History"}
               </button>
             ))}
@@ -605,22 +607,22 @@ export default function PortfolioClient() {
             <div className="space-y-6">
               {/* Manual Add */}
               <div className="flex items-center justify-between">
-                <h2 className="text-lg font-semibold">Positions</h2>
+                <h2 className="text-lg font-semibold">{t("portfolio.positions")}</h2>
                 <Dialog open={manualOpen} onOpenChange={setManualOpen}>
                   <DialogTrigger asChild>
                     <Button variant="outline" size="sm">
                       <Plus className="h-4 w-4 mr-1" />
-                      Add Manual Asset
+                      {t("portfolio.addPosition")}
                     </Button>
                   </DialogTrigger>
                   <DialogContent className="sm:max-w-md">
                     <DialogHeader>
                       <DialogDescription className="sr-only">Dialog content</DialogDescription>
-                      <DialogTitle>Add Manual Asset</DialogTitle>
+                      <DialogTitle>{t("portfolio.addPosition")}</DialogTitle>
                     </DialogHeader>
                     <div className="space-y-4 py-2">
                       <div className="space-y-2">
-                        <Label>Symbol</Label>
+                        <Label>{t("portfolio.symbol")}</Label>
                         <Input
                           value={manualSymbol}
                           onChange={(e) => setManualSymbol(e.target.value)}
@@ -628,7 +630,7 @@ export default function PortfolioClient() {
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label>Amount</Label>
+                        <Label>{t("portfolio.quantity")}</Label>
                         <Input
                           value={manualAmount}
                           onChange={(e) => setManualAmount(e.target.value)}
@@ -637,7 +639,7 @@ export default function PortfolioClient() {
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label>Avg Entry Price ($)</Label>
+                        <Label>{t("portfolio.entryPrice")}</Label>
                         <Input
                           value={manualPrice}
                           onChange={(e) => setManualPrice(e.target.value)}
@@ -660,7 +662,7 @@ export default function PortfolioClient() {
                     </div>
                     <DialogFooter>
                       <Button onClick={handleAddManual} disabled={loading}>
-                        {loading ? "Adding..." : "Add Asset"}
+                        {loading ? t("common.loading") : "Add Asset"}
                       </Button>
                     </DialogFooter>
                   </DialogContent>
@@ -672,12 +674,12 @@ export default function PortfolioClient() {
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead>Asset</TableHead>
-                        <TableHead className="text-right">Amount</TableHead>
-                        <TableHead className="text-right">Entry</TableHead>
-                        <TableHead className="text-right">Price</TableHead>
-                        <TableHead className="text-right">PnL</TableHead>
-                        <TableHead className="text-right">Notional</TableHead>
+                        <TableHead>{t("portfolio.symbol")}</TableHead>
+                        <TableHead className="text-right">{t("portfolio.quantity")}</TableHead>
+                        <TableHead className="text-right">{t("portfolio.entryPrice")}</TableHead>
+                        <TableHead className="text-right">{t("portfolio.currentPrice")}</TableHead>
+                        <TableHead className="text-right">{t("portfolio.pnl")}</TableHead>
+                        <TableHead className="text-right">{t("portfolio.value")}</TableHead>
                         <TableHead>Side</TableHead>
                         <TableHead className="w-[40px]"></TableHead>
                       </TableRow>
@@ -743,7 +745,7 @@ export default function PortfolioClient() {
               <div className="rounded-xl border bg-card p-6">
                 <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
                   <PieChart className="h-5 w-5 text-indigo-500" />
-                  Allocation by Category
+                  {t("portfolio.allocation")}
                 </h3>
                 {pieData.length > 0 ? (
                   <ResponsiveContainer width="100%" height={320}>
@@ -844,7 +846,7 @@ export default function PortfolioClient() {
           {activeTab === "models" && (
             <div className="space-y-8">
               <div className="flex items-center justify-between">
-                <h2 className="text-lg font-semibold">Model Portfolios</h2>
+                <h2 className="text-lg font-semibold">{t("portfolio.models")}</h2>
                 <Button size="sm" onClick={() => setCustomOpen(true)}>
                   <Plus className="mr-2 h-4 w-4" /> Create Custom Model
                 </Button>
@@ -1073,7 +1075,7 @@ export default function PortfolioClient() {
             </div>
             <DialogFooter>
               <DialogClose asChild>
-                <Button variant="outline">Cancel</Button>
+                <Button variant="outline">{t("common.cancel")}</Button>
               </DialogClose>
               <Button onClick={handleCreateCustomModel}>Create Model</Button>
             </DialogFooter>
