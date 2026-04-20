@@ -1,0 +1,114 @@
+{
+  "name": "Yield Curve Intelligence Module",
+  "version": "1.1.0",
+  "description": "Макро-аналитика кривых доходности + исторические аналоги + cross-market сигналы",
+  "author": "AI Assistant",
+  "target_project": "SignalStream Dashboard",
+  
+  "files": {
+    "core": [
+      {
+        "path": "backend/app/services/fred_client.py",
+        "description": "FRED API клиент + расчёт спредов и вероятности рецессии",
+        "size_kb": 6.4,
+        "required": true
+      },
+      {
+        "path": "backend/app/services/pattern_engine.py",
+        "description": "Движок поиска исторических аналогий (7 кейсов с 1966)",
+        "size_kb": 18.0,
+        "required": true
+      },
+      {
+        "path": "backend/app/services/cross_market.py",
+        "description": "Cross-market анализ + regime detection",
+        "size_kb": 12.7,
+        "required": true
+      },
+      {
+        "path": "backend/app/models/yield_curve.py",
+        "description": "Pydantic модели для yield curve",
+        "size_kb": 3.1,
+        "required": true
+      },
+      {
+        "path": "backend/app/models/unified_state.py",
+        "description": "Unified dashboard state",
+        "size_kb": 3.3,
+        "required": true
+      }
+    ],
+    "optional": [
+      {
+        "path": "backend/app/services/telegram.py",
+        "description": "Telegram алерты",
+        "size_kb": 4.2,
+        "required": false
+      },
+      {
+        "path": "backend/app/services/macro_data.py",
+        "description": "Интеграция с существующим Macro модулем",
+        "size_kb": 4.4,
+        "required": false
+      }
+    ],
+    "documentation": [
+      "INTEGRATION.md",
+      "README.md",
+      "TZ_Yield_Curve_Intelligence.md"
+    ]
+  },
+  
+  "dependencies": {
+    "python": [
+      "fastapi>=0.109.0",
+      "aiohttp>=3.9.1",
+      "numpy>=1.26.3",
+      "pandas>=2.1.4",
+      "pydantic>=2.5.3"
+    ]
+  },
+  
+  "api_endpoints": {
+    "new": [
+      "/api/v1/yield-curve/current",
+      "/api/v1/yield-curve/spreads",
+      "/api/v1/yield-curve/recession-probability",
+      "/api/v1/analogs",
+      "/api/v1/cross-market/signal",
+      "/api/v1/dashboard"
+    ],
+    "existing_compatible": [
+      "/api/v1/macro/latest",
+      "/api/v1/macro/correlations"
+    ]
+  },
+  
+  "env_variables": {
+    "required": [
+      {
+        "name": "FRED_API_KEY",
+        "value": "44fd19414c58a4227405bd187b743d1e",
+        "description": "FRED API ключ"
+      }
+    ],
+    "optional": [
+      {
+        "name": "TELEGRAM_BOT_TOKEN",
+        "description": "Для алертов в Telegram"
+      },
+      {
+        "name": "TELEGRAM_CHAT_ID",
+        "description": "ID чата для алертов"
+      }
+    ]
+  },
+  
+  "integration_steps": [
+    "Скопировать файлы из backend/app/ в твой проект",
+    "Добавить импорты в main.py",
+    "Установить зависимости: pip install aiohttp numpy pandas",
+    "Добавить FRED_API_KEY в .env",
+    "Перезапустить сервер"
+  ]
+}

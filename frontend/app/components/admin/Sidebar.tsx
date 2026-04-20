@@ -17,7 +17,8 @@ import {
   Zap,
   Crown,
   Wallet,
-  Globe
+  Globe,
+  TrendingUp
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Logo } from '../Logo';
@@ -34,6 +35,7 @@ const baseNavItems = [
   { href: '/portfolio', label: 'Portfolio', icon: Wallet },
   { href: '/signals', label: 'Signals', icon: Zap },
   { href: '/macro', label: 'Macro', icon: Globe },
+  { href: '/yield-curve', label: 'Yield Curve', icon: TrendingUp },
   { href: '/pricing', label: 'Pricing', icon: Crown },
 ];
 

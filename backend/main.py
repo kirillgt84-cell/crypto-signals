@@ -28,6 +28,7 @@ from routers.scanner import router as scanner_router
 from routers.payments import router as payments_router
 from routers.portfolio import router as portfolio_router
 from routers.macro import router as macro_router
+from routers.yield_curve import router as yield_curve_router
 from scheduler import start_scheduler, stop_scheduler
 
 # Глобальная переменная для scheduler
@@ -175,6 +176,7 @@ app.include_router(scanner_router)
 app.include_router(payments_router)
 app.include_router(portfolio_router)
 app.include_router(macro_router)
+app.include_router(yield_curve_router)
 
 # ============= Health Check =============
 @app.get("/health")
