@@ -15,6 +15,13 @@ const LANGUAGE_NAMES: Record<Language, string> = {
   zh: "中文",
 }
 
+const LANGUAGE_FLAGS: Record<Language, string> = {
+  en: "🇬🇧",
+  ru: "🇷🇺",
+  es: "🇪🇸",
+  zh: "🇨🇳",
+}
+
 interface LanguageContextType {
   language: Language
   setLanguage: (lang: Language) => void
@@ -22,6 +29,7 @@ interface LanguageContextType {
   isLoaded: boolean
   languages: Language[]
   languageNames: Record<Language, string>
+  languageFlags: Record<Language, string>
 }
 
 const translations: Record<Language, Record<string, string> | null> = {
@@ -67,6 +75,7 @@ const LanguageContext = createContext<LanguageContextType>({
   isLoaded: false,
   languages: ALL_LANGUAGES,
   languageNames: LANGUAGE_NAMES,
+  languageFlags: LANGUAGE_FLAGS,
 })
 
 export function LanguageProvider({ children }: { children: ReactNode }) {
@@ -102,7 +111,7 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
 
   return (
     <LanguageContext.Provider
-      value={{ language, setLanguage, t, isLoaded, languages: ALL_LANGUAGES, languageNames: LANGUAGE_NAMES }}
+      value={{ language, setLanguage, t, isLoaded, languages: ALL_LANGUAGES, languageNames: LANGUAGE_NAMES, languageFlags: LANGUAGE_FLAGS }}
     >
       {children}
     </LanguageContext.Provider>
