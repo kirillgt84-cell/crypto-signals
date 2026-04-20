@@ -43,7 +43,7 @@ export function Logo({ collapsed = false, className }: LogoProps) {
           <polygon points="34,8 30,10 30,14" fill="#22c55e"/>
         </svg>
       </div>
-      <span className="text-lg font-bold tracking-tight text-[#1e3a5f] dark:text-white">
+      <span className="text-lg font-bold tracking-tight text-[#1e3a5f] dark:text-foreground">
         FAST LANE
       </span>
     </div>

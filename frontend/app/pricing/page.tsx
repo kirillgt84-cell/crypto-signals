@@ -8,7 +8,7 @@ export const metadata = {
 
 export default function PricingPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen bg-[#0b0f19]" />}>
+    <Suspense fallback={<div className="min-h-screen bg-background" />}>
       <PricingClient />
     </Suspense>
   );

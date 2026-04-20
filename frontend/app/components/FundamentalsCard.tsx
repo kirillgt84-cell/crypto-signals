@@ -80,18 +80,18 @@ function ZoneCard({
   children: React.ReactNode
 }) {
   return (
-    <div className="space-y-3 p-5 rounded-lg bg-slate-900/40 border border-slate-800">
+    <div className="space-y-3 p-5 rounded-lg bg-muted border border-border">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <span className="text-base font-semibold text-slate-200 uppercase tracking-wider">{title}</span>
           <div className="group relative">
             <Info className="w-5 h-5 text-slate-600 cursor-help hover:text-slate-400 transition-colors" />
-            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-60 p-3 bg-slate-900 border border-slate-700 rounded-md text-xs text-slate-300 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-20 shadow-xl leading-relaxed">
+            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-60 p-3 bg-popover border border-border rounded-md text-xs text-popover-foreground opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-20 shadow-xl leading-relaxed">
               {METRIC_INFO[infoKey]}
             </div>
           </div>
         </div>
-        <span className="text-lg font-bold font-mono text-white">{valueFormatted}</span>
+        <span className="text-lg font-bold font-mono text-foreground">{valueFormatted}</span>
       </div>
 
       {children}
@@ -170,9 +170,9 @@ export function FundamentalsCard({ symbol, loading: parentLoading }: Fundamental
 
   if (isLoading) {
     return (
-      <Card className="bg-[#0b0f19] border-amber-500/30">
+      <Card className="border-amber-500/30">
         <CardHeader className="pb-2">
-          <CardTitle className="flex items-center gap-2 text-sm font-bold tracking-widest text-white">
+          <CardTitle className="flex items-center gap-2 text-sm font-bold tracking-widest text-foreground">
             <Activity className="w-4 h-4" />
             FUNDAMENTAL HEALTH
           </CardTitle>
@@ -190,9 +190,9 @@ export function FundamentalsCard({ symbol, loading: parentLoading }: Fundamental
 
   if (!hasAnyData) {
     return (
-      <Card className="bg-[#0b0f19] border-amber-500/30">
+      <Card className="border-amber-500/30">
         <CardHeader className="pb-2">
-          <CardTitle className="flex items-center gap-2 text-sm font-bold tracking-widest text-white">
+          <CardTitle className="flex items-center gap-2 text-sm font-bold tracking-widest text-foreground">
             <Activity className="w-4 h-4" />
             FUNDAMENTAL HEALTH
           </CardTitle>
@@ -231,9 +231,9 @@ export function FundamentalsCard({ symbol, loading: parentLoading }: Fundamental
   const comps = data.composite?.components || {}
 
   return (
-    <Card className="bg-[#0b0f19] border-amber-500/30">
+    <Card className="border-amber-500/30">
       <CardHeader className="pb-2">
-        <CardTitle className="flex items-center gap-2 text-sm font-bold tracking-widest text-white">
+        <CardTitle className="flex items-center gap-2 text-sm font-bold tracking-widest text-foreground">
           <Activity className="w-4 h-4" />
           FUNDAMENTAL HEALTH
         </CardTitle>
@@ -391,7 +391,7 @@ export function FundamentalsCard({ symbol, loading: parentLoading }: Fundamental
             {comps.mvrv && (
               <div className="text-center">
                 <p className="text-[10px] text-slate-500 uppercase">MVRV</p>
-                <p className="text-xs font-mono font-bold text-slate-300">
+                <p className="text-xs font-mono font-bold text-popover-foreground">
                   {comps.mvrv.normalized > 0 ? "+" : ""}
                   {comps.mvrv.normalized.toFixed(2)}
                 </p>
@@ -400,7 +400,7 @@ export function FundamentalsCard({ symbol, loading: parentLoading }: Fundamental
             {comps.nupl && (
               <div className="text-center">
                 <p className="text-[10px] text-slate-500 uppercase">NUPL</p>
-                <p className="text-xs font-mono font-bold text-slate-300">
+                <p className="text-xs font-mono font-bold text-popover-foreground">
                   {comps.nupl.normalized > 0 ? "+" : ""}
                   {comps.nupl.normalized.toFixed(2)}
                 </p>
@@ -409,7 +409,7 @@ export function FundamentalsCard({ symbol, loading: parentLoading }: Fundamental
             {comps.funding && (
               <div className="text-center">
                 <p className="text-[10px] text-slate-500 uppercase">Funding</p>
-                <p className="text-xs font-mono font-bold text-slate-300">
+                <p className="text-xs font-mono font-bold text-popover-foreground">
                   {comps.funding.normalized > 0 ? "+" : ""}
                   {comps.funding.normalized.toFixed(2)}
                 </p>
@@ -418,7 +418,7 @@ export function FundamentalsCard({ symbol, loading: parentLoading }: Fundamental
             {comps.market_momentum && (
               <div className="text-center">
                 <p className="text-[10px] text-slate-500 uppercase">Momentum</p>
-                <p className="text-xs font-mono font-bold text-slate-300">
+                <p className="text-xs font-mono font-bold text-popover-foreground">
                   {comps.market_momentum.normalized > 0 ? "+" : ""}
                   {comps.market_momentum.normalized.toFixed(2)}
                 </p>

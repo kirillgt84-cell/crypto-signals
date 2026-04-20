@@ -47,7 +47,7 @@ export default function CVDChart({ data }: { data: CVDData }) {
             <BarChart3 className={`w-5 h-5 ${isBullish ? 'text-green-400' : 'text-red-400'}`} />
           </div>
           <div>
-            <h3 className="font-semibold text-white">CVD Analysis</h3>
+            <h3 className="font-semibold text-foreground">CVD Analysis</h3>
             <p className="text-xs text-gray-500">Cumulative Volume Delta</p>
           </div>
         </div>
@@ -124,7 +124,7 @@ export default function CVDChart({ data }: { data: CVDData }) {
             <div className="w-2 h-2 rounded-full bg-green-500" />
             <span className="text-xs text-green-400 uppercase">Buy Volume</span>
           </div>
-          <p className="text-lg font-bold font-mono text-white">
+          <p className="text-lg font-bold font-mono text-foreground">
             ${(data.buy_volume / 1e6).toFixed(2)}M
           </p>
         </div>
@@ -134,7 +134,7 @@ export default function CVDChart({ data }: { data: CVDData }) {
             <div className="w-2 h-2 rounded-full bg-red-500" />
             <span className="text-xs text-red-400 uppercase">Sell Volume</span>
           </div>
-          <p className="text-lg font-bold font-mono text-white">
+          <p className="text-lg font-bold font-mono text-foreground">
             ${(data.sell_volume / 1e6).toFixed(2)}M
           </p>
         </div>

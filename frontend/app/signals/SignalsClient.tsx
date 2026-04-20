@@ -466,7 +466,7 @@ export default function SignalsClient() {
                                     href={`https://www.tradingview.com/chart/?symbol=BINANCE:${s.symbol}.P`}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="font-semibold text-white hover:text-amber-400 transition-colors"
+                                    className="font-semibold text-foreground hover:text-amber-400 transition-colors"
                                   >
                                     {s.base_asset}
                                   </a>
@@ -490,7 +490,7 @@ export default function SignalsClient() {
                                 </div>
                               </td>
                               <td className="px-4 py-3">
-                                <span className="font-bold text-white">{s.score}</span>
+                                <span className="font-bold text-foreground">{s.score}</span>
                               </td>
                               <td className="px-4 py-3 text-slate-300">
                                 x{s.volume_ratio}

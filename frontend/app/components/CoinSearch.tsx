@@ -137,7 +137,7 @@ export default function CoinSearch({ onSelect, currentSymbol = "BTCUSDT" }: Coin
   return (
     <div ref={containerRef} className="relative w-72">
       <div
-        className="relative flex items-center bg-[#0b0f19] border border-slate-700 rounded hover:border-amber-500/50 transition-colors cursor-pointer"
+        className="relative flex items-center bg-card border border-slate-700 rounded hover:border-amber-500/50 transition-colors cursor-pointer"
         onClick={() => {
           setIsOpen(true)
           inputRef.current?.focus()
@@ -152,7 +152,7 @@ export default function CoinSearch({ onSelect, currentSymbol = "BTCUSDT" }: Coin
           onFocus={() => setIsOpen(true)}
           onKeyDown={handleKeyDown}
           placeholder="Search..."
-          className="w-full pl-10 pr-14 py-2 bg-transparent text-white font-mono text-sm placeholder-slate-500 focus:outline-none"
+          className="w-full pl-10 pr-14 py-2 bg-transparent text-foreground font-mono text-sm placeholder-muted-foreground focus:outline-none"
         />
         {!isOpen && selectedCoin && (
           <div className="absolute right-3 flex items-center gap-1 text-xs">
@@ -171,7 +171,7 @@ export default function CoinSearch({ onSelect, currentSymbol = "BTCUSDT" }: Coin
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -8 }}
             transition={{ duration: 0.15 }}
-            className="absolute top-full left-0 right-0 mt-1 bg-[#0b0f19] border border-slate-700 rounded shadow-2xl max-h-96 overflow-y-auto z-50"
+            className="absolute top-full left-0 right-0 mt-1 bg-card border border-slate-700 rounded shadow-2xl max-h-96 overflow-y-auto z-50"
           >
             <div className="px-3 py-2 text-[10px] text-slate-500 border-b border-slate-800 flex justify-between items-center">
               <span>{query ? `Found: ${filteredCoins.length}` : "Top by liquidity"}</span>
@@ -189,7 +189,7 @@ export default function CoinSearch({ onSelect, currentSymbol = "BTCUSDT" }: Coin
                   key={coin.symbol}
                   onClick={() => handleSelect(coin)}
                   className={`flex items-center gap-3 px-3 py-2 cursor-pointer transition-colors ${
-                    index === highlightedIndex ? "bg-slate-800" : "hover:bg-slate-800/50"
+                    index === highlightedIndex ? "bg-muted" : "hover:bg-muted/50"
                   } ${isSelected ? "border-l-2 border-amber-500 bg-amber-500/5" : "border-l-2 border-transparent"}`}
                 >
                   <div className="w-5 h-5 flex items-center justify-center shrink-0">
@@ -204,14 +204,14 @@ export default function CoinSearch({ onSelect, currentSymbol = "BTCUSDT" }: Coin
 
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-1.5">
-                      <span className="font-bold text-white font-mono text-sm">{coin.baseAsset}</span>
+                      <span className="font-bold text-foreground font-mono text-sm">{coin.baseAsset}</span>
                       <span className="text-[10px] text-slate-500">/USDT</span>
                     </div>
                     <div className="text-[10px] text-slate-500">Vol {formatVolume(coin.volume_24h)}</div>
                   </div>
 
                   <div className="text-right shrink-0">
-                    <div className="text-sm font-mono text-white">
+                    <div className="text-sm font-mono text-foreground">
                       ${coin.price.toLocaleString(undefined, {
                         minimumFractionDigits: coin.price < 1 ? 4 : 2,
                         maximumFractionDigits: coin.price < 1 ? 6 : 2,

@@ -293,7 +293,7 @@ export function OrderBook({ symbol, currentPrice = 0, loading: parentLoading }: 
 
   if (isLoading) {
     return (
-      <div className="w-full border-2 border-primary/30 rounded-xl bg-[#0b0f19] p-4 font-mono">
+      <div className="w-full border-2 border-primary/30 rounded-xl bg-card p-4 font-mono">
         <div className="flex items-center gap-2 text-primary mb-4">
           <BookOpen className="w-4 h-4 animate-pulse" />
           <span className="text-sm font-bold tracking-wider">ORDER DEPTH</span>
@@ -309,7 +309,7 @@ export function OrderBook({ symbol, currentPrice = 0, loading: parentLoading }: 
 
   if (error || !rawBook) {
     return (
-      <div className="w-full min-h-[500px] border-2 border-muted rounded-xl bg-[#0b0f19] p-4 font-mono flex flex-col items-center justify-center text-muted-foreground">
+      <div className="w-full min-h-[500px] border-2 border-muted rounded-xl bg-card p-4 font-mono flex flex-col items-center justify-center text-muted-foreground">
         <AlertCircle className="w-8 h-8 mb-2" />
         <p className="text-sm">{error || "No order book data"}</p>
       </div>
@@ -336,7 +336,7 @@ export function OrderBook({ symbol, currentPrice = 0, loading: parentLoading }: 
 
   return (
     <motion.div
-      className="w-full border-2 border-blue-500/30 rounded-xl bg-[#0b0f19] p-3 font-mono flex flex-col"
+      className="w-full border-2 border-blue-500/30 rounded-xl bg-card p-3 font-mono flex flex-col"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
     >
@@ -354,8 +354,8 @@ export function OrderBook({ symbol, currentPrice = 0, loading: parentLoading }: 
               className={cn(
                 "px-2 py-0.5 text-[10px] font-bold rounded transition-colors border",
                 selectedStep === opt.value
-                  ? "bg-blue-500 text-white border-blue-500"
-                  : "bg-[#0b0f19] text-muted-foreground border-slate-700 hover:border-blue-500/50 hover:text-foreground"
+                  ? "bg-blue-500 text-foreground border-blue-500"
+                  : "bg-card text-muted-foreground border-border hover:border-blue-500/50 hover:text-foreground"
               )}
             >
               {opt.label}
@@ -389,13 +389,13 @@ export function OrderBook({ symbol, currentPrice = 0, loading: parentLoading }: 
               className="grid grid-cols-[72px_1fr] items-center relative"
               style={{ height: rowHeight }}
             >
-              <div className="text-right pr-3 text-[10px] font-mono leading-none text-white">
+              <div className="text-right pr-3 text-[10px] font-mono leading-none text-foreground">
                 {formatPrice(ask.price)}
               </div>
               <div className="relative h-full">
                 <div className="absolute inset-0 flex justify-between pointer-events-none">
                   {[1, 2, 3].map((k) => (
-                    <div key={k} className="h-full w-px bg-slate-800/40" style={{ marginLeft: `${k * 25}%` }} />
+                    <div key={k} className="h-full w-px bg-muted/40" style={{ marginLeft: `${k * 25}%` }} />
                   ))}
                 </div>
                 <div
@@ -431,13 +431,13 @@ export function OrderBook({ symbol, currentPrice = 0, loading: parentLoading }: 
               className="grid grid-cols-[72px_1fr] items-center relative"
               style={{ height: rowHeight }}
             >
-              <div className="text-right pr-3 text-[10px] font-mono leading-none text-white">
+              <div className="text-right pr-3 text-[10px] font-mono leading-none text-foreground">
                 {formatPrice(bid.price)}
               </div>
               <div className="relative h-full">
                 <div className="absolute inset-0 flex justify-between pointer-events-none">
                   {[1, 2, 3].map((k) => (
-                    <div key={k} className="h-full w-px bg-slate-800/40" style={{ marginLeft: `${k * 25}%` }} />
+                    <div key={k} className="h-full w-px bg-muted/40" style={{ marginLeft: `${k * 25}%` }} />
                   ))}
                 </div>
                 <div

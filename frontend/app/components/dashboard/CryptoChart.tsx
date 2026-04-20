@@ -76,7 +76,7 @@ export default function CryptoChart({ symbol, timeframe }: CryptoChartProps) {
     if (active && payload && payload.length) {
       const d = payload[0].payload;
       return (
-        <div className="bg-slate-900 border border-slate-700 rounded-lg p-3 shadow-xl">
+        <div className="bg-muted border border-border rounded-lg p-3 shadow-xl">
           <p className="text-slate-400 text-xs mb-2">{d.time}</p>
           <div className="space-y-1 text-xs">
             <div className="flex justify-between gap-4">

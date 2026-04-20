@@ -54,7 +54,7 @@ export default function ClusterMap({ data }: { data: ClusterData }) {
             <Layers className="w-5 h-5 text-yellow-400" />
           </div>
           <div>
-            <h3 className="font-semibold text-white">Volume Profile</h3>
+            <h3 className="font-semibold text-foreground">Volume Profile</h3>
             <p className="text-xs text-gray-500">Cluster Analysis</p>
           </div>
         </div>
@@ -126,7 +126,7 @@ export default function ClusterMap({ data }: { data: ClusterData }) {
 
                   {/* Volume text */}
                   <div className="absolute inset-0 flex items-center justify-end px-2">
-                    <span className="text-xs font-mono text-white drop-shadow-lg">
+                    <span className="text-xs font-mono text-foreground drop-shadow-lg">
                       {(cluster.total / 1000).toFixed(1)}K
                     </span>
                   </div>

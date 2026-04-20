@@ -56,7 +56,7 @@ export default function LevelsPanel({ data }: { data: LevelsData }) {
             <Target className="w-5 h-5 text-red-400" />
           </div>
           <div>
-            <h3 className="font-semibold text-white">Key Levels</h3>
+            <h3 className="font-semibold text-foreground">Key Levels</h3>
             <p className="text-xs text-gray-500">EMA & Liquidations</p>
           </div>
         </div>

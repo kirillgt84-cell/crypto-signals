@@ -30,7 +30,7 @@ export default function MarketDepth({ data }: MarketDepthProps) {
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
       return (
-        <div className="bg-slate-900 border border-slate-700 rounded p-2 shadow-lg">
+        <div className="bg-muted border border-border rounded p-2 shadow-lg">
           <p className="text-slate-200 text-xs font-mono mb-1">{label}</p>
           {payload.map((entry: any, index: number) => (
             <p key={index} className="text-xs" style={{ color: entry.color }}>

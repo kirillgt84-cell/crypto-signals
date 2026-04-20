@@ -64,7 +64,7 @@ export function LiquidationMap({
 
   if (loading) {
     return (
-      <div className="w-full border-2 border-primary/30 rounded-xl bg-[#0b0f19] p-4 font-mono">
+      <div className="w-full border-2 border-primary/30 rounded-xl bg-card p-4 font-mono">
         <div className="flex items-center gap-2 text-primary mb-4">
           <AlertTriangle className="w-4 h-4 animate-pulse" />
           <span className="text-sm font-bold tracking-wider">LIQUIDATION HEATMAP</span>
@@ -81,7 +81,7 @@ export function LiquidationMap({
   if (!buckets.length) {
     return (
       <motion.div
-        className="w-full border-2 border-amber-500/30 rounded-xl bg-[#0b0f19] p-4 font-mono flex flex-col items-center justify-center min-h-[200px]"
+        className="w-full border-2 border-amber-500/30 rounded-xl bg-card p-4 font-mono flex flex-col items-center justify-center min-h-[200px]"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
       >
@@ -94,7 +94,7 @@ export function LiquidationMap({
 
   return (
     <motion.div
-      className="w-full border-2 border-amber-500/30 rounded-xl bg-[#0b0f19] p-3 font-mono flex flex-col"
+      className="w-full border-2 border-amber-500/30 rounded-xl bg-card p-3 font-mono flex flex-col"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
     >
@@ -139,7 +139,7 @@ export function LiquidationMap({
               transition={{ duration: 0.05, delay: i * 0.01 }}
               className={cn(
                 "grid grid-cols-[1fr_64px_1fr] items-center rounded-sm",
-                isCurrent ? "bg-amber-500/10 border border-amber-500/30" : "hover:bg-slate-800/30"
+                isCurrent ? "bg-amber-500/10 border border-amber-500/30" : "hover:bg-muted/50"
               )}
               style={{ height: 20 }}
             >

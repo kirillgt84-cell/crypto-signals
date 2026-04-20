@@ -49,7 +49,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
   if (active && payload && payload.length) {
     const data = payload[0].payload;
     return (
-      <div className="bg-slate-900 border border-slate-700 rounded-lg p-3 shadow-xl">
+      <div className="bg-muted border border-border rounded-lg p-3 shadow-xl">
         <p className="text-slate-400 text-xs mb-2">{label}</p>
         <div className="space-y-1 text-xs">
           <div className="flex justify-between gap-4">
@@ -213,7 +213,7 @@ const LastPrice = (props: LastPriceProps) => {
   const isTrendingUp = percentageChange > 0;
 
   return (
-    <span className="font-mono text-sm md:text-lg inline-flex flex-row items-center gap-2 bg-slate-900/80 px-3 py-1.5 rounded-lg">
+    <span className="font-mono text-sm md:text-lg inline-flex flex-row items-center gap-2 bg-muted/80 px-3 py-1.5 rounded-lg">
       <Triangle
         className={cn("size-3", {
           "fill-emerald-500 stroke-emerald-500": isTrendingUp,
@@ -224,7 +224,7 @@ const LastPrice = (props: LastPriceProps) => {
         {percentageChange.toFixed(2)}%
       </span>
       <span className="text-slate-500">|</span>
-      <span className="text-white">{value.toLocaleString("en-US", { style: "currency", currency: "USD" })}</span>
+      <span className="text-foreground">{value.toLocaleString("en-US", { style: "currency", currency: "USD" })}</span>
     </span>
   );
 };

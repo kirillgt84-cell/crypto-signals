@@ -52,11 +52,11 @@ export default function OIPanel({ data }: { data: OIAnalysis }) {
             <Activity className="w-5 h-5 text-blue-400" />
           </div>
           <div>
-            <h3 className="font-semibold text-white">Open Interest</h3>
+            <h3 className="font-semibold text-foreground">Open Interest</h3>
             <p className="text-xs text-gray-500 uppercase tracking-wider">{data.timeframe || '1h'}</p>
           </div>
         </div>
-        <div className={`px-3 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider bg-gradient-to-r ${getSignalColor()} text-white shadow-lg ${getSignalGlow()}`}>
+        <div className={`px-3 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider bg-gradient-to-r ${getSignalColor()} text-foreground shadow-lg ${getSignalGlow()}`}>
           {analysis.status.replace(/_/g, ' ')}
         </div>
       </div>
@@ -69,7 +69,7 @@ export default function OIPanel({ data }: { data: OIAnalysis }) {
             <DollarSign className="w-3 h-3" />
             PRICE
           </div>
-          <div className="text-2xl font-bold font-mono text-white">
+          <div className="text-2xl font-bold font-mono text-foreground">
             ${data.price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
           </div>
           <div className={`flex items-center gap-1 mt-1 text-sm font-medium ${
@@ -90,7 +90,7 @@ export default function OIPanel({ data }: { data: OIAnalysis }) {
             <BarChart2 className="w-3 h-3" />
             OPEN INTEREST
           </div>
-          <div className="text-2xl font-bold font-mono text-white">
+          <div className="text-2xl font-bold font-mono text-foreground">
             {formatNumber(data.open_interest)}
           </div>
           <div className={`flex items-center gap-1 mt-1 text-sm font-medium ${
@@ -137,7 +137,7 @@ export default function OIPanel({ data }: { data: OIAnalysis }) {
       <div className="mt-4 flex items-center gap-3">
         <div className="flex-1 p-3 rounded-xl bg-blue-500/10 border border-blue-500/20">
           <p className="text-xs text-blue-400 uppercase mb-1">Recommendation</p>
-          <p className="text-sm font-medium text-white">{analysis.action}</p>
+          <p className="text-sm font-medium text-foreground">{analysis.action}</p>
         </div>
       </div>
     </div>

@@ -24,12 +24,12 @@ export function ProBlurOverlay({ children, title = "Pro Feature", description }:
       </div>
       <div className="absolute inset-0 flex flex-col items-center justify-center rounded-xl bg-black/30 px-4 text-center">
         <Lock className="mb-2 h-6 w-6 text-amber-500" />
-        <p className="text-sm font-bold text-white">{title}</p>
+        <p className="text-sm font-bold text-foreground">{title}</p>
         {description && <p className="mt-1 max-w-[200px] text-xs text-slate-300">{description}</p>}
         {!isAuthenticated ? (
           <Button
             size="sm"
-            className="mt-3 bg-amber-500 text-white hover:bg-amber-600"
+            className="mt-3 bg-amber-500 text-foreground hover:bg-amber-600"
             onClick={() => {
               // Dispatch custom event or use window location hash to trigger auth modal
               window.dispatchEvent(new CustomEvent("open-auth-modal"))
@@ -40,7 +40,7 @@ export function ProBlurOverlay({ children, title = "Pro Feature", description }:
         ) : (
           <Button
             size="sm"
-            className="mt-3 bg-amber-500 text-white hover:bg-amber-600"
+            className="mt-3 bg-amber-500 text-foreground hover:bg-amber-600"
             onClick={() => (window.location.href = "/profile?tab=subscription")}
           >
             Upgrade to Pro
