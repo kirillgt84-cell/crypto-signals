@@ -32,11 +32,25 @@ const API_BASE_URL = "https://crypto-signals-production-ff4c.up.railway.app/api/
 const symbols = ["BTC", "ETH", "SOL", "BNB", "XRP", "DOGE", "ADA", "LINK", "AVAX", "POL"]
 
 const timeframes = [
-  { value: "15", label: "M15", api: "1h" },  // Map to backend timeframe
+  { value: "15", label: "M15", api: "1h" },
   { value: "60", label: "1H", api: "1h" },
   { value: "240", label: "4H", api: "4h" },
   { value: "D", label: "1D", api: "1d" },
+  { value: "3D", label: "3D", api: "3d" },
+  { value: "1W", label: "1W", api: "1w" },
 ]
+
+function formatTfLabel(tf: string) {
+  const mapping: Record<string, string> = {
+    "15": "15m",
+    "60": "1h",
+    "240": "4h",
+    "D": "1d",
+    "3D": "3d",
+    "1W": "1w",
+  }
+  return mapping[tf] || tf
+}
 
 interface MarketData {
   symbol: string
@@ -193,7 +207,7 @@ function OIAnalysisCards({ data, loading, timeframe }: { data: MarketData; loadi
       <MetricCard
         title="Futures Volume"
         value={formatVolumeUSD((data?.volume || 0) * (data?.price || 0))}
-        subvalue={data?.volume_change !== undefined && data?.volume_change !== 0 ? `${data.volume_change >= 0 ? "+" : ""}${data.volume_change.toFixed(2)}% (${timeframe === "15" ? "15m" : timeframe === "60" ? "1h" : timeframe === "240" ? "4h" : "1d"})` : `${timeframe === "15" ? "15m" : timeframe === "60" ? "1h" : timeframe === "240" ? "4h" : "1d"} volume`}
+        subvalue={data?.volume_change !== undefined && data?.volume_change !== 0 ? `${data.volume_change >= 0 ? "+" : ""}${data.volume_change.toFixed(2)}% (${formatTfLabel(timeframe)})` : `${formatTfLabel(timeframe)} volume`}
         trend={data?.volume_change > 0 ? "Rising" : data?.volume_change < 0 ? "Falling" : "Stable"}
         trendUp={data?.volume_change >= 0}
         icon={BarChart3}
@@ -202,7 +216,7 @@ function OIAnalysisCards({ data, loading, timeframe }: { data: MarketData; loadi
       <MetricCard
         title="Spot Volume"
         value={formatVolumeUSD((data?.spot_volume || 0) * (data?.price || 0))}
-        subvalue={data?.spot_volume_change !== undefined && data?.spot_volume_change !== 0 ? `${data.spot_volume_change >= 0 ? "+" : ""}${data.spot_volume_change.toFixed(2)}% (${timeframe === "15" ? "15m" : timeframe === "60" ? "1h" : timeframe === "240" ? "4h" : "1d"})` : `${timeframe === "15" ? "15m" : timeframe === "60" ? "1h" : timeframe === "240" ? "4h" : "1d"} volume`}
+        subvalue={data?.spot_volume_change !== undefined && data?.spot_volume_change !== 0 ? `${data.spot_volume_change >= 0 ? "+" : ""}${data.spot_volume_change.toFixed(2)}% (${formatTfLabel(timeframe)})` : `${formatTfLabel(timeframe)} volume`}
         trend={data?.spot_volume_change > 0 ? "Rising" : data?.spot_volume_change < 0 ? "Falling" : "Stable"}
         trendUp={data?.spot_volume_change >= 0}
         icon={BarChart3}
@@ -463,9 +477,11 @@ export default function Dashboard() {
   const getApiTimeframe = (tf: string) => {
     const mapping: Record<string, string> = {
       "15": "1h",
-      "60": "1h", 
+      "60": "1h",
       "240": "4h",
-      "D": "1d"
+      "D": "1d",
+      "3D": "3d",
+      "1W": "1w",
     }
     return mapping[tf] || "1h"
   }
