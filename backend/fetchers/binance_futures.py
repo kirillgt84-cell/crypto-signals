@@ -753,6 +753,25 @@ class BinanceFuturesFetcher:
                 "error": str(e)
             }
     
+    async def get_all_perpetual_symbols(self) -> List[str]:
+        """Fetch all USDT perpetual futures symbols from Binance."""
+        session = await self._get_session()
+        try:
+            async with session.get(
+                f"{self.BASE_URL}/fapi/v1/exchangeInfo",
+                headers={"Accept": "application/json"}
+            ) as resp:
+                data = await resp.json()
+            
+            symbols = []
+            for s in data.get("symbols", []):
+                if s.get("status") == "TRADING" and s.get("contractType") == "PERPETUAL":
+                    symbols.append(s["symbol"])
+            return symbols
+        except Exception as e:
+            print(f"DEBUG: Error fetching exchange info: {e}")
+            return []
+    
     async def close(self):
         if self.session:
             await self.session.close()

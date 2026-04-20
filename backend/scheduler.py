@@ -4,6 +4,7 @@ Scheduler для сохранения OI и других метрик кажды
 import asyncio
 import logging
 from datetime import datetime
+from typing import List
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from fetchers.binance_futures import BinanceFuturesFetcher
 from database import get_db
@@ -14,48 +15,102 @@ from services.macro_sync import sync_macro_prices, calculate_correlations
 
 logger = logging.getLogger(__name__)
 
+async def _get_top_symbols(min_volume: float = 1_000_000, top_n: int = 150) -> List[str]:
+    """Get top-N perpetual futures symbols by 24h quote volume."""
+    from fetchers.binance_heatmap import BinanceHeatmapFetcher
+    fetcher = BinanceHeatmapFetcher()
+    try:
+        exchange_info = await fetcher.get_exchange_info()
+        tickers = await fetcher.get_all_tickers()
+        ticker_map = {t["symbol"]: t for t in tickers if t.get("symbol")}
+        
+        symbols_with_vol = []
+        for info in exchange_info:
+            sym = info["symbol"]
+            ticker = ticker_map.get(sym, {})
+            quote_vol = float(ticker.get("quoteVolume", 0) or 0)
+            if quote_vol >= min_volume:
+                symbols_with_vol.append((sym, quote_vol))
+        
+        symbols_with_vol.sort(key=lambda x: x[1], reverse=True)
+        return [s[0] for s in symbols_with_vol[:top_n]]
+    except Exception as e:
+        logger.error(f"[Scheduler] Failed to fetch symbol list: {e}")
+        return ['BTCUSDT', 'ETHUSDT', 'SOLUSDT', 'BNBUSDT', 'XRPUSDT', 'DOGEUSDT', 'ADAUSDT', 'LINKUSDT', 'AVAXUSDT', 'MATICUSDT']
+    finally:
+        await fetcher.close()
+
+
 async def save_oi_snapshot():
-    """Сохраняет OI для всех символов и таймфреймов"""
+    """Сохраняет OI для топ-20 символов (все таймфреймы) каждые 5 мин."""
     try:
         fetcher = BinanceFuturesFetcher()
         db = get_db()
-        
-        symbols = ['BTCUSDT', 'ETHUSDT', 'SOLUSDT', 'BNBUSDT', 'XRPUSDT', 'DOGEUSDT', 'ADAUSDT', 'LINKUSDT', 'AVAXUSDT', 'MATICUSDT']
+        symbols = await _get_top_symbols(top_n=20)
         timeframes = ['1h', '4h', '1d']
         
         for symbol in symbols:
             for tf in timeframes:
                 try:
-                    # Получаем данные с Binance (фьючерсы + спот)
                     data = await fetcher.get_oi_analysis(symbol, tf)
                     spot_data = await fetcher.get_spot_volume(symbol, tf)
-                    
-                    # Сохраняем в БД
                     await db.execute(
                         """INSERT INTO oi_history 
                            (time, symbol, timeframe, open_interest, price, volume, spot_volume, funding_rate)
                            VALUES (NOW(), $1, $2, $3, $4, $5, $6, $7)
                            ON CONFLICT (time, symbol, timeframe) DO NOTHING""",
                         [
-                            symbol,
-                            tf,
-                            data.get('open_interest', 0),
-                            data.get('price', 0),
-                            data.get('volume_24h', 0),
-                            spot_data.get('spot_volume', 0),
+                            symbol, tf,
+                            data.get('open_interest', 0), data.get('price', 0),
+                            data.get('volume_24h', 0), spot_data.get('spot_volume', 0),
                             data.get('funding_rate', 0)
                         ]
                     )
-                    logger.info(f"[Scheduler] Saved OI for {symbol} {tf}: OI={data.get('open_interest', 0)}, SpotVol={spot_data.get('spot_volume', 0)}")
-                    
                 except Exception as e:
                     logger.error(f"[Scheduler] Failed to save {symbol} {tf}: {e}")
                     continue
         
         await fetcher.close()
-        
+        logger.info(f"[Scheduler] OI snapshot (liquid): saved {len(symbols)} symbols x {len(timeframes)} timeframes")
     except Exception as e:
         logger.error(f"[Scheduler] Critical error: {e}")
+
+
+async def save_oi_snapshot_extended():
+    """Сохраняет OI для топ 21-150 символов (только 1h) каждые 15 мин."""
+    try:
+        fetcher = BinanceFuturesFetcher()
+        db = get_db()
+        symbols = await _get_top_symbols(top_n=150)
+        # Skip top 20 already covered by save_oi_snapshot
+        symbols = symbols[20:]
+        if not symbols:
+            return
+        
+        for symbol in symbols:
+            try:
+                data = await fetcher.get_oi_analysis(symbol, "1h")
+                spot_data = await fetcher.get_spot_volume(symbol, "1h")
+                await db.execute(
+                    """INSERT INTO oi_history 
+                       (time, symbol, timeframe, open_interest, price, volume, spot_volume, funding_rate)
+                       VALUES (NOW(), $1, '1h', $2, $3, $4, $5, $6)
+                       ON CONFLICT (time, symbol, timeframe) DO NOTHING""",
+                    [
+                        symbol,
+                        data.get('open_interest', 0), data.get('price', 0),
+                        data.get('volume_24h', 0), spot_data.get('spot_volume', 0),
+                        data.get('funding_rate', 0)
+                    ]
+                )
+            except Exception as e:
+                logger.error(f"[Scheduler] Failed to save extended {symbol}: {e}")
+                continue
+        
+        await fetcher.close()
+        logger.info(f"[Scheduler] OI snapshot (extended): saved {len(symbols)} symbols x 1h")
+    except Exception as e:
+        logger.error(f"[Scheduler] Extended OI critical error: {e}")
 
 async def save_fundamentals_snapshot():
     """Собирает фундаментальные метрики MVRV, NUPL, Funding"""
@@ -375,6 +430,15 @@ def start_scheduler():
         'interval',
         minutes=5,
         id='anomaly_scan',
+        replace_existing=True
+    )
+
+    # Extended OI snapshot for top 21-150 symbols every 15 minutes
+    scheduler.add_job(
+        save_oi_snapshot_extended,
+        'interval',
+        minutes=15,
+        id='oi_snapshot_extended',
         replace_existing=True
     )
 
