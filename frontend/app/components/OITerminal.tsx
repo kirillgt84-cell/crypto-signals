@@ -33,9 +33,9 @@ const COLORS = {
 export function OITerminal({ analysis, loading }: OITerminalProps) {
   if (loading) {
     return (
-      <Card className="bg-[#0b0f19] border-amber-500/30 h-full">
+      <Card className="bg-gradient-to-t from-amber-500/5 to-card h-full">
         <CardHeader className="pb-2">
-          <CardTitle className="flex items-center gap-2 text-sm font-bold tracking-widest text-white">
+          <CardTitle className="flex items-center gap-2 text-sm font-bold tracking-widest text-foreground">
             <Radio className="w-4 h-4 animate-pulse" />
             OI ANALYSIS
           </CardTitle>
@@ -101,11 +101,17 @@ export function OITerminal({ analysis, loading }: OITerminalProps) {
 
   const ProgressBar = ({ dir }: { dir: "up" | "down" | "flat" }) => {
     const color = getColor(dir)
-    const filled = dir === "up" ? 9 : dir === "down" ? 3 : 6
+    const pct = dir === "up" ? 75 : dir === "down" ? 25 : 50
     return (
-      <span className="text-sm tracking-tighter font-bold" style={{ color }}>
-        {"█".repeat(filled)}{"░".repeat(12 - filled)}
-      </span>
+      <div className="h-2 flex-1 bg-muted rounded-full overflow-hidden">
+        <motion.div
+          className="h-full rounded-full"
+          style={{ backgroundColor: color }}
+          initial={{ width: 0 }}
+          animate={{ width: `${pct}%` }}
+          transition={{ duration: 0.6, ease: "easeOut" }}
+        />
+      </div>
     )
   }
 
@@ -116,9 +122,9 @@ export function OITerminal({ analysis, loading }: OITerminalProps) {
   }
 
   return (
-    <Card className="bg-[#0b0f19] border-amber-500/30 h-full">
+    <Card className="bg-gradient-to-t from-amber-500/5 to-card h-full">
       <CardHeader className="pb-2">
-        <CardTitle className="flex items-center gap-2 text-sm font-bold tracking-widest text-amber-500">
+        <CardTitle className="flex items-center gap-2 text-sm font-bold tracking-widest text-foreground">
           <motion.div
             animate={{ opacity: [1, 0.3, 1] }}
             transition={{ duration: 2, repeat: Infinity }}
@@ -141,11 +147,11 @@ export function OITerminal({ analysis, loading }: OITerminalProps) {
               initial={{ x: -10 }}
               animate={{ x: 0 }}
             >
-              <BarChart3 className="w-4 h-4" style={{ color: getColor(oiDir) }} />
-              <span className="text-sm font-bold w-14" style={{ color: getColor(oiDir) }}>OI</span>
+              <BarChart3 className="w-4 h-4 shrink-0" style={{ color: getColor(oiDir) }} />
+              <span className="text-sm font-bold w-14 shrink-0" style={{ color: getColor(oiDir) }}>OI</span>
               <ProgressBar dir={oiDir} />
-              <span className="text-lg font-bold" style={{ color: getColor(oiDir) }}>{getArrow(oiDir)}</span>
-              <span className="text-xs w-14 text-right font-mono" style={{ color: getColor(oiDir) }}>
+              <span className="text-lg font-bold shrink-0" style={{ color: getColor(oiDir) }}>{getArrow(oiDir)}</span>
+              <span className="text-xs w-14 text-right font-mono shrink-0" style={{ color: getColor(oiDir) }}>
                 {formatChange(analysis.oi_change_pct)}
               </span>
             </motion.div>
@@ -158,11 +164,11 @@ export function OITerminal({ analysis, loading }: OITerminalProps) {
               animate={{ x: 0 }}
               transition={{ delay: 0.1 }}
             >
-              <DollarSign className="w-4 h-4" style={{ color: getColor(priceDir) }} />
-              <span className="text-sm font-bold w-14" style={{ color: getColor(priceDir) }}>PRICE</span>
+              <DollarSign className="w-4 h-4 shrink-0" style={{ color: getColor(priceDir) }} />
+              <span className="text-sm font-bold w-14 shrink-0" style={{ color: getColor(priceDir) }}>PRICE</span>
               <ProgressBar dir={priceDir} />
-              <span className="text-lg font-bold" style={{ color: getColor(priceDir) }}>{getArrow(priceDir)}</span>
-              <span className="text-xs w-14 text-right font-mono" style={{ color: getColor(priceDir) }}>
+              <span className="text-lg font-bold shrink-0" style={{ color: getColor(priceDir) }}>{getArrow(priceDir)}</span>
+              <span className="text-xs w-14 text-right font-mono shrink-0" style={{ color: getColor(priceDir) }}>
                 {formatChange(analysis.price_change_pct)}
               </span>
             </motion.div>
@@ -175,11 +181,11 @@ export function OITerminal({ analysis, loading }: OITerminalProps) {
               animate={{ x: 0 }}
               transition={{ delay: 0.2 }}
             >
-              <Activity className="w-4 h-4" style={{ color: getColor(volumeDir) }} />
-              <span className="text-sm font-bold w-14" style={{ color: getColor(volumeDir) }}>VOLUME</span>
+              <Activity className="w-4 h-4 shrink-0" style={{ color: getColor(volumeDir) }} />
+              <span className="text-sm font-bold w-14 shrink-0" style={{ color: getColor(volumeDir) }}>VOLUME</span>
               <ProgressBar dir={volumeDir} />
-              <span className="text-lg font-bold" style={{ color: getColor(volumeDir) }}>{getArrow(volumeDir)}</span>
-              <span className="text-xs w-14 text-right font-mono" style={{ color: getColor(volumeDir) }}>
+              <span className="text-lg font-bold shrink-0" style={{ color: getColor(volumeDir) }}>{getArrow(volumeDir)}</span>
+              <span className="text-xs w-14 text-right font-mono shrink-0" style={{ color: getColor(volumeDir) }}>
                 {formatChange(analysis.volume_change_pct)}
               </span>
             </motion.div>
