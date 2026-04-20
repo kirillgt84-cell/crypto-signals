@@ -123,6 +123,7 @@ export default function YieldCurveClient() {
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [activeMetricIndex, setActiveMetricIndex] = useState(0);
 
   const fetchData = useCallback(async () => {
     try {
@@ -351,27 +352,92 @@ export default function YieldCurveClient() {
                     </Card>
                   )}
 
-                  {/* Interpretation Metrics */}
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                    {data.interpretation.metrics.map((metric, i) => (
-                      <Card key={i} className={cn(
-                        "border-l-4",
-                        metric.color === "red" && "border-l-red-500",
-                        metric.color === "orange" && "border-l-orange-500",
-                        metric.color === "yellow" && "border-l-amber-500",
-                        metric.color === "green" && "border-l-emerald-500",
-                        metric.color === "blue" && "border-l-blue-500",
-                        metric.color === "gray" && "border-l-gray-500",
-                      )}>
-                        <CardContent className="pt-4 pb-4">
-                          <p className="font-bold text-sm mb-1">{metric.headline}</p>
-                          <p className="text-xs text-muted-foreground leading-relaxed mb-2">{metric.explanation}</p>
-                          <div className="bg-muted/50 rounded p-2">
-                            <p className="text-xs text-muted-foreground italic">{metric.historical_context}</p>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))}
+                  {/* Interpretation Metrics — Card Index */}
+                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                    {/* Left: list of headlines */}
+                    <div className="space-y-1">
+                      {data.interpretation.metrics.map((metric, i) => (
+                        <button
+                          key={i}
+                          onClick={() => setActiveMetricIndex(i)}
+                          className={cn(
+                            "w-full text-left px-3 py-2.5 rounded-lg text-sm font-medium transition-all flex items-center gap-2.5",
+                            i === activeMetricIndex
+                              ? "bg-white/10 text-white border border-white/20 shadow-sm"
+                              : "text-muted-foreground hover:bg-white/5 hover:text-foreground border border-transparent"
+                          )}
+                        >
+                          <span className={cn(
+                            "w-2 h-2 rounded-full shrink-0",
+                            metric.color === "green" && "bg-emerald-500",
+                            metric.color === "red" && "bg-red-500",
+                            metric.color === "yellow" && "bg-amber-500",
+                            metric.color === "orange" && "bg-orange-500",
+                            metric.color === "blue" && "bg-blue-500",
+                            metric.color === "gray" && "bg-gray-500",
+                          )} />
+                          <span className="truncate">{metric.headline}</span>
+                        </button>
+                      ))}
+                    </div>
+
+                    {/* Right: full active metric */}
+                    <div className="lg:col-span-2">
+                      {(() => {
+                        const metric = data.interpretation.metrics[activeMetricIndex];
+                        if (!metric) return null;
+                        const metricIconMap: Record<string, React.ReactNode> = {
+                          "trending-up": <TrendingUp className="w-5 h-5" />,
+                          "trending-down": <TrendingDown className="w-5 h-5" />,
+                          "alert-triangle": <AlertTriangle className="w-5 h-5" />,
+                          "activity": <Activity className="w-5 h-5" />,
+                          "arrow-up-right": <ArrowUpRight className="w-5 h-5" />,
+                          "minus": <Minus className="w-5 h-5" />,
+                          "shield-check": <ShieldCheck className="w-5 h-5" />,
+                          "alert-octagon": <AlertOctagon className="w-5 h-5" />,
+                          "skull": <Skull className="w-5 h-5" />,
+                          "help-circle": <HelpCircle className="w-5 h-5" />,
+                          "rocket": <Rocket className="w-5 h-5" />,
+                          "git-branch": <GitBranch className="w-5 h-5" />,
+                          "shield": <Shield className="w-5 h-5" />,
+                          "history": <History className="w-5 h-5" />,
+                          "lightbulb": <Lightbulb className="w-5 h-5" />,
+                        };
+                        return (
+                          <Card className={cn(
+                            "border-l-4 h-full",
+                            metric.color === "red" && "border-l-red-500",
+                            metric.color === "orange" && "border-l-orange-500",
+                            metric.color === "yellow" && "border-l-amber-500",
+                            metric.color === "green" && "border-l-emerald-500",
+                            metric.color === "blue" && "border-l-blue-500",
+                            metric.color === "gray" && "border-l-gray-500",
+                          )}>
+                            <CardContent className="pt-6 pb-6">
+                              <div className="flex items-center gap-2 mb-4">
+                                <span className={cn(
+                                  "p-2 rounded-lg",
+                                  metric.color === "green" && "bg-emerald-500/10 text-emerald-500",
+                                  metric.color === "red" && "bg-red-500/10 text-red-500",
+                                  metric.color === "yellow" && "bg-amber-500/10 text-amber-500",
+                                  metric.color === "orange" && "bg-orange-500/10 text-orange-500",
+                                  metric.color === "blue" && "bg-blue-500/10 text-blue-500",
+                                  metric.color === "gray" && "bg-muted text-muted-foreground",
+                                )}>
+                                  {metricIconMap[metric.icon] || <Activity className="w-5 h-5" />}
+                                </span>
+                                <p className="font-bold text-base">{metric.headline}</p>
+                              </div>
+                              <p className="text-sm text-muted-foreground leading-relaxed mb-5">{metric.explanation}</p>
+                              <div className="bg-muted/50 rounded-lg p-4">
+                                <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-2">Historical Context</p>
+                                <p className="text-sm text-muted-foreground italic leading-relaxed">{metric.historical_context}</p>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        );
+                      })()}
+                    </div>
                   </div>
                 </>
               )}
