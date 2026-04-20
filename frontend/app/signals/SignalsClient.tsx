@@ -462,9 +462,14 @@ export default function SignalsClient() {
                             >
                               <td className="px-4 py-3">
                                 <div className="flex items-center gap-2">
-                                  <span className="font-semibold text-white">
+                                  <a
+                                    href={`https://www.tradingview.com/chart/?symbol=BINANCE:${s.symbol}.P`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="font-semibold text-white hover:text-amber-400 transition-colors"
+                                  >
                                     {s.base_asset}
-                                  </span>
+                                  </a>
                                   <span className="text-xs text-slate-500">
                                     {s.category}
                                   </span>
