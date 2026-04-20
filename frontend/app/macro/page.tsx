@@ -2,7 +2,7 @@ import { Metadata } from "next";
 import MacroClient from "./MacroClient";
 
 export const metadata: Metadata = {
-  title: "Macro — Crypto Signals",
+  title: "Macro — Mirkaso",
   description: "BTC correlations with SPX500, Gold, VIX",
 };
 

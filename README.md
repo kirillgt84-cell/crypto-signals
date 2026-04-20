@@ -1,2 +1,2 @@
-# Crypto Signals Platform
+# Mirkaso — Precision in Investment Management
 FastAPI + Next.js + Turso

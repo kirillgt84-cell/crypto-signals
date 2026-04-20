@@ -10,9 +10,9 @@ from database import get_db
 logger = logging.getLogger(__name__)
 
 RESEND_API_KEY = os.getenv("RESEND_API_KEY")
-RESEND_FROM = os.getenv("RESEND_FROM_EMAIL", "Fast Lane <reports@fastlane.trade>")
+RESEND_FROM = os.getenv("RESEND_FROM_EMAIL", "Mirkaso <reports@mirkaso.com>")
 TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
-TELEGRAM_BOT_NAME = os.getenv("TELEGRAM_BOT_NAME", "fastlane_signals_bot")
+TELEGRAM_BOT_NAME = os.getenv("TELEGRAM_BOT_NAME", "mirkaso_bot")
 
 
 async def send_email(to: str, subject: str, html: str) -> dict:
@@ -70,7 +70,7 @@ def _build_report_html(title: str, content_blocks: List[str]) -> str:
         <table width="100%" cellpadding="0" cellspacing="0" style="max-width:640px;background:#111827;border-radius:12px;overflow:hidden;border:1px solid #1e293b;">
           <tr>
             <td style="background:#0f172a;padding:24px 20px;border-bottom:1px solid #1e293b;">
-              <p style="margin:0;font-size:12px;color:#94a3b8;letter-spacing:0.1em;text-transform:uppercase;">Fast Lane · Market Intelligence</p>
+              <p style="margin:0;font-size:12px;color:#94a3b8;letter-spacing:0.1em;text-transform:uppercase;">Mirkaso · Precision in Investment Management</p>
               <h1 style="margin:6px 0 0;font-size:22px;font-weight:700;color:#f8fafc;">{title}</h1>
             </td>
           </tr>
@@ -78,7 +78,7 @@ def _build_report_html(title: str, content_blocks: List[str]) -> str:
           <tr>
             <td style="padding:16px 20px;border-top:1px solid #1e293b;text-align:center;">
               <p style="margin:0;font-size:12px;color:#64748b;">
-                Sent by Fast Lane ·
+                Sent by Mirkaso ·
                 <a href="https://crypto-signals-chi.vercel.app" style="color:#94a3b8;text-decoration:none;">Open Dashboard</a>
               </p>
             </td>
@@ -376,7 +376,7 @@ async def send_daily_reports():
 
     for u in users:
         try:
-            result = await send_email(u["email"], "Fast Lane Daily Report", report["html"])
+            result = await send_email(u["email"], "Mirkaso Daily Report", report["html"])
             await _mark_sent(u["id"], "daily", "sent" if result["success"] else "failed", "")
         except Exception as e:
             logger.error(f"Failed to send daily to {u['email']}: {e}")
@@ -407,7 +407,7 @@ async def send_weekly_reports():
 
     for u in users:
         try:
-            result = await send_email(u["email"], "Fast Lane Weekly Report", report["html"])
+            result = await send_email(u["email"], "Mirkaso Weekly Report", report["html"])
             await _mark_sent(u["id"], "weekly", "sent" if result["success"] else "failed", "")
         except Exception as e:
             logger.error(f"Failed to send weekly to {u['email']}: {e}")
@@ -447,7 +447,7 @@ async def send_telegram_alerts():
         if sym in seen:
             continue
         seen.add(sym)
-        msg = f"<b>Fast Lane Alert</b>\n<code>{sym}</code> at ${a['price']:,.2f}\nFunding: {a['funding_rate']*100:.4f}%"
+        msg = f"<b>Mirkaso Alert</b>\n<code>{sym}</code> at ${a['price']:,.2f}\nFunding: {a['funding_rate']*100:.4f}%"
         messages.append(msg)
 
     for u in users:

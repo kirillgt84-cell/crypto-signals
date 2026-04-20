@@ -52,8 +52,8 @@ async def _get_or_create_trial_plan(billing_cycle: str) -> dict:
     # Create PayPal product + plan
     paypal = get_paypal_api()
     product_res = await paypal.create_product(
-        name="Fast Lane Pro",
-        description="Fast Lane Pro subscription with 7-day free trial",
+        name="Mirkaso Pro",
+        description="Mirkaso Pro subscription with 7-day free trial",
     )
     product_id = product_res.get("id")
     if not product_id:

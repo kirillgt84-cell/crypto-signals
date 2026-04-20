@@ -5,7 +5,11 @@ import Sidebar from "../components/admin/Sidebar";
 import { cn } from "@/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, TrendingUp, TrendingDown, AlertTriangle, Activity, History, BarChart3, Lightbulb, ShieldCheck, ArrowUpRight, Minus, AlertOctagon, Skull, HelpCircle, Rocket, GitBranch, Shield } from "lucide-react";
+import { Loader2, TrendingUp, TrendingDown, AlertTriangle, Activity, History, BarChart3, Lightbulb, ShieldCheck, ArrowUpRight, Minus, AlertOctagon, Skull, HelpCircle, Rocket, GitBranch, Shield, Info } from "lucide-react";
+import AssetCardTabs from "../components/AssetCardTabs";
+import TacticalWheel from "../components/TacticalWheel";
+import RiskReturnBubbles from "../components/RiskReturnBubbles";
+import HeatmapMatrix from "../components/HeatmapMatrix";
 import {
   LineChart,
   Line,
@@ -67,7 +71,7 @@ interface InterpretationMetric {
   status: string;
   headline: string;
   explanation: string;
-  actionable: string;
+  historical_context: string;
   color: string;
   icon: string;
 }
@@ -108,8 +112,8 @@ interface DashboardData {
       risk_level: string;
       color: string;
     };
+    disclaimer: string;
     signals: string[];
-    trade_actions: string[];
     metrics: InterpretationMetric[];
   };
 }
@@ -184,6 +188,37 @@ export default function YieldCurveClient() {
         { tenor: "30Y", yield: data.yield_curve.yields["30Y"] },
       ].filter((d) => d.yield !== undefined)
     : [];
+
+  const assetNameMap: Record<string, string> = {
+    SP500: "S&P 500",
+    NASDAQ: "NASDAQ",
+    BTC: "Bitcoin",
+    ETH: "Ethereum",
+    GOLD: "Gold",
+    OIL: "Oil",
+    DXY: "US Dollar Index",
+  };
+
+  const crossMarketAssets = data?.market_regime.impacts.map((impact) => {
+    const impact3m = impact.returns["3m"] ?? 0;
+    const impact6m = impact.returns["6m"] ?? 0;
+    const avg = (impact3m + impact6m) / 2;
+    let status = "neutral";
+    let color = "gray";
+    if (avg > 5) { status = "positive"; color = "green"; }
+    else if (avg > 0) { status = "neutral-positive"; color = "blue"; }
+    else if (avg > -5) { status = "neutral-negative"; color = "yellow"; }
+    else { status = "negative"; color = "red"; }
+    return {
+      asset: impact.asset,
+      name: assetNameMap[impact.asset] || impact.asset,
+      impact_3m: impact3m,
+      impact_6m: impact6m,
+      risk_level: data.market_regime.risk_level,
+      status,
+      color,
+    };
+  }) ?? [];
 
   return (
     <div className="min-h-screen bg-background">
@@ -304,24 +339,14 @@ export default function YieldCurveClient() {
                     </CardContent>
                   </Card>
 
-                  {/* Trade Actions */}
-                  {data.interpretation.trade_actions.length > 0 && (
-                    <Card>
-                      <CardHeader className="pb-2">
-                        <CardTitle className="text-base flex items-center gap-2">
-                          <ShieldCheck className="w-4 h-4 text-emerald-500" />
-                          Recommended Actions
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <ul className="space-y-2">
-                          {data.interpretation.trade_actions.map((action, i) => (
-                            <li key={i} className="flex items-start gap-2 text-sm">
-                              <span className="text-emerald-500 font-bold shrink-0">{i + 1}.</span>
-                              <span>{action}</span>
-                            </li>
-                          ))}
-                        </ul>
+                  {/* Disclaimer */}
+                  {data.interpretation.disclaimer && (
+                    <Card className="border-blue-500/20 bg-blue-500/5">
+                      <CardContent className="pt-4 pb-4">
+                        <div className="flex items-start gap-3">
+                          <Info className="w-4 h-4 text-blue-400 shrink-0 mt-0.5" />
+                          <p className="text-xs text-blue-300/80 leading-relaxed">{data.interpretation.disclaimer}</p>
+                        </div>
                       </CardContent>
                     </Card>
                   )}
@@ -342,7 +367,7 @@ export default function YieldCurveClient() {
                           <p className="font-bold text-sm mb-1">{metric.headline}</p>
                           <p className="text-xs text-muted-foreground leading-relaxed mb-2">{metric.explanation}</p>
                           <div className="bg-muted/50 rounded p-2">
-                            <p className="text-xs font-medium">{metric.actionable}</p>
+                            <p className="text-xs text-muted-foreground italic">{metric.historical_context}</p>
                           </div>
                         </CardContent>
                       </Card>
@@ -380,6 +405,26 @@ export default function YieldCurveClient() {
                   )}
                 </CardContent>
               </Card>
+
+              {/* New Cross-Market Visualizations */}
+              {crossMarketAssets.length > 0 && (
+                <>
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <TacticalWheel assets={crossMarketAssets} regime={data?.market_regime.regime?.replace("_", "-") || "transition"} />
+                    <AssetCardTabs assets={crossMarketAssets} />
+                  </div>
+                  <Card>
+                    <CardContent className="pt-6 pb-6">
+                      <RiskReturnBubbles assets={crossMarketAssets} />
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardContent className="pt-6 pb-6">
+                      <HeatmapMatrix assets={crossMarketAssets} />
+                    </CardContent>
+                  </Card>
+                </>
+              )}
 
               {/* Regime + Cross-Market */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -431,51 +476,6 @@ export default function YieldCurveClient() {
                   </CardContent>
                 </Card>
               </div>
-
-              {/* Cross-Market Impacts */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-base">Cross-Market Impact Forecast</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-                    {data.market_regime.impacts.map((impact) => (
-                      <div
-                        key={impact.asset}
-                        className={cn(
-                          "p-3 rounded-lg border",
-                          impact.direction === "UP" && "border-emerald-500/30 bg-emerald-500/5",
-                          impact.direction === "DOWN" && "border-red-500/30 bg-red-500/5",
-                          impact.direction === "SIDEWAYS" && "border-muted bg-muted/20"
-                        )}
-                      >
-                        <div className="flex items-center justify-between mb-1">
-                          <span className="text-sm font-bold">{impact.asset}</span>
-                          {impact.direction === "UP" ? (
-                            <TrendingUp className="w-4 h-4 text-emerald-500" />
-                          ) : impact.direction === "DOWN" ? (
-                            <TrendingDown className="w-4 h-4 text-red-500" />
-                          ) : (
-                            <span className="text-xs text-muted-foreground">→</span>
-                          )}
-                        </div>
-                        <p className="text-xs text-muted-foreground capitalize">{impact.magnitude.toLowerCase()}</p>
-                        {impact.returns["3m"] !== null && (
-                          <p
-                            className={cn(
-                              "text-xs font-mono mt-1",
-                              (impact.returns["3m"] ?? 0) >= 0 ? "text-emerald-500" : "text-red-500"
-                            )}
-                          >
-                            3M: {impact.returns["3m"]! > 0 ? "+" : ""}
-                            {impact.returns["3m"]}%
-                          </p>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
 
               {/* Active Signals */}
               {data.signals.active.length > 0 && (

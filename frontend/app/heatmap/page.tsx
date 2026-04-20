@@ -1,4 +1,10 @@
+import { Metadata } from "next"
 import HeatmapClient from "./HeatmapClient"
+
+export const metadata: Metadata = {
+  title: "Heatmap — Mirkaso",
+  description: "Market heatmap with sector analysis",
+}
 
 const API_BASE_URL = "https://crypto-signals-production-ff4c.up.railway.app/api/v1"
 

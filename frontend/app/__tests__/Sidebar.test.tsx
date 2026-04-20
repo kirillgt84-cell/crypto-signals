@@ -23,7 +23,7 @@ describe('Sidebar', () => {
   it('renders sidebar with logo', () => {
     render(<Sidebar collapsed={false} onToggle={mockToggle} />)
     
-    expect(screen.getByText('FAST LANE')).toBeInTheDocument()
+    expect(screen.getByText('MIRKASO')).toBeInTheDocument()
   })
 
   it('renders Dashboard link', () => {
@@ -49,7 +49,7 @@ describe('Sidebar', () => {
   it('shows only icon when collapsed', () => {
     render(<Sidebar collapsed={true} onToggle={mockToggle} />)
     
-    expect(screen.queryByText('FAST LANE')).not.toBeInTheDocument()
+    expect(screen.queryByText('MIRKASO')).not.toBeInTheDocument()
   })
 
   it('shows user info in bottom section', () => {

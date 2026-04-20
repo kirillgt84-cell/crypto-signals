@@ -291,14 +291,14 @@ async def get_yield_curve_interpretation():
                 "color": interpretation.overall_color,
             },
             "signals": interpretation.signals,
-            "trade_actions": interpretation.trade_actions,
+            "disclaimer": interpretation.disclaimer,
             "metrics": [
                 {
                     "metric": m.metric,
                     "status": m.status,
                     "headline": m.headline,
                     "explanation": m.explanation,
-                    "actionable": m.actionable,
+                    "historical_context": m.historical_context,
                     "color": m.color,
                     "icon": m.icon,
                 }
@@ -441,14 +441,14 @@ async def get_yield_dashboard():
                     "color": interpretation.overall_color,
                 },
                 "signals": interpretation.signals,
-                "trade_actions": interpretation.trade_actions,
+                "disclaimer": interpretation.disclaimer,
                 "metrics": [
                     {
                         "metric": m.metric,
                         "status": m.status,
                         "headline": m.headline,
                         "explanation": m.explanation,
-                        "actionable": m.actionable,
+                        "historical_context": m.historical_context,
                         "color": m.color,
                         "icon": m.icon,
                     }

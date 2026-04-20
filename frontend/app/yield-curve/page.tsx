@@ -2,7 +2,7 @@ import { Metadata } from "next";
 import YieldCurveClient from "./YieldCurveClient";
 
 export const metadata: Metadata = {
-  title: "Yield Curve — Crypto Signals",
+  title: "Yield Curve — Mirkaso",
   description: "US Treasury yield curve, recession probability, historical analogs",
 };
 

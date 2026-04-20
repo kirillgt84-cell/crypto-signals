@@ -1,6 +1,6 @@
 """
-SignalStream OI Dashboard API
-Аналитика Open Interest и рыночных данных
+Mirkaso API
+Precision in Investment Management
 """
 import logging
 import os
@@ -117,8 +117,8 @@ async def lifespan(app: FastAPI):
     stop_scheduler(scheduler)
 
 app = FastAPI(
-    title="SignalStream OI Dashboard",
-    description="Аналитика Open Interest и рыночных данных для трейдинга",
+    title="Mirkaso API",
+    description="Precision in Investment Management",
     version="2.0.0",
     lifespan=lifespan
 )
@@ -194,7 +194,7 @@ async def health():
 async def root():
     """Root endpoint with API info"""
     return {
-        "name": "SignalStream OI Dashboard",
+        "name": "Mirkaso API",
         "version": "2.0.0",
         "endpoints": {
             "market": {

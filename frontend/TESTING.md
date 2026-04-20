@@ -1,4 +1,4 @@
-# Testing Guide for Fast Lane Dashboard
+# Testing Guide for Mirkaso Dashboard
 
 ## Setup
 
@@ -47,7 +47,7 @@ app/
    - Renders with text when expanded
    - Renders icon only when collapsed
    - Has correct SVG structure
-   - Contains chart bars and green arrow
+   - Contains 3 ascending dark blue chart bars
 
 2. **Sidebar Component**
    - Renders navigation links

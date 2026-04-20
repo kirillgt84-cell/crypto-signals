@@ -654,13 +654,13 @@ async def test_email(current_user: dict = Depends(get_current_user)):
     html = f"""
     <html>
       <body style="font-family:Arial,sans-serif;padding:24px;">
-        <h2>Test Email from Fast Lane</h2>
+        <h2>Test Email from Mirkaso</h2>
         <p>This is a test email sent to {current_user['email']}.</p>
         <p>If you received this, your email notifications are working correctly.</p>
       </body>
     </html>
     """
-    result = await send_email(current_user["email"], "Fast Lane Test Email", html)
+    result = await send_email(current_user["email"], "Mirkaso Test Email", html)
     if not result["success"]:
         raise HTTPException(status_code=500, detail=result.get("error", "Failed to send email"))
     return {"message": "Test email sent", "id": result.get("id")}
@@ -680,7 +680,7 @@ async def test_telegram(current_user: dict = Depends(get_current_user)):
     
     result = await send_telegram_message(
         chat_id,
-        f"<b>Fast Lane Test</b>\nYour Telegram alerts are working, {current_user.get('username', 'trader')}!"
+        f"<b>Mirkaso Test</b>\nYour Telegram alerts are working, {current_user.get('username', 'trader')}!"
     )
     if not result["success"]:
         raise HTTPException(status_code=500, detail=result.get("error", "Failed to send Telegram message"))

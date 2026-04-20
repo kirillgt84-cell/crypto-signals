@@ -8,8 +8,8 @@ import { AuthProvider } from './context/AuthContext'
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'Fast Lane - Crypto Trading Dashboard',
-  description: 'Professional crypto analytics and trading signals',
+  title: 'Mirkaso — Precision in Investment Management',
+  description: 'Advanced analytics and trading intelligence platform',
   icons: {
     icon: '/favicon.svg',
     shortcut: '/favicon.svg',

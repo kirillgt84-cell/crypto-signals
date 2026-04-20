@@ -3,7 +3,7 @@
   "version": "1.1.0",
   "description": "Макро-аналитика кривых доходности + исторические аналоги + cross-market сигналы",
   "author": "AI Assistant",
-  "target_project": "SignalStream Dashboard",
+  "target_project": "Mirkaso Dashboard",
   
   "files": {
     "core": [

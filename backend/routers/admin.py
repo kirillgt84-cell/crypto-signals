@@ -167,7 +167,7 @@ async def send_test_report(
     if not report.get("html"):
         raise HTTPException(status_code=500, detail="Report HTML is empty")
     
-    result = await send_email(admin_email, f"Fast Lane Test {report_type.capitalize()} Report", report["html"])
+    result = await send_email(admin_email, f"Mirkaso Test {report_type.capitalize()} Report", report["html"])
     
     if not result["success"]:
         raise HTTPException(status_code=500, detail=result.get("error", "Failed to send email"))
