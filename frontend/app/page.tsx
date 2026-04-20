@@ -796,17 +796,7 @@ export default function Dashboard() {
             <ChartSection className="flex-1" symbol={symbol} timeframe={timeframe} data={marketData} loading={loading} />
           </div>
           <div className="lg:w-1/3 flex flex-col">
-            <Card className="flex flex-col flex-1">
-              <CardHeader className="gap-2 pb-2 shrink-0">
-                <CardTitle className="flex items-center gap-2 text-sm font-bold tracking-widest text-white">
-                <Radio className="w-4 h-4" />
-                OI ANALYSIS
-              </CardTitle>
-              </CardHeader>
-              <CardContent className="flex-1 pt-0 min-h-0 flex flex-col">
-                <OITerminal analysis={oiAnalysis} loading={loading} />
-              </CardContent>
-            </Card>
+            <OITerminal analysis={oiAnalysis} loading={loading} />
           </div>
         </div>
 
