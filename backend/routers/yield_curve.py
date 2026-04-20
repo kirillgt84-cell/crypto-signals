@@ -284,7 +284,16 @@ async def get_yield_dashboard():
                 "risk_level": signal.risk_level,
                 "narrative": signal.narrative,
                 "impacts": [
-                    {"asset": i.asset, "direction": i.direction, "magnitude": i.magnitude}
+                    {
+                        "asset": i.asset,
+                        "direction": i.direction,
+                        "magnitude": i.magnitude,
+                        "returns": {
+                            "3m": i.typical_return_3m,
+                            "6m": i.typical_return_6m,
+                            "12m": i.typical_return_12m,
+                        },
+                    }
                     for i in signal.impacts
                 ],
             },
