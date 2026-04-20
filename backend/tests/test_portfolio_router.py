@@ -122,10 +122,12 @@ class TestPortfolioRouter:
         assert resp.status_code == 200
 
     def test_list_models(self, client):
-        """Models endpoint is public and returns allocations."""
+        """Models endpoint returns allocations for authenticated user."""
+        app.dependency_overrides[get_current_user] = mock_pro
         mock_db = MagicMock()
         mock_db.query = AsyncMock(side_effect=[
-            [{"id": 1, "name": "Conservative", "description": "Safe", "risk_level": "conservative"}],
+            [{"id": 1, "name": "Conservative", "description": "Safe", "risk_level": "conservative", "is_custom": False, "user_id": None}],
+            [{"asset_symbol": "BTC", "asset_name": "Bitcoin", "target_weight": 50.0}],
             [{"category_id": 1, "target_weight": 50.0, "category_name": "Stablecoins"}],
         ])
         with patch("routers.portfolio.get_db", return_value=mock_db):
@@ -134,6 +136,7 @@ class TestPortfolioRouter:
         data = resp.json()
         assert len(data) == 1
         assert "allocations" in data[0]
+        assert "asset_allocations" in data[0]
 
     def test_select_model(self, client):
         """Selecting a model should upsert user_portfolio_settings."""

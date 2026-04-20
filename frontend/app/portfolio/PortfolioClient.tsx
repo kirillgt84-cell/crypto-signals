@@ -107,7 +107,8 @@ interface PortfolioSummary {
 }
 
 interface DeviationItem {
-  category: string;
+  category?: string;
+  asset?: string;
   current_weight: number;
   target_weight: number;
   delta: number;
@@ -119,7 +120,9 @@ interface PortfolioModel {
   name: string;
   description: string;
   risk_level: string;
+  is_custom?: boolean;
   allocations: { category_name: string; target_weight: number }[];
+  asset_allocations: { asset_symbol: string; asset_name: string; target_weight: number }[];
 }
 
 export default function PortfolioClient() {
@@ -148,6 +151,26 @@ export default function PortfolioClient() {
   const [alertOpen, setAlertOpen] = useState(false);
   const [alertSettings, setAlertSettings] = useState<any[]>([]);
   const [equityTimeframe, setEquityTimeframe] = useState<"daily" | "weekly">("daily");
+
+  // Custom model dialog state
+  const [customOpen, setCustomOpen] = useState(false);
+  const [customName, setCustomName] = useState("");
+  const [customDesc, setCustomDesc] = useState("");
+  const [customAssets, setCustomAssets] = useState<{asset_symbol: string; asset_name: string; target_weight: number}[]>([
+    { asset_symbol: "BTC", asset_name: "Bitcoin", target_weight: 0 },
+    { asset_symbol: "ETH", asset_name: "Ethereum", target_weight: 0 },
+    { asset_symbol: "GOLD", asset_name: "Gold & Silver", target_weight: 0 },
+    { asset_symbol: "SPX", asset_name: "S&P 500", target_weight: 0 },
+    { asset_symbol: "BONDS", asset_name: "US Treasuries", target_weight: 0 },
+    { asset_symbol: "USDC", asset_name: "USDC / USDT", target_weight: 0 },
+    { asset_symbol: "NDX", asset_name: "Nasdaq", target_weight: 0 },
+    { asset_symbol: "COIN", asset_name: "Coinbase", target_weight: 0 },
+    { asset_symbol: "MSTR", asset_name: "MicroStrategy", target_weight: 0 },
+    { asset_symbol: "SOL", asset_name: "Solana", target_weight: 0 },
+    { asset_symbol: "XRP", asset_name: "XRP", target_weight: 0 },
+    { asset_symbol: "BNB", asset_name: "BNB", target_weight: 0 },
+    { asset_symbol: "KO", asset_name: "Coca-Cola / Pepsi / P&G / Nestle", target_weight: 0 },
+  ]);
 
   const headers = {
     Authorization: `Bearer ${token || ""}`,
@@ -178,13 +201,14 @@ export default function PortfolioClient() {
   }, [token]);
 
   const fetchModels = useCallback(async () => {
+    if (!token) return;
     try {
-      const res = await fetch(`${API_BASE_URL}/portfolio/models`);
+      const res = await fetch(`${API_BASE_URL}/portfolio/models`, { headers });
       if (res.ok) setModels(await res.json());
     } catch (e) {
       console.error("Failed to fetch models", e);
     }
-  }, []);
+  }, [token]);
 
   const fetchDeviation = useCallback(async () => {
     if (!token) return;
@@ -321,6 +345,55 @@ export default function PortfolioClient() {
     });
     setSelectedModelId(modelId);
     await fetchDeviation();
+  };
+
+  const handleCreateCustomModel = async () => {
+    if (!token) return;
+    const assets = customAssets.filter((a) => a.target_weight > 0);
+    const total = assets.reduce((sum, a) => sum + a.target_weight, 0);
+    if (total < 99.99 || total > 100.01) {
+      alert(`Weights must sum to 100%. Current: ${total.toFixed(2)}%`);
+      return;
+    }
+    try {
+      const res = await fetch(`${API_BASE_URL}/portfolio/models/custom`, {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ name: customName, description: customDesc, assets }),
+      });
+      if (res.ok) {
+        setCustomOpen(false);
+        setCustomName("");
+        setCustomDesc("");
+        setCustomAssets((prev) => prev.map((a) => ({ ...a, target_weight: 0 })));
+        await fetchModels();
+      } else {
+        const data = await res.json();
+        alert(data.detail || "Failed to create model");
+      }
+    } catch (e: any) {
+      alert(e.message);
+    }
+  };
+
+  const handleDeleteCustomModel = async (modelId: number) => {
+    if (!token) return;
+    if (!confirm("Delete this custom model?")) return;
+    try {
+      const res = await fetch(`${API_BASE_URL}/portfolio/models/custom/${modelId}`, {
+        method: "DELETE",
+        headers,
+      });
+      if (res.ok) {
+        await fetchModels();
+        if (selectedModelId === modelId) {
+          setSelectedModelId(null);
+          setDeviation(null);
+        }
+      }
+    } catch (e) {
+      console.error("Failed to delete model", e);
+    }
   };
 
   const fetchAiInsight = async () => {
@@ -751,15 +824,22 @@ export default function PortfolioClient() {
 
           {activeTab === "models" && (
             <div className="space-y-8">
+              <div className="flex items-center justify-between">
+                <h2 className="text-lg font-semibold">Model Portfolios</h2>
+                <Button size="sm" onClick={() => setCustomOpen(true)}>
+                  <Plus className="mr-2 h-4 w-4" /> Create Custom Model
+                </Button>
+              </div>
+
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {models.map((model) => {
                   const isSelected = selectedModelId === model.id;
+                  const hasAssets = model.asset_allocations && model.asset_allocations.length > 0;
                   return (
                     <div
                       key={model.id}
-                      onClick={() => handleSelectModel(model.id)}
                       className={cn(
-                        "rounded-xl border p-5 cursor-pointer transition-all",
+                        "rounded-xl border p-5 transition-all relative",
                         isSelected
                           ? "border-indigo-500 bg-indigo-500/5 ring-1 ring-indigo-500"
                           : "border-border hover:border-indigo-300"
@@ -767,17 +847,40 @@ export default function PortfolioClient() {
                     >
                       <div className="flex items-center justify-between mb-2">
                         <h3 className="font-semibold">{model.name}</h3>
-                        {isSelected && <CheckCircle2 className="h-5 w-5 text-indigo-500" />}
+                        <div className="flex items-center gap-2">
+                          {isSelected && <CheckCircle2 className="h-5 w-5 text-indigo-500" />}
+                          {model.is_custom && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-6 w-6 text-slate-400 hover:text-rose-400"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDeleteCustomModel(model.id);
+                              }}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          )}
+                        </div>
                       </div>
                       <p className="text-sm text-muted-foreground mb-3">{model.description}</p>
-                      <div className="space-y-1">
-                        {model.allocations.map((a) => (
-                          <div key={a.category_name} className="flex items-center justify-between text-xs">
-                            <span>{a.category_name}</span>
+                      <div className="space-y-1 mb-4">
+                        {(hasAssets ? model.asset_allocations : model.allocations).map((a: any) => (
+                          <div key={a.asset_symbol || a.category_name} className="flex items-center justify-between text-xs">
+                            <span>{a.asset_name || a.asset_symbol || a.category_name}</span>
                             <span className="font-medium">{a.target_weight}%</span>
                           </div>
                         ))}
                       </div>
+                      <Button
+                        size="sm"
+                        variant={isSelected ? "default" : "outline"}
+                        className="w-full"
+                        onClick={() => handleSelectModel(model.id)}
+                      >
+                        {isSelected ? "Selected" : "Select Model"}
+                      </Button>
                     </div>
                   );
                 })}
@@ -791,8 +894,8 @@ export default function PortfolioClient() {
                   </h3>
                   <div className="space-y-3">
                     {deviation.map((d) => (
-                      <div key={d.category} className="flex items-center gap-4">
-                        <div className="w-24 text-sm font-medium">{d.category}</div>
+                      <div key={d.asset || d.category} className="flex items-center gap-4">
+                        <div className="w-24 text-sm font-medium">{d.asset || d.category}</div>
                         <div className="flex-1 flex items-center gap-2">
                           <div className="text-xs text-muted-foreground w-12 text-right">{d.current_weight}%</div>
                           <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden relative">
@@ -893,6 +996,69 @@ export default function PortfolioClient() {
             </div>
           )}
         </div>
+
+        {/* Custom Model Dialog */}
+        <Dialog open={customOpen} onOpenChange={setCustomOpen}>
+          <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Create Custom Portfolio Model</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 py-2">
+              <div className="space-y-2">
+                <Label>Model Name</Label>
+                <Input
+                  value={customName}
+                  onChange={(e) => setCustomName(e.target.value)}
+                  placeholder="My Portfolio"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Description</Label>
+                <Input
+                  value={customDesc}
+                  onChange={(e) => setCustomDesc(e.target.value)}
+                  placeholder="Short description"
+                />
+              </div>
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <Label>Asset Allocations</Label>
+                  <span className="text-xs text-muted-foreground">
+                    Total: {customAssets.reduce((s, a) => s + a.target_weight, 0).toFixed(1)}%
+                  </span>
+                </div>
+                {customAssets.map((asset, idx) => (
+                  <div key={asset.asset_symbol} className="flex items-center gap-3">
+                    <span className="w-24 text-xs font-medium truncate">{asset.asset_name}</span>
+                    <input
+                      type="range"
+                      min={0}
+                      max={100}
+                      step={0.5}
+                      value={asset.target_weight}
+                      onChange={(e) => {
+                        const val = parseFloat(e.target.value);
+                        setCustomAssets((prev) => {
+                          const next = [...prev];
+                          next[idx] = { ...next[idx], target_weight: val };
+                          return next;
+                        });
+                      }}
+                      className="flex-1 h-2 cursor-pointer accent-indigo-500"
+                    />
+                    <span className="w-12 text-right text-xs font-mono">{asset.target_weight}%</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <DialogFooter>
+              <DialogClose asChild>
+                <Button variant="outline">Cancel</Button>
+              </DialogClose>
+              <Button onClick={handleCreateCustomModel}>Create Model</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </main>
     </div>
   );

@@ -47,6 +47,19 @@ class SelectModelRequest(BaseModel):
     model_id: int
 
 
+class CustomModelAsset(BaseModel):
+    asset_symbol: str
+    asset_name: Optional[str] = None
+    target_weight: float
+
+
+class CreateCustomModelRequest(BaseModel):
+    name: str
+    description: Optional[str] = ""
+    risk_level: Optional[str] = "custom"
+    assets: list[CustomModelAsset]
+
+
 # ============= HELPERS =============
 
 async def _get_user_source(user_id: int, provider: str = "binance") -> Optional[dict]:
@@ -216,12 +229,25 @@ async def assign_category(req: AssignCategoryRequest, current_user: dict = Depen
 # ============= MODELS =============
 
 @router.get("/models")
-async def list_models():
+async def list_models(current_user: dict = Depends(get_current_user)):
     db = get_db()
-    rows = await db.query("SELECT * FROM portfolio_models WHERE is_active = TRUE", [])
+    # Return system models + user's custom models
+    rows = await db.query(
+        """SELECT * FROM portfolio_models
+           WHERE is_active = TRUE AND (is_custom = FALSE OR user_id = $1)
+           ORDER BY is_custom ASC, id ASC""",
+        [current_user["id"]],
+    )
     models = []
     for r in rows:
         model = dict(r)
+        # Asset-level allocations
+        assets = await db.query(
+            "SELECT asset_symbol, asset_name, target_weight FROM portfolio_model_assets WHERE model_id = $1 ORDER BY target_weight DESC",
+            [r["id"]],
+        )
+        model["asset_allocations"] = [dict(a) for a in assets]
+        # Legacy category allocations (for backward compat)
         allocs = await db.query(
             "SELECT m.*, c.name as category_name FROM portfolio_model_allocations m JOIN categories c ON c.id = m.category_id WHERE model_id = $1",
             [r["id"]],
@@ -245,7 +271,7 @@ async def select_model(req: SelectModelRequest, current_user: dict = Depends(get
 
 @router.get("/models/deviation")
 async def get_deviation(current_user: dict = Depends(get_current_user)):
-    """Compare current allocation vs selected model targets."""
+    """Compare current allocation vs selected model targets (asset-level)."""
     db = get_db()
     settings = await db.query(
         "SELECT selected_model_id FROM user_portfolio_settings WHERE user_id = $1",
@@ -255,19 +281,50 @@ async def get_deviation(current_user: dict = Depends(get_current_user)):
         raise HTTPException(status_code=400, detail="No model selected")
 
     model_id = settings[0]["selected_model_id"]
+    # Try asset-level targets first
+    asset_targets = await db.query(
+        "SELECT asset_symbol, target_weight FROM portfolio_model_assets WHERE model_id = $1",
+        [model_id],
+    )
+
+    summary = await get_portfolio_summary(current_user["id"])
+    total = summary.get("total_notional", 0)
+
+    if asset_targets:
+        target_map = {t["asset_symbol"]: float(t["target_weight"]) for t in asset_targets}
+        # Aggregate current holdings by asset symbol
+        holdings = {}
+        for asset in summary.get("assets", []):
+            sym = asset.get("asset_symbol", "")
+            if sym:
+                holdings[sym] = holdings.get(sym, 0) + asset.get("notional", 0)
+        deviations = []
+        for sym, target in target_map.items():
+            current_weight = (holdings.get(sym, 0) / total * 100) if total > 0 else 0
+            delta = current_weight - target
+            status = "ok"
+            if abs(delta) > 10:
+                status = "critical"
+            elif abs(delta) > 5:
+                status = "warning"
+            deviations.append({
+                "asset": sym,
+                "current_weight": round(current_weight, 2),
+                "target_weight": round(target, 2),
+                "delta": round(delta, 2),
+                "status": status,
+            })
+        return {"model_id": model_id, "deviations": deviations}
+
+    # Fallback to category-level deviation
     targets = await db.query(
         "SELECT category_id, target_weight FROM portfolio_model_allocations WHERE model_id = $1",
         [model_id],
     )
     target_map = {t["category_id"]: float(t["target_weight"]) for t in targets}
-
-    summary = await get_portfolio_summary(current_user["id"])
-    total = summary.get("total_notional", 0)
-
     deviations = []
     for cat_name, data in summary.get("categories", {}).items():
         current_weight = (data.get("notional", 0) / total * 100) if total > 0 else 0
-        # Find category ID from name
         cat_row = await db.query("SELECT id FROM categories WHERE name = $1 LIMIT 1", [cat_name])
         target = 0
         if cat_row:
@@ -285,8 +342,48 @@ async def get_deviation(current_user: dict = Depends(get_current_user)):
             "delta": round(delta, 2),
             "status": status,
         })
-
     return {"model_id": model_id, "deviations": deviations}
+
+
+@router.post("/models/custom")
+async def create_custom_model(req: CreateCustomModelRequest, current_user: dict = Depends(get_current_user)):
+    """Create a user-defined portfolio model with asset-level allocations."""
+    db = get_db()
+    # Validate weights sum to ~100
+    total_weight = sum(a.target_weight for a in req.assets)
+    if not (99.99 <= total_weight <= 100.01):
+        raise HTTPException(status_code=400, detail=f"Weights must sum to 100%, got {total_weight}")
+
+    inserted = await db.query(
+        """INSERT INTO portfolio_models (name, description, risk_level, is_custom, user_id, is_active)
+           VALUES ($1, $2, $3, TRUE, $4, TRUE) RETURNING id""",
+        [req.name, req.description, req.risk_level or "custom", current_user["id"]],
+    )
+    model_id = inserted[0]["id"]
+
+    for a in req.assets:
+        await db.execute(
+            "INSERT INTO portfolio_model_assets (model_id, asset_symbol, asset_name, target_weight) VALUES ($1, $2, $3, $4)",
+            [model_id, a.asset_symbol, a.asset_name or a.asset_symbol, a.target_weight],
+        )
+
+    return {"model_id": model_id, "message": "Custom model created"}
+
+
+@router.delete("/models/custom/{model_id}")
+async def delete_custom_model(model_id: int, current_user: dict = Depends(get_current_user)):
+    """Delete a custom model owned by the user."""
+    db = get_db()
+    row = await db.query(
+        "SELECT user_id FROM portfolio_models WHERE id = $1 AND is_custom = TRUE",
+        [model_id],
+    )
+    if not row:
+        raise HTTPException(status_code=404, detail="Custom model not found")
+    if row[0]["user_id"] != current_user["id"]:
+        raise HTTPException(status_code=403, detail="Not your model")
+    await db.execute("UPDATE portfolio_models SET is_active = FALSE WHERE id = $1", [model_id])
+    return {"message": "Model deleted"}
 
 
 # ============= ALERTS =============

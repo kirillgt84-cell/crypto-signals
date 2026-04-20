@@ -247,12 +247,14 @@ CREATE TABLE IF NOT EXISTS portfolio_models (
     id SERIAL PRIMARY KEY,
     name VARCHAR(50) NOT NULL,
     description TEXT,
-    risk_level VARCHAR(20) CHECK (risk_level IN ('conservative', 'balanced', 'aggressive')),
+    risk_level VARCHAR(20) CHECK (risk_level IN ('conservative', 'balanced', 'aggressive', 'custom')),
+    is_custom BOOLEAN DEFAULT FALSE,
+    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
     is_active BOOLEAN DEFAULT TRUE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Model target allocations
+-- Model target allocations by category (legacy)
 CREATE TABLE IF NOT EXISTS portfolio_model_allocations (
     id SERIAL PRIMARY KEY,
     model_id INTEGER REFERENCES portfolio_models(id) ON DELETE CASCADE,
@@ -261,12 +263,63 @@ CREATE TABLE IF NOT EXISTS portfolio_model_allocations (
     UNIQUE(model_id, category_id)
 );
 
+-- Model target allocations by specific asset
+CREATE TABLE IF NOT EXISTS portfolio_model_assets (
+    id SERIAL PRIMARY KEY,
+    model_id INTEGER NOT NULL REFERENCES portfolio_models(id) ON DELETE CASCADE,
+    asset_symbol VARCHAR(20) NOT NULL,
+    asset_name VARCHAR(50),
+    target_weight DECIMAL(5, 2) NOT NULL,
+    UNIQUE(model_id, asset_symbol)
+);
+
 -- Seed portfolio models
-INSERT INTO portfolio_models (name, description, risk_level) VALUES
-    ('Conservative', 'Low risk, stable assets heavy', 'conservative'),
-    ('Balanced', 'Medium risk, diversified', 'balanced'),
-    ('Aggressive', 'High risk, growth assets heavy', 'aggressive')
+INSERT INTO portfolio_models (name, description, risk_level, is_custom) VALUES
+    ('Conservative', 'Low risk, stable assets heavy', 'conservative', FALSE),
+    ('Balanced', 'Medium risk, diversified', 'balanced', FALSE),
+    ('Aggressive', 'High risk, growth assets heavy', 'aggressive', FALSE)
 ON CONFLICT DO NOTHING;
+
+-- Seed asset allocations for system models
+INSERT INTO portfolio_model_assets (model_id, asset_symbol, asset_name, target_weight)
+SELECT m.id, a.asset_symbol, a.asset_name, a.weight
+FROM portfolio_models m
+JOIN (VALUES
+    -- Conservative
+    ('Conservative', 'GOLD', 'Gold & Silver', 10.0),
+    ('Conservative', 'BONDS', 'US Treasuries / BUIDL', 40.0),
+    ('Conservative', 'BTC', 'Bitcoin', 3.0),
+    ('Conservative', 'ETH', 'Ethereum', 2.0),
+    ('Conservative', 'USDC', 'USDC / USDT', 10.0),
+    ('Conservative', 'SPX', 'S&P 500', 20.0),
+    ('Conservative', 'KO', 'Coca-Cola, Pepsi, P&G, Nestle', 15.0),
+    -- Balanced
+    ('Balanced', 'GOLD', 'Gold & Silver', 10.0),
+    ('Balanced', 'BONDS', 'US Treasuries / BUIDL', 15.0),
+    ('Balanced', 'BTC', 'Bitcoin', 12.0),
+    ('Balanced', 'ETH', 'Ethereum', 8.0),
+    ('Balanced', 'SOL', 'Solana', 5.0),
+    ('Balanced', 'XRP', 'XRP', 5.0),
+    ('Balanced', 'BNB', 'BNB', 5.0),
+    ('Balanced', 'USDC', 'USDC / USDT', 5.0),
+    ('Balanced', 'SPX', 'S&P 500', 10.0),
+    ('Balanced', 'NDX', 'Nasdaq', 15.0),
+    ('Balanced', 'COIN', 'Coinbase', 5.0),
+    ('Balanced', 'MSTR', 'MicroStrategy', 5.0),
+    -- Aggressive
+    ('Aggressive', 'GOLD', 'Gold & Silver', 5.0),
+    ('Aggressive', 'BTC', 'Bitcoin', 18.0),
+    ('Aggressive', 'ETH', 'Ethereum', 12.0),
+    ('Aggressive', 'SOL', 'Solana', 8.0),
+    ('Aggressive', 'XRP', 'XRP', 8.0),
+    ('Aggressive', 'BNB', 'BNB', 9.0),
+    ('Aggressive', 'SPX', 'S&P 500', 5.0),
+    ('Aggressive', 'NDX', 'Nasdaq', 15.0),
+    ('Aggressive', 'COIN', 'Coinbase', 10.0),
+    ('Aggressive', 'MSTR', 'MicroStrategy', 10.0)
+) AS a(model_name, asset_symbol, asset_name, weight)
+ON m.name = a.model_name
+ON CONFLICT (model_id, asset_symbol) DO UPDATE SET target_weight = EXCLUDED.target_weight, asset_name = EXCLUDED.asset_name;
 
 -- Portfolio snapshots (assets per sync)
 CREATE TABLE IF NOT EXISTS portfolio_assets (
