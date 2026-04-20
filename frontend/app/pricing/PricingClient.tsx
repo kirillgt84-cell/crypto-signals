@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useSidebar } from "@/hooks/useSidebar";
 import { useAuth } from "../context/AuthContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -36,7 +37,7 @@ const proFeatures = [
 ];
 
 export default function PricingClient() {
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
+  const { collapsed: sidebarCollapsed, toggle: toggleSidebar } = useSidebar();
   const { user, isAuthenticated } = useAuth();
   const searchParams = useSearchParams();
   const [billingCycle, setBillingCycle] = useState<"monthly" | "yearly">("yearly");
@@ -99,7 +100,7 @@ export default function PricingClient() {
 
   return (
     <div className="flex min-h-screen bg-background text-foreground">
-      <Sidebar collapsed={sidebarCollapsed} onToggle={() => setSidebarCollapsed(!sidebarCollapsed)} />
+      <Sidebar collapsed={sidebarCollapsed} onToggle={toggleSidebar} />
       <main className={cn("flex-1 overflow-hidden transition-all duration-300", sidebarCollapsed ? "lg:ml-16" : "lg:ml-64")}>
         <div className="mx-auto max-w-5xl px-4 py-12">
           {/* Header */}

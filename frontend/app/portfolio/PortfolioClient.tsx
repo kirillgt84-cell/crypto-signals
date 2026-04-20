@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { useSidebar } from "@/hooks/useSidebar";
 import Sidebar from "../components/admin/Sidebar";
 import { useAuth } from "../context/AuthContext";
 import { cn } from "@/lib/utils";
@@ -129,7 +130,7 @@ interface PortfolioModel {
 
 export default function PortfolioClient() {
   const { user } = useAuth();
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const { collapsed: sidebarCollapsed, toggle: toggleSidebar } = useSidebar();
   const [token, setToken] = useState<string | null>(null);
   const [mounted, setMounted] = useState(false);
   const [summary, setSummary] = useState<PortfolioSummary | null>(null);
@@ -439,7 +440,7 @@ export default function PortfolioClient() {
 
   return (
     <div className="min-h-screen bg-background">
-      <Sidebar collapsed={sidebarCollapsed} onToggle={() => setSidebarCollapsed(!sidebarCollapsed)} />
+      <Sidebar collapsed={sidebarCollapsed} onToggle={toggleSidebar} />
       <main
         className={cn(
           "transition-all duration-300",

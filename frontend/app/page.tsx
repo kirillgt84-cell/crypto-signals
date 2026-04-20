@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useRef, useState } from "react"
+import { useSidebar } from "@/hooks/useSidebar"
 import Link from "next/link"
 import { TrendingUp, TrendingDown, Minus, Activity, BarChart3, Wallet, Target, Zap, Loader2, ArrowRight, Radio } from "lucide-react"
 import { UserMenu } from "./components/UserMenu"
@@ -410,7 +411,7 @@ function SecondaryIndicators({ data, timeframe, loading }: { data: MarketData; t
 // Main Dashboard Component
 export default function Dashboard() {
   const [mounted, setMounted] = useState(false)
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(true)
+  const { collapsed: sidebarCollapsed, toggle: toggleSidebar } = useSidebar()
   const [authOpen, setAuthOpen] = useState(false)
   const isFirstLoad = useRef(true)
   const { isAuthenticated } = useAuth()
@@ -750,7 +751,7 @@ export default function Dashboard() {
 
   return (
     <div className="flex min-h-screen">
-      <Sidebar collapsed={sidebarCollapsed} onToggle={() => setSidebarCollapsed(!sidebarCollapsed)} />
+      <Sidebar collapsed={sidebarCollapsed} onToggle={toggleSidebar} />
       
       <main className={cn("flex-1 overflow-hidden transition-all duration-300", sidebarCollapsed ? "lg:ml-16" : "lg:ml-64")}>
         {/* Header */}

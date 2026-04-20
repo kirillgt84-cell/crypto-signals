@@ -45,16 +45,16 @@ export default function TacticalWheel({ assets, regime }: TacticalWheelProps) {
   const rc = regimeColors[regime] || regimeColors.transition;
 
   return (
-    <div className="w-full max-w-sm mx-auto">
-      <div className={`rounded-xl border ${rc.border} ${rc.bg} p-5`}>
-        <div className="text-center mb-3">
+    <div className="w-full">
+      <div className={`rounded-xl border ${rc.border} ${rc.bg} p-4`}>
+        <div className="text-center mb-2">
           <span className={`text-xs font-semibold uppercase tracking-wider ${rc.text}`}>
             TACTICAL WHEEL — {regime.toUpperCase().replace('-', ' ')}
           </span>
         </div>
 
         {/* Wheel */}
-        <div className="relative w-48 h-48 mx-auto mb-4">
+        <div className="relative w-40 h-40 mx-auto mb-3">
           {/* Outer ring */}
           <div className="absolute inset-0 rounded-full border-2 border-white/10" />
 

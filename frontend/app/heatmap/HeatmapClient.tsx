@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect, useCallback, useMemo } from "react"
+import { useSidebar } from "@/hooks/useSidebar"
 import { hierarchy, treemap as d3Treemap } from "d3-hierarchy"
 import { cn } from "@/lib/utils"
 import { ArrowLeft } from "lucide-react"
@@ -75,7 +76,7 @@ function computeLayout(items: HeatmapItem[], width: number, height: number) {
 }
 
 export default function HeatmapClient({ initialData }: { initialData: HeatmapItem[] }) {
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(true)
+  const { collapsed: sidebarCollapsed, toggle: toggleSidebar } = useSidebar()
   const [timeframe, setTimeframe] = useState("m15")
   const [sector, setSector] = useState("all")
   const [minVolume, setMinVolume] = useState(500000)
@@ -129,7 +130,7 @@ export default function HeatmapClient({ initialData }: { initialData: HeatmapIte
 
   return (
     <div className="flex min-h-screen bg-background text-foreground font-mono">
-      <Sidebar collapsed={sidebarCollapsed} onToggle={() => setSidebarCollapsed(!sidebarCollapsed)} />
+      <Sidebar collapsed={sidebarCollapsed} onToggle={toggleSidebar} />
       <main className={cn("flex-1 overflow-hidden transition-all duration-300", sidebarCollapsed ? "lg:ml-16" : "lg:ml-64")}>
       <header className="border-b border-slate-800 px-4 py-4">
         <div className="flex items-center gap-3 mb-4">

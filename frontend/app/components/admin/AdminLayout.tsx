@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState } from 'react';
+import React from 'react';
+import { useSidebar } from '@/hooks/useSidebar';
 import { cn } from '@/lib/utils';
 import Sidebar from './Sidebar';
 import Header from './Header';
@@ -10,13 +11,13 @@ interface AdminLayoutProps {
 }
 
 export default function AdminLayout({ children }: AdminLayoutProps) {
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const { collapsed: sidebarCollapsed, toggle: toggleSidebar } = useSidebar();
 
   return (
     <div className="min-h-screen bg-background">
       <Sidebar 
         collapsed={sidebarCollapsed} 
-        onToggle={() => setSidebarCollapsed(!sidebarCollapsed)} 
+        onToggle={toggleSidebar} 
       />
       
       <div className={cn(

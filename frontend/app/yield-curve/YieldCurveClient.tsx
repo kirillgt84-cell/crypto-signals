@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { useSidebar } from "@/hooks/useSidebar";
 import Sidebar from "../components/admin/Sidebar";
 import { cn } from "@/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -119,7 +120,7 @@ interface DashboardData {
 }
 
 export default function YieldCurveClient() {
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const { collapsed: sidebarCollapsed, toggle: toggleSidebar } = useSidebar();
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -223,7 +224,7 @@ export default function YieldCurveClient() {
 
   return (
     <div className="min-h-screen bg-background">
-      <Sidebar collapsed={sidebarCollapsed} onToggle={() => setSidebarCollapsed(!sidebarCollapsed)} />
+      <Sidebar collapsed={sidebarCollapsed} onToggle={toggleSidebar} />
       <main className={cn("transition-all duration-300", sidebarCollapsed ? "lg:ml-16" : "lg:ml-64")}>
         <div className="p-4 lg:p-8 max-w-7xl mx-auto">
           <div className="mb-8">
@@ -475,9 +476,13 @@ export default function YieldCurveClient() {
               {/* New Cross-Market Visualizations */}
               {crossMarketAssets.length > 0 && (
                 <>
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    <TacticalWheel assets={crossMarketAssets} regime={data?.market_regime.regime?.replace("_", "-") || "transition"} />
-                    <AssetCardTabs assets={crossMarketAssets} />
+                  <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+                    <div className="lg:col-span-2">
+                      <TacticalWheel assets={crossMarketAssets} regime={data?.market_regime.regime?.replace("_", "-") || "transition"} />
+                    </div>
+                    <div className="lg:col-span-3">
+                      <AssetCardTabs assets={crossMarketAssets} />
+                    </div>
                   </div>
                   <Card>
                     <CardContent className="pt-6 pb-6">

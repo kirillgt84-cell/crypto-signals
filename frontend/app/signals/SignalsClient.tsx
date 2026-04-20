@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import { useSidebar } from "@/hooks/useSidebar";
 import { useAuth } from "../context/AuthContext";
 import { ProBlurOverlay } from "../components/ProBlurOverlay";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -45,7 +46,7 @@ export default function SignalsClient() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
+  const { collapsed: sidebarCollapsed, toggle: toggleSidebar } = useSidebar();
   const [minScore, setMinScore] = useState(8);
   const [direction, setDirection] = useState<string>("all");
   const [confidence, setConfidence] = useState<string>("all");
@@ -200,7 +201,7 @@ export default function SignalsClient() {
 
   return (
     <div className="flex min-h-screen bg-background text-foreground">
-      <Sidebar collapsed={sidebarCollapsed} onToggle={() => setSidebarCollapsed(!sidebarCollapsed)} />
+      <Sidebar collapsed={sidebarCollapsed} onToggle={toggleSidebar} />
       <main className={cn("flex-1 overflow-hidden transition-all duration-300", sidebarCollapsed ? "lg:ml-16" : "lg:ml-64")}>
       <div className="mx-auto max-w-7xl px-4 py-8">
         {/* Header */}

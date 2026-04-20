@@ -28,8 +28,9 @@ const getHeatColor = (value: number): string => {
 };
 
 const getTextColor = (value: number): string => {
-  if (Math.abs(value) > 3) return 'text-white';
-  return 'text-gray-900';
+  // Light backgrounds (green-200 / red-200) need dark text
+  if (value !== 0 && Math.abs(value) < 2) return 'text-gray-900';
+  return 'text-white';
 };
 
 const timeframes = [

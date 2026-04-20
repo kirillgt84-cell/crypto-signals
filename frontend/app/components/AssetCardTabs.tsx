@@ -46,14 +46,14 @@ export default function AssetCardTabs({ assets }: AssetCardTabsProps) {
   const isPositive = parseFloat(avg) > 0;
 
   return (
-    <div className="w-full max-w-md mx-auto">
+    <div className="w-full">
       {/* Tabs */}
-      <div className="flex gap-1 mb-4 overflow-x-auto pb-1">
+      <div className="flex gap-1 mb-4 flex-wrap">
         {assets.map((a, i) => (
           <button
             key={a.asset}
             onClick={() => setActiveIndex(i)}
-            className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium transition-all whitespace-nowrap ${
+            className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
               i === activeIndex
                 ? 'bg-white/10 text-white border border-white/20'
                 : 'bg-white/5 text-gray-400 border border-transparent hover:bg-white/10 hover:text-gray-300'
@@ -66,43 +66,43 @@ export default function AssetCardTabs({ assets }: AssetCardTabsProps) {
       </div>
 
       {/* Card */}
-      <div className={`rounded-xl border p-5 transition-all duration-300 ${colorClasses[active.color] || colorClasses.gray}`}>
-        <div className="flex items-center justify-between mb-3">
+      <div className={`rounded-xl border p-6 transition-all duration-300 ${colorClasses[active.color] || colorClasses.gray}`}>
+        <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
-            {iconMap[active.asset] || <Activity className="w-5 h-5" />}
-            <span className="font-semibold text-sm">{active.name}</span>
+            {iconMap[active.asset] || <Activity className="w-6 h-6" />}
+            <span className="font-semibold text-base">{active.name}</span>
           </div>
-          <span className={`text-xs px-2 py-1 rounded-full border ${active.color === 'green' ? 'border-green-500/30 bg-green-500/10' : active.color === 'red' ? 'border-red-500/30 bg-red-500/10' : 'border-yellow-500/30 bg-yellow-500/10'}`}>
+          <span className={`text-xs px-2.5 py-1 rounded-full border ${active.color === 'green' ? 'border-green-500/30 bg-green-500/10' : active.color === 'red' ? 'border-red-500/30 bg-red-500/10' : 'border-yellow-500/30 bg-yellow-500/10'}`}>
             {active.risk_level}
           </span>
         </div>
 
-        <div className="grid grid-cols-3 gap-3 mb-4">
+        <div className="grid grid-cols-3 gap-4 mb-5">
           <div className="text-center">
-            <div className="text-[10px] text-gray-400 uppercase tracking-wider mb-1">3M</div>
-            <div className={`text-lg font-bold ${active.impact_3m > 0 ? 'text-green-400' : 'text-red-400'}`}>
+            <div className="text-xs text-gray-400 uppercase tracking-wider mb-1">3M</div>
+            <div className={`text-2xl font-bold ${active.impact_3m > 0 ? 'text-green-400' : 'text-red-400'}`}>
               {active.impact_3m > 0 ? '+' : ''}{active.impact_3m}%
             </div>
           </div>
           <div className="text-center">
-            <div className="text-[10px] text-gray-400 uppercase tracking-wider mb-1">6M</div>
-            <div className={`text-lg font-bold ${active.impact_6m > 0 ? 'text-green-400' : 'text-red-400'}`}>
+            <div className="text-xs text-gray-400 uppercase tracking-wider mb-1">6M</div>
+            <div className={`text-2xl font-bold ${active.impact_6m > 0 ? 'text-green-400' : 'text-red-400'}`}>
               {active.impact_6m > 0 ? '+' : ''}{active.impact_6m}%
             </div>
           </div>
           <div className="text-center">
-            <div className="text-[10px] text-gray-400 uppercase tracking-wider mb-1">AVG</div>
-            <div className={`text-lg font-bold ${isPositive ? 'text-green-400' : 'text-red-400'}`}>
+            <div className="text-xs text-gray-400 uppercase tracking-wider mb-1">AVG</div>
+            <div className={`text-2xl font-bold ${isPositive ? 'text-green-400' : 'text-red-400'}`}>
               {isPositive ? '+' : ''}{avg}%
             </div>
           </div>
         </div>
 
         {/* Mini bar chart */}
-        <div className="space-y-2">
+        <div className="space-y-3">
           <div className="flex items-center gap-2">
-            <span className="text-[10px] w-6 text-gray-400">3M</span>
-            <div className="flex-1 h-2 bg-white/10 rounded-full overflow-hidden">
+            <span className="text-xs w-8 text-gray-400">3M</span>
+            <div className="flex-1 h-2.5 bg-white/10 rounded-full overflow-hidden">
               <div
                 className={`h-full rounded-full transition-all duration-500 ${active.impact_3m > 0 ? 'bg-green-500' : 'bg-red-500'}`}
                 style={{ width: `${Math.min(Math.abs(active.impact_3m) * 3, 100)}%` }}
@@ -110,8 +110,8 @@ export default function AssetCardTabs({ assets }: AssetCardTabsProps) {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <span className="text-[10px] w-6 text-gray-400">6M</span>
-            <div className="flex-1 h-2 bg-white/10 rounded-full overflow-hidden">
+            <span className="text-xs w-8 text-gray-400">6M</span>
+            <div className="flex-1 h-2.5 bg-white/10 rounded-full overflow-hidden">
               <div
                 className={`h-full rounded-full transition-all duration-500 ${active.impact_6m > 0 ? 'bg-green-500' : 'bg-red-500'}`}
                 style={{ width: `${Math.min(Math.abs(active.impact_6m) * 3, 100)}%` }}
