@@ -43,6 +43,18 @@ def _require_pro(current_user: dict = Depends(get_current_user)) -> dict:
     return current_user
 
 
+def _serialize_signal(row: dict) -> dict:
+    """Convert asyncpg datetime fields to ISO strings for JSON response."""
+    out = dict(row)
+    for key in ("triggered_at", "expires_at", "created_at", "updated_at"):
+        val = out.get(key)
+        if val is not None:
+            from datetime import datetime
+            if isinstance(val, datetime):
+                out[key] = val.isoformat()
+    return out
+
+
 @router.get("/anomalies", response_model=List[AnomalySignalOut])
 async def get_anomalies(
     min_score: int = Query(8, ge=0, le=13),
@@ -80,7 +92,7 @@ async def get_anomalies(
             LIMIT ${len(params)}""",
         params,
     )
-    return [dict(r) for r in rows]
+    return [_serialize_signal(r) for r in rows]
 
 
 @router.get("/anomalies/history")
@@ -104,7 +116,7 @@ async def get_anomaly_history(
                ORDER BY triggered_at DESC LIMIT $1""",
             [limit],
         )
-    return [dict(r) for r in rows]
+    return [_serialize_signal(r) for r in rows]
 
 
 @router.post("/scan-now")
@@ -130,7 +142,7 @@ async def scanner_status(current_user: dict = Depends(_require_pro)):
         [],
     )
     return {
-        "last_run": dict(last_run[0]) if last_run else None,
+        "last_run": _serialize_signal(last_run[0]) if last_run else None,
         "runs_24h": runs_24h[0]["cnt"] if runs_24h else 0,
         "anomalies_24h": int(runs_24h[0]["total_found"]) if runs_24h else 0,
         "is_active": True,
