@@ -39,7 +39,7 @@ export default function PricingClient() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
   const { user, isAuthenticated } = useAuth();
   const searchParams = useSearchParams();
-  const [billingCycle, setBillingCycle] = useState<"monthly" | "yearly">("monthly");
+  const [billingCycle, setBillingCycle] = useState<"monthly" | "yearly">("yearly");
   const [processing, setProcessing] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
 
