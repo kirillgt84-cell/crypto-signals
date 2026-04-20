@@ -177,15 +177,11 @@ async def get_oi_analysis(
         db = get_db()
         
         # Ищем OI за соответствующий таймфрейм назад
-        # 1h -> 1 час назад, 4h -> 4 часа назад, 1d -> 24 часа назад
-        hours_map = {"1h": 1, "4h": 4, "1d": 24}
+        hours_map = {"1h": 1, "4h": 4, "1d": 24, "3d": 72, "1w": 168}
         hours = hours_map.get(timeframe, 1)
-        
-        # Ищем запись за период `hours` назад (с допуском ±30 мин)
-        print(f"DEBUG router: Looking for {symbol_upper} {timeframe}, hours={hours}")
-        
-        # Используем минуты для корректного SQL (избегаем '1 hours' vs '1 hour')
         minutes = hours * 60
+        
+        # 1. Пробуем найти запись с точным таймфреймом
         old_data = await db.query(
             f"""SELECT open_interest, price, volume, spot_volume, time FROM oi_history 
                WHERE symbol = $1 AND timeframe = $2 
@@ -196,27 +192,27 @@ async def get_oi_analysis(
             [symbol_upper, timeframe]
         )
         
-        print(f"DEBUG router: old_data (exact match) = {old_data}")
+        # 2. Fallback: ищем в 1h данных за тот же период назад
+        # (для монет вне топ-20 scheduler сохраняет только 1h)
+        if not old_data or len(old_data) == 0:
+            old_data = await db.query(
+                f"""SELECT open_interest, price, volume, spot_volume, time FROM oi_history 
+                   WHERE symbol = $1 AND timeframe = '1h' 
+                   AND time BETWEEN NOW() - INTERVAL '{minutes} minutes' - INTERVAL '30 minutes'
+                                AND NOW() - INTERVAL '{minutes} minutes' + INTERVAL '30 minutes'
+                   ORDER BY ABS(EXTRACT(EPOCH FROM (time - (NOW() - INTERVAL '{minutes} minutes')))) ASC
+                   LIMIT 1""",
+                [symbol_upper]
+            )
         
-        # Fallback: если нет точного попадания, берем самую старую запись за сегодня
+        # 3. Final fallback: самая старая запись за последние 24ч (любой tf)
         if not old_data or len(old_data) == 0:
             old_data = await db.query(
                 """SELECT open_interest, price, volume, spot_volume, time FROM oi_history 
-                   WHERE symbol = $1 AND timeframe = $2 
-                   AND time > NOW() - INTERVAL '24 hours'
+                   WHERE symbol = $1 AND time > NOW() - INTERVAL '24 hours'
                    ORDER BY time ASC LIMIT 1""",
-                [symbol_upper, timeframe]
+                [symbol_upper]
             )
-            print(f"DEBUG router: old_data (fallback) = {old_data}")
-        
-        # Проверим последние записи вообще (без фильтра времени)
-        latest_data = await db.query(
-            """SELECT open_interest, price, volume, spot_volume, time FROM oi_history 
-               WHERE symbol = $1 AND timeframe = $2 
-               ORDER BY time DESC LIMIT 3""",
-            [symbol_upper, timeframe]
-        )
-        print(f"DEBUG router: latest 3 records = {latest_data}")
         
         # Расчет изменения OI из БД (если есть история)
         if old_data and len(old_data) > 0:
