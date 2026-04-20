@@ -23,6 +23,7 @@ import {
   Bot,
   Bell,
   Settings2,
+  Loader2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -30,6 +31,7 @@ import { Label } from "@/components/ui/label";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
@@ -128,8 +130,14 @@ interface PortfolioModel {
 export default function PortfolioClient() {
   const { user } = useAuth();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const token = typeof window !== "undefined" ? localStorage.getItem("access_token") : null;
+  const [token, setToken] = useState<string | null>(null);
+  const [mounted, setMounted] = useState(false);
   const [summary, setSummary] = useState<PortfolioSummary | null>(null);
+
+  useEffect(() => {
+    setMounted(true);
+    setToken(localStorage.getItem("access_token"));
+  }, []);
   const [history, setHistory] = useState<any[]>([]);
   const [models, setModels] = useState<PortfolioModel[]>([]);
   const [deviation, setDeviation] = useState<DeviationItem[] | null>(null);
@@ -421,6 +429,14 @@ export default function PortfolioClient() {
   const totalPnl = summary?.total_unrealized_pnl || 0;
   const pnlPositive = totalPnl >= 0;
 
+  if (!mounted) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background">
       <Sidebar collapsed={sidebarCollapsed} onToggle={() => setSidebarCollapsed(!sidebarCollapsed)} />
@@ -455,6 +471,7 @@ export default function PortfolioClient() {
                   </DialogTrigger>
                   <DialogContent className="sm:max-w-md">
                     <DialogHeader>
+                      <DialogDescription className="sr-only">Dialog content</DialogDescription>
                       <DialogTitle>Portfolio Alerts</DialogTitle>
                     </DialogHeader>
                     <div className="space-y-2 py-2 max-h-[400px] overflow-auto">
@@ -491,6 +508,7 @@ export default function PortfolioClient() {
                 </DialogTrigger>
                 <DialogContent className="sm:max-w-md">
                   <DialogHeader>
+                      <DialogDescription className="sr-only">Dialog content</DialogDescription>
                     <DialogTitle>Connect Binance (Read-Only)</DialogTitle>
                   </DialogHeader>
                   <div className="space-y-4 py-2">
@@ -596,6 +614,7 @@ export default function PortfolioClient() {
                   </DialogTrigger>
                   <DialogContent className="sm:max-w-md">
                     <DialogHeader>
+                      <DialogDescription className="sr-only">Dialog content</DialogDescription>
                       <DialogTitle>Add Manual Asset</DialogTitle>
                     </DialogHeader>
                     <div className="space-y-4 py-2">
@@ -1000,6 +1019,7 @@ export default function PortfolioClient() {
         <Dialog open={customOpen} onOpenChange={setCustomOpen}>
           <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
             <DialogHeader>
+                      <DialogDescription className="sr-only">Dialog content</DialogDescription>
               <DialogTitle>Create Custom Portfolio Model</DialogTitle>
             </DialogHeader>
             <div className="space-y-4 py-2">
