@@ -5,7 +5,7 @@ import Sidebar from "../components/admin/Sidebar";
 import { cn } from "@/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, TrendingUp, TrendingDown, AlertTriangle, Activity, History, BarChart3 } from "lucide-react";
+import { Loader2, TrendingUp, TrendingDown, AlertTriangle, Activity, History, BarChart3, Lightbulb, ShieldCheck, ArrowUpRight, Minus, AlertOctagon, Skull, HelpCircle, Rocket, GitBranch, Shield } from "lucide-react";
 import {
   LineChart,
   Line,
@@ -62,6 +62,16 @@ interface CrossMarketImpact {
   };
 }
 
+interface InterpretationMetric {
+  metric: string;
+  status: string;
+  headline: string;
+  explanation: string;
+  actionable: string;
+  color: string;
+  icon: string;
+}
+
 interface DashboardData {
   timestamp: string;
   yield_curve: {
@@ -91,6 +101,16 @@ interface DashboardData {
   signals: {
     active: { level: string; title: string; message: string }[];
     count: number;
+  };
+  interpretation?: {
+    overall: {
+      assessment: string;
+      risk_level: string;
+      color: string;
+    };
+    signals: string[];
+    trade_actions: string[];
+    metrics: InterpretationMetric[];
   };
 }
 
@@ -243,6 +263,93 @@ export default function YieldCurveClient() {
                   </CardContent>
                 </Card>
               </div>
+
+              {/* Overall Interpretation */}
+              {data.interpretation && (
+                <>
+                  <Card className={cn(
+                    "border-l-4",
+                    data.interpretation.overall.color === "red" && "border-l-red-500",
+                    data.interpretation.overall.color === "yellow" && "border-l-amber-500",
+                    data.interpretation.overall.color === "green" && "border-l-emerald-500",
+                    data.interpretation.overall.color === "blue" && "border-l-blue-500",
+                    data.interpretation.overall.color === "gray" && "border-l-gray-500",
+                  )}>
+                    <CardContent className="pt-6">
+                      <div className="flex items-start gap-4">
+                        <div className={cn(
+                          "p-3 rounded-full shrink-0",
+                          data.interpretation.overall.color === "red" && "bg-red-500/10 text-red-500",
+                          data.interpretation.overall.color === "yellow" && "bg-amber-500/10 text-amber-500",
+                          data.interpretation.overall.color === "green" && "bg-emerald-500/10 text-emerald-500",
+                          data.interpretation.overall.color === "blue" && "bg-blue-500/10 text-blue-500",
+                          data.interpretation.overall.color === "gray" && "bg-muted text-muted-foreground",
+                        )}>
+                          <Lightbulb className="w-6 h-6" />
+                        </div>
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <Badge variant="outline" className={cn(
+                              data.interpretation.overall.color === "red" && "bg-red-500/10 text-red-500 border-red-500/30",
+                              data.interpretation.overall.color === "yellow" && "bg-amber-500/10 text-amber-500 border-amber-500/30",
+                              data.interpretation.overall.color === "green" && "bg-emerald-500/10 text-emerald-500 border-emerald-500/30",
+                              data.interpretation.overall.color === "blue" && "bg-blue-500/10 text-blue-500 border-blue-500/30",
+                            )}>
+                              {data.interpretation.overall.risk_level}
+                            </Badge>
+                          </div>
+                          <p className="text-sm font-medium leading-relaxed">{data.interpretation.overall.assessment}</p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  {/* Trade Actions */}
+                  {data.interpretation.trade_actions.length > 0 && (
+                    <Card>
+                      <CardHeader className="pb-2">
+                        <CardTitle className="text-base flex items-center gap-2">
+                          <ShieldCheck className="w-4 h-4 text-emerald-500" />
+                          Recommended Actions
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <ul className="space-y-2">
+                          {data.interpretation.trade_actions.map((action, i) => (
+                            <li key={i} className="flex items-start gap-2 text-sm">
+                              <span className="text-emerald-500 font-bold shrink-0">{i + 1}.</span>
+                              <span>{action}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </CardContent>
+                    </Card>
+                  )}
+
+                  {/* Interpretation Metrics */}
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                    {data.interpretation.metrics.map((metric, i) => (
+                      <Card key={i} className={cn(
+                        "border-l-4",
+                        metric.color === "red" && "border-l-red-500",
+                        metric.color === "orange" && "border-l-orange-500",
+                        metric.color === "yellow" && "border-l-amber-500",
+                        metric.color === "green" && "border-l-emerald-500",
+                        metric.color === "blue" && "border-l-blue-500",
+                        metric.color === "gray" && "border-l-gray-500",
+                      )}>
+                        <CardContent className="pt-4 pb-4">
+                          <p className="font-bold text-sm mb-1">{metric.headline}</p>
+                          <p className="text-xs text-muted-foreground leading-relaxed mb-2">{metric.explanation}</p>
+                          <div className="bg-muted/50 rounded p-2">
+                            <p className="text-xs font-medium">{metric.actionable}</p>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                </>
+              )}
 
               {/* Yield Curve Chart */}
               <Card>
