@@ -123,21 +123,6 @@ app = FastAPI(
     lifespan=lifespan
 )
 
-# Ensure CORS headers are present even on 500 errors
-@app.exception_handler(Exception)
-async def global_exception_handler(request, exc):
-    from fastapi.responses import JSONResponse
-    origin = request.headers.get("origin", "")
-    response = JSONResponse(
-        status_code=500,
-        content={"detail": "Internal server error"}
-    )
-    if origin:
-        response.headers["access-control-allow-origin"] = origin
-        response.headers["access-control-allow-credentials"] = "true"
-        response.headers["vary"] = "Origin"
-    return response
-
 # CORS configuration — allow all Vercel preview deployments + local dev
 _default_origins = [
     "http://localhost:3000",
@@ -154,6 +139,54 @@ if _additional:
 
 logger.info(f"CORS configured: origins={_default_origins}")
 
+# Custom CORS middleware that guarantees headers on EVERY response (including errors)
+class GuaranteedCORS:
+    def __init__(self, app, allowed_origins, allowed_regex=None):
+        self.app = app
+        self.allowed_origins = set(allowed_origins)
+        self.allowed_regex = re_module.compile(allowed_regex) if allowed_regex else None
+
+    def _is_allowed(self, origin: str) -> bool:
+        if not origin:
+            return False
+        if origin in self.allowed_origins:
+            return True
+        if self.allowed_regex and self.allowed_regex.match(origin):
+            return True
+        return False
+
+    async def __call__(self, scope, receive, send):
+        if scope["type"] != "http":
+            await self.app(scope, receive, send)
+            return
+
+        origin = ""
+        for key, value in scope.get("headers", []):
+            if key.lower() == b"origin":
+                origin = value.decode("latin-1")
+                break
+
+        allowed = self._is_allowed(origin)
+
+        async def wrapped_send(message):
+            if message["type"] == "http.response.start":
+                headers = list(message.get("headers", []))
+                if allowed:
+                    headers.append((b"access-control-allow-origin", origin.encode("latin-1")))
+                    headers.append((b"access-control-allow-credentials", b"true"))
+                    headers.append((b"vary", b"Origin"))
+                # Always allow these for simplicity on API routes
+                headers.append((b"access-control-allow-methods", b"GET, POST, PUT, DELETE, OPTIONS, PATCH"))
+                headers.append((b"access-control-allow-headers", b"*"))
+                headers.append((b"access-control-max-age", b"86400"))
+                message["headers"] = headers
+            await send(message)
+
+        await self.app(scope, receive, wrapped_send)
+
+app.add_middleware(GuaranteedCORS, allowed_origins=_default_origins, allowed_regex=r"https://.*\.vercel\.app")
+
+# Keep FastAPI CORS for normal request handling
 app.add_middleware(
     CORSMiddleware,
     allow_origins=_default_origins,
