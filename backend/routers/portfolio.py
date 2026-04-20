@@ -5,7 +5,7 @@ from typing import Optional
 from fastapi import APIRouter, HTTPException, Depends, Request
 from pydantic import BaseModel
 from database import get_db
-from routers.auth import get_current_user
+from routers.auth import get_current_user, get_current_user_optional
 from services.portfolio_crypto import encrypt, decrypt
 from services.portfolio_sync import sync_user_portfolio, get_portfolio_summary
 from fetchers.binance_portfolio import BinancePortfolioFetcher
@@ -229,15 +229,21 @@ async def assign_category(req: AssignCategoryRequest, current_user: dict = Depen
 # ============= MODELS =============
 
 @router.get("/models")
-async def list_models(current_user: dict = Depends(get_current_user)):
+async def list_models(current_user: Optional[dict] = Depends(get_current_user_optional)):
     db = get_db()
-    # Return system models + user's custom models
-    rows = await db.query(
-        """SELECT * FROM portfolio_models
-           WHERE is_active = TRUE AND (is_custom = FALSE OR user_id = $1)
-           ORDER BY is_custom ASC, id ASC""",
-        [current_user["id"]],
-    )
+    # Return system models + user's custom models (if authenticated)
+    if current_user:
+        rows = await db.query(
+            """SELECT * FROM portfolio_models
+               WHERE is_active = TRUE AND (is_custom = FALSE OR user_id = $1)
+               ORDER BY is_custom ASC, id ASC""",
+            [current_user["id"]],
+        )
+    else:
+        rows = await db.query(
+            "SELECT * FROM portfolio_models WHERE is_active = TRUE AND is_custom = FALSE ORDER BY id ASC",
+            [],
+        )
     models = []
     for r in rows:
         model = dict(r)

@@ -201,9 +201,8 @@ export default function PortfolioClient() {
   }, [token]);
 
   const fetchModels = useCallback(async () => {
-    if (!token) return;
     try {
-      const res = await fetch(`${API_BASE_URL}/portfolio/models`, { headers });
+      const res = await fetch(`${API_BASE_URL}/portfolio/models`, token ? { headers } : {});
       if (res.ok) setModels(await res.json());
     } catch (e) {
       console.error("Failed to fetch models", e);

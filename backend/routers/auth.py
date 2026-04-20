@@ -152,6 +152,24 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(s
     
     return dict(user[0])
 
+
+async def get_current_user_optional(credentials: HTTPAuthorizationCredentials = Depends(security)) -> Optional[dict]:
+    """Optional dependency — returns user dict or None without raising 401."""
+    if not credentials:
+        return None
+    try:
+        user_id = verify_token(credentials.credentials)
+        if not user_id:
+            return None
+        db = get_db()
+        user = await db.query(
+            "SELECT id, email, username, avatar_url, is_email_verified, subscription_tier FROM users WHERE id = $1 AND is_active = TRUE",
+            [user_id]
+        )
+        return dict(user[0]) if user else None
+    except Exception:
+        return None
+
 # ============= EMAIL/PASSWORD AUTH =============
 
 @router.post("/register", response_model=TokenResponse)
