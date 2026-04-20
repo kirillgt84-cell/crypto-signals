@@ -798,7 +798,7 @@ export default function Dashboard() {
           <div className="lg:w-1/3 flex flex-col">
             <Card className="flex flex-col flex-1 bg-gradient-to-t from-amber-500/5 to-card">
               <CardHeader className="gap-2 pb-2 shrink-0">
-                <CardTitle className="flex items-center gap-2 text-sm font-bold tracking-widest text-white">
+                <CardTitle className="flex items-center gap-2 text-sm font-bold tracking-widest">
                   <Radio className="w-4 h-4 text-amber-500" />
                   OI ANALYSIS
                 </CardTitle>

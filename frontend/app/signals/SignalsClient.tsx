@@ -199,14 +199,14 @@ export default function SignalsClient() {
   const categories = Array.from(new Set(signals.map((s) => s.category)));
 
   return (
-    <div className="flex min-h-screen bg-[#0b0f19] text-slate-200">
+    <div className="flex min-h-screen bg-background text-foreground">
       <Sidebar collapsed={sidebarCollapsed} onToggle={() => setSidebarCollapsed(!sidebarCollapsed)} />
       <main className={cn("flex-1 overflow-hidden transition-all duration-300", sidebarCollapsed ? "lg:ml-16" : "lg:ml-64")}>
       <div className="mx-auto max-w-7xl px-4 py-8">
         {/* Header */}
         <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div>
-            <h1 className="text-2xl font-bold tracking-wider text-white flex items-center gap-2">
+            <h1 className="text-2xl font-bold tracking-wider text-foreground flex items-center gap-2">
               <Zap className="h-6 w-6 text-amber-400" />
               SIGNALS
             </h1>
@@ -237,7 +237,7 @@ export default function SignalsClient() {
                 size="sm"
                 onClick={handleScanNow}
                 disabled={scanningNow}
-                className="border-slate-700 bg-slate-900 text-slate-300 hover:bg-slate-800"
+                className=""
               >
                 <Play className={`mr-2 h-4 w-4 ${scanningNow ? "animate-pulse" : ""}`} />
                 {scanningNow ? "Scanning..." : "Scan Now"}
@@ -248,7 +248,7 @@ export default function SignalsClient() {
               size="sm"
               onClick={fetchSignals}
               disabled={loading}
-              className="border-slate-700 bg-slate-900 text-slate-300 hover:bg-slate-800"
+              className=""
             >
               <RefreshCw className={`mr-2 h-4 w-4 ${loading ? "animate-spin" : ""}`} />
               Refresh
@@ -258,7 +258,7 @@ export default function SignalsClient() {
 
         {/* Content */}
         {!isPro ? (
-          <Card className="border-slate-800 bg-[#0f1420]">
+          <Card>
             <CardContent className="p-8">
               <ProBlurOverlay title="Pro Feature" description="Volume Spike / OI Anomaly Scanner is available for Pro subscribers only.">
                 <div className="h-64 w-full" />
@@ -268,9 +268,9 @@ export default function SignalsClient() {
         ) : (
           <>
             {/* Filters */}
-            <Card className="mb-6 border-slate-800 bg-[#0f1420]">
+            <Card className="mb-6">
               <CardHeader className="pb-3">
-                <CardTitle className="text-sm font-bold tracking-widest text-white flex items-center gap-2">
+                <CardTitle className="text-sm font-bold tracking-widest flex items-center gap-2">
                   <Filter className="h-4 w-4 text-slate-400" />
                   FILTERS
                 </CardTitle>
@@ -279,7 +279,7 @@ export default function SignalsClient() {
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
                   <div className="space-y-1.5">
                     <label className="text-xs font-medium text-slate-400">
-                      Min Score: <span className="text-white">{minScore}</span>
+                      Min Score: <span className="text-foreground">{minScore}</span>
                     </label>
                     <Input
                       type="range"
@@ -287,17 +287,17 @@ export default function SignalsClient() {
                       max={13}
                       value={minScore}
                       onChange={(e) => setMinScore(Number(e.target.value))}
-                      className="h-2 cursor-pointer border-0 bg-slate-800 p-0 accent-amber-500"
+                      className="h-2 cursor-pointer border-0 bg-muted p-0 accent-amber-500"
                     />
                   </div>
 
                   <div className="space-y-1.5">
                     <label className="text-xs font-medium text-slate-400">Direction</label>
                     <Select value={direction} onValueChange={setDirection}>
-                      <SelectTrigger className="border-slate-700 bg-slate-900 text-slate-200">
+                      <SelectTrigger>
                         <SelectValue />
                       </SelectTrigger>
-                      <SelectContent className="border-slate-700 bg-slate-900 text-slate-200">
+                      <SelectContent>
                         <SelectItem value="all">All</SelectItem>
                         <SelectItem value="LONG">Long</SelectItem>
                         <SelectItem value="SHORT">Short</SelectItem>
@@ -308,10 +308,10 @@ export default function SignalsClient() {
                   <div className="space-y-1.5">
                     <label className="text-xs font-medium text-slate-400">Confidence</label>
                     <Select value={confidence} onValueChange={setConfidence}>
-                      <SelectTrigger className="border-slate-700 bg-slate-900 text-slate-200">
+                      <SelectTrigger>
                         <SelectValue />
                       </SelectTrigger>
-                      <SelectContent className="border-slate-700 bg-slate-900 text-slate-200">
+                      <SelectContent>
                         <SelectItem value="all">All</SelectItem>
                         <SelectItem value="high">High</SelectItem>
                         <SelectItem value="medium">Medium</SelectItem>
@@ -322,10 +322,10 @@ export default function SignalsClient() {
                   <div className="space-y-1.5">
                     <label className="text-xs font-medium text-slate-400">Category</label>
                     <Select value={category} onValueChange={setCategory}>
-                      <SelectTrigger className="border-slate-700 bg-slate-900 text-slate-200">
+                      <SelectTrigger>
                         <SelectValue />
                       </SelectTrigger>
-                      <SelectContent className="border-slate-700 bg-slate-900 text-slate-200">
+                      <SelectContent>
                         <SelectItem value="all">All</SelectItem>
                         {categories.map((c) => (
                           <SelectItem key={c} value={c}>
@@ -340,9 +340,9 @@ export default function SignalsClient() {
             </Card>
 
             {/* Scanner Settings */}
-            <Card className="mb-6 border-slate-800 bg-[#0f1420]">
+            <Card className="mb-6">
               <CardHeader className="pb-3">
-                <CardTitle className="text-sm font-bold tracking-widest text-white flex items-center gap-2">
+                <CardTitle className="text-sm font-bold tracking-widest flex items-center gap-2">
                   <Settings2 className="h-4 w-4 text-slate-400" />
                   SCANNER SETTINGS
                 </CardTitle>
@@ -351,7 +351,7 @@ export default function SignalsClient() {
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
                   <div className="space-y-1.5">
                     <label className="text-xs font-medium text-slate-400">
-                      Default Min Score: <span className="text-white">{scannerSettings?.min_score ?? 8}</span>
+                      Default Min Score: <span className="text-foreground">{scannerSettings?.min_score ?? 8}</span>
                     </label>
                     <Input
                       type="range"
@@ -363,7 +363,7 @@ export default function SignalsClient() {
                         setScannerSettings((prev: any) => ({ ...prev, min_score: val }));
                         saveScannerSettings({ min_score: val });
                       }}
-                      className="h-2 cursor-pointer border-0 bg-slate-800 p-0 accent-amber-500"
+                      className="h-2 cursor-pointer border-0 bg-muted p-0 accent-amber-500"
                     />
                     <p className="text-[10px] text-slate-600">Lower = more signals, higher noise</p>
                   </div>
@@ -402,7 +402,7 @@ export default function SignalsClient() {
             </Card>
 
             {/* Table */}
-            <Card className="border-slate-800 bg-[#0f1420]">
+            <Card>
               <CardContent className="p-0">
                 {error && (
                   <div className="p-4 text-sm text-rose-400">{error}</div>
@@ -428,7 +428,7 @@ export default function SignalsClient() {
                           <tr key={i} className="border-b border-slate-800/50">
                             {Array.from({ length: 8 }).map((_, j) => (
                               <td key={j} className="px-4 py-3">
-                                <Skeleton className="h-4 w-20 bg-slate-800" />
+                                <Skeleton className="h-4 w-20" />
                               </td>
                             ))}
                           </tr>
@@ -458,7 +458,7 @@ export default function SignalsClient() {
                               initial={{ opacity: 0, y: 4 }}
                               animate={{ opacity: 1, y: 0 }}
                               exit={{ opacity: 0 }}
-                              className="border-b border-slate-800/50 hover:bg-slate-800/30 transition-colors"
+                              className="border-b hover:bg-muted/50 transition-colors"
                             >
                               <td className="px-4 py-3">
                                 <div className="flex items-center gap-2">

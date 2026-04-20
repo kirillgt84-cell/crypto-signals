@@ -98,13 +98,13 @@ export default function PricingClient() {
   };
 
   return (
-    <div className="flex min-h-screen bg-[#0b0f19] text-slate-200">
+    <div className="flex min-h-screen bg-background text-foreground">
       <Sidebar collapsed={sidebarCollapsed} onToggle={() => setSidebarCollapsed(!sidebarCollapsed)} />
       <main className={cn("flex-1 overflow-hidden transition-all duration-300", sidebarCollapsed ? "lg:ml-16" : "lg:ml-64")}>
         <div className="mx-auto max-w-5xl px-4 py-12">
           {/* Header */}
           <div className="text-center mb-10">
-            <h1 className="text-3xl font-bold tracking-wider text-white flex items-center justify-center gap-3">
+            <h1 className="text-3xl font-bold tracking-wider text-foreground flex items-center justify-center gap-3">
               <Crown className="h-8 w-8 text-amber-400" />
               CHOOSE YOUR PLAN
             </h1>
@@ -127,17 +127,17 @@ export default function PricingClient() {
           {/* Plans */}
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2 max-w-4xl mx-auto">
             {/* FREE */}
-            <Card className="border-slate-800 bg-[#0f1420]">
+            <Card>
               <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
-                  <CardTitle className="text-lg font-bold text-white">FREE</CardTitle>
+                  <CardTitle className="text-lg font-bold">FREE</CardTitle>
                   <Badge className="bg-slate-700 text-slate-300 border-slate-600 text-[10px]">FOREVER FREE</Badge>
                 </div>
                 <p className="text-sm text-slate-400">Essential tools for every trader</p>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="flex items-baseline gap-1">
-                  <span className="text-3xl font-bold text-white">$0</span>
+                  <span className="text-3xl font-bold">$0</span>
                   <span className="text-sm text-slate-500">/mo</span>
                 </div>
                 <ul className="space-y-2 text-sm text-slate-300">
@@ -148,7 +148,7 @@ export default function PricingClient() {
                   ))}
                 </ul>
                 <Button
-                  className="w-full bg-slate-800 text-white hover:bg-slate-700"
+                  className="w-full"
                   onClick={handleFreeStart}
                 >
                   Get Started
@@ -157,13 +157,13 @@ export default function PricingClient() {
             </Card>
 
             {/* PRO */}
-            <Card className="border-amber-500/30 bg-[#0f1420] ring-1 ring-amber-500/20 relative overflow-hidden">
+            <Card className="border-amber-500/30 ring-1 ring-amber-500/20 relative overflow-hidden">
               <div className="absolute top-0 right-0 bg-amber-500 text-black text-[10px] font-bold px-2 py-1 rounded-bl-lg">
                 MOST POPULAR
               </div>
               <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
-                  <CardTitle className="text-lg font-bold text-white">PRO</CardTitle>
+                  <CardTitle className="text-lg font-bold">PRO</CardTitle>
                   <Badge className="bg-amber-500/20 text-amber-400 border-amber-500/30 text-[10px]">
                     <Zap className="mr-1 h-3 w-3" /> PRO
                   </Badge>
@@ -172,12 +172,12 @@ export default function PricingClient() {
               </CardHeader>
               <CardContent className="space-y-4">
                 {/* Billing toggle */}
-                <div className="flex items-center justify-center gap-2 bg-slate-900 rounded-lg p-1">
+                <div className="flex items-center justify-center gap-2 bg-muted rounded-lg p-1">
                   <button
                     onClick={() => setBillingCycle("monthly")}
                     className={cn(
                       "flex-1 text-xs font-medium py-1.5 rounded-md transition-colors",
-                      billingCycle === "monthly" ? "bg-slate-700 text-white" : "text-slate-400 hover:text-slate-200"
+                      billingCycle === "monthly" ? "bg-secondary text-secondary-foreground" : "text-muted-foreground hover:text-foreground"
                     )}
                   >
                     Monthly
@@ -186,7 +186,7 @@ export default function PricingClient() {
                     onClick={() => setBillingCycle("yearly")}
                     className={cn(
                       "flex-1 text-xs font-medium py-1.5 rounded-md transition-colors",
-                      billingCycle === "yearly" ? "bg-slate-700 text-white" : "text-slate-400 hover:text-slate-200"
+                      billingCycle === "yearly" ? "bg-secondary text-secondary-foreground" : "text-muted-foreground hover:text-foreground"
                     )}
                   >
                     Yearly
@@ -194,7 +194,7 @@ export default function PricingClient() {
                 </div>
 
                 <div className="flex items-baseline gap-1">
-                  <span className="text-3xl font-bold text-white">${billingCycle === "monthly" ? "25" : "19"}</span>
+                  <span className="text-3xl font-bold">${billingCycle === "monthly" ? "25" : "19"}</span>
                   <span className="text-sm text-slate-500">/mo</span>
                   {billingCycle === "yearly" && (
                     <span className="ml-2 text-xs text-slate-400">billed as $228/yr</span>

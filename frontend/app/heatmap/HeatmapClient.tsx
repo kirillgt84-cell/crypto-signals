@@ -128,7 +128,7 @@ export default function HeatmapClient({ initialData }: { initialData: HeatmapIte
   const isSingleSector = sector !== "all"
 
   return (
-    <div className="flex min-h-screen bg-[#0b0f19] text-white font-mono">
+    <div className="flex min-h-screen bg-background text-foreground font-mono">
       <Sidebar collapsed={sidebarCollapsed} onToggle={() => setSidebarCollapsed(!sidebarCollapsed)} />
       <main className={cn("flex-1 overflow-hidden transition-all duration-300", sidebarCollapsed ? "lg:ml-16" : "lg:ml-64")}>
       <header className="border-b border-slate-800 px-4 py-4">
@@ -149,7 +149,7 @@ export default function HeatmapClient({ initialData }: { initialData: HeatmapIte
                   "px-3 py-1 text-xs font-bold rounded border transition-colors",
                   timeframe === tf.value
                     ? "bg-amber-500 text-black border-amber-500"
-                    : "bg-[#0b0f19] text-slate-400 border-slate-700 hover:border-amber-500/50"
+                    : "bg-card text-muted-foreground border-border hover:border-amber-500/50"
                 )}
               >
                 {tf.label}
@@ -162,7 +162,7 @@ export default function HeatmapClient({ initialData }: { initialData: HeatmapIte
           <select
             value={sector}
             onChange={(e) => setSector(e.target.value)}
-            className="bg-[#0b0f19] text-xs text-slate-300 border border-slate-700 rounded px-2 py-1 focus:outline-none focus:border-amber-500"
+            className="bg-card text-xs text-muted-foreground border border-border rounded px-2 py-1 focus:outline-none focus:border-amber-500"
           >
             {SECTORS.map((s) => (
               <option key={s.value} value={s.value}>
@@ -252,7 +252,7 @@ export default function HeatmapClient({ initialData }: { initialData: HeatmapIte
         )}
 
         {hovered && (
-          <div className="mt-3 p-3 bg-slate-800/50 border border-slate-700 rounded text-xs text-slate-300 flex flex-wrap gap-x-6 gap-y-1">
+          <div className="mt-3 p-3 bg-muted border border-border rounded text-xs text-muted-foreground flex flex-wrap gap-x-6 gap-y-1">
             <span className="font-bold text-amber-400">{hovered.symbol}</span>
             <span>Price: ${hovered.price.toFixed(hovered.price < 1 ? 4 : 2)}</span>
             <span>24h: {hovered.price_change_pct > 0 ? "+" : ""}{hovered.price_change_pct.toFixed(2)}%</span>
@@ -298,7 +298,7 @@ function SectorTreemap({
       )}
       onClick={onSelect}
     >
-      <div className="px-3 py-2 bg-slate-800/40 border-b border-slate-800 flex items-center justify-between">
+      <div className="px-3 py-2 bg-muted border-b border-border flex items-center justify-between">
         <div className="flex items-center gap-2">
           <span className="text-xs font-bold text-amber-400 uppercase tracking-wider">{name}</span>
           <span className="text-[10px] text-slate-500">{items.length} coins</span>
