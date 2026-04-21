@@ -67,14 +67,17 @@ def translate_batch(texts: list[str], target_lang: str, target_name: str) -> lis
     resp.raise_for_status()
     content = resp.json()["choices"][0]["message"]["content"]
 
-    # Parse [N] translations
+    # Parse [N] or [N0] translations
     results = [""] * len(texts)
     for line in content.splitlines():
         line = line.strip()
         if line.startswith("[") and "]" in line:
             try:
                 idx_str, text = line.split("]", 1)
-                idx = int(idx_str[1:])
+                idx_str = idx_str[1:]  # remove leading [
+                if idx_str.startswith("N"):
+                    idx_str = idx_str[1:]
+                idx = int(idx_str)
                 if 0 <= idx < len(texts):
                     results[idx] = text.strip()
             except ValueError:
@@ -107,7 +110,7 @@ def main():
         target_path = LOCALES_DIR / f"{code}.json"
         target_data = load_json(target_path) if target_path.exists() else {}
 
-        missing_keys = [k for k in en_keys if k not in target_data or not target_data[k]]
+        missing_keys = [k for k in en_keys if k not in target_data or not target_data[k] or target_data[k] == en_data[k]]
 
         if not missing_keys:
             print(f"[{code}] All keys present. Nothing to translate.")
