@@ -155,11 +155,9 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
           </nav>
 
           {/* Language Switcher */}
-          {!collapsed && (
-            <div className="px-3 py-2">
-              <LanguageSwitcher />
-            </div>
-          )}
+          <div className={cn("px-3 py-2", collapsed && "px-1.5")}>
+            <LanguageSwitcher />
+          </div>
 
           {/* Bottom Section */}
           <div className="border-t border-border p-3 space-y-1">
