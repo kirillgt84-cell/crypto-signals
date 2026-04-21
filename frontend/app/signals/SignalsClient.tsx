@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { useSidebar } from "@/hooks/useSidebar";
 import { useAuth } from "../context/AuthContext";
+import { useLanguage } from "../context/LanguageContext";
 import { ProBlurOverlay } from "../components/ProBlurOverlay";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -42,6 +43,7 @@ const API_BASE = "https://crypto-signals-production-ff4c.up.railway.app/api/v1";
 
 export default function SignalsClient() {
   const { isPro } = useAuth();
+  const { t } = useLanguage();
   const [signals, setSignals] = useState<AnomalySignal[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -79,7 +81,7 @@ export default function SignalsClient() {
       const data = await res.json();
       setSignals(Array.isArray(data) ? data : []);
     } catch (e: any) {
-      setError(e.message || "Failed to load signals");
+      setError(e.message || t("signals.loadFailed"));
     } finally {
       setLoading(false);
     }
@@ -241,7 +243,7 @@ export default function SignalsClient() {
                 className=""
               >
                 <Play className={`mr-2 h-4 w-4 ${scanningNow ? "animate-pulse" : ""}`} />
-                {scanningNow ? "Scanning..." : "Scan Now"}
+                {scanningNow ? t("signals.scanning") : t("signals.scanNow")}
               </Button>
             )}
             <Button

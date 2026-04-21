@@ -9,6 +9,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip"
 import { cn } from "@/lib/utils"
+import { useLanguage } from "../context/LanguageContext"
 
 interface SentimentData {
   long_short_ratio: number
@@ -167,6 +168,7 @@ function getSentimentInterpretation(
 }
 
 export function EntryLevels({ data, sentiment, loading }: EntryLevelsProps) {
+  const { t } = useLanguage()
   if (loading) {
     return (
       <div className="w-full h-full border-2 border-primary/30 rounded-lg bg-card p-6 font-mono">
@@ -228,14 +230,14 @@ export function EntryLevels({ data, sentiment, loading }: EntryLevelsProps) {
       name: "VAH",
       value: data.vah,
       type: "resistance" as const,
-      label: "Value Area High",
+      label: t("entryLevels.valueAreaHigh"),
       desc: "Верхняя граница зоны стоимости. Уровень сопротивления где цена считается \"дорогой\" (верхние 15% объема)",
     },
     {
       name: "POC",
       value: data.poc,
       type: "neutral" as const,
-      label: "Point of Control",
+      label: t("entryLevels.pointOfControl"),
       desc: "Точка контроля - уровень с максимальным объемом торгов. Самая \"справедливая\" цена по мнению рынка",
     },
     {
@@ -256,7 +258,7 @@ export function EntryLevels({ data, sentiment, loading }: EntryLevelsProps) {
       name: "VAL",
       value: data.val,
       type: "support" as const,
-      label: "Value Area Low",
+      label: t("entryLevels.valueAreaLow"),
       desc: "Нижняя граница зоны стоимости. Уровень поддержки где цена считается \"дешевой\" (нижние 15% объема)",
     },
   ].sort((a, b) => b.value - a.value)
@@ -285,7 +287,7 @@ export function EntryLevels({ data, sentiment, loading }: EntryLevelsProps) {
           <div className="flex items-center gap-3">
             <Target className="w-5 h-5 text-blue-500" />
             <span className="text-xl font-bold tracking-widest text-blue-500">
-              SHORT TERM POINTS
+              {t("entryLevels.shortTermPoints")}
             </span>
           </div>
           <Tooltip>
@@ -294,15 +296,15 @@ export function EntryLevels({ data, sentiment, loading }: EntryLevelsProps) {
             </TooltipTrigger>
             <TooltipContent side="left" className="max-w-xs">
               <p className="text-xs">
-                <strong>VAH/VAL</strong> — зона стоимости (где 70% объема)
+                <strong>VAH/VAL</strong> — {t("entryLevels.vahValDescription")}
                 <br />
-                <strong>POC</strong> — точка максимального объема
+                <strong>POC</strong> — {t("entryLevels.pocDescription")}
                 <br />
-                <strong>EMA</strong> — динамические уровни
+                <strong>EMA</strong> — {t("entryLevels.emaDescription")}
                 <br />
-                <strong>Sentiment</strong> — соотношение лонг/шорт и активность трейдеров
+                <strong>Sentiment</strong> — {t("entryLevels.sentimentDescription")}
                 <br />
-                Текущая цена показывает вашу позицию относительно поддержек/сопротивлений
+                {t("entryLevels.tooltipPrefix")}
               </p>
             </TooltipContent>
           </Tooltip>
@@ -312,7 +314,7 @@ export function EntryLevels({ data, sentiment, loading }: EntryLevelsProps) {
         {sentiment && (
           <div className="grid grid-cols-3 gap-2 mb-4">
             <SentimentMetricCard
-              title="Long/Short Ratio"
+              title={t("entryLevels.longShortRatio")}
               value={sentiment.long_short_ratio.toFixed(2)}
               subtitle={`Long: ${sentiment.long_accounts_pct.toFixed(1)}% · Short: ${sentiment.short_accounts_pct.toFixed(1)}%`}
               interpretation={lsInterp?.text || ""}
@@ -320,7 +322,7 @@ export function EntryLevels({ data, sentiment, loading }: EntryLevelsProps) {
               loading={loading}
             />
             <SentimentMetricCard
-              title="Top Trader L/S"
+              title={t("entryLevels.topTraderLs")}
               value={sentiment.top_trader_ratio.toFixed(2)}
               subtitle={`Long: ${sentiment.top_long_pct.toFixed(1)}% · Short: ${sentiment.top_short_pct.toFixed(1)}%`}
               interpretation={ttInterp?.text || ""}
@@ -328,14 +330,14 @@ export function EntryLevels({ data, sentiment, loading }: EntryLevelsProps) {
               loading={loading}
             />
             <SentimentMetricCard
-              title="Taker Buy/Sell"
+              title={t("entryLevels.takerBuySell")}
               value={sentiment.taker_volume_ratio.toFixed(2)}
               subtitle={
                 sentiment.sentiment_signal === "bullish"
-                  ? "Bullish dominance"
+                  ? t("entryLevels.bullishDominance")
                   : sentiment.sentiment_signal === "bearish"
-                  ? "Bearish dominance"
-                  : "Neutral balance"
+                  ? t("entryLevels.bearishDominance")
+                  : t("entryLevels.neutralBalance")
               }
               interpretation={takerInterp?.text || ""}
               signal={takerInterp?.signal || "neutral"}

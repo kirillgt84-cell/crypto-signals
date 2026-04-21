@@ -14,6 +14,7 @@ import {
   ShieldCheck,
 } from "lucide-react"
 import { useAuth } from "../context/AuthContext"
+import { useLanguage } from "../context/LanguageContext"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
@@ -22,14 +23,15 @@ interface UserMenuProps {
   onOpenAuth: () => void
 }
 
-const tierBadge: Record<string, { label: string; variant: any; icon: React.ReactNode }> = {
-  free: { label: "Free", variant: "secondary", icon: <User className="size-3" /> },
-  pro: { label: "Pro", variant: "default", icon: <Crown className="size-3" /> },
-  admin: { label: "Admin", variant: "destructive", icon: <ShieldCheck className="size-3" /> },
+const tierBadge: Record<string, { labelKey: string; variant: any; icon: React.ReactNode }> = {
+  free: { labelKey: "common.free", variant: "secondary", icon: <User className="size-3" /> },
+  pro: { labelKey: "common.pro", variant: "default", icon: <Crown className="size-3" /> },
+  admin: { labelKey: "common.admin", variant: "destructive", icon: <ShieldCheck className="size-3" /> },
 }
 
 export function UserMenu({ onOpenAuth }: UserMenuProps) {
   const { user, isAuthenticated, logout } = useAuth()
+  const { t } = useLanguage()
   const [open, setOpen] = useState(false)
   const [isLoggingOut, setIsLoggingOut] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
@@ -57,7 +59,7 @@ export function UserMenu({ onOpenAuth }: UserMenuProps) {
     return (
       <Button onClick={onOpenAuth} variant="outline" size="sm" className="gap-2">
         <User className="size-4" />
-        <span className="hidden sm:inline">Sign In</span>
+        <span className="hidden sm:inline">{t("common.signIn")}</span>
       </Button>
     )
   }
@@ -84,7 +86,6 @@ export function UserMenu({ onOpenAuth }: UserMenuProps) {
 
       {open && (
         <div className="absolute right-0 top-full mt-2 w-72 rounded-xl border border-border/50 bg-popover p-2 shadow-xl z-50 animate-in fade-in-0 zoom-in-95">
-          {/* Header */}
           <div className="px-2 py-2">
             <div className="flex items-center gap-3">
               <Avatar className="h-10 w-10 border border-border/50">
@@ -96,12 +97,12 @@ export function UserMenu({ onOpenAuth }: UserMenuProps) {
               <div className="flex flex-col">
                 <p className="text-sm font-semibold leading-tight">{user?.username}</p>
                 <p className="text-xs text-muted-foreground leading-tight truncate max-w-[140px]">
-                  {user?.email || "No email"}
+                  {user?.email || t("userMenu.noEmail")}
                 </p>
                 <div className="mt-1">
                   <Badge variant={tier.variant} className="text-[10px] h-4 px-1.5 gap-1">
                     {tier.icon}
-                    {tier.label}
+                    {t(tier.labelKey)}
                   </Badge>
                 </div>
               </div>
@@ -110,63 +111,37 @@ export function UserMenu({ onOpenAuth }: UserMenuProps) {
 
           <div className="h-px bg-border my-1" />
 
-          {/* Platform */}
           <div className="px-2 py-1">
-            <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium mb-1">Platform</p>
-            <Link
-              href="/dashboard"
-              onClick={() => setOpen(false)}
-              className="flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm hover:bg-accent transition-colors"
-            >
+            <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium mb-1">{t("userMenu.platform")}</p>
+            <Link href="/dashboard" onClick={() => setOpen(false)} className="flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm hover:bg-accent transition-colors">
               <LayoutDashboard className="size-4 text-muted-foreground" />
-              <span>Dashboard</span>
-              <span className="ml-auto text-xs tracking-widest text-muted-foreground">⌘D</span>
+              <span>{t("sidebar.dashboard")}</span>
             </Link>
-            <Link
-              href="/trades"
-              onClick={() => setOpen(false)}
-              className="flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm hover:bg-accent transition-colors"
-            >
+            <Link href="/trades" onClick={() => setOpen(false)} className="flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm hover:bg-accent transition-colors">
               <Wallet className="size-4 text-muted-foreground" />
-              <span>My Trades</span>
+              <span>{t("userMenu.myTrades")}</span>
             </Link>
           </div>
 
           <div className="h-px bg-border my-1" />
 
-          {/* Account */}
           <div className="px-2 py-1">
-            <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium mb-1">Account</p>
-            <Link
-              href="/profile"
-              onClick={() => setOpen(false)}
-              className="flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm hover:bg-accent transition-colors"
-            >
+            <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium mb-1">{t("userMenu.account")}</p>
+            <Link href="/profile" onClick={() => setOpen(false)} className="flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm hover:bg-accent transition-colors">
               <Settings className="size-4 text-muted-foreground" />
-              <span>Settings</span>
-              <span className="ml-auto text-xs tracking-widest text-muted-foreground">⌘S</span>
+              <span>{t("userMenu.settings")}</span>
             </Link>
-            <Link
-              href="/help"
-              onClick={() => setOpen(false)}
-              className="flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm hover:bg-accent transition-colors"
-            >
+            <Link href="/help" onClick={() => setOpen(false)} className="flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm hover:bg-accent transition-colors">
               <HelpCircle className="size-4 text-muted-foreground" />
-              <span>Help & Support</span>
+              <span>{t("userMenu.helpSupport")}</span>
             </Link>
           </div>
 
           <div className="h-px bg-border my-1" />
 
-          {/* Logout */}
-          <button
-            onClick={handleLogout}
-            disabled={isLoggingOut}
-            className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-sm text-destructive hover:bg-destructive/10 transition-colors disabled:opacity-50"
-          >
+          <button onClick={handleLogout} disabled={isLoggingOut} className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-sm text-destructive hover:bg-destructive/10 transition-colors disabled:opacity-50">
             <LogOut className="size-4" />
-            <span>{isLoggingOut ? "Signing out..." : "Sign out"}</span>
-            <span className="ml-auto text-xs tracking-widest text-muted-foreground">⇧⌘Q</span>
+            <span>{isLoggingOut ? t("userMenu.signingOut") : t("common.signOut")}</span>
           </button>
         </div>
       )}
