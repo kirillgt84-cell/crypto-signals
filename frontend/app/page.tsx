@@ -12,7 +12,7 @@ import { useLanguage } from "./context/LanguageContext"
 import { getRSIInterpretation, getMACDInterpretation, getFundingInterpretation, getExchangeFlowInterpretation, getCVDInterpretation } from "./lib/market-utils"
 import { Logo, LogoIcon } from "./components/Logo"
 import { ThemeToggle } from "./components/ThemeToggle"
-import { LanguageSwitcher } from "./components/LanguageSwitcher"
+
 import { useTheme } from "next-themes"
 import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -778,7 +778,6 @@ export default function Dashboard() {
             <UserMenu onOpenAuth={() => setAuthOpen(true)} />
           </div>
           <div className="flex items-center gap-2">
-            <LanguageSwitcher />
             <ThemeToggle />
             <Button variant="outline" size="sm" className="hidden sm:flex items-center gap-2">
               <Wallet className="h-4 w-4" />
