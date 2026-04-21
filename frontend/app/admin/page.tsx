@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Loader2, Users, Crown, UserCheck, TrendingUp, Search, Ban, CheckCircle2, Mail, Send, Zap, Activity, Play } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { useLanguage } from "../context/LanguageContext"
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid } from "recharts"
 
 const API_BASE_URL = "https://crypto-signals-production-ff4c.up.railway.app/api/v1"
@@ -50,6 +51,7 @@ function formatDateLabel(dateStr: string) {
 export default function AdminPage() {
   const { user, isLoading } = useAuth()
   const router = useRouter()
+  const { t } = useLanguage()
   const [users, setUsers] = useState<AdminUser[]>([])
   const [stats, setStats] = useState<Stats | null>(null)
   const [loading, setLoading] = useState(true)
@@ -164,7 +166,7 @@ export default function AdminPage() {
       if (!res.ok) throw new Error(data.detail || "Failed")
       setTestResult(`Test ${type} report sent to ${data.email}`)
     } catch (e: any) {
-      setTestResult(`Error: ${e.message}`)
+      setTestResult(`{t("common.error")}: ${e.message}`)
     } finally {
       setSendingTest(false)
     }
@@ -207,8 +209,8 @@ export default function AdminPage() {
     <AdminLayout>
       <div className="space-y-6">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Admin Dashboard</h1>
-          <p className="text-sm text-muted-foreground">Overview, analytics and user management.</p>
+          <h1 className="text-2xl font-bold tracking-tight">{t("admin.title")}</h1>
+          <p className="text-sm text-muted-foreground">{t("admin.subtitle")}</p>
         </div>
 
         {error && (
@@ -220,25 +222,25 @@ export default function AdminPage() {
         {/* Metrics */}
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <MetricCard
-            title="Total Users"
+            title={t("admin.totalUsers")}
             value={stats?.total_users ?? 0}
             icon={Users}
             tone="indigo"
           />
           <MetricCard
-            title="Pro Users"
+            title={t("admin.proUsers")}
             value={stats?.pro_users ?? 0}
             icon={Crown}
             tone="violet"
           />
           <MetricCard
-            title="Free Users"
+            title={t("admin.freeUsers")}
             value={stats?.free_users ?? 0}
             icon={UserCheck}
             tone="slate"
           />
           <MetricCard
-            title="New (7d)"
+            title={t("admin.new7d")}
             value={stats?.new_users_7d ?? 0}
             icon={TrendingUp}
             tone="emerald"
@@ -250,8 +252,8 @@ export default function AdminPage() {
           <CardHeader className="pb-2">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <CardTitle className="text-base font-semibold">Daily Reports</CardTitle>
-                <CardDescription>Email market overview subscriptions</CardDescription>
+                <CardTitle className="text-base font-semibold">{t("admin.dailyReports")}</CardTitle>
+                <CardDescription>{t("admin.marketOverview")}</CardDescription>
               </div>
               <div className="flex items-center gap-2">
                 <Button
@@ -261,7 +263,7 @@ export default function AdminPage() {
                   onClick={() => handleSendTest("daily")}
                 >
                   <Send className="mr-2 h-4 w-4" />
-                  Test daily
+                  {t("admin.testDaily")}
                 </Button>
                 <Button
                   variant="outline"
@@ -270,7 +272,7 @@ export default function AdminPage() {
                   onClick={() => handleSendTest("weekly")}
                 >
                   <Send className="mr-2 h-4 w-4" />
-                  Test weekly
+                  {t("admin.testWeekly")}
                 </Button>
               </div>
             </div>
@@ -283,19 +285,19 @@ export default function AdminPage() {
           <CardContent>
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
               <MetricCard
-                title="Daily Subscribers"
+                title={t("admin.dailySubscribers")}
                 value={reportStatus?.daily_subscribers ?? 0}
                 icon={Mail}
                 tone="indigo"
               />
               <MetricCard
-                title="Sent (24h)"
+                title={t("admin.sent24h")}
                 value={reportStatus?.daily_sent_24h ?? 0}
                 icon={CheckCircle2}
                 tone="emerald"
               />
               <MetricCard
-                title="Failed (24h)"
+                title={t("admin.failed24h")}
                 value={reportStatus?.daily_failed_24h ?? 0}
                 icon={Ban}
                 tone="slate"
@@ -317,8 +319,8 @@ export default function AdminPage() {
           <CardHeader className="pb-2">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <CardTitle className="text-base font-semibold">Scanner Management</CardTitle>
-                <CardDescription>Anomaly scanner status and controls</CardDescription>
+                <CardTitle className="text-base font-semibold">{t("admin.scannerManagement")}</CardTitle>
+                <CardDescription>{t("admin.scannerStatus")}</CardDescription>
               </div>
               <div className="flex items-center gap-2">
                 <Button
@@ -340,7 +342,7 @@ export default function AdminPage() {
                   }}
                 >
                   <Play className="mr-2 h-4 w-4" />
-                  Run Now
+                  {t("admin.runNow")}
                 </Button>
               </div>
             </div>
@@ -348,25 +350,25 @@ export default function AdminPage() {
           <CardContent>
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-4">
               <MetricCard
-                title="Min Score"
+                title={t("signals.minScore")}
                 value={scannerStatus?.min_score ?? 5}
                 icon={Zap}
                 tone="amber"
               />
               <MetricCard
-                title="Active Signals"
+                title={t("admin.activeSignals")}
                 value={scannerStatus?.active_signals ?? 0}
                 icon={Activity}
                 tone="emerald"
               />
               <MetricCard
-                title="Scans (24h)"
+                title={t("admin.scans24h")}
                 value={scannerStatus?.runs_24h ?? 0}
                 icon={CheckCircle2}
                 tone="indigo"
               />
               <MetricCard
-                title="Signals (24h)"
+                title={t("admin.signals24h")}
                 value={scannerStatus?.anomalies_24h ?? 0}
                 icon={Zap}
                 tone="slate"
@@ -374,10 +376,10 @@ export default function AdminPage() {
             </div>
             {scannerStatus?.last_run && (
               <p className="mt-3 text-xs text-muted-foreground">
-                Last scan: {new Date(scannerStatus.last_run.run_at).toLocaleString()} · 
-                Checked {scannerStatus.last_run.symbols_checked} symbols · 
-                Found {scannerStatus.last_run.anomalies_found} anomalies · 
-                Duration {scannerStatus.last_run.duration_ms}ms
+                {t("admin.lastScan")}: {new Date(scannerStatus.last_run.run_at).toLocaleString()} · 
+                {t("admin.checked")} {scannerStatus.last_run.symbols_checked} symbols · 
+                {t("admin.found")} {scannerStatus.last_run.anomalies_found} anomalies · 
+                {t("admin.duration")} {scannerStatus.last_run.duration_ms}ms
                 {scannerStatus.last_run.error && <span className="text-red-500 ml-2">Error: {scannerStatus.last_run.error}</span>}
               </p>
             )}
@@ -386,11 +388,11 @@ export default function AdminPage() {
                 <table className="w-full text-xs">
                   <thead>
                     <tr className="border-b text-left text-muted-foreground">
-                      <th className="py-1">Time</th>
-                      <th className="py-1">Checked</th>
-                      <th className="py-1">Found</th>
-                      <th className="py-1">Min</th>
-                      <th className="py-1">Duration</th>
+                      <th className="py-1">{t("admin.time")}</th>
+                      <th className="py-1">{t("admin.checked")}</th>
+                      <th className="py-1">{t("admin.found")}</th>
+                      <th className="py-1">{t("admin.min")}</th>
+                      <th className="py-1">{t("admin.duration")}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -413,8 +415,8 @@ export default function AdminPage() {
         {/* Chart */}
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-base font-semibold">Registrations (30 days)</CardTitle>
-            <CardDescription>New user sign-ups by day</CardDescription>
+            <CardTitle className="text-base font-semibold">{t("admin.registrations30d")}</CardTitle>
+            <CardDescription>{t("admin.newUsers")}</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="h-[280px] w-full">
@@ -432,7 +434,7 @@ export default function AdminPage() {
                   </BarChart>
                 </ResponsiveContainer>
               ) : (
-                <div className="flex h-full items-center justify-center text-sm text-muted-foreground">No data</div>
+                <div className="flex h-full items-center justify-center text-sm text-muted-foreground">{t("common.noData")}</div>
               )}
             </div>
           </CardContent>
@@ -443,14 +445,14 @@ export default function AdminPage() {
           <CardHeader className="pb-2">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <CardTitle className="text-base font-semibold">Users</CardTitle>
-                <CardDescription>Manage tiers and access</CardDescription>
+                <CardTitle className="text-base font-semibold">{t("admin.users")}</CardTitle>
+                <CardDescription>{t("admin.manageTiers")}</CardDescription>
               </div>
               <div className="flex items-center gap-2">
                 <div className="relative">
                   <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                   <Input
-                    placeholder="Search users..."
+                    placeholder={t("admin.searchUsers")}
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
                     className="w-48 pl-9"
@@ -458,13 +460,13 @@ export default function AdminPage() {
                 </div>
                 <Select value={tierFilter} onValueChange={setTierFilter}>
                   <SelectTrigger className="w-32">
-                    <SelectValue placeholder="Tier" />
+                    <SelectValue placeholder={t("admin.tier")} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">All tiers</SelectItem>
-                    <SelectItem value="free">Free</SelectItem>
-                    <SelectItem value="pro">Pro</SelectItem>
-                    <SelectItem value="admin">Admin</SelectItem>
+                    <SelectItem value="all">{t("admin.allTiers")}</SelectItem>
+                    <SelectItem value="free">{t("common.free")}</SelectItem>
+                    <SelectItem value="pro">{t("common.pro")}</SelectItem>
+                    <SelectItem value="admin">{t("common.admin")}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -475,11 +477,11 @@ export default function AdminPage() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>User</TableHead>
-                    <TableHead>Tier</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Created</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
+                    <TableHead>{t("admin.user")}</TableHead>
+                    <TableHead>{t("admin.tier")}</TableHead>
+                    <TableHead>{t("admin.status")}</TableHead>
+                    <TableHead>{t("admin.created")}</TableHead>
+                    <TableHead className="text-right">{t("admin.actions")}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -514,12 +516,12 @@ export default function AdminPage() {
                         {u.is_active ? (
                           <span className="inline-flex items-center gap-1 text-xs font-medium text-emerald-600">
                             <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-                            Active
+                            {t("common.active")}
                           </span>
                         ) : (
                           <span className="inline-flex items-center gap-1 text-xs font-medium text-red-600">
                             <span className="h-1.5 w-1.5 rounded-full bg-red-500" />
-                            Inactive
+                            {t("common.inactive")}
                           </span>
                         )}
                       </TableCell>
@@ -533,9 +535,9 @@ export default function AdminPage() {
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="free">Free</SelectItem>
-                              <SelectItem value="pro">Pro</SelectItem>
-                              <SelectItem value="admin">Admin</SelectItem>
+                              <SelectItem value="free">{t("common.free")}</SelectItem>
+                              <SelectItem value="pro">{t("common.pro")}</SelectItem>
+                              <SelectItem value="admin">{t("common.admin")}</SelectItem>
                             </SelectContent>
                           </Select>
                           <Button
@@ -543,7 +545,7 @@ export default function AdminPage() {
                             size="icon"
                             className="h-8 w-8"
                             onClick={() => handleToggleActive(u.id, u.is_active)}
-                            title={u.is_active ? "Deactivate" : "Activate"}
+                            title={u.is_active ? t("admin.deactivate") : t("admin.activate")}
                           >
                             {u.is_active ? (
                               <Ban className="h-4 w-4 text-red-500" />
@@ -558,7 +560,7 @@ export default function AdminPage() {
                   {filteredUsers.length === 0 && (
                     <TableRow>
                       <TableCell colSpan={5} className="py-8 text-center text-muted-foreground">
-                        No users found.
+                        {t("admin.noUsersFound")}
                       </TableCell>
                     </TableRow>
                   )}
@@ -571,19 +573,19 @@ export default function AdminPage() {
         {/* Payments */}
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-base font-semibold">Payments</CardTitle>
-            <CardDescription>Recent PayPal transactions</CardDescription>
+            <CardTitle className="text-base font-semibold">{t("admin.payments")}</CardTitle>
+            <CardDescription>{t("admin.transactions")}</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>User</TableHead>
-                    <TableHead>Plan</TableHead>
-                    <TableHead>Amount</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Date</TableHead>
+                    <TableHead>{t("admin.user")}</TableHead>
+                    <TableHead>{t("admin.plan")}</TableHead>
+                    <TableHead>{t("admin.amount")}</TableHead>
+                    <TableHead>{t("admin.status")}</TableHead>
+                    <TableHead>{t("admin.date")}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>

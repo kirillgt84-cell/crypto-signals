@@ -101,7 +101,7 @@ describe('Dashboard Integration', () => {
 
     await waitFor(() => {
       // Dashboard has no "Dashboard" heading, check for main content instead
-      expect(screen.getByText('SHORT TERM POINTS')).toBeInTheDocument()
+      expect(screen.getByText('entryLevels.shortTermPoints')).toBeInTheDocument()
     }, { timeout: 3000 })
   })
 
@@ -119,7 +119,7 @@ describe('Dashboard Integration', () => {
     render(<Dashboard />)
 
     await waitFor(() => {
-      expect(screen.getByText('BTC')).toBeInTheDocument()
+      expect(screen.getByDisplayValue('BTC')).toBeInTheDocument()
     }, { timeout: 3000 })
   })
 

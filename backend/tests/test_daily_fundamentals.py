@@ -19,22 +19,22 @@ class TestInterpretMvrv:
     def test_undervalued(self):
         status, desc = interpret_mvrv(0.8)
         assert status == "UNDERvalued"
-        assert "накопления" in desc
+        assert "Accumulation" in desc
 
     def test_fair(self):
         status, desc = interpret_mvrv(1.5)
         assert status == "FAIR"
-        assert "Справедливая" in desc
+        assert "Fair" in desc
 
     def test_overvalued(self):
         status, desc = interpret_mvrv(2.5)
         assert status == "OVERvalued"
-        assert "Переоценен" in desc
+        assert "Overvalued" in desc
 
     def test_bubble(self):
         status, desc = interpret_mvrv(4.0)
         assert status == "BUBBLE"
-        assert "Пузырь" in desc
+        assert "Bubble" in desc
 
     def test_boundary_exactly_one(self):
         status, _ = interpret_mvrv(1.0)
@@ -84,22 +84,22 @@ class TestInterpretFunding:
     def test_long_overheat(self):
         status, desc = interpret_funding(0.002)
         assert status == "LONG_OVERHEAT"
-        assert "Лонги" in desc
+        assert "Longs" in desc
 
     def test_short_overheat(self):
         status, desc = interpret_funding(-0.002)
         assert status == "SHORT_OVERHEAT"
-        assert "Шорты" in desc
+        assert "Shorts" in desc
 
     def test_neutral_positive(self):
         status, desc = interpret_funding(0.0005)
         assert status == "NEUTRAL"
-        assert "Нейтрально" in desc
+        assert "Neutral" in desc
 
     def test_neutral_negative(self):
         status, desc = interpret_funding(-0.0005)
         assert status == "NEUTRAL"
-        assert "Нейтрально" in desc
+        assert "Neutral" in desc
 
     def test_boundary_exactly_0_001(self):
         status, _ = interpret_funding(0.001)

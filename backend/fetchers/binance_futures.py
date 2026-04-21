@@ -162,35 +162,35 @@ class BinanceFuturesFetcher:
             return {
                 "status": "long_buildup",
                 "signal": "bullish",
-                "description": "OI↑ Цена↑ — Накопление лонгов. Крупные игроки покупают, толпа шортит. Сильный сигнал для лонга.",
+                "description": "OI↑ Price↑ — Long accumulation. Smart money buying, crowd shorting. Strong long signal.",
                 "color": "green"
             }
         elif oi_up and price_down:
             return {
                 "status": "short_buildup",
                 "signal": "bearish", 
-                "description": "OI↑ Цена↓ — Накопление шортов. Крупные продают толпе. Сильный сигнал для шорта.",
+                "description": "OI↑ Price↓ — Short accumulation. Smart money selling to crowd. Strong short signal.",
                 "color": "red"
             }
         elif oi_down and price_up:
             return {
                 "status": "short_liquidation",
                 "signal": "caution",
-                "description": "OI↓ Цена↑ — Разгрузка шортов (short squeeze). Слабый тренд, осторожно.",
+                "description": "OI↓ Price↑ — Short unwinding (short squeeze). Weak trend, caution.",
                 "color": "yellow"
             }
         elif oi_down and price_down:
             return {
                 "status": "long_liquidation",
                 "signal": "caution",
-                "description": "OI↓ Цена↓ — Разгрузка лонгов. Слабый рынок, возможен отскок.",
+                "description": "OI↓ Price↓ — Long unwinding. Weak market, bounce possible.",
                 "color": "yellow"
             }
         else:
             return {
                 "status": "neutral",
                 "signal": "neutral",
-                "description": "Нейтральная динамика. Ожидание пробоя.",
+                "description": "Neutral dynamics. Waiting for breakout.",
                 "color": "gray"
             }
     

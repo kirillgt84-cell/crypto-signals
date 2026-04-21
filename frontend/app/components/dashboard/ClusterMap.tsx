@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { Layers, Flame } from 'lucide-react';
+import { useLanguage } from '../../context/LanguageContext';
 
 interface Cluster {
   price: number;
@@ -18,6 +19,7 @@ interface ClusterData {
 }
 
 export default function ClusterMap({ data }: { data: ClusterData }) {
+  const { t } = useLanguage();
   const maxVolume = Math.max(...data.clusters.map(c => c.total), 1);
   const currentPrice = data.clusters[Math.floor(data.clusters.length / 2)]?.price || data.poc;
   
@@ -66,8 +68,8 @@ export default function ClusterMap({ data }: { data: ClusterData }) {
 
       {/* Price Scale Header */}
       <div className="flex items-center justify-between text-xs text-gray-500 mb-2 px-2">
-        <span>Price Level</span>
-        <span>Volume</span>
+        <span>{t("clusterMap.priceLevel")}</span>
+        <span>{t("clusterMap.volume")}</span>
       </div>
 
       {/* Cluster Bars */}

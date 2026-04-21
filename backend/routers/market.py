@@ -324,7 +324,7 @@ async def get_checklist(
         checks['oi_signal'] = {
             'passed': oi_signal in ['strong_bullish', 'bullish', 'strong_bearish', 'bearish'] and oi_signal != 'neutral',
             'value': oi_data.get('analysis', {}).get('status', 'neutral'),
-            'description': 'OI + Price комбинация',
+            'description': 'OI + Price combination',
             'weight': 'required'
         }
         if checks['oi_signal']['passed']:
@@ -337,7 +337,7 @@ async def get_checklist(
         checks['cvd_confirmation'] = {
             'passed': cvd_match,
             'value': f"CVD: {cvd_interp}",
-            'description': 'CVD подтверждает направление',
+            'description': 'CVD confirms direction',
             'weight': 'required'
         }
         if checks['cvd_confirmation']['passed']:
@@ -350,7 +350,7 @@ async def get_checklist(
         checks['cluster_clear'] = {
             'passed': has_clusters,
             'value': f"POC: {clusters_data.get('poc', 'N/A')}",
-            'description': 'Данные профиля объема доступны',
+            'description': 'Volume profile data available',
             'weight': 'required'
         }
         if checks['cluster_clear']['passed']:
@@ -363,7 +363,7 @@ async def get_checklist(
         checks['ema_position'] = {
             'passed': ema_ok,
             'value': f"{trend} ({distance_50}%)",
-            'description': 'Цена у EMA50 (pullback)',
+            'description': 'Price at EMA50 (pullback)',
             'weight': 'preferred'
         }
         if checks['ema_position']['passed']:
@@ -375,7 +375,7 @@ async def get_checklist(
         checks['funding_normal'] = {
             'passed': funding_ok,
             'value': f"{funding*100:.4f}%",
-            'description': 'Funding не экстремальный',
+            'description': 'Funding not extreme',
             'weight': 'background'
         }
         if checks['funding_normal']['passed']:
@@ -386,19 +386,19 @@ async def get_checklist(
         
         if required_passed == 3 and score >= 6:
             recommendation = "STRONG_BUY"
-            action = "ВХОД РАЗРЕШЕН"
+            action = "ENTRY ALLOWED"
             color = "green"
         elif required_passed == 3 and score >= 4:
             recommendation = "BUY"
-            action = "ВХОД (внимание)"
+            action = "ENTRY (caution)"
             color = "yellow"
         elif required_passed == 3:
             recommendation = "CAUTION"
-            action = "ОСТОРОЖНО"
+            action = "CAUTION"
             color = "orange"
         else:
             recommendation = "WAIT"
-            action = "ОЖИДАНИЕ"
+            action = "WAIT"
             color = "red"
         
         return clean_json({

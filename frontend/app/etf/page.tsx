@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { useLanguage } from "../context/LanguageContext"
 import Link from "next/link"
 import { ArrowLeft, TrendingUp, TrendingDown, DollarSign, Bitcoin, Activity, Loader2 } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -85,6 +86,7 @@ function CustomTooltip({ active, payload, label }: any) {
 }
 
 export default function EtfPage() {
+  const { t } = useLanguage()
   const [summary, setSummary] = useState<any>(null)
   const [latest, setLatest] = useState<{ date: string; flows: LatestFlow[] } | null>(null)
   const [loading, setLoading] = useState(true)
@@ -278,7 +280,7 @@ export default function EtfPage() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Fund</TableHead>
+                    <TableHead>{t("etf.fund")}</TableHead>
                     <TableHead className="text-right">AUM</TableHead>
                     <TableHead className="text-right">BTC Held</TableHead>
                     <TableHead className="text-right">Avg BTC Price</TableHead>
@@ -347,7 +349,7 @@ export default function EtfPage() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Fund</TableHead>
+                    <TableHead>{t("etf.fund")}</TableHead>
                     <TableHead className="text-right">Flow</TableHead>
                     <TableHead className="text-right">BTC Held</TableHead>
                     <TableHead className="text-right">Avg Price</TableHead>

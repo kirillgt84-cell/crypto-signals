@@ -152,7 +152,7 @@ describe("OrderBook", () => {
     render(<OrderBook symbol="BTC" loading={false} />)
 
     await waitFor(() => {
-      expect(screen.getByText("Order book unavailable")).toBeInTheDocument()
+      expect(screen.getByText("orderBook.unavailable")).toBeInTheDocument()
     })
   })
 

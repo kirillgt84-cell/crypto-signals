@@ -1,5 +1,5 @@
 """
-Расширенная логика интерпретации OI с учетом объема
+Advanced OI interpretation logic with volume considerations
 """
 
 print("DEBUG: oi_interpreter loaded with change percentages support")
@@ -10,14 +10,14 @@ def interpret_oi_advanced(
     volume_change_pct: float
 ) -> dict:
     """
-    Расширенная логика с тремя переменными
+    Advanced logic with three variables
     
     Returns:
         dict: status, signal, description, action_recommendation
     """
     print(f"DEBUG interpret: oi={oi_change_pct}, price={price_change_pct}, vol={volume_change_pct}")
     
-    # Определяем направления
+    # Determine directions
     oi_up = oi_change_pct > 1.0
     oi_down = oi_change_pct < -1.0
     oi_flat = not oi_up and not oi_down
@@ -26,164 +26,164 @@ def interpret_oi_advanced(
     price_down = price_change_pct < -0.5
     price_flat = not price_up and not price_down
     
-    volume_up = volume_change_pct > 10  # Объем вырос более чем на 10%
+    volume_up = volume_change_pct > 10  # Volume increased more than 10%
     volume_flat = abs(volume_change_pct) <= 10
     
-    # 1. OI растет, цена растет, объем растет (или на месте)
+    # 1. OI rising, price rising, volume rising (or flat)
     if oi_up and price_up:
         return {
             "status": "long_buildup",
             "signal": "strong_bullish",
             "strength": 5,
-            "description": "OI↑ Цена↑ Объем↑ — Крупные игроки покупают, толпа шортит.",
-            "detailed": "Рано или поздно толпа будет закрывать шорты по стопам, что будет провоцировать дальнейший рост цены. Устойчивый восходящий тренд, сильный рынок.",
-            "action": "Рассматривать покупки (лонг)",
-            "tactic": "Не входить против тренда. Ждать откаты к EMA20/50 для входа в лонг.",
+            "description": "OI↑ Price↑ Volume↑ — Smart money buying, crowd shorting.",
+            "detailed": "Eventually the crowd will close shorts at stops, pushing price higher. Sustainable uptrend, strong market.",
+            "action": "Consider long entries",
+            "tactic": "Don't fight the trend. Wait for pullbacks to EMA20/50 to enter long.",
             "color": "#22c55e",  # green-500
             "oi_change_pct": oi_change_pct,
             "price_change_pct": price_change_pct,
             "volume_change_pct": volume_change_pct
         }
     
-    # 2. OI растет, цена падает, объем растет (или на месте)
+    # 2. OI rising, price falling, volume rising (or flat)
     if oi_up and price_down:
         return {
             "status": "short_buildup",
             "signal": "strong_bearish",
             "strength": 5,
-            "description": "OI↑ Цена↓ Объем↑ — Крупные игроки распродают позицию толпе.",
-            "detailed": "Толпа покупает, но скоро они будут закрываться по стопам, что толкнет цену вниз еще больше. Устойчивый нисходящий тренд, сильный рынок.",
-            "action": "Рассматривать продажи (шорт)",
-            "tactic": "Входить в шорт на отскоки к сопротивлению. Не ловить падающий нож.",
+            "description": "OI↑ Price↓ Volume↑ — Smart money distributing to the crowd.",
+            "detailed": "The crowd is buying, but soon they will be stopped out, pushing price even lower. Sustainable downtrend, strong market.",
+            "action": "Consider short entries",
+            "tactic": "Enter short on bounces to resistance. Don't catch a falling knife.",
             "color": "#ef4444",  # red-500
             "oi_change_pct": oi_change_pct,
             "price_change_pct": price_change_pct,
             "volume_change_pct": volume_change_pct
         }
     
-    # 3. OI падает, цена растет (разгрузка) - Вариант А и Б
+    # 3. OI falling, price rising (unwinding) - Variant A & B
     if oi_down and price_up:
         if volume_up:
-            # Вариант Б: Разгрузка предыдущего падающего тренда
+            # Variant B: Unwinding of previous downtrend
             return {
                 "status": "short_covering",
                 "signal": "caution_bullish",
                 "strength": 3,
-                "description": "OI↓ Цена↑ (Вариант Б) — Разгрузка предыдущего падающего тренда.",
-                "detailed": "Умные деньги фиксируют прибыль по предыдущим шортам, толпа кроет убыток. Разворот по OI совпадает с началом коррекции.",
-                "action": "Рассматривать покупки (лонг)",
-                "tactic": "Ожидается продолжение коррекции или разворот. Входить после подтверждения пробоя.",
+                "description": "OI↓ Price↑ (Variant B) — Unwinding of previous downtrend.",
+                "detailed": "Smart money taking profit on previous shorts, crowd covering losses. OI reversal coincides with correction beginning.",
+                "action": "Consider long entries",
+                "tactic": "Continuation of correction or reversal expected. Enter after breakout confirmation.",
                 "color": "#eab308",  # yellow-500
                 "oi_change_pct": oi_change_pct,
                 "price_change_pct": price_change_pct,
                 "volume_change_pct": volume_change_pct
             }
         else:
-            # Вариант А: Разгрузка в конце восходящего движения
+            # Variant A: Distribution at end of uptrend
             return {
                 "status": "long_distribution",
                 "signal": "weak_bearish",
                 "strength": 2,
-                "description": "OI↓ Цена↑ (Вариант А) — Разгрузка в конце восходящего движения.",
-                "detailed": "Крупные игроки фиксируют прибыль, закрывая лонги. Толпа закрывает продажи по стопам. Слабый рынок.",
-                "action": "Рассматривать продажи (шорт)",
-                "tactic": "Ожидается падение. Не входить в лонг на этой фазе.",
+                "description": "OI↓ Price↑ (Variant A) — Distribution at end of uptrend.",
+                "detailed": "Big players taking profit, closing longs. Crowd closing sells at stops. Weak market.",
+                "action": "Consider short entries",
+                "tactic": "Decline expected. Do not enter long on this phase.",
                 "color": "#f97316",  # orange-500
                 "oi_change_pct": oi_change_pct,
                 "price_change_pct": price_change_pct,
                 "volume_change_pct": volume_change_pct
             }
     
-    # 4. OI падает, цена падает - Вариант А и Б
+    # 4. OI falling, price falling - Variant A & B
     if oi_down and price_down:
         if volume_up:
-            # Вариант А: Разгрузка в конце нисходящего движения
+            # Variant A: Unwinding at end of downtrend
             return {
                 "status": "short_covering_bottom",
                 "signal": "potential_bottom",
                 "strength": 3,
-                "description": "OI↓ Цена↓ (Вариант А) — Разгрузка в конце нисходящего движения.",
-                "detailed": "Крупные игроки фиксируют прибыль, закрывая шорты. Толпа закрывает покупки по стопам. Слабый рынок, ожидается рост.",
-                "action": "Рассматривать покупки (лонг)",
-                "tactic": "Ждать признаков разворота. Входить после формирования дна.",
-                "color": "#22c55e",  # green-500 (потенциальное дно)
+                "description": "OI↓ Price↓ (Variant A) — Unwinding at end of downtrend.",
+                "detailed": "Big players taking profit, closing shorts. Crowd closing buys at stops. Weak market, growth expected.",
+                "action": "Consider long entries",
+                "tactic": "Wait for reversal signs. Enter after bottom formation.",
+                "color": "#22c55e",  # green-500 (potential bottom)
                 "oi_change_pct": oi_change_pct,
                 "price_change_pct": price_change_pct,
                 "volume_change_pct": volume_change_pct
             }
         else:
-            # Вариант Б: Разгрузка предыдущего растущего тренда
+            # Variant B: Unwinding of previous uptrend
             return {
                 "status": "long_distribution_cont",
                 "signal": "caution_bearish",
                 "strength": 2,
-                "description": "OI↓ Цена↓ (Вариант Б) — Разгрузка предыдущего растущего тренда.",
-                "detailed": "Разворот по OI совпадает с началом коррекции. Умные деньги фиксируют прибыль по предыдущим лонгам, толпа кроет убыток.",
-                "action": "Рассматривать продажи (шорт)",
-                "tactic": "Ожидается продолжение коррекции или разворот. Не покупать на падении.",
+                "description": "OI↓ Price↓ (Variant B) — Unwinding of previous uptrend.",
+                "detailed": "OI reversal coincides with correction beginning. Smart money taking profit on previous longs, crowd covering losses.",
+                "action": "Consider short entries",
+                "tactic": "Continuation of correction or reversal expected. Don't buy the dip.",
                 "color": "#ef4444",  # red-500
                 "oi_change_pct": oi_change_pct,
                 "price_change_pct": price_change_pct,
                 "volume_change_pct": volume_change_pct
             }
     
-    # 5. OI не меняется
+    # 5. OI flat
     if oi_flat:
         return {
             "status": "neutral",
             "signal": "neutral",
             "strength": 1,
-            "description": "OI→ (не меняется) — Недостаточно данных для анализа.",
-            "detailed": "OI стагнирует. Дальнейший ход цены под вопросом. Не анализируем.",
-            "action": "Не торговать",
-            "tactic": "Ждать движения OI и цены для формирования сигнала.",
+            "description": "OI→ (flat) — Insufficient data for analysis.",
+            "detailed": "OI stagnating. Further price movement uncertain. No analysis.",
+            "action": "No trade",
+            "tactic": "Wait for OI and price movement to form a signal.",
             "color": "#9ca3af",  # gray-400
             "oi_change_pct": oi_change_pct,
             "price_change_pct": price_change_pct,
             "volume_change_pct": volume_change_pct
         }
     
-    # 6. OI растет, цена боковик (накопление)
+    # 6. OI rising, price flat (accumulation)
     if oi_up and price_flat:
         return {
             "status": "accumulation_phase",
             "signal": "watchlist",
             "strength": 4,
-            "description": "OI↑ Цена↔ — Происходит накопление позиций.",
-            "detailed": "Крупные игроки накапливают позицию пока цена в боковике. Конфликт между быками и медведями.",
-            "action": "Ждать пробоя диапазона",
-            "tactic": "Ждем пробой на повышенном объеме и торгуем в его сторону. Если накопление в тренде - торгуем продолжение. Диапазон станет зоной поддержки/сопротивления.",
+            "description": "OI↑ Price↔ — Accumulation phase underway.",
+            "detailed": "Big players accumulating while price is flat. Conflict between bulls and bears.",
+            "action": "Wait for range breakout",
+            "tactic": "Wait for breakout on elevated volume and trade in its direction. If accumulation in trend - trade continuation. Range will become support/resistance zone.",
             "color": "#3b82f6",  # blue-500
             "oi_change_pct": oi_change_pct,
             "price_change_pct": price_change_pct,
             "volume_change_pct": volume_change_pct
         }
     
-    # 7. OI падает, цена боковик (распределение)
+    # 7. OI falling, price flat (distribution)
     if oi_down and price_flat:
         return {
             "status": "distribution_phase",
             "signal": "watchlist",
             "strength": 4,
-            "description": "OI↓ Цена↔ — Фаза распределения.",
-            "detailed": "Крупные игроки распределяют позиции пока цена в боковике. Перетекание позиций от профи к толпе.",
-            "action": "Ждать пробоя границ диапазона",
-            "tactic": "Предпочтительнее торговать в разворот тренда. Диапазон станет зоной поддержки/сопротивления после выхода цены.",
+            "description": "OI↓ Price↔ — Distribution phase.",
+            "detailed": "Big players distributing while price is flat. Positions flowing from pros to the crowd.",
+            "action": "Wait for range boundary breakout",
+            "tactic": "Prefer trading trend reversal. Range will become support/resistance after price exits.",
             "color": "#8b5cf6",  # violet-500
             "oi_change_pct": oi_change_pct,
             "price_change_pct": price_change_pct,
             "volume_change_pct": volume_change_pct
         }
     
-    # По умолчанию
+    # Default
     return {
         "status": "neutral",
         "signal": "neutral",
         "strength": 1,
-        "description": "НЕЙТРАЛЬНАЯ ДИНАМИКA - DEPLOY TEST.",
-        "detailed": "Недостаточно данных для четкой интерпретации. Рынок в неопределенности.",
-        "action": "Не торговать",
-        "tactic": "Ожидание формирования четкого паттерна OI + Price + Volume.",
+        "description": "NEUTRAL DYNAMICS - DEPLOY TEST.",
+        "detailed": "Insufficient data for clear interpretation. Market in uncertainty.",
+        "action": "No trade",
+        "tactic": "Waiting for clear OI + Price + Volume pattern to form.",
         "color": "#9ca3af",  # gray-400
         "oi_change_pct": oi_change_pct,
         "price_change_pct": price_change_pct,

@@ -4,19 +4,19 @@ describe('API Helper Functions', () => {
   describe('getRSIInterpretation', () => {
     it('returns overbought for RSI > 72 on 1H', () => {
       const result = getRSIInterpretation(75, '60')
-      expect(result.text).toContain('Перекуплен')
+      expect(result.text).toContain('Overbought')
       expect(result.color).toBe('text-red-500')
     })
 
     it('returns oversold for RSI < 28 on 1H', () => {
       const result = getRSIInterpretation(25, '60')
-      expect(result.text).toContain('Перепродан')
+      expect(result.text).toContain('Oversold')
       expect(result.color).toBe('text-emerald-500')
     })
 
     it('returns neutral for RSI between thresholds', () => {
       const result = getRSIInterpretation(50, '60')
-      expect(result.text).toContain('Нейтрально')
+      expect(result.text).toContain('Neutral')
       expect(result.color).toBe('text-amber-500')
     })
 
@@ -24,61 +24,61 @@ describe('API Helper Functions', () => {
       const m15 = getRSIInterpretation(73, '15')
       const h1 = getRSIInterpretation(73, '60')
       
-      expect(m15.text).toContain('Нейтрально') // 73 < 75 for M15
-      expect(h1.text).toContain('Перекуплен') // 73 > 72 for 1H
+      expect(m15.text).toContain('Neutral') // 73 < 75 for M15
+      expect(h1.text).toContain('Overbought') // 73 > 72 for 1H
     })
   })
 
   describe('getMACDInterpretation', () => {
     it('returns bullish when MACD > signal and positive', () => {
       const result = getMACDInterpretation(100, 50, '60')
-      expect(result.text).toContain('Бычий')
+      expect(result.text).toContain('Bullish')
       expect(result.color).toBe('text-emerald-500')
     })
 
     it('returns bearish when MACD < signal and negative', () => {
       const result = getMACDInterpretation(-100, -50, '60')
-      expect(result.text).toContain('Медвежий')
+      expect(result.text).toContain('Bearish')
       expect(result.color).toBe('text-red-500')
     })
 
     it('returns crossing up when MACD > signal but negative', () => {
       const result = getMACDInterpretation(-50, -100, '60')
-      expect(result.text).toContain('Пересечение вверх')
+      expect(result.text).toContain('Crossing up')
     })
 
     it('returns crossing down when MACD < signal but positive', () => {
       const result = getMACDInterpretation(50, 100, '60')
-      expect(result.text).toContain('Пересечение вниз')
+      expect(result.text).toContain('Crossing down')
     })
   })
 
   describe('getFundingInterpretation', () => {
     it('returns extreme long bias for funding > 0.03', () => {
       const result = getFundingInterpretation(0.05, '60')
-      expect(result.text).toContain('Экстремальный лонг')
+      expect(result.text).toContain('Extreme long')
       expect(result.color).toBe('text-red-500')
     })
 
     it('returns longs pay for funding > 0.01', () => {
       const result = getFundingInterpretation(0.015, '60')
-      expect(result.text).toContain('Лонги платят')
+      expect(result.text).toContain('Longs pay')
     })
 
     it('returns extreme short bias for funding < -0.03', () => {
       const result = getFundingInterpretation(-0.05, '60')
-      expect(result.text).toContain('Экстремальный шорт')
+      expect(result.text).toContain('Extreme short')
       expect(result.color).toBe('text-emerald-500')
     })
 
     it('returns shorts pay for funding < -0.01', () => {
       const result = getFundingInterpretation(-0.015, '60')
-      expect(result.text).toContain('Шорты платят')
+      expect(result.text).toContain('Shorts pay')
     })
 
     it('returns balanced for funding near 0', () => {
       const result = getFundingInterpretation(0.005, '60')
-      expect(result.text).toContain('Сбалансировано')
+      expect(result.text).toContain('Balanced')
     })
   })
 })

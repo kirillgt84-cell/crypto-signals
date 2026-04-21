@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useMemo } from "react"
 import { useSidebar } from "@/hooks/useSidebar"
+import { useLanguage } from "../context/LanguageContext"
 import { hierarchy, treemap as d3Treemap } from "d3-hierarchy"
 import { cn } from "@/lib/utils"
 import { ArrowLeft } from "lucide-react"
@@ -76,6 +77,7 @@ function computeLayout(items: HeatmapItem[], width: number, height: number) {
 }
 
 export default function HeatmapClient({ initialData }: { initialData: HeatmapItem[] }) {
+  const { t } = useLanguage()
   const { collapsed: sidebarCollapsed, toggle: toggleSidebar } = useSidebar()
   const [timeframe, setTimeframe] = useState("m15")
   const [sector, setSector] = useState("all")
@@ -255,9 +257,9 @@ export default function HeatmapClient({ initialData }: { initialData: HeatmapIte
         {hovered && (
           <div className="mt-3 p-3 bg-muted border border-border rounded text-xs text-muted-foreground flex flex-wrap gap-x-6 gap-y-1">
             <span className="font-bold text-amber-400">{hovered.symbol}</span>
-            <span>Price: ${hovered.price.toFixed(hovered.price < 1 ? 4 : 2)}</span>
+            <span>{t("heatmap.priceLabel")}: ${hovered.price.toFixed(hovered.price < 1 ? 4 : 2)}</span>
             <span>24h: {hovered.price_change_pct > 0 ? "+" : ""}{hovered.price_change_pct.toFixed(2)}%</span>
-            <span>Vol Δ: {hovered.volume_change_pct > 0 ? "+" : ""}{hovered.volume_change_pct.toFixed(1)}%</span>
+            <span>{t("heatmap.volDelta")}: {hovered.volume_change_pct > 0 ? "+" : ""}{hovered.volume_change_pct.toFixed(1)}%</span>
             <span>OI: {hovered.oi >= 1e6 ? `${(hovered.oi / 1e6).toFixed(1)}M` : hovered.oi >= 1e3 ? `${(hovered.oi / 1e3).toFixed(1)}K` : hovered.oi.toFixed(0)}</span>
             <span className="text-slate-500">{hovered.category}</span>
           </div>

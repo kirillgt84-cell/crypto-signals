@@ -196,7 +196,7 @@ async def get_composite(symbol: str):
         }
         values.append(momentum_norm)
         weights.append(0.30)
-        interpretation["market_momentum"] = "Рыночный импульс 24ч"
+        interpretation["market_momentum"] = "24h Market Momentum"
     
     if not weights:
         raise HTTPException(status_code=404, detail="Fundamental data not available yet")

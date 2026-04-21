@@ -381,7 +381,7 @@ async def get_yield_dashboard():
             active_signals.append({
                 "level": "WARNING",
                 "title": "Yield Curve Inverted",
-                "message": f"{matches[0].period_name if matches else 'Unknown'} был похож ({matches[0].similarity_score:.0f}%)" if matches else "",
+                "message": f"{matches[0].period_name if matches else 'Unknown'} was similar ({matches[0].similarity_score:.0f}%)" if matches else "",
             })
         if recession.get("probability_12m", 0) > 40:
             active_signals.append({

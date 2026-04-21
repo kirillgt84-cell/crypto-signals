@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { Target, TrendingUp, TrendingDown, AlertTriangle, ArrowUp, ArrowDown } from 'lucide-react';
+import { useLanguage } from '../../context/LanguageContext';
 
 interface LevelsData {
   timeframe?: string;
@@ -27,6 +28,7 @@ interface LevelsData {
 }
 
 export default function LevelsPanel({ data }: { data: LevelsData }) {
+  const { t } = useLanguage();
   const { liquidation_levels, ema_levels } = data;
   const isBullishTrend = ema_levels.trend === 'bullish';
   const isBearishTrend = ema_levels.trend === 'bearish';
@@ -199,7 +201,7 @@ export default function LevelsPanel({ data }: { data: LevelsData }) {
         {liquidation_levels.funding_rate > 0.0001 && (
           <div className="mt-2 flex items-center gap-2 text-xs text-yellow-400">
             <AlertTriangle className="w-3 h-3" />
-            <span>High funding - caution for longs</span>
+            <span>{t("levelsPanel.highFunding")}</span>
           </div>
         )}
       </div>

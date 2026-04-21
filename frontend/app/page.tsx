@@ -208,7 +208,7 @@ function OIAnalysisCards({ data, loading, timeframe }: { data: MarketData; loadi
         loading={loading}
       />
       <MetricCard
-        title="Futures Volume"
+        title={t("dashboard.futuresVolume")}
         value={formatVolumeUSD((data?.volume || 0) * (data?.price || 0))}
         subvalue={data?.volume_change !== undefined && data?.volume_change !== 0 ? `${data.volume_change >= 0 ? "+" : ""}${data.volume_change.toFixed(2)}% (${formatTfLabel(timeframe)})` : `${formatTfLabel(timeframe)} volume`}
         trend={data?.volume_change > 0 ? "Rising" : data?.volume_change < 0 ? "Falling" : "Stable"}
@@ -217,7 +217,7 @@ function OIAnalysisCards({ data, loading, timeframe }: { data: MarketData; loadi
         loading={loading}
       />
       <MetricCard
-        title="Spot Volume"
+        title={t("dashboard.spotVolume")}
         value={formatVolumeUSD((data?.spot_volume || 0) * (data?.price || 0))}
         subvalue={data?.spot_volume_change !== undefined && data?.spot_volume_change !== 0 ? `${data.spot_volume_change >= 0 ? "+" : ""}${data.spot_volume_change.toFixed(2)}% (${formatTfLabel(timeframe)})` : `${formatTfLabel(timeframe)} volume`}
         trend={data?.spot_volume_change > 0 ? "Rising" : data?.spot_volume_change < 0 ? "Falling" : "Stable"}
@@ -226,7 +226,7 @@ function OIAnalysisCards({ data, loading, timeframe }: { data: MarketData; loadi
         loading={loading}
       />
       <MetricCard
-        title="CVD"
+        title={t("dashboard.cvd")}
         value={`${(data?.cvd || 0) > 0 ? "+" : ""}${((data?.cvd || 0) / 1e6).toFixed(2)} mln`}
         subvalue={getCVDInterpretation(data?.cvd || 0, data?.cvd_change || 0).text}
         trend={(data?.cvd || 0) > 0 ? "Buying" : (data?.cvd || 0) < 0 ? "Selling" : "Neutral"}
@@ -240,6 +240,7 @@ function OIAnalysisCards({ data, loading, timeframe }: { data: MarketData; loadi
 
 // Chart Legend Component
 function ChartLegend({ data, loading }: { data: MarketData; loading: boolean }) {
+  const { t } = useLanguage()
   if (loading) {
     return (
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 p-4 bg-muted/30 rounded-lg">
@@ -260,21 +261,21 @@ function ChartLegend({ data, loading }: { data: MarketData; loading: boolean }) 
   return (
     <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 p-4 bg-muted/30 rounded-lg">
       <div>
-        <p className="text-xs text-muted-foreground">Price</p>
+        <p className="text-xs text-muted-foreground">{t("dashboard.price")}</p>
         <p className="font-mono font-medium">${price > 0 ? price.toLocaleString(undefined, {maximumFractionDigits: decimals}) : "--"}</p>
       </div>
       <div>
-        <p className="text-xs text-muted-foreground">OI Value</p>
+        <p className="text-xs text-muted-foreground">{t("dashboard.oiValue")}</p>
         <p className="font-mono font-medium">{formatVolumeUSD((data?.oi || 0) * (data?.price || 0))}</p>
       </div>
       <div>
-        <p className="text-xs text-muted-foreground">To EMA 20</p>
+        <p className="text-xs text-muted-foreground">{t("dashboard.toEma20")}</p>
         <p className={cn("font-mono font-medium", distanceToEMA20 >= 0 ? "text-emerald-500" : "text-red-500")}>
           {distanceToEMA20 >= 0 ? "+" : ""}{distanceToEMA20.toFixed(2)}%
         </p>
       </div>
       <div>
-        <p className="text-xs text-muted-foreground">To EMA 50</p>
+        <p className="text-xs text-muted-foreground">{t("dashboard.toEma50")}</p>
         <p className={cn("font-mono font-medium", distanceToEMA50 >= 0 ? "text-emerald-500" : "text-red-500")}>
           {distanceToEMA50 >= 0 ? "+" : ""}{distanceToEMA50.toFixed(2)}%
         </p>
@@ -351,7 +352,7 @@ function SecondaryIndicators({ data, timeframe, loading }: { data: MarketData; t
       {/* RSI */}
       <Card className="bg-gradient-to-t from-purple-500/5 to-card">
         <CardHeader className="pb-2">
-          <CardDescription>RSI (14)</CardDescription>
+          <CardDescription>{t("dashboard.rsi")} (14)</CardDescription>
           {loading ? (
             <div className="h-7 flex items-center">
               <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
@@ -369,7 +370,7 @@ function SecondaryIndicators({ data, timeframe, loading }: { data: MarketData; t
       {/* MACD */}
       <Card className="bg-gradient-to-t from-blue-500/5 to-card">
         <CardHeader className="pb-2">
-          <CardDescription>MACD</CardDescription>
+          <CardDescription>{t("dashboard.macd")}</CardDescription>
           {loading ? (
             <div className="h-7 flex items-center">
               <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
@@ -387,7 +388,7 @@ function SecondaryIndicators({ data, timeframe, loading }: { data: MarketData; t
       {/* Exchange Flows */}
       <Card className="bg-gradient-to-t from-pink-500/5 to-card">
         <CardHeader className="pb-2">
-          <CardDescription>Exchange Flows (24h)</CardDescription>
+          <CardDescription>{t("dashboard.exchangeFlows")}</CardDescription>
           {loading ? (
             <div className="h-7 flex items-center">
               <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
@@ -709,10 +710,10 @@ export default function Dashboard() {
         setOiAnalysis({
           status: "long_buildup",
           signal: "strong_bullish",
-          description: "OI↑ Цена↑ Объем↑ — Крупные игроки покупают, толпа шортит.",
-          detailed: "Рано или поздно толпа закроет шорты по стопам — цена пойдет вверх.",
-          action: "Рассматривать покупки (лонг)",
-          tactic: "Искать точки входа на ретестах. Ложный пробой или откат на 1-3%.",
+          description: "OI↑ Price↑ Volume↑ — Smart money buying, crowd shorting.",
+          detailed: "Eventually the crowd will close shorts at stops — price will go up.",
+          action: "Consider long entries",
+          tactic: "Look for entry points on retests. Fakeout or 1-3% pullback.",
           color: "#22c55e",
           strength: 4
         })
@@ -780,7 +781,7 @@ export default function Dashboard() {
             <ThemeToggle />
             <Button variant="outline" size="sm" className="hidden sm:flex items-center gap-2">
               <Wallet className="h-4 w-4" />
-              Connect
+              {t("dashboard.connect")}
             </Button>
           </div>
         </header>

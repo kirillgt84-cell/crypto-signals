@@ -11,11 +11,12 @@ jest.mock("framer-motion", () => ({
 describe("FundamentalsCard", () => {
   beforeEach(() => {
     jest.clearAllMocks()
+    ;(global.fetch as jest.Mock).mockReset()
   })
 
   it("renders loading state", () => {
     render(<FundamentalsCard symbol="BTC" loading={true} />)
-    expect(screen.getByText("FUNDAMENTAL HEALTH")).toBeInTheDocument()
+    expect(screen.getByText("fundamentals.title")).toBeInTheDocument()
   })
 
   it("shows not available message when all requests fail", async () => {
@@ -23,7 +24,7 @@ describe("FundamentalsCard", () => {
     render(<FundamentalsCard symbol="BTC" loading={false} />)
 
     await waitFor(() => {
-      expect(screen.getByText("Fundamental data not available yet")).toBeInTheDocument()
+      expect(screen.getByText("fundamentals.notAvailable")).toBeInTheDocument()
     })
   })
 
@@ -34,7 +35,7 @@ describe("FundamentalsCard", () => {
           ok: true,
           json: () => Promise.resolve({
             value: 1.5,
-            raw_data: { interpretation: "FAIR", description: "Справедливая цена" },
+            raw_data: { interpretation: "FAIR", description: "Fair price" },
             computed_at: "2026-04-14T00:00:00",
           }),
         })
@@ -44,7 +45,7 @@ describe("FundamentalsCard", () => {
           ok: true,
           json: () => Promise.resolve({
             value: 0.3,
-            raw_data: { interpretation: "HOPE", description: "🟡 Надежда" },
+            raw_data: { interpretation: "HOPE", description: "🟡 Hope" },
             computed_at: "2026-04-14T00:00:00",
           }),
         })
@@ -61,9 +62,9 @@ describe("FundamentalsCard", () => {
               funding: { value: 0.0001, normalized: 0.1, weight: 0.3 },
             },
             interpretation: {
-              mvrv: "Справедливая цена",
-              nupl: "🟡 Надежда",
-              funding: "Нейтрально",
+              mvrv: "Fair price",
+              nupl: "🟡 Hope",
+              funding: "Neutral",
             },
           }),
         })
@@ -80,8 +81,8 @@ describe("FundamentalsCard", () => {
     // MVRV and NUPL appear in both main metrics and mini grid
     expect(screen.getAllByText("MVRV").length).toBeGreaterThanOrEqual(1)
     expect(screen.getAllByText("NUPL").length).toBeGreaterThanOrEqual(1)
-    expect(screen.getByText("Справедливая рыночная оценка. Риски сбалансированы, тренд может продолжаться.")).toBeInTheDocument()
-    expect(screen.getByText("Эйфория. Большинство инвесторов в прибыли, рынок начинает перегреваться.")).toBeInTheDocument()
+    expect(screen.getByText("Fair market valuation. Risks are balanced, trend may continue.")).toBeInTheDocument()
+    expect(screen.getByText("Euphoria. Most investors in profit, market beginning to overheat.")).toBeInTheDocument()
   })
 
   it("renders ETH fallback with market momentum", async () => {
@@ -103,8 +104,8 @@ describe("FundamentalsCard", () => {
               market_momentum: { value: 0.05, normalized: 0.167, weight: 0.3 },
             },
             interpretation: {
-              funding: "Нейтрально",
-              market_momentum: "Рыночный импульс 24ч",
+              funding: "Neutral",
+              market_momentum: "24h Market Momentum",
             },
           }),
         })
@@ -118,8 +119,8 @@ describe("FundamentalsCard", () => {
       expect(screen.getByText("NEUTRAL")).toBeInTheDocument()
     })
 
-    expect(screen.getByText("24h Momentum")).toBeInTheDocument()
-    expect(screen.getByText("Умеренный рыночный импульс")).toBeInTheDocument()
+    expect(screen.getByText("fundamentals.momentum24h")).toBeInTheDocument()
+    expect(screen.getByText("fundamentals.moderateMomentum")).toBeInTheDocument()
   })
 
   it("shows bullish sentiment in green", async () => {

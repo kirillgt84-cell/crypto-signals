@@ -5,6 +5,7 @@ import { motion } from "framer-motion"
 import { Activity, AlertCircle, Loader2, Info } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { cn } from "@/lib/utils"
+import { useLanguage } from "../context/LanguageContext"
 
 const API_BASE_URL = "https://crypto-signals-production-ff4c.up.railway.app/api/v1"
 
@@ -39,31 +40,31 @@ interface FundamentalsCardProps {
 }
 
 const METRIC_INFO: Record<string, string> = {
-  mvrv: "Market Value to Realized Value — отношение рыночной капитализации к реализованной. Показывает, насколько актив переоценён или недооценён.",
-  nupl: "Net Unrealized Profit/Loss — доля нераспределённой прибыли/убытка. Отражает эмоциональное состояние рынка.",
-  funding: "Плата за удержание маржинальных позиций. Положительная = переплата лонгистов, отрицательная = шортистов.",
-  market_momentum: "Изменение цены за 24 часа. Отражает краткосрочный рыночный импульс.",
+  mvrv: "Market Value to Realized Value — ratio of market cap to realized cap. Shows if an asset is overvalued or undervalued.",
+  nupl: "Net Unrealized Profit/Loss — share of unrealized profit/loss. Reflects market emotional state.",
+  funding: "Fee for holding margin positions. Positive = longs overpay, negative = shorts overpay.",
+  market_momentum: "Price change over 24 hours. Reflects short-term market impulse.",
 }
 
 function getMVRVInterpretation(value: number): string {
-  if (value < 1.0) return "Актив сильно недооценён. Традиционно считается зоной накопления и низкого риска для длинных позиций."
-  if (value < 2.5) return "Справедливая рыночная оценка. Риски сбалансированы, тренд может продолжаться."
-  if (value < 3.5) return "Переоценка рынка. Возможна коррекция, рекомендуется фиксация части прибыли."
-  return "Экстремальная переоценка (пузырь). Высокая вероятность глубокой коррекции."
+  if (value < 1.0) return "Asset is deeply undervalued. Traditionally considered an accumulation zone with low risk for long positions."
+  if (value < 2.5) return "Fair market valuation. Risks are balanced, trend may continue."
+  if (value < 3.5) return "Market overvaluation. Correction possible, consider partial profit taking."
+  return "Extreme overvaluation (bubble). High probability of deep correction."
 }
 
 function getNUPLInterpretation(value: number): string {
-  if (value < -0.25) return "Рынок в капитуляции. Нереализованные убытки доминируют. Часто формируется локальное дно."
-  if (value < 0) return "Фаза надежды. Инвесторы выходят в ноль, настроения осторожно позитивные."
-  if (value < 0.25) return "Умеренная прибыль. Здоровый бычий тренд без признаков перегрева."
-  if (value < 0.5) return "Эйфория. Большинство инвесторов в прибыли, рынок начинает перегреваться."
-  return "Экстремальная жадность. Нереализованная прибыль находится на пике, риск разворота максимален."
+  if (value < -0.25) return "Market in capitulation. Unrealized losses dominate. Often forms a local bottom."
+  if (value < 0) return "Hope phase. Investors breaking even, sentiment cautiously positive."
+  if (value < 0.25) return "Moderate profit. Healthy bull trend without overheating signs."
+  if (value < 0.5) return "Euphoria. Most investors in profit, market beginning to overheat."
+  return "Extreme greed. Unrealized profit at peak, reversal risk is maximal."
 }
 
 function getFundingInterpretation(value: number): string {
-  if (value < -0.001) return "Шорты переплачивают. Давление на shorts может спровоцировать short squeeze."
-  if (value <= 0.001) return "Нейтральное финансирование. Баланс между лонгами и шортами."
-  return "Лонгисты переплачивают. Перегретый рынок лонгов, высок риск ликвидации."
+  if (value < -0.001) return "Shorts overpay. Pressure on shorts may trigger a short squeeze."
+  if (value <= 0.001) return "Neutral funding. Balance between longs and shorts."
+  return "Longs overpay. Overheated long market, high liquidation risk."
 }
 
 function ZoneCard({
@@ -138,6 +139,7 @@ function ZoneBar({
 }
 
 export function FundamentalsCard({ symbol, loading: parentLoading }: FundamentalsCardProps) {
+  const { t } = useLanguage()
   const [data, setData] = useState<FundamentalsData>({ mvrv: null, nupl: null, composite: null })
   const [loading, setLoading] = useState(true)
 
@@ -174,7 +176,7 @@ export function FundamentalsCard({ symbol, loading: parentLoading }: Fundamental
         <CardHeader className="pb-2">
           <CardTitle className="flex items-center gap-2 text-sm font-bold tracking-widest text-foreground">
             <Activity className="w-4 h-4" />
-            FUNDAMENTAL HEALTH
+            {t("fundamentals.title")}
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -194,13 +196,13 @@ export function FundamentalsCard({ symbol, loading: parentLoading }: Fundamental
         <CardHeader className="pb-2">
           <CardTitle className="flex items-center gap-2 text-sm font-bold tracking-widest text-foreground">
             <Activity className="w-4 h-4" />
-            FUNDAMENTAL HEALTH
+            {t("fundamentals.title")}
           </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <AlertCircle className="w-4 h-4" />
-            <span>Fundamental data not available yet</span>
+            <span>{t("fundamentals.notAvailable")}</span>
           </div>
         </CardContent>
       </Card>
@@ -235,7 +237,7 @@ export function FundamentalsCard({ symbol, loading: parentLoading }: Fundamental
       <CardHeader className="pb-2">
         <CardTitle className="flex items-center gap-2 text-sm font-bold tracking-widest text-foreground">
           <Activity className="w-4 h-4" />
-          FUNDAMENTAL HEALTH
+          {t("fundamentals.title")}
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -252,7 +254,7 @@ export function FundamentalsCard({ symbol, loading: parentLoading }: Fundamental
             <span className="text-2xl leading-none">{getSentimentEmoji(sentiment)}</span>
             <div>
               <div className={cn("text-base font-bold", getSentimentColor(sentiment))}>{sentiment}</div>
-              <div className="text-xs text-slate-500">Composite score</div>
+              <div className="text-xs text-slate-500">{t("fundamentals.compositeScore")}</div>
             </div>
           </div>
           <div className="text-right">
@@ -326,14 +328,14 @@ export function FundamentalsCard({ symbol, loading: parentLoading }: Fundamental
             transition={{ delay: 0.12 }}
           >
             <ZoneCard
-              title="24h Momentum"
+              title={t("fundamentals.momentum24h")}
               valueFormatted={`${(comps.market_momentum.value * 100).toFixed(1)}%`}
               interpretation={
                 comps.market_momentum.value > 0.10
-                  ? "Сильный бычий импульс"
+                  ? t("fundamentals.strongBullishMomentum")
                   : comps.market_momentum.value < -0.10
-                  ? "Сильный медвежий импульс"
-                  : "Умеренный рыночный импульс"
+                  ? t("fundamentals.strongBearishMomentum")
+                  : t("fundamentals.moderateMomentum")
               }
               infoKey="market_momentum"
             >
@@ -359,7 +361,7 @@ export function FundamentalsCard({ symbol, loading: parentLoading }: Fundamental
             transition={{ delay: 0.18 }}
           >
             <ZoneCard
-              title="Funding Rate"
+              title={t("fundamentals.fundingRate")}
               valueFormatted={`${(comps.funding.value * 100).toFixed(3)}%`}
               interpretation={getFundingInterpretation(comps.funding.value)}
               infoKey="funding"

@@ -29,13 +29,13 @@ describe('Sidebar', () => {
   it('renders Dashboard link', () => {
     render(<Sidebar collapsed={false} onToggle={mockToggle} />)
     
-    expect(screen.getByText('Dashboard')).toBeInTheDocument()
+    expect(screen.getByText('sidebar.dashboard')).toBeInTheDocument()
   })
 
   it('does not show Admin link for non-admin', () => {
     render(<Sidebar collapsed={false} onToggle={mockToggle} />)
     
-    expect(screen.queryByText('Admin')).not.toBeInTheDocument()
+    expect(screen.queryByText('sidebar.admin')).not.toBeInTheDocument()
   })
 
   it('calls onToggle when collapse button clicked', () => {

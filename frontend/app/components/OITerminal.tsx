@@ -3,6 +3,7 @@
 import { motion } from "framer-motion"
 import { Activity, BarChart3, DollarSign, Radio } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
+import { useLanguage } from "../context/LanguageContext"
 
 interface OIAnalysis {
   status: string
@@ -30,13 +31,14 @@ const COLORS = {
 }
 
 export function OITerminal({ analysis, loading }: OITerminalProps) {
+  const { t } = useLanguage()
   if (loading) {
     return (
       <Card className="bg-gradient-to-t from-amber-500/5 to-card h-full flex flex-col">
         <CardHeader className="pb-2">
           <CardTitle className="flex items-center gap-2 text-sm font-bold tracking-widest text-foreground">
             <Radio className="w-4 h-4 animate-pulse" />
-            OI ANALYSIS
+            {t("oiPanel.title")}
           </CardTitle>
         </CardHeader>
         <CardContent className="flex-1 flex flex-col justify-center">
@@ -54,22 +56,22 @@ export function OITerminal({ analysis, loading }: OITerminalProps) {
     if (!analysis?.description) return "flat"
     const desc = analysis.description.toLowerCase()
     if (type === "oi") {
-      if (desc.includes("oi↑") || desc.includes("растет") || desc.includes("набир")) return "up"
-      if (desc.includes("oi↓") || desc.includes("падает") || desc.includes("фиксируют")) return "down"
+      if (desc.includes("oi↑") || desc.includes("rising") || desc.includes("accumulat") || desc.includes("buildup")) return "up"
+      if (desc.includes("oi↓") || desc.includes("falling") || desc.includes("distribution") || desc.includes("unwinding")) return "down"
       if (analysis.oi_change_pct && analysis.oi_change_pct > 1) return "up"
       if (analysis.oi_change_pct && analysis.oi_change_pct < -1) return "down"
       return "flat"
     }
     if (type === "price") {
-      if (desc.includes("цена↑") || desc.includes("рост") || desc.includes("восход")) return "up"
-      if (desc.includes("цена↓") || desc.includes("паден") || desc.includes("нисход")) return "down"
+      if (desc.includes("price↑") || desc.includes("rising") || desc.includes("uptrend") || desc.includes("growth")) return "up"
+      if (desc.includes("price↓") || desc.includes("falling") || desc.includes("downtrend") || desc.includes("decline")) return "down"
       if (analysis.price_change_pct && analysis.price_change_pct > 0.5) return "up"
       if (analysis.price_change_pct && analysis.price_change_pct < -0.5) return "down"
       return "flat"
     }
     if (type === "volume") {
-      if (desc.includes("объем↑") || desc.includes("высокий") || desc.includes("повышенный")) return "up"
-      if (desc.includes("объем↓") || desc.includes("низкий")) return "down"
+      if (desc.includes("volume↑") || desc.includes("vol↑") || desc.includes("high") || desc.includes("elevated")) return "up"
+      if (desc.includes("volume↓") || desc.includes("vol↓") || desc.includes("low")) return "down"
       if (analysis.volume_change_pct && analysis.volume_change_pct > 10) return "up"
       if (analysis.volume_change_pct && analysis.volume_change_pct < -10) return "down"
       return "flat"
@@ -191,7 +193,7 @@ export function OITerminal({ analysis, loading }: OITerminalProps) {
 
             <div className="border-t border-dashed border-muted-foreground/30 pt-3">
               <div className="flex items-center gap-2 mb-3">
-                <span className="text-xs text-muted-foreground font-bold">STATUS:</span>
+                <span className="text-xs text-muted-foreground font-bold">{t("oiPanel.status")}:</span>
                 <span
                   className="text-xs font-bold tracking-wider px-2 py-0.5 rounded"
                   style={{
@@ -230,7 +232,7 @@ export function OITerminal({ analysis, loading }: OITerminalProps) {
           </div>
         ) : (
           <div className="flex-1 flex items-center justify-center text-muted-foreground text-sm">
-            Select symbol to initialize...
+            {t("oiPanel.selectSymbol")}
           </div>
         )}
       </CardContent>

@@ -457,7 +457,7 @@ export default function YieldCurveClient() {
                         <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
                         <XAxis dataKey="tenor" tick={{ fontSize: 12 }} />
                         <YAxis tick={{ fontSize: 12 }} domain={["auto", "auto"]} tickFormatter={(v) => `${v}%`} />
-                        <Tooltip formatter={(value: number) => [`${value.toFixed(2)}%`, "Yield"]} />
+                        <Tooltip formatter={(value: number) => [`${value.toFixed(2)}%`, t("yieldCurve.yield")]} />
                         <ReferenceLine y={0} stroke="#6b7280" strokeDasharray="3 3" />
                         <Line
                           type="monotone"
@@ -470,7 +470,7 @@ export default function YieldCurveClient() {
                       </LineChart>
                     </ResponsiveContainer>
                   ) : (
-                    <div className="text-center py-12 text-muted-foreground">No yield data available</div>
+                    <div className="text-center py-12 text-muted-foreground">{t("yieldCurve.noData")}</div>
                   )}
                 </CardContent>
               </Card>
@@ -544,7 +544,7 @@ export default function YieldCurveClient() {
                         )}
                       </>
                     ) : (
-                      <p className="text-sm text-muted-foreground">No historical analogs found</p>
+                      <p className="text-sm text-muted-foreground">{t("yieldCurve.noAnalogs")}</p>
                     )}
                   </CardContent>
                 </Card>

@@ -101,7 +101,7 @@ export default function MacroClient() {
     .map((c) => ({
       date: new Date(c.date).toLocaleDateString(),
       "BTC ↔ SPX": c.btc_spx_correlation != null ? Number(c.btc_spx_correlation).toFixed(2) : null,
-      "Gold ↔ BTC": c.gold_btc_correlation != null ? Number(c.gold_btc_correlation).toFixed(2) : null,
+      [t("macro.goldBtcLabel")]: c.gold_btc_correlation != null ? Number(c.gold_btc_correlation).toFixed(2) : null,
       VIX: c.vix_level != null ? Number(c.vix_level).toFixed(1) : null,
     }));
 
@@ -246,7 +246,7 @@ export default function MacroClient() {
                         <Tooltip formatter={(value: number, name: string) => [`${value?.toFixed(1)}%`, name]} />
                         <Legend />
                         <Line type="monotone" dataKey="spx" name="S&P 500" stroke="#6366f1" strokeWidth={2} dot={false} />
-                        <Line type="monotone" dataKey="gold" name="Gold" stroke="#f59e0b" strokeWidth={2} dot={false} />
+                        <Line type="monotone" dataKey="gold" name={t("macro.gold")} stroke="#f59e0b" strokeWidth={2} dot={false} />
                       </LineChart>
                     </ResponsiveContainer>
                   ) : (
@@ -321,7 +321,7 @@ export default function MacroClient() {
                         <Legend />
                         <ReferenceLine y={0} stroke="#6b7280" strokeDasharray="3 3" />
                         <Area type="monotone" dataKey="BTC ↔ SPX" stroke="#6366f1" fill="url(#gradBtcSpx)" strokeWidth={2} dot={false} />
-                        <Area type="monotone" dataKey="Gold ↔ BTC" stroke="#f59e0b" fill="url(#gradGoldBtc)" strokeWidth={2} dot={false} />
+                        <Area type="monotone" dataKey={t("macro.goldBtcLabel")} stroke="#f59e0b" fill="url(#gradGoldBtc)" strokeWidth={2} dot={false} />
                       </AreaChart>
                     </ResponsiveContainer>
                   ) : (

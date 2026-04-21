@@ -39,10 +39,6 @@ jest.mock("next-themes", () => ({
   useTheme: () => ({ theme: "dark", setTheme: jest.fn() }),
 }))
 
-jest.mock("../../context/LanguageContext", () => ({
-  useLanguage: () => ({ language: "en", setLanguage: jest.fn() }),
-}))
-
 describe("ProfilePage", () => {
   beforeEach(() => {
     jest.clearAllMocks()
@@ -66,7 +62,7 @@ describe("ProfilePage", () => {
     render(<ProfilePage />)
     const input = screen.getByDisplayValue("testuser")
     fireEvent.change(input, { target: { value: "newname" } })
-    fireEvent.click(screen.getByRole("button", { name: /Save Profile/i }))
+    fireEvent.click(screen.getByRole("button", { name: /common.save/i }))
     await waitFor(() => {
       expect(mockUpdateProfile).toHaveBeenCalledWith({ username: "newname", avatar_url: null })
     })

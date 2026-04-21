@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from "react"
 import { Search, Star, Flame, TrendingUp, TrendingDown, ArrowLeft } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
+import { useLanguage } from "../context/LanguageContext"
 
 interface FuturesCoin {
   symbol: string
@@ -28,6 +29,7 @@ export default function CoinSearch({ onSelect, currentSymbol = "BTCUSDT" }: Coin
   const [loading, setLoading] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
+  const { t } = useLanguage()
 
   useEffect(() => {
     const favs = localStorage.getItem("fav_coins")
@@ -151,7 +153,7 @@ export default function CoinSearch({ onSelect, currentSymbol = "BTCUSDT" }: Coin
           onChange={(e) => setQuery(e.target.value)}
           onFocus={() => setIsOpen(true)}
           onKeyDown={handleKeyDown}
-          placeholder="Search..."
+          placeholder={t("coinSearch.placeholder")}
           className="w-full pl-10 pr-14 py-2 bg-transparent text-foreground font-mono text-sm placeholder-muted-foreground focus:outline-none"
         />
         {!isOpen && selectedCoin && (
@@ -174,7 +176,7 @@ export default function CoinSearch({ onSelect, currentSymbol = "BTCUSDT" }: Coin
             className="absolute top-full left-0 right-0 mt-1 bg-card border border-slate-700 rounded shadow-2xl max-h-96 overflow-y-auto z-50"
           >
             <div className="px-3 py-2 text-[10px] text-slate-500 border-b border-slate-800 flex justify-between items-center">
-              <span>{query ? `Found: ${filteredCoins.length}` : "Top by liquidity"}</span>
+              <span>{query ? `${t("coinSearch.found")}: ${filteredCoins.length}` : t("coinSearch.topByLiquidity")}</span>
               <span className="text-slate-600">Binance Futures</span>
               {loading && <span className="text-amber-500 animate-pulse">⟳</span>}
             </div>

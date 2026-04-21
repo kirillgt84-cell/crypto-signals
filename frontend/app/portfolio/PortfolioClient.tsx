@@ -458,7 +458,7 @@ export default function PortfolioClient() {
                 {t("portfolio.title")}
               </h1>
               <p className="text-muted-foreground text-sm mt-1">
-                Track positions across exchanges and wallets
+                {t("portfolio.trackPositions")}
               </p>
             </div>
             <div className="flex items-center gap-2">
@@ -475,10 +475,10 @@ export default function PortfolioClient() {
                   <DialogContent className="sm:max-w-md">
                     <DialogHeader>
                       <DialogDescription className="sr-only">Dialog content</DialogDescription>
-                      <DialogTitle>Portfolio Alerts</DialogTitle>
+                      <DialogTitle>{t("portfolio.alertsTitle")}</DialogTitle>
                     </DialogHeader>
                     <div className="space-y-2 py-2 max-h-[400px] overflow-auto">
-                      {alerts.length === 0 && <p className="text-sm text-muted-foreground">No alerts</p>}
+                      {alerts.length === 0 && <p className="text-sm text-muted-foreground">{t("portfolio.noAlerts")}</p>}
                       {alerts.map((alert: any) => (
                         <div key={alert.id} className={cn("p-3 rounded-lg border text-sm", !alert.is_read ? "bg-amber-500/5 border-amber-200" : "bg-muted/30")}>
                           <p className="font-medium">{alert.asset_symbol}</p>
@@ -492,7 +492,7 @@ export default function PortfolioClient() {
                         await fetch(`${API_BASE_URL}/portfolio/alerts/read`, { method: "POST", headers });
                         fetchAlerts();
                       }}>
-                        Mark all read
+                        {t("portfolio.markAllRead")}
                       </Button>
                     </DialogFooter>
                   </DialogContent>
@@ -500,58 +500,57 @@ export default function PortfolioClient() {
               )}
               <Button variant="outline" size="sm" onClick={handleSync} disabled={syncing}>
                 <RefreshCw className={cn("h-4 w-4 mr-1", syncing && "animate-spin")} />
-                {syncing ? t("common.loading") : "Sync"}
+                {syncing ? t("common.loading") : t("portfolio.sync")}
               </Button>
               <Dialog open={connectOpen} onOpenChange={setConnectOpen}>
                 <DialogTrigger asChild>
                   <Button size="sm">
                     <LinkIcon className="h-4 w-4 mr-1" />
-                    Connect Binance
+                    {t("portfolio.connectBinance")}
                   </Button>
                 </DialogTrigger>
                 <DialogContent className="sm:max-w-md">
                   <DialogHeader>
                       <DialogDescription className="sr-only">Dialog content</DialogDescription>
-                    <DialogTitle>Connect Binance (Read-Only)</DialogTitle>
+                    <DialogTitle>{t("portfolio.connectBinanceTitle")}</DialogTitle>
                   </DialogHeader>
                   <div className="space-y-4 py-2">
                     <div className="text-xs text-muted-foreground bg-amber-500/10 text-amber-600 p-3 rounded">
-                      Your API keys are encrypted with AES-256 and never exposed to the frontend after saving.
-                      Create a read-only API key on Binance with permissions for the selected market type.
+                      {t("portfolio.apiKeyWarning")}
                     </div>
                     <div className="space-y-2">
-                      <Label>Market Type</Label>
+                      <Label>{t("portfolio.marketType")}</Label>
                       <Select value={marketType} onValueChange={setMarketType}>
                         <SelectTrigger>
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="futures">Futures</SelectItem>
-                          <SelectItem value="spot">Spot</SelectItem>
+                          <SelectItem value="futures">{t("portfolio.futures")}</SelectItem>
+                          <SelectItem value="spot">{t("portfolio.spot")}</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
                     <div className="space-y-2">
-                      <Label>API Key</Label>
+                      <Label>{t("portfolio.apiKey")}</Label>
                       <Input
                         value={apiKey}
                         onChange={(e) => setApiKey(e.target.value)}
-                        placeholder="Paste your Binance API key"
+                        placeholder={t("portfolio.apiKey")}
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label>API Secret</Label>
+                      <Label>{t("portfolio.apiSecret")}</Label>
                       <Input
                         type="password"
                         value={apiSecret}
                         onChange={(e) => setApiSecret(e.target.value)}
-                        placeholder="Paste your Binance API secret"
+                        placeholder={t("portfolio.apiSecret")}
                       />
                     </div>
                   </div>
                   <DialogFooter>
                     <Button onClick={handleConnect} disabled={loading || !apiKey.trim() || !apiSecret.trim()}>
-                      {loading ? t("common.loading") : "Connect & Sync"}
+                      {loading ? t("common.loading") : t("portfolio.connectAndSync")}
                     </Button>
                   </DialogFooter>
                 </DialogContent>
@@ -568,7 +567,7 @@ export default function PortfolioClient() {
               </p>
             </div>
             <div className="rounded-xl border bg-card p-5">
-              <p className="text-xs text-muted-foreground uppercase tracking-wider">Unrealized PnL</p>
+              <p className="text-xs text-muted-foreground uppercase tracking-wider">{t("portfolio.unrealizedPnl")}</p>
               <p className={cn("text-2xl font-bold mt-1 flex items-center gap-1", pnlPositive ? "text-green-500" : "text-red-500")}>
                 {pnlPositive ? <TrendingUp className="h-5 w-5" /> : <TrendingDown className="h-5 w-5" />}
                 {totalPnl >= 0 ? "+" : ""}
@@ -576,7 +575,7 @@ export default function PortfolioClient() {
               </p>
             </div>
             <div className="rounded-xl border bg-card p-5">
-              <p className="text-xs text-muted-foreground uppercase tracking-wider">Assets</p>
+              <p className="text-xs text-muted-foreground uppercase tracking-wider">{t("portfolio.assets")}</p>
               <p className="text-2xl font-bold mt-1">{summary?.total_assets || 0}</p>
             </div>
           </div>
@@ -597,7 +596,7 @@ export default function PortfolioClient() {
                 {tab === "assets" && t("portfolio.positions")}
                 {tab === "allocation" && t("portfolio.allocation")}
                 {tab === "models" && t("portfolio.models")}
-                {tab === "history" && "History"}
+                {tab === "history" && t("portfolio.history")}
               </button>
             ))}
           </div>
@@ -648,21 +647,21 @@ export default function PortfolioClient() {
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label>Side</Label>
+                        <Label>{t("portfolio.side")}</Label>
                         <Select value={manualSide} onValueChange={setManualSide}>
                           <SelectTrigger>
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="LONG">Long</SelectItem>
-                            <SelectItem value="SHORT">Short</SelectItem>
+                            <SelectItem value="LONG">{t("portfolio.long")}</SelectItem>
+                            <SelectItem value="SHORT">{t("portfolio.short")}</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
                     </div>
                     <DialogFooter>
                       <Button onClick={handleAddManual} disabled={loading}>
-                        {loading ? t("common.loading") : "Add Asset"}
+                        {loading ? t("common.loading") : t("portfolio.addAsset")}
                       </Button>
                     </DialogFooter>
                   </DialogContent>
@@ -680,7 +679,7 @@ export default function PortfolioClient() {
                         <TableHead className="text-right">{t("portfolio.currentPrice")}</TableHead>
                         <TableHead className="text-right">{t("portfolio.pnl")}</TableHead>
                         <TableHead className="text-right">{t("portfolio.value")}</TableHead>
-                        <TableHead>Side</TableHead>
+                        <TableHead>{t("portfolio.side")}</TableHead>
                         <TableHead className="w-[40px]"></TableHead>
                       </TableRow>
                     </TableHeader>
@@ -691,7 +690,7 @@ export default function PortfolioClient() {
                             <div className="flex items-center gap-2">
                               {asset.asset_symbol}
                               <span className="text-xs text-muted-foreground">
-                                {asset.system_category || asset.user_category_name || "Other"}
+                                {asset.system_category || asset.user_category_name || t("portfolio.other")}
                               </span>
                             </div>
                           </TableCell>
@@ -730,9 +729,9 @@ export default function PortfolioClient() {
               ) : (
                 <div className="text-center py-16 border rounded-xl bg-muted/20">
                   <Wallet className="h-10 w-10 mx-auto text-muted-foreground mb-3" />
-                  <p className="text-muted-foreground">No assets yet</p>
+                  <p className="text-muted-foreground">{t("portfolio.noAssets")}</p>
                   <p className="text-xs text-muted-foreground mt-1">
-                    Connect Binance or add manual assets to get started
+                    {t("portfolio.connectOrAddAssets")}
                   </p>
                 </div>
               )}
@@ -768,12 +767,12 @@ export default function PortfolioClient() {
                     </RePieChart>
                   </ResponsiveContainer>
                 ) : (
-                  <div className="text-center py-12 text-muted-foreground">No data</div>
+                  <div className="text-center py-12 text-muted-foreground">{t("portfolio.noData")}</div>
                 )}
               </div>
 
               <div className="rounded-xl border bg-card p-6">
-                <h3 className="text-lg font-semibold mb-4">Category Breakdown</h3>
+                <h3 className="text-lg font-semibold mb-4">{t("portfolio.categoryBreakdown")}</h3>
                 <div className="space-y-3">
                   {summary && Object.entries(summary.categories).map(([name, data], i) => (
                     <div key={name} className="flex items-center gap-3">
@@ -809,10 +808,10 @@ export default function PortfolioClient() {
           {activeTab === "history" && (
             <div className="space-y-6">
               <div className="flex items-center justify-between">
-                <h2 className="text-lg font-semibold">Equity Curve</h2>
+                <h2 className="text-lg font-semibold">{t("portfolio.equityCurve")}</h2>
                 <div className="flex items-center gap-2">
-                  <Button size="sm" variant={equityTimeframe === "daily" ? "default" : "outline"} onClick={() => setEquityTimeframe("daily")}>Daily</Button>
-                  <Button size="sm" variant={equityTimeframe === "weekly" ? "default" : "outline"} onClick={() => setEquityTimeframe("weekly")}>Weekly</Button>
+                  <Button size="sm" variant={equityTimeframe === "daily" ? "default" : "outline"} onClick={() => setEquityTimeframe("daily")}>{t("portfolio.daily")}</Button>
+                  <Button size="sm" variant={equityTimeframe === "weekly" ? "default" : "outline"} onClick={() => setEquityTimeframe("weekly")}>{t("portfolio.weekly")}</Button>
                 </div>
               </div>
               <div className="rounded-xl border bg-card p-6">
@@ -828,15 +827,15 @@ export default function PortfolioClient() {
                       <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
                       <XAxis dataKey="date" tick={{fontSize: 12}} />
                       <YAxis tick={{fontSize: 12}} tickFormatter={(v: number) => `$${v?.toLocaleString?.() || v}`} />
-                      <ReTooltip formatter={(value: number, name: string) => [`$${Number(value).toLocaleString(undefined, {minimumFractionDigits: 2})}`, name === "total_notional" ? "Portfolio Value" : name]} />
+                      <ReTooltip formatter={(value: number, name: string) => [`$${Number(value).toLocaleString(undefined, {minimumFractionDigits: 2})}`, name === "total_notional" ? t("portfolio.totalValue") : name]} />
                       <Legend />
-                      <Area type="monotone" dataKey="total_notional" name="Portfolio Value" stroke="#6366f1" fillOpacity={1} fill="url(#colorNotional)" strokeWidth={2} />
-                      <Line type="monotone" dataKey="total_unrealized_pnl" name="Unrealized PnL" stroke="#22c55e" strokeWidth={2} dot={false} />
+                      <Area type="monotone" dataKey="total_notional" name={t("portfolio.totalValue")} stroke="#6366f1" fillOpacity={1} fill="url(#colorNotional)" strokeWidth={2} />
+                      <Line type="monotone" dataKey="total_unrealized_pnl" name={t("portfolio.unrealizedPnl")} stroke="#22c55e" strokeWidth={2} dot={false} />
                     </AreaChart>
                   </ResponsiveContainer>
                 ) : (
                   <div className="text-center py-16 text-muted-foreground">
-                    No history yet. Sync your portfolio to start tracking.
+                    {t("portfolio.noHistory")}
                   </div>
                 )}
               </div>
@@ -848,7 +847,7 @@ export default function PortfolioClient() {
               <div className="flex items-center justify-between">
                 <h2 className="text-lg font-semibold">{t("portfolio.models")}</h2>
                 <Button size="sm" onClick={() => setCustomOpen(true)}>
-                  <Plus className="mr-2 h-4 w-4" /> Create Custom Model
+                  <Plus className="mr-2 h-4 w-4" /> {t("portfolio.createCustomModel")}
                 </Button>
               </div>
 
@@ -900,7 +899,7 @@ export default function PortfolioClient() {
                         className="w-full"
                         onClick={() => handleSelectModel(model.id)}
                       >
-                        {isSelected ? "Selected" : "Select Model"}
+                        {isSelected ? t("portfolio.selected") : t("portfolio.selectModel")}
                       </Button>
                     </div>
                   );
@@ -958,13 +957,13 @@ export default function PortfolioClient() {
               <div className="rounded-xl border bg-card p-6">
                 <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
                   <Settings2 className="h-5 w-5 text-indigo-500" />
-                  Alert Settings
+                  {t("portfolio.alertSettings")}
                 </h3>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   {[
-                    { key: "liquidation", label: "Liquidation Warning", desc: "% distance to liq" },
-                    { key: "pnl_up", label: "PnL Up", desc: "% gain threshold" },
-                    { key: "pnl_down", label: "PnL Down", desc: "% loss threshold" },
+                    { key: "liquidation", label: t("portfolio.liquidationWarning"), desc: t("portfolio.distanceToLiq") },
+                    { key: "pnl_up", label: t("portfolio.pnlUp"), desc: t("portfolio.gainThreshold") },
+                    { key: "pnl_down", label: t("portfolio.pnlDown"), desc: t("portfolio.lossThreshold") },
                   ].map((item) => {
                     const setting = alertSettings.find((s: any) => s.alert_type === item.key);
                     return (
@@ -998,6 +997,7 @@ export default function PortfolioClient() {
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-lg font-semibold flex items-center gap-2">
                     <Bot className="h-5 w-5 text-indigo-500" />
+                    {t("portfolio.aiInsight")}
                     AI Insight
                   </h3>
                   <Button variant="outline" size="sm" onClick={fetchAiInsight}>
@@ -1023,11 +1023,11 @@ export default function PortfolioClient() {
           <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
             <DialogHeader>
                       <DialogDescription className="sr-only">Dialog content</DialogDescription>
-              <DialogTitle>Create Custom Portfolio Model</DialogTitle>
+              <DialogTitle>{t("portfolio.createModelTitle")}</DialogTitle>
             </DialogHeader>
             <div className="space-y-4 py-2">
               <div className="space-y-2">
-                <Label>Model Name</Label>
+                <Label>{t("portfolio.modelName")}</Label>
                 <Input
                   value={customName}
                   onChange={(e) => setCustomName(e.target.value)}
@@ -1035,7 +1035,7 @@ export default function PortfolioClient() {
                 />
               </div>
               <div className="space-y-2">
-                <Label>Description</Label>
+                <Label>{t("portfolio.modelDescription")}</Label>
                 <Input
                   value={customDesc}
                   onChange={(e) => setCustomDesc(e.target.value)}
@@ -1044,7 +1044,7 @@ export default function PortfolioClient() {
               </div>
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <Label>Asset Allocations</Label>
+                  <Label>{t("portfolio.assetAllocations")}</Label>
                   <span className="text-xs text-muted-foreground">
                     Total: {customAssets.reduce((s, a) => s + a.target_weight, 0).toFixed(1)}%
                   </span>
@@ -1077,7 +1077,7 @@ export default function PortfolioClient() {
               <DialogClose asChild>
                 <Button variant="outline">{t("common.cancel")}</Button>
               </DialogClose>
-              <Button onClick={handleCreateCustomModel}>Create Model</Button>
+              <Button onClick={handleCreateCustomModel}>{t("portfolio.createModelTitle")}</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>

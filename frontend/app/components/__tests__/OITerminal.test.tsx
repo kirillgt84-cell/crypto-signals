@@ -14,31 +14,24 @@ jest.mock("framer-motion", () => ({
   },
 }))
 
-jest.mock("../../context/LanguageContext", () => ({
-  useLanguage: () => ({
-    language: "ru",
-    t: (key: string) => key,
-  }),
-}))
-
 describe("OITerminal", () => {
   it("renders loading skeleton", () => {
     render(<OITerminal analysis={null} loading={true} />)
-    expect(screen.getByText("oiTerminal.title")).toBeInTheDocument()
+    expect(screen.getByText("oiPanel.title")).toBeInTheDocument()
   })
 
   it("shows initialize message when no analysis", () => {
     render(<OITerminal analysis={null} loading={false} />)
-    expect(screen.getByText(/Select symbol to initialize/i)).toBeInTheDocument()
+    expect(screen.getByText("oiPanel.selectSymbol")).toBeInTheDocument()
   })
 
   it("renders bullish analysis correctly", () => {
     const analysis = {
       status: "long_buildup",
       signal: "strong_bullish",
-      description: "OI↑ Цена↑ Объем↑ — Крупные игроки покупают.",
-      action: "Рассматривать покупки (лонг)",
-      tactic: "Не входить против тренда.",
+      description: "OI↑ Price↑ Volume↑ — Smart money buying, crowd shorting.",
+      action: "Consider long entries",
+      tactic: "Don't fight the trend. Wait for pullbacks to EMA20/50 to enter long.",
       color: "#22c55e",
       strength: 5,
       oi_change_pct: 5.2,
@@ -48,20 +41,20 @@ describe("OITerminal", () => {
 
     render(<OITerminal analysis={analysis} loading={false} />)
 
-    expect(screen.getByText("MARKET STATE")).toBeInTheDocument()
+    expect(screen.getByText(/oiPanel.status/)).toBeInTheDocument()
     expect(screen.getByText(/LONG BUILDUP/)).toBeInTheDocument()
     expect(screen.getByText(analysis.description)).toBeInTheDocument()
     expect(screen.getByText(analysis.tactic)).toBeInTheDocument()
-    expect(screen.getByText(/РАССМАТРИВАТЬ ПОКУПКИ/)).toBeInTheDocument()
+    expect(screen.getByText(/CONSIDER LONG ENTRIES/)).toBeInTheDocument()
   })
 
   it("renders bearish analysis correctly", () => {
     const analysis = {
       status: "short_buildup",
       signal: "strong_bearish",
-      description: "OI↑ Цена↓ — Накопление шортов.",
-      action: "Рассматривать продажи (шорт)",
-      tactic: "Входить в шорт на отскоки.",
+      description: "OI↑ Price↓ Volume↑ — Smart money distributing to the crowd.",
+      action: "Consider short entries",
+      tactic: "Enter short on bounces to resistance. Don't catch a falling knife.",
       color: "#ef4444",
       strength: 5,
       oi_change_pct: 4.5,
@@ -72,16 +65,16 @@ describe("OITerminal", () => {
     render(<OITerminal analysis={analysis} loading={false} />)
 
     expect(screen.getByText(/SHORT BUILDUP/)).toBeInTheDocument()
-    expect(screen.getByText(/РАССМАТРИВАТЬ ПРОДАЖИ/)).toBeInTheDocument()
+    expect(screen.getByText(/CONSIDER SHORT ENTRIES/)).toBeInTheDocument()
   })
 
   it("renders neutral analysis correctly", () => {
     const analysis = {
       status: "neutral",
       signal: "neutral",
-      description: "OI→ (не меняется) — Недостаточно данных.",
-      action: "Не торговать",
-      tactic: "Ждать движения OI и цены.",
+      description: "OI→ (flat) — Insufficient data for analysis.",
+      action: "No trade",
+      tactic: "Wait for OI and price movement to form a signal.",
       color: "#9ca3af",
       strength: 1,
       oi_change_pct: 0.5,
@@ -92,14 +85,14 @@ describe("OITerminal", () => {
     render(<OITerminal analysis={analysis} loading={false} />)
 
     expect(screen.getByText(/NEUTRAL/)).toBeInTheDocument()
-    expect(screen.getByText("▓▓ НЕ ТОРГОВАТЬ ▓▓")).toBeInTheDocument()
+    expect(screen.getByText("▓▓ NO TRADE ▓▓")).toBeInTheDocument()
   })
 
   it("displays formatted change percentages", () => {
     const analysis = {
       status: "long_buildup",
       signal: "strong_bullish",
-      description: "OI↑ Цена↑",
+      description: "OI↑ Price↑",
       action: "LONG",
       color: "#22c55e",
       strength: 5,

@@ -75,30 +75,30 @@ async def fetch_binance_funding(client: httpx.AsyncClient, symbol: str):
 
 def interpret_mvrv(mvrv: float):
     if mvrv < 1.0:
-        return "UNDERvalued", "Зона накопления"
+        return "UNDERvalued", "Accumulation zone"
     if mvrv < 2.0:
-        return "FAIR", "Справедливая цена"
+        return "FAIR", "Fair price"
     if mvrv < 3.5:
-        return "OVERvalued", "Переоценен"
-    return "BUBBLE", "Пузырь"
+        return "OVERvalued", "Overvalued"
+    return "BUBBLE", "Bubble"
 
 def interpret_nupl(nupl: float):
     if nupl > 0.75:
-        return "EUPHORIA", "🔴 Эйфория"
+        return "EUPHORIA", "🔴 Euphoria"
     if nupl > 0.50:
-        return "BELIEF", "🟠 Вера"
+        return "BELIEF", "🟠 Belief"
     if nupl > 0.25:
-        return "HOPE", "🟡 Надежда"
+        return "HOPE", "🟡 Hope"
     if nupl > 0:
-        return "OPTIMISM", "🟢 Оптимизм"
-    return "CAPITULATION", "🔵 Капитуляция"
+        return "OPTIMISM", "🟢 Optimism"
+    return "CAPITULATION", "🔵 Capitulation"
 
 def interpret_funding(rate: float):
     if rate > 0.001:
-        return "LONG_OVERHEAT", "Лонги перегреты"
+        return "LONG_OVERHEAT", "Longs overheated"
     if rate < -0.001:
-        return "SHORT_OVERHEAT", "Шорты перегреты"
-    return "NEUTRAL", "Нейтрально"
+        return "SHORT_OVERHEAT", "Shorts overheated"
+    return "NEUTRAL", "Neutral"
 
 async def save_metric(db, symbol: str, name: str, value: float, raw_data: dict):
     try:

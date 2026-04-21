@@ -24,25 +24,25 @@ describe("AuthModal", () => {
 
   it("renders login tab by default", () => {
     render(<AuthModal isOpen={true} onClose={mockOnClose} />)
-    expect(screen.getByText("Welcome Back")).toBeInTheDocument()
-    expect(screen.getByPlaceholderText("Email")).toBeInTheDocument()
-    expect(screen.getByRole("button", { name: /sign in/i })).toBeInTheDocument()
+    expect(screen.getByText("authModal.welcomeBack")).toBeInTheDocument()
+    expect(screen.getByPlaceholderText("auth.email")).toBeInTheDocument()
+    expect(screen.getAllByRole("button", { name: /common.signIn/i }).length).toBeGreaterThanOrEqual(1)
   })
 
   it("switches to register tab", () => {
     render(<AuthModal isOpen={true} onClose={mockOnClose} />)
-    fireEvent.click(screen.getByText("Register"))
-    expect(screen.getByRole("heading", { name: /create account/i })).toBeInTheDocument()
-    expect(screen.getByPlaceholderText("Username (optional)")).toBeInTheDocument()
+    fireEvent.click(screen.getByText("auth.createAccount"))
+    expect(screen.getByRole("heading", { name: /authModal.createAccount/i })).toBeInTheDocument()
+    expect(screen.getByPlaceholderText(/profile.username/)).toBeInTheDocument()
   })
 
   it("calls login on submit", async () => {
     mockLogin.mockResolvedValueOnce(undefined)
     render(<AuthModal isOpen={true} onClose={mockOnClose} />)
 
-    fireEvent.change(screen.getByPlaceholderText("Email"), { target: { value: "a@b.com" } })
-    fireEvent.change(screen.getByPlaceholderText("Password"), { target: { value: "password123" } })
-    fireEvent.click(screen.getByRole("button", { name: /sign in/i }))
+    fireEvent.change(screen.getByPlaceholderText("auth.email"), { target: { value: "a@b.com" } })
+    fireEvent.change(screen.getByPlaceholderText("auth.password"), { target: { value: "password123" } })
+    fireEvent.click(screen.getAllByRole("button", { name: /common.signIn/i }).pop()!)
 
     await waitFor(() => {
       expect(mockLogin).toHaveBeenCalledWith("a@b.com", "password123")
@@ -54,9 +54,9 @@ describe("AuthModal", () => {
     mockLogin.mockRejectedValueOnce(new Error("bad creds"))
     render(<AuthModal isOpen={true} onClose={mockOnClose} />)
 
-    fireEvent.change(screen.getByPlaceholderText("Email"), { target: { value: "a@b.com" } })
-    fireEvent.change(screen.getByPlaceholderText("Password"), { target: { value: "password123" } })
-    fireEvent.click(screen.getByRole("button", { name: /sign in/i }))
+    fireEvent.change(screen.getByPlaceholderText("auth.email"), { target: { value: "a@b.com" } })
+    fireEvent.change(screen.getByPlaceholderText("auth.password"), { target: { value: "password123" } })
+    fireEvent.click(screen.getAllByRole("button", { name: /common.signIn/i }).pop()!)
 
     await waitFor(() => {
       expect(screen.getByText("bad creds")).toBeInTheDocument()
@@ -68,10 +68,10 @@ describe("AuthModal", () => {
     mockRegister.mockResolvedValueOnce(undefined)
     render(<AuthModal isOpen={true} onClose={mockOnClose} defaultTab="register" />)
 
-    fireEvent.change(screen.getByPlaceholderText("Email"), { target: { value: "a@b.com" } })
-    fireEvent.change(screen.getByPlaceholderText("Password"), { target: { value: "password123" } })
-    fireEvent.change(screen.getByPlaceholderText("Username (optional)"), { target: { value: "alice" } })
-    fireEvent.click(screen.getByRole("button", { name: /create account/i }))
+    fireEvent.change(screen.getByPlaceholderText("auth.email"), { target: { value: "a@b.com" } })
+    fireEvent.change(screen.getByPlaceholderText("auth.password"), { target: { value: "password123" } })
+    fireEvent.change(screen.getByPlaceholderText(/profile.username/), { target: { value: "alice" } })
+    fireEvent.click(screen.getByRole("button", { name: /authModal.createAccount/i }))
 
     await waitFor(() => {
       expect(mockRegister).toHaveBeenCalledWith("a@b.com", "password123", "alice")
@@ -82,7 +82,7 @@ describe("AuthModal", () => {
   it("triggers oauth for google, twitter, discord", () => {
     render(<AuthModal isOpen={true} onClose={mockOnClose} />)
 
-    fireEvent.click(screen.getByText("Google"))
+    fireEvent.click(screen.getByText("auth.google"))
     expect(mockOAuth).toHaveBeenCalledWith("google")
 
     fireEvent.click(screen.getByText("Twitter"))
@@ -96,7 +96,7 @@ describe("AuthModal", () => {
     const openSpy = jest.spyOn(window, "open").mockImplementation(() => null)
     render(<AuthModal isOpen={true} onClose={mockOnClose} />)
 
-    fireEvent.click(screen.getByText("Telegram"))
+    fireEvent.click(screen.getByText("auth.telegram"))
     expect(openSpy).toHaveBeenCalledWith(
       "https://t.me/your_bot_username?start=auth",
       "_blank",

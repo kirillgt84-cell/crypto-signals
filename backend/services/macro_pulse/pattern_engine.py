@@ -1,7 +1,6 @@
 """
 Historical Pattern Matching Engine
-Поиск исторических аналогий текущей ситуации на рынке
-"""
+Search for historical analogies of the current market situation"""
 
 import numpy as np
 from typing import List, Dict, Tuple, Optional
@@ -14,7 +13,7 @@ logger = logging.getLogger(__name__)
 
 @dataclass
 class MarketState:
-    """Текущее состояние рынка для сравнения"""
+    """Current market status for comparison"""
     timestamp: datetime
     yields: Dict[str, float]
     spreads: Dict[str, float]
@@ -30,7 +29,7 @@ class MarketState:
 
 @dataclass
 class HistoricalMatch:
-    """Результат сопоставления с историческим периодом"""
+    """Result of comparison with the historical period"""
     period_name: str
     start_date: datetime
     end_date: Optional[datetime]
@@ -45,7 +44,7 @@ class HistoricalMatch:
 
 
 class PatternMatchingEngine:
-    """Движок поиска исторических аналогий"""
+    """Historical analogy search engine"""
     
     FEATURE_WEIGHTS = {
         '10y2y_spread': 0.35,
@@ -79,7 +78,7 @@ class PatternMatchingEngine:
                 'dxy_change': 22.0,
             },
             'context': 'Housing bubble, subprime crisis',
-            'narrative': 'Длительная инверсия + пузырь на рынке недвижимости'
+            'narrative': 'Prolonged inversion + housing market bubble'
         },
         {
             'period_name': '2000',
@@ -103,7 +102,7 @@ class PatternMatchingEngine:
                 'dxy_change': 8.0,
             },
             'context': 'Dot-com bubble, tech overvaluation',
-            'narrative': 'Быстрая инверсия + переоценка технологического сектора'
+            'narrative': 'Rapid inversion + technology sector overvaluation'
         },
         {
             'period_name': '1989',
@@ -127,7 +126,7 @@ class PatternMatchingEngine:
                 'dxy_change': 5.0,
             },
             'context': 'S&L crisis, Gulf War buildup',
-            'narrative': 'Банковский кризис + геополитическое напряжение'
+            'narrative': 'Banking crisis + geopolitical tension'
         },
         {
             'period_name': '1978-1980',
@@ -151,7 +150,7 @@ class PatternMatchingEngine:
                 'dxy_change': 15.0,
             },
             'context': 'Volcker shock, stagflation',
-            'narrative': 'Экстремальная инверсия с 20% ставками для борьбы с инфляцией'
+            'narrative': 'Extreme inversion with 20% rates to fight inflation'
         },
         {
             'period_name': '1998',
@@ -175,7 +174,7 @@ class PatternMatchingEngine:
                 'dxy_change': 5.0,
             },
             'context': 'LTCM crisis, Russian default',
-            'narrative': 'Кратковременная инверсия + быстрое вмешательство Fed'
+            'narrative': 'Short-term inversion + quick Fed intervention'
         },
         {
             'period_name': '1966',
@@ -199,7 +198,7 @@ class PatternMatchingEngine:
                 'dxy_change': -2.0,
             },
             'context': 'Credit crunch, soft landing',
-            'narrative': 'Мягкая посадка без рецессии'
+            'narrative': 'Soft landing without recession'
         },
         {
             'period_name': '2019',
@@ -223,7 +222,7 @@ class PatternMatchingEngine:
                 'dxy_change': 5.0,
             },
             'context': 'Pre-COVID, trade wars',
-            'narrative': 'Краткая инверсия перед внешним шоком (пандемия)'
+            'narrative': 'Brief inversion before external shock (pandemic)'
         }
     ]
     
@@ -231,7 +230,7 @@ class PatternMatchingEngine:
         self.cases = self.HISTORICAL_CASES
     
     def calculate_similarity(self, current: MarketState, historical: Dict) -> Tuple[float, List[str], List[str]]:
-        """Расчёт similarity score (0-100)"""
+        """Calculation of similarity score (0-100)"""
         similarities = []
         differences = []
         scores = {}
@@ -246,19 +245,19 @@ class PatternMatchingEngine:
         scores['10y2y'] = score_10y2y
         
         if diff_10y2y < 0.2:
-            similarities.append(f"10Y-2Y спред близок ({current_10y2y:.2f}% vs {hist_avg_10y2y:.2f}%)")
+            similarities.append(f"10Y-2Y spread is close ({current_10y2y:.2f}% vs {hist_avg_10y2y:.2f}%)")
         else:
-            differences.append(f"10Y-2Y спред отличается ({current_10y2y:.2f}% vs {hist_avg_10y2y:.2f}%)")
+            differences.append(f"10Y-2Y spread is different ({current_10y2y:.2f}% vs {hist_avg_10y2y:.2f}%)")
         
         if current.curve_shape.upper() == 'INVERTED' and hist_min_10y2y < 0:
             scores['shape'] = 1.0
-            similarities.append("Инвертированная кривая в обоих случаях")
-        elif current.curve_shape.upper() == 'NORMAL' and hist_min_10y2y > 0:
+            similarities.append("Inverted curve in both cases")
+        elif current.curve_shape.upper() =='NORMAL'and hist_min_10y2y > 0:
             scores['shape'] = 1.0
-            similarities.append("Нормальная кривая в обоих случаях")
+            similarities.append("Normal curve in both cases")
         else:
             scores['shape'] = 0.3
-            differences.append(f"Разная форма кривой: сейчас {current.curve_shape}")
+            differences.append(f"Different curve shape: currently {current.curve_shape}")
         
         current_10y = current.yields.get('10Y', 4.0)
         hist_avg_10y = historical['features']['avg_10y']
@@ -267,9 +266,9 @@ class PatternMatchingEngine:
         scores['rate_level'] = score_rate
         
         if rate_diff < 1.5:
-            similarities.append(f"Похожий уровень ставок ({current_10y:.2f}% vs {hist_avg_10y:.2f}%)")
+            similarities.append(f"Similar bid level ({current_10y:.2f}% vs {hist_avg_10y:.2f}%)")
         else:
-            differences.append(f"Разный уровень ставок: сейчас {current_10y:.2f}% vs {hist_avg_10y:.2f}% исторически")
+            differences.append(f"Different bet level: now {current_10y:.2f}% vs {hist_avg_10y:.2f}% historically")
         
         total_score = (
             scores.get('10y2y', 0.5) * self.FEATURE_WEIGHTS['10y2y_spread'] +
@@ -282,7 +281,7 @@ class PatternMatchingEngine:
         return final_score, similarities, differences
     
     def find_best_matches(self, current: MarketState, n: int = 3, min_similarity: float = 40.0) -> List[HistoricalMatch]:
-        """Поиск N лучших исторических аналогий"""
+        """Search for the N best historical analogies"""
         matches = []
         
         for case in self.cases:
@@ -310,36 +309,35 @@ class PatternMatchingEngine:
         return matches[:n]
     
     def _generate_narrative(self, current: MarketState, historical: Dict, score: float, similarities: List[str]) -> str:
-        """Генерация human-readable описания аналогии"""
+        """Generation of human-readable analogy descriptions"""
         period = historical['period_name']
         context = historical['context']
-        recession = "с рецессией" if historical['recession_followed'] else "без рецессии"
+        recession = "with recession" if historical['recession_followed'] else "no recession"
         
         if score > 75:
-            strength = "Сильное"
+            strength = "Strong"
         elif score > 60:
-            strength = "Умеренное"
+            strength = "Moderate"
         else:
-            strength = "Слабое"
+            strength = "Weak"
         
-        narrative = f"{strength} сходство с {period} ({context}), {recession}."
+        narrative = f"{strength} similarity with {period} ({context}), {recession}."
         
         if similarities:
-            narrative += f" Ключевые параллели: {', '.join(similarities[:2])}."
+            narrative += f" Key parallels: {', '.join(similarities[:2])}."
         
         if historical['recession_followed'] and historical.get('lead_time_months'):
-            narrative += f" Тогда рецессия началась через {historical['lead_time_months']} мес."
+            narrative += f" Then the recession began through {historical['lead_time_months']} months."
         
         return narrative
     
     def get_aggregated_forecast(self, matches: List[HistoricalMatch]) -> Dict:
-        """Агрегация прогнозов на основе топ-N аналогий"""
+        """Aggregation of forecasts based on top-N analogies"""
         if not matches:
-            return {
-                'recession_probability': None,
+            return {'recession_probability': None,
                 'confidence': 'LOW',
                 'sp500_range': None,
-                'narrative': 'Недостаточно данных для аналогии'
+                'narrative': 'Insufficient data for analogy'
             }
         
         total_weight = sum(m.similarity_score for m in matches)
@@ -366,18 +364,17 @@ class PatternMatchingEngine:
         recession_cases = [m for m in matches if m.recession_followed]
         no_recession_cases = [m for m in matches if not m.recession_followed]
         
-        narrative = f"На основе {len(matches)} исторических аналогий: "
+        narrative = f"Based on {len(matches)} historical analogies: "
         if recession_prob > 60:
-            narrative += f"высокая вероятность рецессии ({recession_prob:.0f}%). "
+            narrative += f"high probability of recession ({recession_prob:.0f}%). "
             if recession_cases:
-                narrative += f"Сценарии с рецессией: {', '.join(r.period_name for r in recession_cases[:2])}."
+                narrative += f"Recession scenarios: {', '.join(r.period_name for r in recession_cases[:2])}."
         elif recession_prob > 40:
-            narrative += f"неопределенность (баланс сценариев). "
+            narrative += f"uncertainty (scenario balance). "
         else:
-            narrative += f"склонность к мягкой посадке ({100-recession_prob:.0f}%). "
+            narrative += f"soft landing tendency ({100-recession_prob:.0f}%). "
             if no_recession_cases:
-                narrative += f"Аналоги без рецессии: {', '.join(r.period_name for r in no_recession_cases[:2])}."
-        
+                narrative += f"Analogues without recession: {', '.join(r.period_name for r in no_recession_cases[:2])}."
         return {
             'recession_probability': round(recession_prob, 1),
             'confidence': confidence,
@@ -393,7 +390,7 @@ class PatternMatchingEngine:
 _pattern_engine = None
 
 def get_pattern_engine() -> PatternMatchingEngine:
-    """Получить singleton instance движка"""
+    """Get singleton instance of the engine"""
     global _pattern_engine
     if _pattern_engine is None:
         _pattern_engine = PatternMatchingEngine()

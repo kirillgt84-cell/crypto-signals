@@ -20,6 +20,19 @@ jest.mock('next-themes', () => ({
   ThemeProvider: ({ children }) => children,
 }))
 
+// Mock LanguageContext globally
+jest.mock('./app/context/LanguageContext', () => ({
+  useLanguage: () => ({
+    language: 'en',
+    setLanguage: jest.fn(),
+    t: (key) => key,
+    languages: ['en', 'ru', 'es', 'zh'],
+    languageNames: { en: 'English', ru: 'Русский', es: 'Español', zh: '中文' },
+    languageFlags: { en: '🇺🇸', ru: '🇷🇺', es: '🇪🇸', zh: '🇨🇳' },
+  }),
+  LanguageProvider: ({ children }) => children,
+}))
+
 
 
 // Mock fetch globally

@@ -6,6 +6,7 @@ import { Triangle } from "lucide-react";
 import { useMemo, useState } from "react";
 import { CartesianGrid, Line, LineChart, ResponsiveContainer, XAxis, YAxis, Tooltip } from "recharts";
 import { Toggle } from "@/components/ui/toggle";
+import { useLanguage } from "../../context/LanguageContext";
 
 interface CandleData {
   time: string;
@@ -46,6 +47,7 @@ function calculateYAxisDomain(minValue: number, maxValue: number): [number, numb
 }
 
 const CustomTooltip = ({ active, payload, label }: any) => {
+  const { t } = useLanguage()
   if (active && payload && payload.length) {
     const data = payload[0].payload;
     return (
@@ -53,25 +55,25 @@ const CustomTooltip = ({ active, payload, label }: any) => {
         <p className="text-slate-400 text-xs mb-2">{label}</p>
         <div className="space-y-1 text-xs">
           <div className="flex justify-between gap-4">
-            <span className="text-slate-500">Open:</span>
+            <span className="text-slate-500">{t("chart.open")}:</span>
             <span className="font-mono text-slate-200">${data.open.toFixed(2)}</span>
           </div>
           <div className="flex justify-between gap-4">
-            <span className="text-slate-500">High:</span>
+            <span className="text-slate-500">{t("chart.high")}:</span>
             <span className="font-mono text-slate-200">${data.high.toFixed(2)}</span>
           </div>
           <div className="flex justify-between gap-4">
-            <span className="text-slate-500">Low:</span>
+            <span className="text-slate-500">{t("chart.low")}:</span>
             <span className="font-mono text-slate-200">${data.low.toFixed(2)}</span>
           </div>
           <div className="flex justify-between gap-4">
-            <span className="text-slate-500">Close:</span>
+            <span className="text-slate-500">{t("chart.close")}:</span>
             <span className={data.close >= data.open ? "font-mono text-emerald-400" : "font-mono text-red-400"}>
               ${data.close.toFixed(2)}
             </span>
           </div>
           <div className="flex justify-between gap-4 pt-1 border-t border-slate-700">
-            <span className="text-slate-500">OI:</span>
+            <span className="text-slate-500">{t("chart.oi")}:</span>
             <span className="font-mono text-blue-400">{(data.oi / 1000).toFixed(1)}K</span>
           </div>
         </div>

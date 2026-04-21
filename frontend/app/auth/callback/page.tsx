@@ -3,10 +3,12 @@
 import { Suspense } from "react"
 import { useEffect } from "react"
 import { useSearchParams } from "next/navigation"
+import { useLanguage } from "../../context/LanguageContext"
 
 // This component uses useSearchParams and must be wrapped in Suspense
 function OAuthCallbackHandler() {
   const searchParams = useSearchParams()
+  const { t } = useLanguage()
   
   useEffect(() => {
     const code = searchParams.get("code")
@@ -77,7 +79,7 @@ function OAuthCallbackHandler() {
     <div className="flex items-center justify-center min-h-screen">
       <div className="text-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4" />
-        <p className="text-muted-foreground">Completing authentication...</p>
+        <p className="text-muted-foreground">{t("auth.completingAuth")}</p>
       </div>
     </div>
   )

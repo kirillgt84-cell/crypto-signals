@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, useMemo } from "react"
 import { motion } from "framer-motion"
 import { BookOpen, AlertCircle } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { useLanguage } from "../context/LanguageContext"
 
 interface OrderBookProps {
   symbol: string
@@ -83,17 +84,18 @@ export function OrderBook({ symbol, currentPrice = 0, loading: parentLoading }: 
   const [rawBook, setRawBook] = useState<{ bids: [number, number][]; asks: [number, number][] } | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const { t } = useLanguage()
   const levelCount = ORDER_BOOK_LEVELS
   const rowHeight = Math.max(2, Math.floor((CHART_HEIGHT - MID_HEIGHT) / (levelCount * 2)))
 
   const price = currentPrice > 0 ? currentPrice : (symbol === "BTC" ? 70000 : symbol === "ETH" ? 3500 : 100)
   let stepOptions: StepOption[]
-  if (price >= 20000) stepOptions = [{ label: "Raw", value: 0 }, { label: "$10", value: 10 }, { label: "$50", value: 50 }, { label: "$100", value: 100 }]
-  else if (price >= 1000) stepOptions = [{ label: "Raw", value: 0 }, { label: "$1", value: 1 }, { label: "$5", value: 5 }, { label: "$10", value: 10 }]
-  else if (price >= 100) stepOptions = [{ label: "Raw", value: 0 }, { label: "$0.1", value: 0.1 }, { label: "$0.5", value: 0.5 }, { label: "$1", value: 1 }]
-  else if (price >= 1) stepOptions = [{ label: "Raw", value: 0 }, { label: "$0.01", value: 0.01 }, { label: "$0.05", value: 0.05 }, { label: "$0.1", value: 0.1 }]
-  else if (price >= 0.01) stepOptions = [{ label: "Raw", value: 0 }, { label: "$0.001", value: 0.001 }, { label: "$0.005", value: 0.005 }, { label: "$0.01", value: 0.01 }]
-  else stepOptions = [{ label: "Raw", value: 0 }, { label: "$0.0001", value: 0.0001 }, { label: "$0.0005", value: 0.0005 }, { label: "$0.001", value: 0.001 }]
+  if (price >= 20000) stepOptions = [{ label: t("orderBook.raw"), value: 0 }, { label: "$10", value: 10 }, { label: "$50", value: 50 }, { label: "$100", value: 100 }]
+  else if (price >= 1000) stepOptions = [{ label: t("orderBook.raw"), value: 0 }, { label: "$1", value: 1 }, { label: "$5", value: 5 }, { label: "$10", value: 10 }]
+  else if (price >= 100) stepOptions = [{ label: t("orderBook.raw"), value: 0 }, { label: "$0.1", value: 0.1 }, { label: "$0.5", value: 0.5 }, { label: "$1", value: 1 }]
+  else if (price >= 1) stepOptions = [{ label: t("orderBook.raw"), value: 0 }, { label: "$0.01", value: 0.01 }, { label: "$0.05", value: 0.05 }, { label: "$0.1", value: 0.1 }]
+  else if (price >= 0.01) stepOptions = [{ label: t("orderBook.raw"), value: 0 }, { label: "$0.001", value: 0.001 }, { label: "$0.005", value: 0.005 }, { label: "$0.01", value: 0.01 }]
+  else stepOptions = [{ label: t("orderBook.raw"), value: 0 }, { label: "$0.0001", value: 0.0001 }, { label: "$0.0005", value: 0.0005 }, { label: "$0.001", value: 0.001 }]
 
   const positiveSteps = stepOptions.map((o) => o.value).filter((v) => v > 0)
   const targetStep = price * 0.005
@@ -163,7 +165,7 @@ export function OrderBook({ symbol, currentPrice = 0, loading: parentLoading }: 
       // Fetch snapshot via Futures REST
       fetch(`https://fapi.binance.com/fapi/v1/depth?symbol=${symbol}USDT&limit=1000`)
         .then(res => {
-          if (!res.ok) throw new Error("Snapshot failed")
+          if (!res.ok) throw new Error(t("orderBook.snapshotFailed"))
           return res.json()
         })
         .then(snapshot => {
@@ -207,7 +209,7 @@ export function OrderBook({ symbol, currentPrice = 0, loading: parentLoading }: 
         })
         .catch(() => {
           if (abort) return
-          setError("Order book unavailable")
+          setError(t("orderBook.unavailable"))
           setLoading(false)
         })
 

@@ -119,16 +119,16 @@ function getSentimentInterpretation(
   if (type === "long_short") {
     if (value > 1.5)
       return {
-        text: "Сильное преобладание лонгистов (>1.5). Рынок перегрет — возможен short squeeze или коррекция. Толпа слишком оптимистична.",
+        text: "Strong long dominance (>1.5). Market overheated — possible short squeeze or correction. Crowd is too optimistic.",
         signal: "bearish",
       }
     if (value < 0.7)
       return {
-        text: "Сильное преобладание шортистов (<0.7). Рынок пессимистичен — возможен отскок. Экстремальный страх часто сигнализирует о дне.",
+        text: "Strong short dominance (<0.7). Market is pessimistic — bounce possible. Extreme fear often signals a bottom.",
         signal: "bullish",
       }
     return {
-      text: "Баланс между лонгистами и шортистами (~1.0). Рынок нейтрален, нет явного перекоса. Ждите импульса.",
+      text: "Balance between longs and shorts (~1.0). Market is neutral, no clear skew. Wait for impulse.",
       signal: "neutral",
     }
   }
@@ -136,16 +136,16 @@ function getSentimentInterpretation(
   if (type === "top_trader") {
     if (value > 2.0)
       return {
-        text: "Топ-трейдеры сильно в лонге (>2.0). Институциональное бычье настроение. Крупные игроки накапливают позиции.",
+        text: "Top traders heavily long (>2.0). Institutional bullish sentiment. Smart money is accumulating positions.",
         signal: "bullish",
       }
     if (value < 0.5)
       return {
-        text: "Топ-трейдеры в шорте (<0.5). Институциональное медвежье настроение. Смарт-мани защищается от падения.",
+        text: "Top traders in short (<0.5). Institutional bearish sentiment. Smart money is hedging against a drop.",
         signal: "bearish",
       }
     return {
-      text: "Топ-трейдеры нейтральны (~1.0). Нет чёткой институциональной направленности. Рынок в ожидании.",
+      text: "Top traders neutral (~1.0). No clear institutional direction. Market is waiting.",
       signal: "neutral",
     }
   }
@@ -153,16 +153,16 @@ function getSentimentInterpretation(
   // taker
   if (value > 1.2)
     return {
-      text: "Покупатели агрессивны (>1.2). Taker-buy доминирует — сильный спрос на рынке. Агрессивное поглощение ликвидности.",
+      text: "Buyers are aggressive (>1.2). Taker-buy dominates — strong demand on the market. Aggressive liquidity absorption.",
       signal: "bullish",
     }
   if (value < 0.8)
     return {
-      text: "Продавцы агрессивны (<0.8). Taker-sell доминирует — сильное давление. Капитуляция или распределение.",
+      text: "Sellers are aggressive (<0.8). Taker-sell dominates — strong pressure. Capitulation or distribution.",
       signal: "bearish",
     }
   return {
-    text: "Баланс между покупателями и продавцами (~1.0). Нет агрессивной стороны. Рынок консолидируется.",
+    text: "Balance between buyers and sellers (~1.0). No aggressive side. Market is consolidating.",
     signal: "neutral",
   }
 }
@@ -174,7 +174,7 @@ export function EntryLevels({ data, sentiment, loading }: EntryLevelsProps) {
       <div className="w-full h-full border-2 border-primary/30 rounded-lg bg-card p-6 font-mono">
         <div className="flex items-center gap-3 text-primary mb-6">
           <Target className="w-5 h-5 animate-pulse" />
-          <span className="text-lg font-bold tracking-wider">SHORT TERM POINTS</span>
+          <span className="text-lg font-bold tracking-wider">{t("entryLevels.shortTermPoints")}</span>
         </div>
         <div className="space-y-4">
           {[1, 2, 3, 4, 5, 6].map((i) => (
@@ -190,7 +190,7 @@ export function EntryLevels({ data, sentiment, loading }: EntryLevelsProps) {
   if (!price) {
     return (
       <div className="w-full h-full border-2 border-muted rounded-lg bg-card p-6 font-mono flex items-center justify-center">
-        <span className="text-muted-foreground">Select symbol to view levels...</span>
+        <span className="text-muted-foreground">{t("entryLevels.selectSymbol")}</span>
       </div>
     )
   }
@@ -224,42 +224,42 @@ export function EntryLevels({ data, sentiment, loading }: EntryLevelsProps) {
 
   const pricePosition = normalize(price)
 
-  // All levels with descriptions (PRICE removed - shown as marker on scales)
+  // All levels with descriptions
   const levels = [
     {
       name: "VAH",
       value: data.vah,
       type: "resistance" as const,
       label: t("entryLevels.valueAreaHigh"),
-      desc: "Верхняя граница зоны стоимости. Уровень сопротивления где цена считается \"дорогой\" (верхние 15% объема)",
+      desc: t("entryLevels.vahDesc"),
     },
     {
       name: "POC",
       value: data.poc,
       type: "neutral" as const,
       label: t("entryLevels.pointOfControl"),
-      desc: "Точка контроля - уровень с максимальным объемом торгов. Самая \"справедливая\" цена по мнению рынка",
+      desc: t("entryLevels.pocDesc"),
     },
     {
       name: "EMA20",
       value: data.ema20,
       type: ema20Type,
       label: "EMA 20",
-      desc: "Экспоненциальная скользящая средняя 20 периодов. Динамическая поддержка/сопротивление",
+      desc: t("entryLevels.ema20Desc"),
     },
     {
       name: "EMA50",
       value: data.ema50,
       type: ema50Type,
       label: "EMA 50",
-      desc: "Экспоненциальная скользящая средняя 50 периодов. Определяет среднесрочный тренд",
+      desc: t("entryLevels.ema50Desc"),
     },
     {
       name: "VAL",
       value: data.val,
       type: "support" as const,
       label: t("entryLevels.valueAreaLow"),
-      desc: "Нижняя граница зоны стоимости. Уровень поддержки где цена считается \"дешевой\" (нижние 15% объема)",
+      desc: t("entryLevels.valDesc"),
     },
   ].sort((a, b) => b.value - a.value)
 
@@ -450,8 +450,8 @@ export function EntryLevels({ data, sentiment, loading }: EntryLevelsProps) {
                     <p className="text-xs text-muted-foreground">{level.desc}</p>
                     <p className="text-xs">
                       {isAbove
-                        ? `На ${distance.toFixed(1)}% выше текущей цены`
-                        : `На ${Math.abs(distance).toFixed(1)}% ниже текущей цены`}
+                        ? t("entryLevels.abovePrice").replace("{{pct}}", distance.toFixed(1))
+                        : t("entryLevels.belowPrice").replace("{{pct}}", Math.abs(distance).toFixed(1))}
                     </p>
                   </div>
                 </TooltipContent>
@@ -463,10 +463,10 @@ export function EntryLevels({ data, sentiment, loading }: EntryLevelsProps) {
         {/* Legend */}
         <div className="mt-4 pt-3 border-t border-muted-foreground/20">
           <div className="flex justify-between text-xs text-muted-foreground mb-2">
-            <span>🔴 Resistance</span>
-            <span>🟢 Support</span>
-            <span>⚪ Neutral</span>
-            <span>🎯 Current</span>
+            <span>🔴 {t("entryLevels.resistance")}</span>
+            <span>🟢 {t("entryLevels.support")}</span>
+            <span>⚪ {t("entryLevels.neutral")}</span>
+            <span>🎯 {t("entryLevels.current")}</span>
           </div>
           {/* Price scale legend */}
           <div className="flex items-center gap-2 text-[10px] text-muted-foreground/60">
@@ -476,7 +476,7 @@ export function EntryLevels({ data, sentiment, loading }: EntryLevelsProps) {
                 style={{ left: `${pricePosition}%` }}
               />
             </div>
-            <span>▲ — текущая цена на шкале</span>
+            <span>▲ — {t("entryLevels.currentPriceScale")}</span>
           </div>
         </div>
 

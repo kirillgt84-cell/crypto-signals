@@ -263,7 +263,7 @@ export default function SignalsClient() {
         {!isPro ? (
           <Card>
             <CardContent className="p-8">
-              <ProBlurOverlay title="Pro Feature" description="Volume Spike / OI Anomaly Scanner is available for Pro subscribers only.">
+              <ProBlurOverlay title={t("proOverlay.title")} description={t("proOverlay.description")}>
                 <div className="h-64 w-full" />
               </ProBlurOverlay>
             </CardContent>
@@ -282,7 +282,7 @@ export default function SignalsClient() {
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
                   <div className="space-y-1.5">
                     <label className="text-xs font-medium text-slate-400">
-                      Min Score: <span className="text-foreground">{minScore}</span>
+                      {t("signals.minScore")}: <span className="text-foreground">{minScore}</span>
                     </label>
                     <Input
                       type="range"
@@ -295,41 +295,41 @@ export default function SignalsClient() {
                   </div>
 
                   <div className="space-y-1.5">
-                    <label className="text-xs font-medium text-slate-400">Direction</label>
+                    <label className="text-xs font-medium text-slate-400">{t("signals.direction")}</label>
                     <Select value={direction} onValueChange={setDirection}>
                       <SelectTrigger>
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="all">All</SelectItem>
-                        <SelectItem value="LONG">Long</SelectItem>
-                        <SelectItem value="SHORT">Short</SelectItem>
+                        <SelectItem value="all">{t("common.all")}</SelectItem>
+                        <SelectItem value="LONG">{t("signals.long")}</SelectItem>
+                        <SelectItem value="SHORT">{t("signals.short")}</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
 
                   <div className="space-y-1.5">
-                    <label className="text-xs font-medium text-slate-400">Confidence</label>
+                    <label className="text-xs font-medium text-slate-400">{t("signals.confidence")}</label>
                     <Select value={confidence} onValueChange={setConfidence}>
                       <SelectTrigger>
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="all">All</SelectItem>
-                        <SelectItem value="high">High</SelectItem>
-                        <SelectItem value="medium">Medium</SelectItem>
+                        <SelectItem value="all">{t("common.all")}</SelectItem>
+                        <SelectItem value="high">{t("signals.high")}</SelectItem>
+                        <SelectItem value="medium">{t("signals.medium")}</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
 
                   <div className="space-y-1.5">
-                    <label className="text-xs font-medium text-slate-400">Category</label>
+                    <label className="text-xs font-medium text-slate-400">{t("signals.category")}</label>
                     <Select value={category} onValueChange={setCategory}>
                       <SelectTrigger>
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="all">All</SelectItem>
+                        <SelectItem value="all">{t("common.all")}</SelectItem>
                         {categories.map((c) => (
                           <SelectItem key={c} value={c}>
                             {c}
@@ -347,14 +347,14 @@ export default function SignalsClient() {
               <CardHeader className="pb-3">
                 <CardTitle className="text-sm font-bold tracking-widest flex items-center gap-2">
                   <Settings2 className="h-4 w-4 text-slate-400" />
-                  SCANNER SETTINGS
+                  {t("signals.scannerSettings")}
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
                   <div className="space-y-1.5">
                     <label className="text-xs font-medium text-slate-400">
-                      Default Min Score: <span className="text-foreground">{scannerSettings?.min_score ?? 8}</span>
+                      {t("signals.defaultMinScore")} <span className="text-foreground">{scannerSettings?.min_score ?? 8}</span>
                     </label>
                     <Input
                       type="range"
@@ -368,12 +368,12 @@ export default function SignalsClient() {
                       }}
                       className="h-2 cursor-pointer border-0 bg-muted p-0 accent-amber-500"
                     />
-                    <p className="text-[10px] text-slate-600">Lower = more signals, higher noise</p>
+                    <p className="text-[10px] text-slate-600">{t("signals.minScoreDesc")}</p>
                   </div>
 
                   <div className="flex items-center gap-3">
                     <Mail className="h-4 w-4 text-slate-400" />
-                    <label className="text-xs text-slate-300">Email Alerts</label>
+                    <label className="text-xs text-slate-300">{t("signals.emailAlerts")}</label>
                     <input
                       type="checkbox"
                       checked={scannerSettings?.email_alerts ?? false}
@@ -388,7 +388,7 @@ export default function SignalsClient() {
 
                   <div className="flex items-center gap-3">
                     <MessageCircle className="h-4 w-4 text-slate-400" />
-                    <label className="text-xs text-slate-300">Telegram Alerts</label>
+                    <label className="text-xs text-slate-300">{t("signals.telegramAlerts")}</label>
                     <input
                       type="checkbox"
                       checked={scannerSettings?.telegram_alerts ?? false}
@@ -415,14 +415,14 @@ export default function SignalsClient() {
                   <table className="w-full text-sm">
                     <thead>
                       <tr className="border-b border-slate-800 text-left text-xs uppercase tracking-wider text-slate-400">
-                        <th className="px-4 py-3 font-medium">Symbol</th>
-                        <th className="px-4 py-3 font-medium">Direction</th>
-                        <th className="px-4 py-3 font-medium">Score</th>
-                        <th className="px-4 py-3 font-medium">Vol Ratio</th>
+                        <th className="px-4 py-3 font-medium">{t("portfolio.symbol")}</th>
+                        <th className="px-4 py-3 font-medium">{t("signals.direction")}</th>
+                        <th className="px-4 py-3 font-medium">{t("signals.score")}</th>
+                        <th className="px-4 py-3 font-medium">{t("signals.volRatio")}</th>
                         <th className="px-4 py-3 font-medium">OI Δ 1h</th>
-                        <th className="px-4 py-3 font-medium">Price 24h</th>
-                        <th className="px-4 py-3 font-medium">Confidence</th>
-                        <th className="px-4 py-3 font-medium">Time</th>
+                        <th className="px-4 py-3 font-medium">{t("signals.price24h")}</th>
+                        <th className="px-4 py-3 font-medium">{t("signals.confidence")}</th>
+                        <th className="px-4 py-3 font-medium">{t("signals.timestamp")}</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -443,11 +443,11 @@ export default function SignalsClient() {
                             className="px-4 py-12 text-center"
                           >
                             <div className="space-y-2">
-                              <p className="text-slate-400">No active anomaly signals.</p>
+                              <p className="text-slate-400">{t("signals.noSignals")}</p>
                               {scannerStatus?.last_run && (
                                 <p className="text-xs text-slate-600">
-                                  Scanner checked {scannerStatus.last_run.symbols_checked} symbols {formatTimeAgo(scannerStatus.last_run.run_at)}.
-                                  Market is calm — signals appear when volume or OI spikes.
+                                  {t("signals.scannerChecked")} {scannerStatus.last_run.symbols_checked} {t("signals.symbols")} {formatTimeAgo(scannerStatus.last_run.run_at)}.
+                                  {t("signals.marketCalm")}
                                 </p>
                               )}
                             </div>

@@ -32,19 +32,19 @@ import {
 
 type ProfileTab = "overview" | "security" | "preferences" | "subscription"
 
-const navItems: { id: ProfileTab; label: string; icon: React.ElementType }[] = [
-  { id: "overview", label: "Overview", icon: User },
-  { id: "security", label: "Security", icon: Lock },
-  { id: "preferences", label: "Preferences", icon: Settings },
-  { id: "subscription", label: "Subscription", icon: CreditCard },
-]
+const navIcons: Record<ProfileTab, React.ElementType> = {
+  overview: User,
+  security: Lock,
+  preferences: Settings,
+  subscription: CreditCard,
+}
 
 const API_BASE_URL = "https://crypto-signals-production-ff4c.up.railway.app/api/v1"
 
 export default function ProfilePage() {
   const { user, isLoading, isPro, updateProfile, updatePreferences, changePassword, refreshUser } = useAuth()
   const { theme, setTheme } = useTheme()
-  const { language, setLanguage } = useLanguage()
+  const { language, setLanguage, t } = useLanguage()
 
   const [activeTab, setActiveTab] = useState<ProfileTab>("overview")
   const [error, setError] = useState<string | null>(null)
@@ -67,7 +67,7 @@ export default function ProfilePage() {
     setLoadingAction("profile")
     try {
       await updateProfile({ username, avatar_url: avatarUrl || null })
-      showMessage("Profile updated successfully", "success")
+      showMessage(t("profile.profileUpdated"), "success")
     } catch (e: any) {
       showMessage(e.message || "Failed to update profile", "error")
     } finally {
@@ -77,17 +77,17 @@ export default function ProfilePage() {
 
   const handlePasswordChange = async () => {
     if (newPassword.length < 8) {
-      showMessage("Password must be at least 8 characters", "error")
+      showMessage(t("profile.passwordTooShort"), "error")
       return
     }
     if (newPassword !== confirmPassword) {
-      showMessage("Passwords do not match", "error")
+      showMessage(t("profile.passwordsMismatch"), "error")
       return
     }
     setLoadingAction("password")
     try {
       await changePassword(oldPassword, newPassword)
-      showMessage("Password changed successfully", "success")
+      showMessage(t("profile.passwordChanged"), "success")
       setOldPassword(""); setNewPassword(""); setConfirmPassword("")
     } catch (e: any) {
       showMessage(e.message || "Failed to change password", "error")
@@ -99,7 +99,7 @@ export default function ProfilePage() {
   const handlePrefToggle = async (key: string, value: boolean) => {
     try {
       await updatePreferences({ [key]: value } as any)
-      showMessage("Preferences saved", "success")
+      showMessage(t("profile.preferencesSaved"), "success")
     } catch (e: any) {
       showMessage(e.message || "Failed to save preferences", "error")
     }
@@ -120,7 +120,7 @@ export default function ProfilePage() {
     try {
       await updateProfile({ subscription_tier: "pro" })
       await refreshUser()
-      showMessage("Upgraded to Pro! (Payment integration coming soon)", "success")
+      showMessage(t("profile.upgradeSuccess"), "success")
     } catch (e: any) {
       showMessage(e.message || "Upgrade failed", "error")
     } finally {
@@ -136,7 +136,7 @@ export default function ProfilePage() {
         method: "POST", cache: "no-store", headers: { Authorization: `Bearer ${token}` }
       })
       if (!res.ok) { const err = await res.json(); throw new Error(err.detail || "Failed") }
-      showMessage("Test email sent! Check your inbox.", "success")
+      showMessage(t("profile.testEmailSent"), "success")
     } catch (e: any) {
       showMessage(e.message || "Failed to send test email", "error")
     } finally {
@@ -152,7 +152,7 @@ export default function ProfilePage() {
         method: "POST", cache: "no-store", headers: { Authorization: `Bearer ${token}` }
       })
       if (!res.ok) { const err = await res.json(); throw new Error(err.detail || "Failed") }
-      showMessage("Test Telegram message sent!", "success")
+      showMessage(t("profile.testTelegramSent"), "success")
     } catch (e: any) {
       showMessage(e.message || "Failed to send test Telegram", "error")
     } finally {
@@ -185,8 +185,8 @@ export default function ProfilePage() {
       <div className="flex min-h-screen items-center justify-center px-4">
         <Card className="w-full max-w-md">
           <CardHeader>
-            <CardTitle>Authentication Required</CardTitle>
-            <CardDescription>Please sign in to view your profile.</CardDescription>
+            <CardTitle>{t("profile.authRequired")}</CardTitle>
+            <CardDescription>{t("profile.signInToView")}</CardDescription>
           </CardHeader>
         </Card>
       </div>
@@ -203,7 +203,7 @@ export default function ProfilePage() {
                 <ArrowLeft className="h-5 w-5" />
               </Button>
             </Link>
-            <h1 className="text-xl font-bold tracking-tight">Account Settings</h1>
+            <h1 className="text-xl font-bold tracking-tight">{t("profile.accountSettings")}</h1>
           </div>
         </div>
       </header>
@@ -222,13 +222,13 @@ export default function ProfilePage() {
             <Card className="border">
               <CardContent className="p-2">
                 <nav className="space-y-1">
-                  {navItems.map((item) => {
-                    const Icon = item.icon
-                    const active = activeTab === item.id
+                  {(Object.keys(navIcons) as ProfileTab[]).map((id) => {
+                    const Icon = navIcons[id]
+                    const active = activeTab === id
                     return (
                       <button
-                        key={item.id}
-                        onClick={() => setActiveTab(item.id)}
+                        key={id}
+                        onClick={() => setActiveTab(id)}
                         className={cn(
                           "flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
                           active
@@ -237,7 +237,7 @@ export default function ProfilePage() {
                         )}
                       >
                         <Icon className="h-4 w-4" />
-                        {item.label}
+                        {t(`profile.${id}`)}
                       </button>
                     )
                   })}
@@ -252,8 +252,8 @@ export default function ProfilePage() {
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 <Card className="border">
                   <CardHeader>
-                    <CardTitle className="text-base font-semibold">Public Profile</CardTitle>
-                    <CardDescription>Your username and avatar are visible in the app.</CardDescription>
+                    <CardTitle className="text-base font-semibold">{t("profile.publicProfile")}</CardTitle>
+                    <CardDescription>{t("profile.userVisible")}</CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-6">
                     <div className="flex items-center gap-4">
@@ -279,23 +279,23 @@ export default function ProfilePage() {
 
                     <div className="grid gap-4 sm:grid-cols-2">
                       <div className="space-y-2">
-                        <Label htmlFor="username">Username</Label>
+                        <Label htmlFor="username">{t("profile.username")}</Label>
                         <Input id="username" value={username} onChange={(e) => setUsername(e.target.value)} placeholder="username" />
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="avatar">Avatar URL</Label>
+                        <Label htmlFor="avatar">{t("profile.avatarUrl")}</Label>
                         <Input id="avatar" value={avatarUrl} onChange={(e) => setAvatarUrl(e.target.value)} placeholder="https://..." />
                       </div>
                     </div>
 
                     <Button onClick={handleProfileUpdate} disabled={loadingAction === "profile"}>
                       {loadingAction === "profile" && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                      Save Profile
+                      {t("common.save")}
                     </Button>
 
                     {user.connected_oauth && user.connected_oauth.length > 0 && (
                       <div className="pt-4 border-t">
-                        <p className="text-sm font-medium mb-2 flex items-center gap-2"><Shield className="h-4 w-4" /> Connected Accounts</p>
+                        <p className="text-sm font-medium mb-2 flex items-center gap-2"><Shield className="h-4 w-4" /> {t("dashboard.connectedAccounts")}</p>
                         <div className="flex flex-wrap gap-2">
                           {user.connected_oauth.map((provider) => (
                             <Badge key={provider} variant="secondary" className="capitalize">{provider}</Badge>
@@ -308,29 +308,29 @@ export default function ProfilePage() {
 
                 <Card className="border">
                   <CardHeader>
-                    <CardTitle className="text-base font-semibold">Subscription</CardTitle>
-                    <CardDescription>Current plan and benefits.</CardDescription>
+                    <CardTitle className="text-base font-semibold">{t("profile.subscription")}</CardTitle>
+                    <CardDescription>{t("profile.planBenefits")}</CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div className="flex items-center justify-between rounded-lg border p-4">
                       <div>
-                        <p className="text-sm font-medium">Current Plan</p>
-                        <p className="text-2xl font-bold tracking-tight">{isPro ? "Pro" : "Free"}</p>
+                        <p className="text-sm font-medium">{t("profile.currentPlan")}</p>
+                        <p className="text-2xl font-bold tracking-tight">{isPro ? t("common.pro") : t("common.free")}</p>
                       </div>
                       {isPro ? (
-                        <Badge className="bg-emerald-500">Active</Badge>
+                        <Badge className="bg-emerald-500">{t("common.active")}</Badge>
                       ) : (
                         <Button onClick={handleUpgrade} disabled={loadingAction === "upgrade"}>
                           {loadingAction === "upgrade" && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                          Upgrade
+                          {t("pricing.upgradeToPro")}
                         </Button>
                       )}
                     </div>
                     <ul className="space-y-2 text-sm text-muted-foreground">
-                      <li className="flex items-center gap-2"><CheckCircle className="h-4 w-4 text-emerald-500" /> Real-time market data</li>
-                      <li className="flex items-center gap-2"><CheckCircle className="h-4 w-4 text-emerald-500" /> ETF flows & sentiment</li>
-                      <li className="flex items-center gap-2"><CheckCircle className={cn("h-4 w-4", isPro ? "text-emerald-500" : "text-slate-400")} /> OI interpretation & signals {isPro ? "" : "(Pro)"}</li>
-                      <li className="flex items-center gap-2"><CheckCircle className={cn("h-4 w-4", isPro ? "text-emerald-500" : "text-slate-400")} /> Email & Telegram reports {isPro ? "" : "(Pro)"}</li>
+                      <li className="flex items-center gap-2"><CheckCircle className="h-4 w-4 text-emerald-500" /> {t("profile.realtimeData")}</li>
+                      <li className="flex items-center gap-2"><CheckCircle className="h-4 w-4 text-emerald-500" /> {t("profile.etfFlows")}</li>
+                      <li className="flex items-center gap-2"><CheckCircle className={cn("h-4 w-4", isPro ? "text-emerald-500" : "text-slate-400")} /> {t("profile.oiSignals")} {isPro ? "" : `( ${t("common.pro")} )`}</li>
+                      <li className="flex items-center gap-2"><CheckCircle className={cn("h-4 w-4", isPro ? "text-emerald-500" : "text-slate-400")} /> {t("profile.emailTelegram")} {isPro ? "" : `( ${t("common.pro")} )`}</li>
                     </ul>
                   </CardContent>
                 </Card>
@@ -340,25 +340,25 @@ export default function ProfilePage() {
             {activeTab === "security" && (
               <Card className="border max-w-xl">
                 <CardHeader>
-                  <CardTitle className="text-base font-semibold">Security</CardTitle>
-                  <CardDescription>Change your password to keep your account secure.</CardDescription>
+                  <CardTitle className="text-base font-semibold">{t("profile.security")}</CardTitle>
+                  <CardDescription>{t("profile.passwordSecurity")}</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="old-password">Current Password</Label>
+                    <Label htmlFor="old-password">{t("profile.currentPassword")}</Label>
                     <Input id="old-password" type="password" value={oldPassword} onChange={(e) => setOldPassword(e.target.value)} />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="new-password">New Password</Label>
+                    <Label htmlFor="new-password">{t("profile.newPassword")}</Label>
                     <Input id="new-password" type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="confirm-password">Confirm New Password</Label>
+                    <Label htmlFor="confirm-password">{t("profile.confirmPassword")}</Label>
                     <Input id="confirm-password" type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} />
                   </div>
                   <Button onClick={handlePasswordChange} disabled={loadingAction === "password"}>
                     {loadingAction === "password" && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    Update Password
+                    {t("profile.updatePassword")}
                   </Button>
                 </CardContent>
               </Card>
@@ -368,7 +368,7 @@ export default function ProfilePage() {
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 <Card className="border">
                   <CardHeader>
-                    <CardTitle className="text-base font-semibold flex items-center gap-2"><Palette className="h-4 w-4" /> Theme</CardTitle>
+                    <CardTitle className="text-base font-semibold flex items-center gap-2"><Palette className="h-4 w-4" /> {t("profile.theme")}</CardTitle>
                   </CardHeader>
                   <CardContent>
                     <div className="flex gap-2">
@@ -381,7 +381,7 @@ export default function ProfilePage() {
 
                 <Card className="border">
                   <CardHeader>
-                    <CardTitle className="text-base font-semibold flex items-center gap-2"><Globe className="h-4 w-4" /> Language</CardTitle>
+                    <CardTitle className="text-base font-semibold flex items-center gap-2"><Globe className="h-4 w-4" /> {t("profile.language")}</CardTitle>
                   </CardHeader>
                   <CardContent>
                     <div className="flex gap-2">
@@ -393,14 +393,14 @@ export default function ProfilePage() {
 
                 <Card className="border">
                   <CardHeader>
-                    <CardTitle className="text-base font-semibold flex items-center gap-2"><Bell className="h-4 w-4" /> Notifications</CardTitle>
-                    <CardDescription>Browser and push alerts.</CardDescription>
+                    <CardTitle className="text-base font-semibold flex items-center gap-2"><Bell className="h-4 w-4" /> {t("common.notifications")}</CardTitle>
+                    <CardDescription>{t("profile.browserAlerts")}</CardDescription>
                   </CardHeader>
                   <CardContent>
                     <div className="flex items-center justify-between">
                       <div className="space-y-0.5">
-                        <Label htmlFor="notif">Push Notifications</Label>
-                        <p className="text-xs text-muted-foreground">Receive browser alerts for signals.</p>
+                        <Label htmlFor="notif">{t("profile.pushNotifications")}</Label>
+                        <p className="text-xs text-muted-foreground">{t("profile.browserAlertsDesc")}</p>
                       </div>
                       <Switch
                         id="notif"
@@ -417,28 +417,28 @@ export default function ProfilePage() {
               <div className="space-y-4">
                 <Card className="border">
                   <CardHeader>
-                    <CardTitle className="text-base font-semibold">Report Subscriptions</CardTitle>
-                    <CardDescription>Choose which reports and alerts you want to receive.</CardDescription>
+                    <CardTitle className="text-base font-semibold">{t("profile.reportSubscriptions")}</CardTitle>
+                    <CardDescription>{t("profile.reportPreferences")}</CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div className="flex items-center justify-between">
                       <div className="space-y-0.5">
-                        <Label>Daily Market Report</Label>
-                        <p className="text-xs text-muted-foreground">Morning summary for all assets.</p>
+                        <Label>{t("profile.dailyMarketReport")}</Label>
+                        <p className="text-xs text-muted-foreground">{t("profile.dailyReportDesc")}</p>
                       </div>
                       <Switch checked={user.preferences?.daily_report ?? false} onCheckedChange={(v) => handlePrefToggle("daily_report", v)} />
                     </div>
                     <div className="flex items-center justify-between">
                       <div className="space-y-0.5">
-                        <Label>Weekly Market Report</Label>
-                        <p className="text-xs text-muted-foreground">Deep dive every Monday.</p>
+                        <Label>{t("profile.weeklyMarketReport")}</Label>
+                        <p className="text-xs text-muted-foreground">{t("profile.weeklyReportDesc")}</p>
                       </div>
                       <Switch checked={user.preferences?.weekly_report ?? false} onCheckedChange={(v) => handlePrefToggle("weekly_report", v)} />
                     </div>
                     <div className="flex items-center justify-between">
                       <div className="space-y-0.5">
-                        <Label>Telegram Alerts</Label>
-                        <p className="text-xs text-muted-foreground">Instant signals and anomalies.</p>
+                        <Label>{t("profile.telegramAlertsLabel")}</Label>
+                        <p className="text-xs text-muted-foreground">{t("profile.telegramAlertsDesc")}</p>
                       </div>
                       <Switch checked={user.preferences?.telegram_alerts ?? false} onCheckedChange={(v) => handlePrefToggle("telegram_alerts", v)} />
                     </div>
@@ -447,19 +447,19 @@ export default function ProfilePage() {
 
                 <Card className="border">
                   <CardHeader>
-                    <CardTitle className="text-base font-semibold flex items-center gap-2"><Send className="h-4 w-4" /> Telegram Connection</CardTitle>
-                    <CardDescription>Link your Telegram account for instant alerts.</CardDescription>
+                    <CardTitle className="text-base font-semibold flex items-center gap-2"><Send className="h-4 w-4" /> {t("profile.telegramConnection")}</CardTitle>
+                    <CardDescription>{t("profile.linkTelegram")}</CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div className="flex items-center justify-between rounded-lg border p-4">
                       <div>
-                        <p className="text-sm font-medium">Status</p>
+                        <p className="text-sm font-medium">{t("common.status")}</p>
                         <p className="text-xs text-muted-foreground">
-                          {user.preferences?.telegram_chat_id ? "Connected" : "Not connected"}
+                          {user.preferences?.telegram_chat_id ? t("profile.connected") : t("profile.notConnected")}
                         </p>
                       </div>
                       <Button variant="outline" size="sm" onClick={handleTelegramConnect}>
-                        {user.preferences?.telegram_chat_id ? "Reconnect" : "Connect Telegram"}
+                        {user.preferences?.telegram_chat_id ? t("profile.reconnect") : t("profile.connectTelegram")}
                       </Button>
                     </div>
                   </CardContent>
@@ -468,18 +468,18 @@ export default function ProfilePage() {
                 {isPro && (
                   <Card className="border">
                     <CardHeader>
-                      <CardTitle className="text-base font-semibold flex items-center gap-2"><Mail className="h-4 w-4" /> Test Notifications</CardTitle>
-                      <CardDescription>Send a test message to verify delivery.</CardDescription>
+                      <CardTitle className="text-base font-semibold flex items-center gap-2"><Mail className="h-4 w-4" /> {t("profile.testNotifications")}</CardTitle>
+                      <CardDescription>{t("profile.testMessage")}</CardDescription>
                     </CardHeader>
                     <CardContent>
                       <div className="flex flex-wrap gap-2">
                         <Button variant="outline" size="sm" onClick={handleTestEmail} disabled={loadingAction === "test-email"}>
                           {loadingAction === "test-email" && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                          Send Test Email
+                          {t("profile.sendTestEmail")}
                         </Button>
                         <Button variant="outline" size="sm" onClick={handleTestTelegram} disabled={loadingAction === "test-telegram" || !user.preferences?.telegram_chat_id}>
                           {loadingAction === "test-telegram" && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                          Send Test Telegram
+                          {t("profile.sendTestTelegram")}
                         </Button>
                       </div>
                     </CardContent>

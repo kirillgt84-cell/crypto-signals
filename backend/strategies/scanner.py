@@ -116,9 +116,9 @@ async def scan_and_create_signal(api_base_url: str):
                     json=signal
                 ) as resp:
                     if resp.status == 200:
-                        print(f"[{datetime.now()}] Сигнал создан: {signal}")
+                        print(f"[{datetime.now()}] Signal created: {signal}")
                     else:
-                        print(f"[{datetime.now()}] Ошибка создания: {await resp.text()}")
+                        print(f"[{datetime.now()}] Error creating signal: {await resp.text()}")
 
 
 def start_scheduler(api_base_url: str = "http://localhost:8000"):
@@ -134,7 +134,7 @@ def start_scheduler(api_base_url: str = "http://localhost:8000"):
     )
     
     scheduler.start()
-    print(f"[{datetime.now()}] Scanner запущен. Проверка каждые 5 минут.")
+    print(f"[{datetime.now()}] Scanner started. Checking every 5 minutes.")
     
     return scheduler
 

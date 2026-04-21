@@ -234,28 +234,28 @@ class CrossMarketAnalyzer:
         
         narratives = {
             MarketRegime.RISK_ON: 
-                f"Нормальная кривая доходности ({curve_shape}) указывает на здоровую экономику. "
-                "Благоприятная среда для risk assets.",
+                f"Normal yield curve ({curve_shape}) indicates a healthy economy. "
+                "Favorable environment for risk assets.",
             
             MarketRegime.RISK_OFF_EARLY:
-                f"Инверсия кривой ({curve_shape}) сигнализирует о замедлении. "
-                f"Вероятность рецессии {recession_prob:.0f}%. "
-                "Ротация в защитные активы.",
+                f"Curve inversion ({curve_shape}) signals slowdown. "
+                f"Recession probability {recession_prob:.0f}%. "
+                "Rotation into defensive assets.",
             
             MarketRegime.RISK_OFF_LATE:
-                f"Глубокая инверсия ({curve_shape}) при вероятности рецессии {recession_prob:.0f}%. "
-                "Преобладает защитный настрой. Дефенсивная позиция оправдана.",
+                f"Deep inversion ({curve_shape}) with recession probability {recession_prob:.0f}%. "
+                "Defensive sentiment prevails. Defensive positioning justified.",
             
             MarketRegime.RECOVERY:
-                f"Восстановление кривой ({curve_shape}) после инверсии. "
-                "Возможен Fed pivot. Благоприятно для ростовых активов.",
+                f"Curve recovery ({curve_shape}) after inversion. "
+                "Fed pivot possible. Favorable for growth assets.",
             
             MarketRegime.TRANSITION:
-                f"Переходный период ({curve_shape}). "
-                "Неопределенность требует осторожности."
+                f"Transition period ({curve_shape}). "
+                "Uncertainty requires caution."
         }
         
-        return narratives.get(regime, "Неопределенный режим")
+        return narratives.get(regime, "Undefined regime")
     
     def calculate_correlation_matrix(self, 
                                      yields: pd.DataFrame,

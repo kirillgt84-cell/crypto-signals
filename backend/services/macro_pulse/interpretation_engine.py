@@ -16,10 +16,10 @@ logger = logging.getLogger(__name__)
 
 
 DISCLAIMER = (
-    "Информация носит исключительно образовательно-аналитический характер. "
-    "Не является инвестиционной рекомендацией, предложением купить/продать активы "
-    "или управлять портфелем. Past performance does not guarantee future results. "
-    "Любые решения принимаются пользователем самостоятельно и на свой риск."
+    "The information is exclusively educational and analytical in nature."
+    "It is not an investment recommendation or an offer to buy/sell assets"
+    "or portfolio management. Past performance does not guarantee future results."
+    "Any decisions are made by the user independently and at his own risk."
 )
 
 
@@ -39,32 +39,31 @@ class DashboardInterpretation:
     timestamp: datetime
     disclaimer: str = DISCLAIMER
     overall_assessment: str = ""
-    overall_risk_level: str = "LOW"      # LOW / MODERATE / ELEVATED / HIGH
+    overall_risk_level: str = "LOW" # LOW / MODERATE / ELEVATED / HIGH
     overall_color: str = "green"
     metrics: List[MetricInterpretation] = field(default_factory=list)
     signals: List[str] = field(default_factory=list)
 
 
 class InterpretationEngine:
-    """Генератор исторических интерпретаций для метрик Yield Curve.
+    """Generator of historical interpretations for Yield Curve metrics.
     
-    Все формулировки построены на исторических фактах и статистике.
-    Не содержат инвестиционных рекомендаций, конкретных тикеров
-    или гарантий доходности.
-    """
+    All formulations are based on historical facts and statistics.
+    Does not contain investment recommendations or specific tickers
+    or guarantees of profitability."""
 
     def __init__(self):
         pass
 
     # ────────────────────────────────
-    # Helpers
+    #Helpers
     # ────────────────────────────────
 
     @staticmethod
     def _recession_color(prob: float) -> str:
-        if prob < 10:   return "green"
-        if prob < 25:   return "yellow"
-        if prob < 50:   return "orange"
+        if prob < 10: return "green"
+        if prob < 25: return "yellow"
+        if prob < 50: return "orange"
         return "red"
 
     @staticmethod
@@ -78,71 +77,71 @@ class InterpretationEngine:
         return "LOW"
 
     # ────────────────────────────────
-    # 1. Curve Shape
+    #1. Curve Shape
     # ────────────────────────────────
 
     def interpret_curve_shape(self, shape: str) -> MetricInterpretation:
         interpretations = {
             "normal": {
                 "status": "normal",
-                "headline": "Кривая нормальной формы — стандартный режим",
+                "headline": "Norm Curve - Standard Mode",
                 "explanation": (
-                    "Долгосрочные ставки выше краткосрочных. Это отражает здоровые ожидания инфляции и роста. "
-                    "Банки получают положительный разворот ставок (positive carry), что стимулирует кредитование."
+                    "Long-term rates are higher than short-term rates. This reflects healthy expectations for inflation and growth."
+                    "Banks receive a positive rate reversal (positive carry), which stimulates lending."
                 ),
                 "historical_context": (
-                    "В периоды нормальной кривой (1975-1978, 1983-1989, 2003-2005) equities показывали среднюю доходность 12-15% годовых. "
-                    "Крипто-активы (в доступной истории с 2013) также демонстрировали позитивную динамику в данной фазе. "
-                    "Defensive активы (золото, краткосрочные облигации) historically underperform против equities."
+                    "During the normal curve periods (1975-1978, 1983-1989, 2003-2005) equities showed an average return of 12-15% per annum."
+                    "Crypto assets (in available history since 2013) also showed positive dynamics in this phase."
+                    "Defensive assets (gold, short-term bonds) have historically underperformed against equities."
                 ),
                 "color": "green",
                 "icon": "trending-up",
             },
             "flat": {
                 "status": "warning",
-                "headline": "Кривая сплющена — рынок теряет уверенность",
+                "headline": "The curve is flattened - the market is losing confidence",
                 "explanation": (
-                    "Спреды между кратко- и долгосрочными ставками минимальны. "
-                    "Инвесторы не требуют значимой премии за время — либо ожидают замедления роста, "
-                    "либо Fed удерживает краткосрочные ставки на высоком уровне."
+                    "Spreads between short-term and long-term rates are minimal."
+                    "Investors are not demanding a significant premium over time - or they are expecting a slowdown in growth,"
+                    "or the Fed keeps short-term rates high."
                 ),
                 "historical_context": (
-                    "Каждая плоская кривая с 1965 предшествовала либо инверсии, либо резкому замедлению экономики. "
-                    "В 1994-1995 кривая была плоской 8 месяцев, затем последовала мягкая посадка без рецессии. "
-                    "В 2006 кривая была плоской 4 месяца перед инверсией. "
-                    "В периоды плоской кривой equities показывали повышенную волатильность: средний drawdown составлял -12%."
+                    "Every flat curve since 1965 has been preceded by either an inversion or a sharp economic slowdown."
+                    "In 1994-1995 the curve was flat for 8 months, followed by a soft landing without a recession."
+                    "In 2006 the curve was flat for 4 months before the inversion."
+                    "During periods of a flat curve, equities showed increased volatility: the average drawdown was -12%."
                 ),
                 "color": "yellow",
                 "icon": "alert-triangle",
             },
             "inverted": {
                 "status": "critical",
-                "headline": "Инвертированная кривая — предвестник замедления",
+                "headline": "An inverted curve is a harbinger of a slowdown",
                 "explanation": (
-                    "Краткосрочные ставки выше долгосрочных. Рынок дисконтирует резкое замедление: "
-                    "инвесторы перемещаются в длинные облигации, подавляя их доходность, при этом Fed держит короткие ставки высокими."
+                    "Short-term rates are higher than long-term rates. The market is discounting a sharp slowdown:"
+                    "Investors are moving into long bonds, suppressing yields, while the Fed keeps short rates high."
                 ),
                 "historical_context": (
-                    "Согласно исследованию ФРБ Сан-Франциско (Estrella & Hardouvelis, 1991), "
-                    "инверсия 10Y-2Y предшествовала экономическому замедлению в 8 из 9 наблюдений с 1955 года. "
-                    "Средний лаг: 12-18 месяцев. Единственное исключение — 1966 (мягкая посадка без спада ВВП). "
-                    "При инвертированной кривой S&P 500 показывал медианный drawdown -18% за последующие 12 месяцев. "
-                    "Золото в тот же период historically outperform на +8-15% за счёт safe-haven demand."
+                    "According to a study by the San Francisco Federal Reserve Bank (Estrella & Hardouvelis, 1991),"
+                    "the 10Y-2Y reversal has preceded economic slowdowns in 8 of 9 observations since 1955."
+                    "Average lag: 12-18 months. The only exception is 1966 (soft landing without a decline in GDP)."
+                    "With an inverted curve, the S&P 500 showed a median drawdown of -18% over the next 12 months."
+                    "Gold in the same period historically outperformed by +8-15% due to safe-haven demand."
                 ),
                 "color": "red",
                 "icon": "trending-down",
             },
             "humped": {
                 "status": "warning",
-                "headline": "Горбатая кривая — нестабильность, смена фазы",
+                "headline": "Humpback curve - instability, phase change",
                 "explanation": (
-                    "Среднесрочные ставки (5-7Y) выше долгосрочных (10-30Y), но кривая ещё не полностью инвертирована. "
-                    "Редкая и кратковременная фаза — обычно предшествует полной инверсии или резкому развороту Fed."
+                    "Intermediate-term rates (5-7Y) are higher than long-term rates (10-30Y), but the curve is not yet completely inverted."
+                    "A rare and short-lived phase - usually precedes a complete inversion or a sharp Fed reversal."
                 ),
                 "historical_context": (
-                    "Горбатая кривая наблюдалась в 1978 (перед Volcker shock), 1989 (перед S&L crisis) и 2000 (перед dot-com). "
-                    "Продолжительность горбатой фазы: в среднем 2-4 месяца. "
-                    "В данной фазе defensive секторы (utilities, healthcare, consumer staples) historically outperform growth на 5-8%."
+                    "The humpback curve was observed in 1978 (before the Volcker shock), 1989 (before the S&L crisis) and 2000 (before dot-com)."
+                    "Duration of the humpback phase: on average 2-4 months."
+                    "In this phase, defensive sectors (utilities, healthcare, consumer staples) historically outperform growth by 5-8%."
                 ),
                 "color": "orange",
                 "icon": "activity",
@@ -153,7 +152,7 @@ class InterpretationEngine:
         return MetricInterpretation(metric="curve_shape", **data)
 
     # ────────────────────────────────
-    # 2. Spreads (10Y-2Y, 10Y-3M)
+    #2. Spreads (10Y-2Y, 10Y-3M)
     # ────────────────────────────────
 
     def interpret_10y2y_spread(self, spread: Optional[float]) -> MetricInterpretation:
@@ -161,9 +160,9 @@ class InterpretationEngine:
             return MetricInterpretation(
                 metric="10y2y_spread",
                 status="unknown",
-                headline="Данные 10Y-2Y недоступны",
-                explanation="Не удалось получить текущий спред 10Y-2Y. Проверьте подключение к FRED API.",
-                historical_context="В отсутствие данных невозможно провести историческое сравнение. Используйте альтернативные источники.",
+                headline="10Y-2Y data not available",
+                explanation="Could not get current spread 10Y-2Y. Check your connection to the FRED API.",
+                historical_context="In the absence of data, historical comparisons cannot be made. Use alternative sources.",
                 color="gray",
                 icon="help-circle",
             )
@@ -172,16 +171,16 @@ class InterpretationEngine:
             return MetricInterpretation(
                 metric="10y2y_spread",
                 status="normal",
-                headline=f"10Y-2Y спред {spread:.2f}% — крутая кривая",
+                headline=f"10Y-2Y spread {spread:.2f}% - steep curve",
                 explanation=(
-                    f"Спред {spread:.2f}% говорит о здоровой премии за время. "
-                    "Рынок ожидает стабильный рост и инфляцию в пределах таргета. "
-                    "Банки активно кредитуют, margin lending растёт."
+                    f"The spread {spread:.2f}% indicates a healthy time premium."
+                    "The market expects stable growth and inflation within the target."
+                    "Banks are actively lending, margin lending is growing."
                 ),
                 historical_context=(
-                    f"При спреде >1% equities historically показывали среднюю доходность 14% годовых (1996-1997, 2003-2004, 2013-2014). "
-                    f"High-beta активы (крипто, growth-акции) в этой фазе outperform value на 8-12%. "
-                    f"Облигации с дюрацией <2 лет historically underperform equities на 6-8%."
+                    f"With a spread of >1%, equities have historically shown an average return of 14% per annum (1996-1997, 2003-2004, 2013-2014)."
+                    f"High-beta assets (crypto, growth stocks) in this phase outperform value by 8-12%."
+                    f"Bonds with duration <2 years historically underperform equities by 6-8%."
                 ),
                 color="green",
                 icon="arrow-up-right",
@@ -190,16 +189,16 @@ class InterpretationEngine:
             return MetricInterpretation(
                 metric="10y2y_spread",
                 status="normal",
-                headline=f"10Y-2Y спред {spread:.2f}% — позитивный, но снижающийся",
+                headline=f"10Y-2Y spread {spread:.2f}% - positive, but declining",
                 explanation=(
-                    f"Спред положительный, но уже не агрессивный. Рынок начинает закладывать риск замедления, но паники нет. "
-                    "Типичная фаза позднего цикла — рост продолжается, но скорость замедляется."
+                    f"The spread is positive, but no longer aggressive. The market is starting to price in the risk of a slowdown, but there is no panic."
+                    "A typical late-cycle phase—growth continues, but the rate slows."
                 ),
                 historical_context=(
-                    f"При спреде 0.25-1.0% наблюдалась повышенная волатильность: средний max drawdown S&P 500 составлял -8% за 6 мес. "
-                    f"В 2018 спред был 0.5% перед коррекцией -20% (без рецессии). "
-                    f"Dividend-акции historically outperform growth на 3-5% в данной фазе. "
-                    f"Крипто-активы показывали волатильность ±30-40% в трёхмесячном окне."
+                    f"With a spread of 0.25-1.0%, increased volatility was observed: the average max drawdown of the S&P 500 was -8% for 6 months."
+                    f"In 2018 the spread was 0.5% before the -20% correction (no recession)."
+                    f"Dividend shares have historically outperformed growth by 3-5% in this phase."
+                    f"Crypto assets showed volatility of ±30-40% in a three-month window."
                 ),
                 color="blue",
                 icon="minus",
@@ -208,15 +207,15 @@ class InterpretationEngine:
             return MetricInterpretation(
                 metric="10y2y_spread",
                 status="warning",
-                headline=f"10Y-2Y спред {spread:.2f}% — почти плоский, раннее предупреждение",
+                headline=f"10Y-2Y spread {spread:.2f}% - almost flat, early warning",
                 explanation=(
-                    f"Спред сжался до {spread:.2f}%. Каждый раз, когда 10Y-2Y приближался к нулю за последние 50 лет, "
-                    "в последующие 6-18 месяцев либо начиналась рецессия, либо Fed резко снижал ставки."
+                    f"The spread has tightened to {spread:.2f}%. Every time 10Y-2Y has approached zero in the last 50 years,"
+                    "in the next 6-18 months, either a recession began or the Fed sharply cut rates."
                 ),
                 historical_context=(
-                    f"При спреде -0.1% до +0.25% S&P 500 historically показывал средний drawdown -10% за 6 мес. "
-                    f"Крипто-активы в данной фазе: медианный decline -25% (BTC), -35% (ETH). "
-                    f"Золото historically outperform на +5-10%. VIX в среднем рос с 15 до 25."
+                    f"With a spread of -0.1% to +0.25%, the S&P 500 historically showed an average drawdown of -10% over 6 months."
+                    f"Crypto assets in this phase: median decline -25% (BTC), -35% (ETH)."
+                    f"Gold historically outperforms by +5-10%. The VIX averaged from 15 to 25."
                 ),
                 color="yellow",
                 icon="alert-triangle",
@@ -225,18 +224,18 @@ class InterpretationEngine:
             return MetricInterpretation(
                 metric="10y2y_spread",
                 status="critical",
-                headline=f"10Y-2Y спред {spread:.2f}% — инверсия",
+                headline=f"10Y-2Y spread {spread:.2f}% - inversion",
                 explanation=(
-                    f"Инверсия 10Y-2Y на уровне {spread:.2f}% активна. "
-                    "Согласно данным ФРБ Сан-Франциско, инверсия предшествовала экономическому замедлению в 8 из 9 наблюдений с 1955. "
-                    f"Единственное исключение — 1966 (мягкая посадка без спада ВВП)."
+                    f"The 10Y-2Y inversion at {spread:.2f}% is active."
+                    "An inversion has preceded an economic slowdown in 8 out of 9 observations since 1955, according to the San Francisco Fed."
+                    f"The only exception is 1966 (soft landing without a decline in GDP)."
                 ),
                 historical_context=(
-                    f"При инверсии S&P 500 показывал медианный drawdown -18% за 12 мес. "
-                    f"Максимальные просадки: 2008 (-57%), 2001 (-49%), 1973 (-48%). "
-                    f"Золото: медианный рост +12% за 12 мес. после инверсии. "
-                    f"Крипто (в истории с 2013): BTC показывал decline -40% в среднем за 6 мес. после инверсии. "
-                    f"Кэш и краткосрочные облигации historically сохраняли номинальную стоимость."
+                    f"During the inversion, the S&P 500 showed a median drawdown of -18% over 12 months."
+                    f"Maximum drawdowns: 2008 (-57%), 2001 (-49%), 1973 (-48%)."
+                    f"Gold: median growth +12% over 12 months. after inversion."
+                    f"Crypto (in history since 2013): BTC showed a decline of -40% on average over 6 months. after inversion."
+                    f"Cash and short-term bonds have historically maintained par value."
                 ),
                 color="red",
                 icon="trending-down",
@@ -247,67 +246,67 @@ class InterpretationEngine:
             return MetricInterpretation(
                 metric="10y3m_spread",
                 status="unknown",
-                headline="Данные 10Y-3M недоступны",
-                explanation="Не удалось получить текущий спред 10Y-3M.",
-                historical_context="10Y-3M — ключевой предиктор в NY Fed Logistic Model. В отсутствие данных использовать альтернативные индикаторы.",
+                headline="10Y-3M data not available",
+                explanation="Could not get current spread 10Y-3M.",
+                historical_context="10Y-3M is a key predictor in the NY Fed Logistic Model. In the absence of data, use alternative indicators.",
                 color="gray",
                 icon="help-circle",
             )
 
         if spread > 1.5:
             status = "normal"
-            headline = f"10Y-3M спред {spread:.2f}% — крутая кривая"
+            headline = f"10Y-3M spread {spread:.2f}% - steep curve"
             explanation = (
-                f"10Y-3M на {spread:.2f}% — 'безопасная зона'. NY Fed model даёт вероятность замедления <5%. "
-                "Краткосрочные ставки значительно ниже долгосрочных, что стимулирует кредитование и инвестиции."
+                f"10Y-3M at {spread:.2f}% is the 'safe zone'. The NY Fed model gives <5% chance of a slowdown."
+                "Short-term rates are significantly lower than long-term rates, which stimulates lending and investment."
             )
             historical_context = (
-                f"При 10Y-3M >1.5% рецессия наблюдалась в <2% случаев за 60 лет данных. "
-                f"S&P 500 в среднем рос на 15% годовых. Крипто-активы: медианный рост +80% годовых (в доступной истории). "
-                f"High-yield bonds outperform investment-grade на 2-3%."
+                f"At 10Y-3M >1.5%, recession was observed <2% of the time over the 60 years of data."
+                f"The S&P 500 grew at an average annual rate of 15%. Crypto assets: median growth +80% per annum (in available history)."
+                f"High-yield bonds outperform investment-grade by 2-3%."
             )
             color = "green"
         elif spread > 0.0:
             status = "normal"
-            headline = f"10Y-3M спред {spread:.2f}% — позитивный, но снижающийся"
+            headline = f"10Y-3M spread {spread:.2f}% - positive, but declining"
             explanation = (
-                f"Спред ещё положительный ({spread:.2f}%), но уже не агрессивный. "
-                "Вероятность рецессии по NY Fed модели ниже 10%. Поздняя фаза расширения."
+                f"The spread is still positive ({spread:.2f}%), but no longer aggressive."
+                "The probability of a recession according to the NY Fed model is below 10%. Late expansion phase."
             )
             historical_context = (
-                f"При спреде 0-1.5% наблюдались как мягкие посадки (1995, 2019), так и рецессии (2001, 2007). "
-                f"S&P 500: средняя доходность 8% годовых, но с повышенной волатильностью. "
-                f"Крипто: ±50% волатильность в трёхмесячном окне."
+                f"With a spread of 0-1.5%, both soft landings (1995, 2019) and recessions (2001, 2007) were observed."
+                f"S&P 500: average return of 8% per annum, but with increased volatility."
+                f"Crypto: ±50% volatility in a three-month window."
             )
             color = "blue"
         elif spread > -0.50:
             status = "warning"
-            headline = f"10Y-3M спред {spread:.2f}% — близко к инверсии"
+            headline = f"10Y-3M spread {spread:.2f}% - close to inversion"
             explanation = (
-                f"10Y-3M приближается к нулю ({spread:.2f}%). Более ранний и чувствительный индикатор, чем 10Y-2Y. "
-                "NY Fed использует именно этот спред для расчёта вероятности рецессии."
+                f"10Y-3M approaches zero ({spread:.2f}%). An earlier and more sensitive indicator than 10Y-2Y."
+                "The NY Fed uses this spread to calculate the likelihood of a recession."
             )
             historical_context = (
-                f"При спреде -0.5% до 0% вероятность рецессии по NY Fed модели historically составляла 15-30%. "
-                f"S&P 500: средний drawdown -12% за 6 мес. "
-                f"BTC: медианный decline -30% в трёхмесячном окне. "
-                f"Золото: +5-8% за 6 мес."
+                f"With a spread of -0.5% to 0%, the probability of a recession according to the NY Fed model has historically been 15-30%."
+                f"S&P 500: average drawdown -12% for 6 months."
+                f"BTC: median decline -30% in a three-month window."
+                f"Gold: +5-8% for 6 months."
             )
             color = "yellow"
         else:
             status = "critical"
-            headline = f"10Y-3M спред {spread:.2f}% — инверсия (NY Fed модель)"
+            headline = f"10Y-3M spread {spread:.2f}% - inversion (NY Fed model)"
             explanation = (
-                f"Инверсия 10Y-3M на {spread:.2f}% — ключевой вход для NY Fed Logistic Model. "
-                "Этот спред предсказал все рецессии с 1960-х. Единственное исключение — 1998 (кратковременная инверсия, быстрый разворот Fed)."
+                f"The 10Y-3M inversion by {spread:.2f}% is a key input for the NY Fed Logistic Model."
+                "This spread has predicted every recession since the 1960s. The only exception is 1998 (short-term inversion, rapid Fed reversal)."
             )
             historical_context = (
-                f"При инверсии 10Y-3M вероятность рецессии historically составляла 40-70%. "
-                f"S&P 500: медианный drawdown -20% за 12 мес., максимальный -57% (2008). "
-                f"BTC (в истории с 2013): средний decline -45% за 6 мес. после инверсии. "
-                f"Золото: +10-18% за 12 мес. как safe-haven. "
-                f"Доллар (DXY): +3-5% за 6 мес. на flight-to-safety. "
-                f"Краткосрочные облигации: сохранение номинальной стоимости."
+                f"With a 10Y-3M inversion, the probability of recession historically was 40-70%."
+                f"S&P 500: median drawdown -20% for 12 months, maximum -57% (2008)."
+                f"BTC (in history since 2013): average decline -45% over 6 months. after inversion."
+                f"Gold: +10-18% for 12 months. like safe-haven."
+                f"Dollar (DXY): +3-5% for 6 months. on flight-to-safety."
+                f"Short-term bonds: maintaining par value."
             )
             color = "red"
 
@@ -322,17 +321,17 @@ class InterpretationEngine:
         )
 
     # ────────────────────────────────
-    # 3. Recession Probability
+    #3. Recession Probability
     # ────────────────────────────────
 
     def interpret_recession_probability(self, prob: Optional[float]) -> MetricInterpretation:
-        if prob is None:
+        if probe is None:
             return MetricInterpretation(
                 metric="recession_probability",
                 status="unknown",
-                headline="Вероятность неизвестна",
-                explanation="Нет данных для расчёта. Возможно, 10Y-3M спред недоступен.",
-                historical_context="Использовать альтернативные индикаторы: Conference Board LEI, PMIs, unemployment claims.",
+                headline="Probability unknown",
+                explanation="No data for calculation. The 10Y-3M spread may not be available.",
+                historical_context="Use alternative indicators: Conference Board LEI, PMIs, unemployment claims.",
                 color="gray",
                 icon="help-circle",
             )
@@ -341,17 +340,17 @@ class InterpretationEngine:
             return MetricInterpretation(
                 metric="recession_probability",
                 status="normal",
-                headline=f"Вероятность замедления: {prob:.1f}% — зелёная зона",
+                headline=f"Probability of slowdown: {prob:.1f}% - green zone",
                 explanation=(
-                    f"NY Fed модель оценивает шанс рецессии в {prob:.1f}% на 12 мес. "
-                    "Исторически низкий уровень. Экономика в фазе расширения."
+                    f"The NY Fed model estimates the chance of a recession at {prob:.1f}% for 12 months."
+                    "Historically low level. The economy is in an expansion phase."
                 ),
                 historical_context=(
-                    f"При вероятности <10% рецессия наблюдалась в <5% случаев. "
-                    f"S&P 500: средняя доходность 14% годовых. "
-                    f"Крипто: медианный рост +60-100% годовых. "
-                    f"Золото: ±5% (боковик). "
-                    f"Кредитные спреды: сжатые, стабильные."
+                    f"With a probability of <10%, recession was observed in <5% of cases."
+                    f"S&P 500: average return of 14% per annum."
+                    f"Crypto: median growth +60-100% per annum."
+                    f"Gold: ±5% (sideways)."
+                    f"Credit spreads: tight, stable."
                 ),
                 color="green",
                 icon="shield-check",
@@ -360,17 +359,17 @@ class InterpretationEngine:
             return MetricInterpretation(
                 metric="recession_probability",
                 status="warning",
-                headline=f"Вероятность замедления: {prob:.1f}% — жёлтая зона",
+                headline=f"Probability of slowdown: {prob:.1f}% - yellow zone",
                 explanation=(
-                    f"Модель выдаёт {prob:.1f}% — выше минимума, но ещё не критично. "
-                    "Типичная фаза позднего цикла, когда рост замедляется, но спада ещё нет. "
-                    "Примеры: 2018 (предшествовало коррекции -20%), 1995 (мягкая посадка)."
+                    f"The model produces {prob:.1f}% - above the minimum, but not yet critical."
+                    "A typical phase of the late cycle, when growth slows down, but there is no decline yet."
+                    "Examples: 2018 (preceded a -20% correction), 1995 (soft landing)."
                 ),
                 historical_context=(
-                    f"При 10-25% вероятности: S&P 500 показывал средний drawdown -8% за 6 мес. "
-                    f"В 50% случаев рецессия не наступала (1995, 1998, 2019). "
-                    f"Крипто: волатильность ±40% в трёхмесячном окне. "
-                    f"Defensive секторы outperform growth на 2-4%."
+                    f"With a 10-25% probability: the S&P 500 showed an average drawdown of -8% over 6 months."
+                    f"In 50% of cases, a recession did not occur (1995, 1998, 2019)."
+                    f"Crypto: volatility ±40% in a three-month window."
+                    f"Defensive sectors outperform growth by 2-4%."
                 ),
                 color="yellow",
                 icon="alert-triangle",
@@ -379,18 +378,18 @@ class InterpretationEngine:
             return MetricInterpretation(
                 metric="recession_probability",
                 status="warning",
-                headline=f"Вероятность замедления: {prob:.1f}% — оранжевая зона",
+                headline=f"Probability of slowdown: {prob:.1f}% - orange zone",
                 explanation=(
-                    f"{prob:.1f}% — серьёзный уровень. NY Fed модель считается одной из самых точных: "
-                    "предсказала замедления 1970, 1973, 1980, 1981, 1990, 2001, 2007, 2020."
+                    f"{prob:.1f}% - serious level. The NY Fed model is considered one of the most accurate:"
+                    "predicted slowdowns in 1970, 1973, 1980, 1981, 1990, 2001, 2007, 2020."
                 ),
                 historical_context=(
-                    f"При 25-50%: S&P 500 показывал средний drawdown -15% за 12 мес. "
-                    f"Рецессия наступала в 70% случаев. "
-                    f"BTC: медианный decline -35% за 6 мес. "
-                    f"Золото: +8-12% за 12 мес. "
-                    f"DXY: +2-4% на safe-haven demand. "
-                    f"Кредитные спреды (HY-IG): расширение на 150-250 bps."
+                    f"At 25-50%: the S&P 500 showed an average drawdown of -15% over 12 months."
+                    f"Recession occurred in 70% of cases."
+                    f"BTC: median decline -35% over 6 months."
+                    f"Gold: +8-12% for 12 months."
+                    f"DXY: +2-4% on safe-haven demand."
+                    f"Credit spreads (HY-IG): widening by 150-250 bps."
                 ),
                 color="orange",
                 icon="alert-octagon",
@@ -399,96 +398,96 @@ class InterpretationEngine:
             return MetricInterpretation(
                 metric="recession_probability",
                 status="critical",
-                headline=f"Вероятность замедления: {prob:.1f}% — красная зона",
+                headline=f"Probability of slowdown: {prob:.1f}% - red zone",
                 explanation=(
-                    f"{prob:.1f}% — критический уровень. Такие значения наблюдались перед: "
-                    "2008 (пик ~45% в 2006), 2001 (пик ~50% в 2000), 1990 (пик ~35% в 1989). "
-                    "Рынок уже дисконтирует спад."
+                    f"{prob:.1f}% - critical level. These values ​​were observed before:"
+                    "2008 (peak ~45% in 2006), 2001 (peak ~50% in 2000), 1990 (peak ~35% in 1989)."
+                    "The market is already discounting the decline."
                 ),
                 historical_context=(
-                    f"При вероятности >50%: рецессия наступала в 85% случаев. "
-                    f"S&P 500: медианный drawdown -25% за 12 мес., максимальный -57% (2008). "
-                    f"BTC (с 2013): средний decline -50% за 6 мес. "
-                    f"Золото: +12-20% за 12 мес. "
+                    f"With probability >50%: recession occurred in 85% of cases."
+                    f"S&P 500: median drawdown -25% for 12 months, maximum -57% (2008)."
+                    f"BTC (since 2013): average decline -50% over 6 months."
+                    f"Gold: +12-20% for 12 months."
                     f"DXY: +4-6%. "
                     f"Treasury bonds (10Y): +8-12% total return. "
-                    f"Кредитные спреды: расширение на 300-500 bps."
+                    f"Credit spreads: widening by 300-500 bps."
                 ),
                 color="red",
                 icon="skull",
             )
 
     # ────────────────────────────────
-    # 4. Market Regime
+    #4. Market Regime
     # ────────────────────────────────
 
     def interpret_market_regime(self, regime: str) -> MetricInterpretation:
         regimes = {
             "risk-on": {
-                "headline": "Режим RISK-ON — рынки растут",
+                "headline": "RISK-ON mode - markets are rising",
                 "explanation": (
-                    "Все классы активов показывают позитивную динамику. VIX низкий, кредитные спреды сжаты, "
-                    "инвесторы покупают growth и high-beta. Фаза 'жадности' по шкале Fear&Greed."
+                    "All asset classes are showing positive dynamics. VIX is low, credit spreads are compressed,"
+                    "investors buy growth and high-beta. The 'greed' phase on the Fear&Greed scale."
                 ),
                 "historical_context": (
-                    "Risk-on режимы historically длятся 12-24 месяца. "
-                    "В данной фазе S&P 500 показывал среднюю доходность 18% годовых. "
-                    "NASDAQ outperform SPX на 5-8%. "
-                    "Крипто (BTC): медианный рост +120% годовых. "
-                    "Золото: underperform на -5% (инвесторы предпочитают yield). "
-                    "DXY: слабеет на 2-3% (carry trades)."
+                    "Risk-on modes historically last 12-24 months."
+                    "During this phase, the S&P 500 showed an average return of 18% per annum."
+                    "NASDAQ outperform SPX by 5-8%."
+                    "Crypto (BTC): median growth +120% per annum."
+                    "Gold: underperform by -5% (investors prefer yield)."
+                    "DXY: weakens by 2-3% (carry trades)."
                 ),
                 "color": "green",
                 "icon": "rocket",
             },
             "risk-off": {
-                "headline": "Режим RISK-OFF — бегство от риска",
+                "headline": "RISK-OFF mode - escape from risk",
                 "explanation": (
-                    "Рынки падают, VIX взлетает, инвесторы продают акции и крипту, переходя в кэш и облигации. "
-                    "Кредитные спреды расширяются — банки перестают кредитовать. "
-                    "Это либо коррекция (-10-20%), либо начало bear market (-30%+)."
+                    "Markets are falling, VIX is soaring, investors are selling stocks and crypto, moving into cash and bonds."
+                    "Credit spreads widen as banks stop lending."
+                    "This is either a correction (-10-20%) or the beginning of a bear market (-30%+)."
                 ),
                 "historical_context": (
-                    "Risk-off фазы: средняя продолжительность 6-9 месяцев. "
-                    "S&P 500: медианный drawdown -18%, максимальный -57%. "
-                    "BTC: медианный decline -60% за 6 мес. "
-                    "Золото: +10-15% за 6 мес. (safe-haven). "
+                    "Risk-off phase: average duration 6-9 months."
+                    "S&P 500: median drawdown -18%, maximum -57%."
+                    "BTC: median decline -60% over 6 months."
+                    "Gold: +10-15% for 6 months. (safe-haven)."
                     "DXY: +5-8% (flight to safety + Fed hikes). "
                     "Treasury bonds (10Y): +6-10% total return. "
-                    "VIX: рост с 15 до 35-45."
+                    "VIX: growth from 15 to 35-45."
                 ),
                 "color": "red",
                 "icon": "shield",
             },
             "transition": {
-                "headline": "Режим TRANSITION — переломный момент",
+                "headline": "TRANSITION mode is the turning point",
                 "explanation": (
-                    "Рынок не может выбрать направление. Отдельные секторы растут, другие падают. "
-                    "Лидеры прошлого цикла слабеют, новые лидеры ещё не определились. "
-                    "Самая нестабильная фаза — ловушка для тех, кто покупает просадку слишком рано."
+                    "The market cannot choose a direction. Some sectors are growing, others are falling."
+                    "The leaders of the last cycle are weakening, new leaders have not yet been identified."
+                    "The most unstable phase is a trap for those who buy the drawdown too early."
                 ),
                 "historical_context": (
-                    "Transition фазы длятся 3-6 месяцев. "
-                    "S&P 500: боковик ±5% с высокой волатильностью. "
-                    "Секторная ротация: energy, staples outperform tech на 8-12%. "
-                    "BTC: волатильность ±50% без чёткого тренда. "
-                    "Золото: +3-5% (первые признаки hedge demand). "
-                    "DXY: боковик ±2%."
+                    "Transition phases last 3-6 months."
+                    "S&P 500: flat ±5% with high volatility."
+                    "Sector rotation: energy, staples outperform tech by 8-12%."
+                    "BTC: volatility ±50% without a clear trend."
+                    "Gold: +3-5% (first signs of hedge demand)."
+                    "DXY: sidewall ±2%."
                 ),
                 "color": "yellow",
                 "icon": "git-branch",
             },
             "undefined": {
-                "headline": "Режим UNDEFINED — недостаточно данных",
+                "headline": "UNDEFINED mode - not enough data",
                 "explanation": (
-                    "Cross-market анализ не смог определить текущий режим. Возможные причины: "
-                    "конфликтующие сигналы, недостаточная волатильность, технические проблемы."
+                    "Cross-market analysis could not determine the current mode. Possible reasons:"
+                    "conflicting signals, insufficient volatility, technical problems."
                 ),
                 "historical_context": (
-                    "При неопределённости рынка historically лучшая стратегия — нейтральная позиция с повышенным кэшем. "
-                    "В периоды без чёткого regime S&P 500 показывал минимальную доходность 2-4% годовых с повышенной волатильностью."
+                    "When the market is uncertain, historically the best strategy is a neutral position with increased cache."
+                    "During periods without a clear regime, the S&P 500 showed a minimum return of 2-4% per annum with increased volatility."
                 ),
-                "color": "gray",
+                "color": "grey",
                 "icon": "help-circle",
             },
         }
@@ -497,7 +496,7 @@ class InterpretationEngine:
         return MetricInterpretation(metric="market_regime", status=regime.lower(), **data)
 
     # ────────────────────────────────
-    # 5. Historical Analog
+    #5.Historical Analogue
     # ────────────────────────────────
 
     def interpret_top_analog(
@@ -513,15 +512,15 @@ class InterpretationEngine:
             return MetricInterpretation(
                 metric="top_analog",
                 status="low_relevance",
-                headline=f"Топ-аналогия: {analog_name} ({similarity:.0f}% match) — слабая связь",
+                headline=f"Top analogy: {analog_name} ({similarity:.0f}% match) - weak connection",
                 explanation=(
-                    f"Сходство всего {similarity:.0f}%. Текущая ситуация уникальна и не имеет чёткого исторического прецедента. "
-                    "Возможен сценарий мягкой посадки или новый тип кризиса."
+                    f"The similarity is just {similarity:.0f}%. The current situation is unique and has no clear historical precedent."
+                    "A soft landing scenario or a new type of crisis is possible."
                 ),
                 historical_context=(
-                    "Слабые аналогии (<30%) historically предшествовали как мягким посадкам (1995, 2019), "
-                    "так и внезапным шокам (2020 — COVID). "
-                    "Не полагаться только на аналогии — использовать комплексный анализ (PMI, NFP, CPI, earnings)."
+                    "Weak analogies (<30%) historically preceded both soft landings (1995, 2019),"
+                    "and sudden shocks (2020 - COVID)."
+                    "Do not rely only on analogies - use complex analysis (PMI, NFP, CPI, earnings)."
                 ),
                 color="blue",
                 icon="history",
@@ -530,21 +529,21 @@ class InterpretationEngine:
         status = "warning" if recession_followed else "normal"
         color = "red" if recession_followed else "green"
 
-        recession_text = "с рецессией" if recession_followed else "без рецессии"
-        lead_text = f" через {lead_time_months} мес." if lead_time_months else ""
+        recession_text = "with recession" if recession_followed else "no recession"
+        lead_text = f"in {lead_time_months} ​​months." if lead_time_months else ""
         outcome_text = f" SPX: {sp500_outcome:+.0f}%." if sp500_outcome else ""
 
-        headline = f"Топ-аналогия: {analog_name} ({similarity:.0f}% match) — {recession_text}"
+        headline = f"Top analogy: {analog_name} ({similarity:.0f}% match) - {recession_text}"
 
         explanation = (
-            f"Текущая кривая и макро-контекст на {similarity:.0f}% совпадают с {analog_name}. "
-            f"Тогда замедление {'наступило' if recession_followed else 'не наступило'}{lead_text}.{outcome_text}"
+            f"The current curve and macro context are {similarity:.0f}% identical to {analog_name}."
+            f"Then the slowdown {'has occurred' if recession_followed else 'has not occurred'}{lead_text}.{outcome_text}"
         )
 
         historical_context = (
-            f"Уроки периода {analog_name}: {self._analog_lessons(analog_name)} "
-            f"Лаг сигнала: {lead_time_months or 'N'} мес. "
-            f"При сходстве >30% вероятность рецессии historically составляла {70 if recession_followed else 30}%. "
+            f"Lessons from the period {analog_name}: {self._analog_lessons(analog_name)}"
+            f"Signal lag: {lead_time_months or 'N'} months."
+            f"With similarity >30%, the probability of recession historically was {70 if recession_followed else 30}%."
             f"SPX outcome: {sp500_outcome or 'N/A'}%."
         )
 
@@ -561,15 +560,15 @@ class InterpretationEngine:
     @staticmethod
     def _analog_lessons(analog_name: str) -> str:
         lessons = {
-            "2006-2007": "пузырь на рынке недвижимости, банки сильно leveredged",
-            "2000": "переоценка tech, IPO-безумие, margin debt на пике",
-            "1989": "банковский кризис S&L, геополитика",
-            "1978-1980": "stagflation, Volcker shock, двойная рецессия",
-            "1998": "LTCM, Russian default — Fed спас рынок",
-            "1966": "credit crunch, но быстрое восстановление",
-            "2019": "trade wars, COVID shock (внешний, не финансовый)",
+            "2006-2007": "real estate bubble, banks heavily levered",
+            "2000": "revaluation of tech, IPO madness, margin debt at its peak",
+            "1989": "S&L banking crisis, geopolitics",
+            "1978-1980": "stagflation, Volcker shock, double recession",
+            "1998": "LTCM, Russian default - Fed saved the market",
+            "1966": "credit crunch, but quick recovery",
+            "2019": "trade wars, COVID shock (external, not financial)",
         }
-        return lessons.get(analog_name, "внимание к макро-шокам")
+        return lessons.get(analog_name, "attention to macro shocks")
 
     # ────────────────────────────────
     # 6. Cross-Market Impact (per asset)
@@ -588,9 +587,9 @@ class InterpretationEngine:
             "NASDAQ": "NASDAQ",
             "BTC": "Bitcoin",
             "ETH": "Ethereum",
-            "GOLD": "Золото",
-            "OIL": "Нефть",
-            "DXY": "Индекс доллара (DXY)",
+            "GOLD": "Gold",
+            "OIL": "Oil",
+            "DXY": "Dollar Index (DXY)",
         }
         name = asset_names.get(asset, asset)
         avg_impact = (impact_3m + impact_6m) / 2
@@ -598,53 +597,53 @@ class InterpretationEngine:
         if avg_impact > 5:
             status = "positive"
             color = "green"
-            headline = f"{name}: модель указывает на позитив (+{avg_impact:.0f}% 3-6M)"
+            headline = f"{name}: model indicates positive (+{avg_impact:.0f}% 3-6M)"
             explanation = (
-                f"При текущей форме кривой {name} historically показывал рост +{impact_3m:.0f}% (3M) и +{impact_6m:.0f}% (6M). "
-                f"Это один из лучших сигналов для данного актива в текущем regime."
+                f"With the current shape of the curve, {name} has historically shown an increase of +{impact_3m:.0f}% (3M) and +{impact_6m:.0f}% (6M)."
+                f"This is one of the best signals for this asset in the current regime."
             )
             historical_context = (
-                f"В аналогичных периодах {name} outperform другие активы на 5-10%. "
-                f"Risk level: {risk_level}. Волатильность historically на 20-30% ниже, чем в противоположном сценарии."
+                f"In similar periods {name} outperform other assets by 5-10%."
+                f"Risk level: {risk_level}. Volatility is historically 20-30% lower than in the opposite scenario."
             )
         elif avg_impact > 0:
             status = "neutral-positive"
             color = "blue"
-            headline = f"{name}: модель указывает на слабый позитив (+{avg_impact:.0f}% 3-6M)"
+            headline = f"{name}: model indicates weak positive (+{avg_impact:.0f}% 3-6M)"
             explanation = (
-                f"Умеренный позитивный сигнал для {name}: +{impact_3m:.0f}% (3M), +{impact_6m:.0f}% (6M). "
-                "Не самый сильный сценарий, но направление позитивное."
+                f"Moderate positive signal for {name}: +{impact_3m:.0f}% (3M), +{impact_6m:.0f}% (6M)."
+                "Not the strongest scenario, but the direction is positive."
             )
             historical_context = (
-                f"В аналогичных периодах {name} рос на 2-5% с умеренной волатильностью. "
-                f"Risk level: {risk_level}. Сигнал неоднозначный — возможна боковика."
+                f"In similar periods, {name} grew by 2-5% with moderate volatility."
+                f"Risk level: {risk_level}. The signal is ambiguous - sideways movement is possible."
             )
         elif avg_impact > -5:
             status = "neutral-negative"
             color = "yellow"
-            headline = f"{name}: модель указывает на слабый негатив ({avg_impact:.0f}% 3-6M)"
+            headline = f"{name}: model indicates weak negativity ({avg_impact:.0f}% 3-6M)"
             explanation = (
-                f"Умеренный негативный сигнал для {name}: {impact_3m:.0f}% (3M), {impact_6m:.0f}% (6M). "
-                "Возможна боковика или коррекция 5-10%."
+                f"Moderate negative signal for {name}: {impact_3m:.0f}% (3M), {impact_6m:.0f}% (6M)."
+                "Sideways or correction of 5-10% is possible."
             )
             historical_context = (
-                f"В аналогичных периодах {name} показывал снижение 3-7% с повышенной волатильностью. "
-                f"Risk level: {risk_level}. Не критично, но негативный bias присутствует."
+                f"In similar periods, {name} showed a decrease of 3-7% with increased volatility."
+                f"Risk level: {risk_level}. Not critical, but negative bias is present."
             )
         else:
             status = "negative"
             color = "red"
-            headline = f"{name}: модель указывает на сильный негатив ({avg_impact:.0f}% 3-6M)"
+            headline = f"{name}: model indicates strong negativity ({avg_impact:.0f}% 3-6M)"
             explanation = (
-                f"Значительный негативный сигнал для {name}: {impact_3m:.0f}% (3M), {impact_6m:.0f}% (6M). "
-                f"При текущей yield-curve конфигурации {name} historically underperform. "
+                f"Significant negative signal for {name}: {impact_3m:.0f}% (3M), {impact_6m:.0f}% (6M)."
+                f"With the current yield-curve configuration, {name} historically underperform."
                 f"Risk level: {risk_level}."
             )
             historical_context = (
-                f"В аналогичных периодах {name} показывал decline -10% до -25%. "
-                f"Волатильность historically повышена на 40-60%. "
-                f"Recovery period: в среднем 9-12 месяцев после достижения дна. "
-                f"Safe-haven активы (золото, DXY) historically outperform в данной фазе."
+                f"In similar periods, {name} showed a decline of -10% to -25%."
+                f"Volatility has historically increased by 40-60%."
+                f"Recovery period: on average 9-12 months after reaching the bottom."
+                f"Safe-haven assets (gold, DXY) historically outperform in this phase."
             )
 
         return MetricInterpretation(
@@ -658,7 +657,7 @@ class InterpretationEngine:
         )
 
     # ────────────────────────────────
-    # 7. Aggregated Forecast
+    #7. Aggregated Forecast
     # ────────────────────────────────
 
     def interpret_aggregated_forecast(
@@ -670,45 +669,45 @@ class InterpretationEngine:
     ) -> MetricInterpretation:
 
         if recession_prob < 30:
-            headline = f"Агрегированный прогноз: мягкая посадка или рост ({recession_prob:.0f}% рецессии)"
+            headline = f"Aggregated forecast: soft landing or growth ({recession_prob:.0f}% recession)"
             explanation = (
-                f"На основе {len(top_analogies)} исторических аналогий вероятность рецессии низкая ({recession_prob:.0f}%). "
-                f"Confidence: {confidence}. Большинство аналогий указывают на продолжение роста или мягкое замедление."
+                f"Based on {len(top_analogies)} historical analogies, the probability of a recession is low ({recession_prob:.0f}%)."
+                f"Confidence: {confidence}. Most analogies point to continued growth or a mild slowdown."
             )
             historical_context = (
-                f"При <30% рецессии S&P 500 historically рос на 8-12% годовых. "
-                f"Крипто: медианный рост +50-80%. "
-                f"Золото: ±5% (боковик). "
-                f"Кредитные спреды: стабильны."
+                f"In <30% recessions, the S&P 500 has historically grown 8-12% annually."
+                f"Crypto: median growth +50-80%."
+                f"Gold: ±5% (sideways)."
+                f"Credit spreads: stable."
             )
             color = "green"
         elif recession_prob < 60:
-            headline = f"Агрегированный прогноз: неопределённость, бифуркация ({recession_prob:.0f}% рецессии)"
+            headline = f"Aggregated forecast: uncertainty, bifurcation ({recession_prob:.0f}% recession)"
             explanation = (
-                f"Модель даёт {recession_prob:.0f}% — зона неопределённости. Аналогии противоречивы: "
-                f"{', '.join(top_analogies[:3])}. Рынок может пойти в обе стороны."
+                f"The model gives {recession_prob:.0f}% - the zone of uncertainty. The analogies are contradictory:"
+                f"{', '.join(top_analogies[:3])}. The market can go both ways."
             )
             historical_context = (
-                f"При 30-60% вероятности S&P 500 historically показывал боковик ±5% с высокой волатильностью. "
-                f"В 40% случаев рецессия не наступала (1995, 1998). "
-                f"Секторная ротация: value outperform growth на 5-8%. "
-                f"Крипто: волатильность ±60% без чёткого тренда."
+                f"With a 30-60% probability, the S&P 500 historically showed a sideways trend of ±5% with high volatility."
+                f"In 40% of cases, a recession did not occur (1995, 1998)."
+                f"Sector rotation: value outperform growth by 5-8%."
+                f"Crypto: volatility ±60% without a clear trend."
             )
             color = "yellow"
         else:
-            headline = f"Агрегированный прогноз: высокая вероятность замедления ({recession_prob:.0f}%)"
+            headline = f"Aggregate forecast: high probability of slowdown ({recession_prob:.0f}%)"
             explanation = (
-                f"{recession_prob:.0f}% — большинство исторических аналогий указывают на замедление. "
-                f"Корпоративные прибыли начнут снижаться через 2-4 квартала после сигнала."
+                f"{recession_prob:.0f}% - Most historical analogies point to a slowdown."
+                f"Corporate profits will begin to decline 2-4 quarters after the signal."
             )
             historical_context = (
-                f"При >60% вероятности рецессия наступала в 85% случаев. "
-                f"S&P 500: медианный drawdown -25% за 12 мес., максимальный -57%. "
-                f"Крипто: средний decline -50% за 6 мес. "
-                f"Золото: +12-20% за 12 мес. "
+                f"With >60% probability, recession occurred in 85% of cases."
+                f"S&P 500: median drawdown -25% for 12 months, maximum -57%."
+                f"Crypto: average decline -50% over 6 months."
+                f"Gold: +12-20% for 12 months."
                 f"Treasury bonds (10Y): +8-12% total return. "
                 f"DXY: +4-6%. "
-                f"Кредитные спреды: расширение на 300-500 bps."
+                f"Credit spreads: widening by 300-500 bps."
             )
             color = "red"
 
@@ -723,7 +722,7 @@ class InterpretationEngine:
         )
 
     # ────────────────────────────────
-    # Main Method
+    #MainMethod
     # ────────────────────────────────
 
     def interpret_dashboard(
@@ -800,21 +799,21 @@ class InterpretationEngine:
     def _overall_assessment(risk: str, shape: str, analog: str) -> str:
         if risk in ("HIGH", "EXTREME"):
             return (
-                f"Высокий риск: кривая {shape}, аналогия {analog}, "
-                f"уровень риска {risk}. Исторически требовалось повышенное внимание к защите капитала."
+                f"High risk: curve {shape}, analogy {analog},"
+                f"risk level {risk}. Historically, increased attention to capital protection has been required."
             )
         elif risk == "ELEVATED":
             return (
-                f"Повышенный риск: кривая {shape}, прецедент {analog}. "
-                f"Исторически рекомендовалась консервативная позиция."
+                f"Increased risk: curve {shape}, precedent {analog}."
+                f"Historically, a conservative position has been recommended."
             )
         elif risk == "MODERATE":
             return (
-                f"Умеренный риск: кривая {shape}. Неопределённость нарастает."
+                f"Moderate risk: {shape} curve. Uncertainty increases."
             )
         else:
             return (
-                f"Низкий риск: кривая {shape}, благоприятные исторические условия."
+                f"Low risk: {shape} curve, favorable historical conditions."
             )
 
 
