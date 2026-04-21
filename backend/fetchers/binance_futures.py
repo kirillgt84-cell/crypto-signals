@@ -566,23 +566,34 @@ class BinanceFuturesFetcher:
             macd = df['macd'].iloc[-1]
             macd_signal = df['macd_signal'].iloc[-1]
             
+            # Dynamic precision based on price magnitude
+            def _rp(val):
+                if current_price >= 10000:
+                    return round(val, 2)
+                elif current_price >= 100:
+                    return round(val, 3)
+                elif current_price >= 1:
+                    return round(val, 4)
+                else:
+                    return round(val, 6)
+            
             # Определяем тренд
             trend = "bullish" if current_price > ema50 > ema200 else \
                     "bearish" if current_price < ema50 < ema200 else "mixed"
             
             return {
-                "current_price": float(round(current_price, 2)),
-                "ema20": float(round(ema20, 2)),
-                "ema50": float(round(ema50, 2)),
-                "ema200": float(round(ema200, 2)),
+                "current_price": float(_rp(current_price)),
+                "ema20": float(_rp(ema20)),
+                "ema50": float(_rp(ema50)),
+                "ema200": float(_rp(ema200)),
                 "rsi": float(round(rsi, 1)),
-                "macd": float(round(macd, 2)),
-                "macd_signal": float(round(macd_signal, 2)),
+                "macd": float(round(macd, 4)),
+                "macd_signal": float(round(macd_signal, 4)),
                 "trend": str(trend),
                 "distance_to_ema20_pct": float(round((current_price - ema20) / ema20 * 100, 2)),
                 "distance_to_ema50_pct": float(round((current_price - ema50) / ema50 * 100, 2)),
                 "distance_to_ema200_pct": float(round((current_price - ema200) / ema200 * 100, 2)),
-                "support_levels": [float(round(ema20, 2)), float(round(ema50, 2)), float(round(ema200, 2))],
+                "support_levels": [float(_rp(ema20)), float(_rp(ema50)), float(_rp(ema200))],
                 "recommendation": "buy_dip" if trend == "bullish" and current_price > ema50 else \
                                 "wait" if trend == "mixed" else "caution"
             }
