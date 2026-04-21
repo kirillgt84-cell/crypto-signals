@@ -21,7 +21,7 @@ import { TrendingUp, TrendingDown, Activity, Globe, Gem, AlertTriangle } from "l
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useLanguage } from "@/app/context/LanguageContext";
 
-const API_BASE = "https://crypto-signals-production-ff4c.up.railway.app/api/v1";
+import { API_BASE_URL } from "@/app/lib/api"
 
 interface MacroPrice {
   time: string;
@@ -50,10 +50,10 @@ export default function MacroClient() {
   const fetchData = useCallback(async () => {
     try {
       const [latestRes, corrRes, spxRes, goldRes] = await Promise.all([
-        fetch(`${API_BASE}/macro/latest`),
-        fetch(`${API_BASE}/macro/correlations?limit=90`),
-        fetch(`${API_BASE}/macro/prices/spx500?limit=365`),
-        fetch(`${API_BASE}/macro/prices/gold?limit=365`),
+        fetch(`${API_BASE_URL}/macro/latest`),
+        fetch(`${API_BASE_URL}/macro/correlations?limit=90`),
+        fetch(`${API_BASE_URL}/macro/prices/spx500?limit=365`),
+        fetch(`${API_BASE_URL}/macro/prices/gold?limit=365`),
       ]);
       if (latestRes.ok) setLatest(await latestRes.json());
       if (corrRes.ok) setCorrelations(await corrRes.json());

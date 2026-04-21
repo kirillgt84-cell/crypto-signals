@@ -39,7 +39,7 @@ interface AnomalySignal {
   expires_at: string;
 }
 
-const API_BASE = "https://crypto-signals-production-ff4c.up.railway.app/api/v1";
+import { API_BASE_URL } from "@/app/lib/api"
 
 export default function SignalsClient() {
   const { isPro } = useAuth();
@@ -71,7 +71,7 @@ export default function SignalsClient() {
       if (confidence !== "all") params.set("confidence", confidence);
       if (category !== "all") params.set("category", category);
 
-      const res = await fetch(`${API_BASE}/scanner/anomalies?${params.toString()}`, {
+      const res = await fetch(`${API_BASE_URL}/scanner/anomalies?${params.toString()}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (!res.ok) {
@@ -91,7 +91,7 @@ export default function SignalsClient() {
     if (!isPro) return;
     try {
       const token = localStorage.getItem("access_token");
-      const res = await fetch(`${API_BASE}/scanner/status`, {
+      const res = await fetch(`${API_BASE_URL}/scanner/status`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (res.ok) setScannerStatus(await res.json());
@@ -104,7 +104,7 @@ export default function SignalsClient() {
     if (!isPro) return;
     try {
       const token = localStorage.getItem("access_token");
-      const res = await fetch(`${API_BASE}/scanner/settings`, {
+      const res = await fetch(`${API_BASE_URL}/scanner/settings`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (res.ok) setScannerSettings(await res.json());
@@ -117,7 +117,7 @@ export default function SignalsClient() {
     if (!isPro) return;
     try {
       const token = localStorage.getItem("access_token");
-      const res = await fetch(`${API_BASE}/scanner/settings`, {
+      const res = await fetch(`${API_BASE_URL}/scanner/settings`, {
         method: "PATCH",
         headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
         body: JSON.stringify(updates),
@@ -135,7 +135,7 @@ export default function SignalsClient() {
     setScanningNow(true);
     try {
       const token = localStorage.getItem("access_token");
-      const res = await fetch(`${API_BASE}/scanner/scan-now`, {
+      const res = await fetch(`${API_BASE_URL}/scanner/scan-now`, {
         method: "POST",
         headers: { Authorization: `Bearer ${token}` },
       });

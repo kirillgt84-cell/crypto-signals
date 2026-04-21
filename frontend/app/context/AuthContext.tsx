@@ -43,7 +43,7 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
-const API_BASE_URL = "https://crypto-signals-production-ff4c.up.railway.app/api/v1"
+import { API_BASE_URL } from "@/app/lib/api"
 
 const authUrl = (path: string) => `${API_BASE_URL}/auth${path}?_cb=${Date.now()}`
 

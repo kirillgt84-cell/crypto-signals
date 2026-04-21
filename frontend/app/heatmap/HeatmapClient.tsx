@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils"
 import { ArrowLeft } from "lucide-react"
 import Sidebar from "../components/admin/Sidebar"
 
-const API_BASE_URL = "https://crypto-signals-production-ff4c.up.railway.app/api/v1"
+import { API_BASE_URL } from "@/app/lib/api"
 
 const TIMEFRAMES = [
   { value: "m15", label: "M15" },

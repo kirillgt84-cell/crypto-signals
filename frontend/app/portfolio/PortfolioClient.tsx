@@ -72,7 +72,7 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 import { useLanguage } from "@/app/context/LanguageContext";
 
-const API_BASE_URL = "https://crypto-signals-production-ff4c.up.railway.app/api/v1";
+import { API_BASE_URL } from "@/app/lib/api";
 
 const COLORS = [
   "#ef4444", "#22c55e", "#f59e0b", "#3b82f6", "#8b5cf6",

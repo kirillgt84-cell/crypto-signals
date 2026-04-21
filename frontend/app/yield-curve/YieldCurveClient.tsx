@@ -23,7 +23,7 @@ import {
   ReferenceLine,
 } from "recharts";
 
-const API_BASE = "https://crypto-signals-production-ff4c.up.railway.app/api/v1";
+import { API_BASE_URL } from "@/app/lib/api"
 
 interface YieldData {
   timestamp: string;
@@ -130,7 +130,7 @@ export default function YieldCurveClient() {
 
   const fetchData = useCallback(async () => {
     try {
-      const res = await fetch(`${API_BASE}/dashboard/yield`, { cache: "no-store" });
+      const res = await fetch(`${API_BASE_URL}/dashboard/yield`, { cache: "no-store" });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const json = await res.json();
       setData(json);

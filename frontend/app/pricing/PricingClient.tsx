@@ -12,7 +12,7 @@ import { cn } from "@/lib/utils";
 import { useSearchParams } from "next/navigation";
 import { useLanguage } from "@/app/context/LanguageContext";
 
-const API_BASE = "https://crypto-signals-production-ff4c.up.railway.app/api/v1";
+import { API_BASE_URL } from "@/app/lib/api"
 
 const freeFeatures = [
   "Real-time Dashboard (Price, OI, Volume, CVD)",
@@ -68,7 +68,7 @@ export default function PricingClient() {
     setMessage(null);
     try {
       const accessToken = localStorage.getItem("access_token");
-      const res = await fetch(`${API_BASE}/payments/create-trial`, {
+      const res = await fetch(`${API_BASE_URL}/payments/create-trial`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

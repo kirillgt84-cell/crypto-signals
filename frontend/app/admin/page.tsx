@@ -16,7 +16,7 @@ import { cn } from "@/lib/utils"
 import { useLanguage } from "../context/LanguageContext"
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid } from "recharts"
 
-const API_BASE_URL = "https://crypto-signals-production-ff4c.up.railway.app/api/v1"
+import { API_BASE_URL } from "@/app/lib/api"
 
 interface AdminUser {
   id: number

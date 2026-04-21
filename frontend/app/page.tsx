@@ -29,7 +29,7 @@ import { cn } from "@/lib/utils"
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip } from "recharts"
 
 // API Base URL - hardcoded to ensure correct path (updated)
-const API_BASE_URL = "https://crypto-signals-production-ff4c.up.railway.app/api/v1"
+import { API_BASE_URL } from "@/app/lib/api"
 
 const symbols = ["BTC", "ETH", "SOL", "BNB", "XRP", "DOGE", "ADA", "LINK", "AVAX", "POL"]
 

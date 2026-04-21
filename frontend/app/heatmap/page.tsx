@@ -6,7 +6,7 @@ export const metadata: Metadata = {
   description: "Market heatmap with sector analysis",
 }
 
-const API_BASE_URL = "https://crypto-signals-production-ff4c.up.railway.app/api/v1"
+import { API_BASE_URL } from "@/app/lib/api"
 
 async function getHeatmapData() {
   try {
