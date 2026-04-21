@@ -4,6 +4,7 @@ import './globals.css'
 import { ThemeProvider } from './components/theme-provider'
 import { LanguageProvider } from './context/LanguageContext'
 import { AuthProvider } from './context/AuthContext'
+import { NewsletterPopup } from './components/NewsletterPopup'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -34,6 +35,7 @@ export default function RootLayout({
               disableTransitionOnChange
             >
               {children}
+              <NewsletterPopup />
             </ThemeProvider>
           </LanguageProvider>
         </AuthProvider>

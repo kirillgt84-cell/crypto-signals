@@ -369,3 +369,14 @@ CREATE TABLE IF NOT EXISTS macro_correlations (
 );
 
 CREATE INDEX IF NOT EXISTS idx_macro_correlations_date ON macro_correlations(date DESC);
+
+-- ========== NEWSLETTER SUBSCRIPTIONS ==========
+
+CREATE TABLE IF NOT EXISTS newsletter_subscribers (
+    id SERIAL PRIMARY KEY,
+    email VARCHAR(255) NOT NULL UNIQUE,
+    is_active BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_newsletter_email ON newsletter_subscribers(email);
