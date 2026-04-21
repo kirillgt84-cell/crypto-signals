@@ -10,7 +10,6 @@ import {
   ChevronLeft,
   ChevronRight,
   Menu,
-  User,
   Zap,
   Crown,
   Wallet,
@@ -33,27 +32,17 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
   const { user, isAuthenticated } = useAuth();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const isAdmin = user?.subscription_tier === 'admin';
 
-  const baseNavItems = [
+  const navItems = [
     { href: '/', label: t('sidebar.dashboard'), icon: LayoutDashboard },
     { href: '/portfolio', label: t('sidebar.portfolio'), icon: Wallet },
     { href: '/signals', label: t('sidebar.signals'), icon: Zap },
     { href: '/macro', label: t('sidebar.macro'), icon: Globe },
     { href: '/yield-curve', label: t('sidebar.yieldCurve'), icon: TrendingUp },
     { href: '/pricing', label: t('sidebar.pricing'), icon: Crown },
-  ];
-
-  const bottomNavItems = [
-    { href: '/profile', label: t('sidebar.profile'), icon: User },
-  ];
-
-  const adminNavItem = { href: '/admin', label: t('sidebar.admin'), icon: Shield };
-  
-  const topNavItems = [
-    ...baseNavItems,
-    ...(isAdmin ? [adminNavItem] : []),
+    ...(isAdmin ? [{ href: '/admin', label: t('sidebar.admin'), icon: Shield }] : []),
   ];
 
   return (
@@ -94,18 +83,15 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
               <Logo collapsed={collapsed} />
             </Link>
             {!collapsed && (
-              <div className="flex items-center gap-1">
-                <LanguageDropdown />
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={onToggle}
-                  className="hidden h-8 w-8 lg:flex"
-                  data-testid="sidebar-toggle"
-                >
-                  <ChevronLeft className="h-4 w-4" />
-                </Button>
-              </div>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={onToggle}
+                className="hidden h-8 w-8 lg:flex"
+                data-testid="sidebar-toggle"
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
             )}
             {collapsed && (
               <Button
@@ -121,7 +107,7 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
 
           {/* Navigation */}
           <nav className="flex-1 space-y-1 p-3">
-            {topNavItems.map((item) => {
+            {navItems.map((item) => {
               const Icon = item.icon;
               const isActive = pathname === item.href;
 
@@ -155,32 +141,23 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
           </nav>
 
           {/* Bottom Section */}
-          <div className="border-t border-border p-3 space-y-1">
-            {bottomNavItems.map((item) => {
-              const Icon = item.icon;
-              const isActive = pathname === item.href;
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  onClick={() => setMobileOpen(false)}
-                  className={cn(
-                    "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
-                    isActive
-                      ? "bg-indigo-500/10 text-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-300"
-                      : "text-muted-foreground hover:bg-accent hover:text-foreground",
-                    collapsed && "justify-center px-2"
-                  )}
-                >
-                  <Icon className="h-4 w-4 flex-shrink-0" />
-                  {!collapsed && <span>{item.label}</span>}
-                </Link>
-              );
-            })}
+          <div className="border-t border-border p-3 space-y-2">
+            {/* Language Switcher */}
+            {collapsed ? (
+              <div className="flex justify-center">
+                <span className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground">
+                  {language}
+                </span>
+              </div>
+            ) : (
+              <LanguageDropdown />
+            )}
+
+            {/* Profile / Guest */}
             {isAuthenticated ? (
               <Link href="/profile" onClick={() => setMobileOpen(false)}>
                 <div className={cn(
-                  "mt-2 flex items-center gap-3 rounded-lg bg-muted/50 p-3",
+                  "flex items-center gap-3 rounded-lg bg-muted/50 p-3",
                   collapsed && "justify-center"
                 )}>
                   <Avatar className="h-8 w-8">
@@ -204,7 +181,7 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
                   window.dispatchEvent(new CustomEvent("open-auth-modal"));
                 }}
                 className={cn(
-                  "mt-2 w-full flex items-center gap-3 rounded-lg bg-muted/50 p-3 text-left hover:bg-muted transition-colors",
+                  "w-full flex items-center gap-3 rounded-lg bg-muted/50 p-3 text-left hover:bg-muted transition-colors",
                   collapsed && "justify-center"
                 )}
               >
