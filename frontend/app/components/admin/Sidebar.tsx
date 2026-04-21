@@ -21,11 +21,47 @@ import {
   TrendingUp
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { Logo } from '../Logo';
 import { useAuth } from '../../context/AuthContext';
 import { useLanguage } from '../../context/LanguageContext';
-import { LanguageSwitcher } from '../LanguageSwitcher';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+
+function LanguageDropdown() {
+  const { language, setLanguage, languages, languageNames, languageFlags } = useLanguage()
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="ghost" size="icon" className="h-8 w-8">
+          <span className="text-base leading-none">{languageFlags[language]}</span>
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" sideOffset={4} className="min-w-[140px]">
+        {languages.map((lang) => (
+          <DropdownMenuItem
+            key={lang}
+            onClick={() => setLanguage(lang)}
+            className="flex items-center justify-between gap-2 cursor-pointer"
+          >
+            <div className="flex items-center gap-2">
+              <span className="text-base">{languageFlags[lang]}</span>
+              <span className="text-sm">{languageNames[lang]}</span>
+            </div>
+            {language === lang && (
+              <span className="text-emerald-500 text-xs">✓</span>
+            )}
+          </DropdownMenuItem>
+        ))}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  )
+}
 
 interface SidebarProps {
   collapsed: boolean;
@@ -97,15 +133,18 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
               <Logo collapsed={collapsed} />
             </Link>
             {!collapsed && (
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={onToggle}
-                className="hidden h-8 w-8 lg:flex"
-                data-testid="sidebar-toggle"
-              >
-                <ChevronLeft className="h-4 w-4" />
-              </Button>
+              <div className="flex items-center gap-1">
+                <LanguageDropdown />
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={onToggle}
+                  className="hidden h-8 w-8 lg:flex"
+                  data-testid="sidebar-toggle"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+              </div>
             )}
             {collapsed && (
               <Button
@@ -153,11 +192,6 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
               );
             })}
           </nav>
-
-          {/* Language Switcher */}
-          <div className={cn("px-3 py-2", collapsed && "px-1.5")}>
-            <LanguageSwitcher />
-          </div>
 
           {/* Bottom Section */}
           <div className="border-t border-border p-3 space-y-1">

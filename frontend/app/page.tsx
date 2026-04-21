@@ -9,7 +9,6 @@ import { AuthModal } from "./components/AuthModal"
 import { ProBlurOverlay } from "./components/ProBlurOverlay"
 import { useAuth } from "./context/AuthContext"
 import { useLanguage } from "./context/LanguageContext"
-import { NativeLanguageSelect } from "./components/NativeLanguageSelect"
 import { getRSIInterpretation, getMACDInterpretation, getFundingInterpretation, getExchangeFlowInterpretation, getCVDInterpretation } from "./lib/market-utils"
 import { Logo, LogoIcon } from "./components/Logo"
 import { ThemeToggle } from "./components/ThemeToggle"
@@ -764,7 +763,6 @@ export default function Dashboard() {
         <header className="flex h-16 items-center justify-between border-b border-border px-4 lg:px-6">
           <div className="flex items-center gap-4">
             <h1 className="text-xl font-semibold uppercase">MIRKASO</h1>
-            <NativeLanguageSelect />
             <CoinSearch onSelect={(sym) => setSymbol(sym.replace("USDT", ""))} currentSymbol={symbol + "USDT"} />
             <Select value={timeframe} onValueChange={setTimeframe}>
               <SelectTrigger className="w-20">
