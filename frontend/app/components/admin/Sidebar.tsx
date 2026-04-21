@@ -32,7 +32,7 @@ interface SidebarProps {
 export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
-  const { user } = useAuth();
+  const { user, isAuthenticated } = useAuth();
   const { t } = useLanguage();
   const isAdmin = user?.subscription_tier === 'admin';
 
@@ -177,25 +177,50 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
                 </Link>
               );
             })}
-            <Link href="/profile" onClick={() => setMobileOpen(false)}>
-              <div className={cn(
-                "mt-2 flex items-center gap-3 rounded-lg bg-muted/50 p-3",
-                collapsed && "justify-center"
-              )}>
+            {isAuthenticated ? (
+              <Link href="/profile" onClick={() => setMobileOpen(false)}>
+                <div className={cn(
+                  "mt-2 flex items-center gap-3 rounded-lg bg-muted/50 p-3",
+                  collapsed && "justify-center"
+                )}>
+                  <Avatar className="h-8 w-8">
+                    <AvatarImage src={user?.avatar_url || ""} alt={user?.username || ""} />
+                    <AvatarFallback className="text-xs font-bold bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300">
+                      {user?.username?.slice(0, 2).toUpperCase() || "U"}
+                    </AvatarFallback>
+                  </Avatar>
+                  {!collapsed && (
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-medium">{user?.username || "Guest"}</p>
+                      <p className="truncate text-xs text-muted-foreground">{user?.email || "No email"}</p>
+                    </div>
+                  )}
+                </div>
+              </Link>
+            ) : (
+              <button
+                onClick={() => {
+                  setMobileOpen(false);
+                  window.dispatchEvent(new CustomEvent("open-auth-modal"));
+                }}
+                className={cn(
+                  "mt-2 w-full flex items-center gap-3 rounded-lg bg-muted/50 p-3 text-left hover:bg-muted transition-colors",
+                  collapsed && "justify-center"
+                )}
+              >
                 <Avatar className="h-8 w-8">
-                  <AvatarImage src={user?.avatar_url || ""} alt={user?.username || ""} />
                   <AvatarFallback className="text-xs font-bold bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300">
-                    {user?.username?.slice(0, 2).toUpperCase() || "U"}
+                    U
                   </AvatarFallback>
                 </Avatar>
                 {!collapsed && (
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium">{user?.username || "Guest"}</p>
-                    <p className="truncate text-xs text-muted-foreground">{user?.email || "No email"}</p>
+                    <p className="truncate text-sm font-medium">Guest</p>
+                    <p className="truncate text-xs text-muted-foreground">Click to sign in</p>
                   </div>
                 )}
-              </div>
-            </Link>
+              </button>
+            )}
           </div>
         </div>
       </aside>

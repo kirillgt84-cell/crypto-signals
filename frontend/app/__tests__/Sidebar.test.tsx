@@ -9,6 +9,7 @@ jest.mock('../context/AuthContext', () => ({
       avatar_url: null,
       subscription_tier: 'free',
     },
+    isAuthenticated: true,
     isLoading: false,
   }),
 }))
