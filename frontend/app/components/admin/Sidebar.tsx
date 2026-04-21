@@ -33,24 +33,27 @@ import { useLanguage } from '../../context/LanguageContext';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 function LanguageDropdown() {
-  const { language, setLanguage, languages, languageNames, languageFlags } = useLanguage()
+  const { language, setLanguage, languages, languageNames } = useLanguage()
 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon" className="h-8 w-8">
-          <span className="text-base leading-none">{languageFlags[language]}</span>
+        <Button variant="ghost" size="sm" className="h-8 px-2 text-xs font-bold uppercase tracking-wide hover:bg-white/10">
+          {language}
+          <svg width="10" height="10" viewBox="0 0 10 10" className="ml-1 text-muted-foreground" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="2 3.5 5 6.5 8 3.5" />
+          </svg>
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" sideOffset={4} className="min-w-[140px]">
+      <DropdownMenuContent align="end" sideOffset={4} className="min-w-[160px]">
         {languages.map((lang) => (
           <DropdownMenuItem
             key={lang}
             onClick={() => setLanguage(lang)}
-            className="flex items-center justify-between gap-2 cursor-pointer"
+            className="flex items-center justify-between gap-3 cursor-pointer"
           >
             <div className="flex items-center gap-2">
-              <span className="text-base">{languageFlags[lang]}</span>
+              <span className="text-xs font-bold uppercase w-5">{lang}</span>
               <span className="text-sm">{languageNames[lang]}</span>
             </div>
             {language === lang && (
