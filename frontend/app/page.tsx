@@ -762,7 +762,6 @@ export default function Dashboard() {
         {/* Header */}
         <header className="flex h-16 items-center justify-between border-b border-border px-4 lg:px-6">
           <div className="flex items-center gap-4">
-            <h1 className="text-xl font-semibold uppercase">MIRKASO</h1>
             <CoinSearch onSelect={(sym) => setSymbol(sym.replace("USDT", ""))} currentSymbol={symbol + "USDT"} />
             <Select value={timeframe} onValueChange={setTimeframe}>
               <SelectTrigger className="w-20">
