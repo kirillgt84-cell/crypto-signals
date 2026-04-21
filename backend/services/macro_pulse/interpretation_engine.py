@@ -325,7 +325,7 @@ class InterpretationEngine:
     # ────────────────────────────────
 
     def interpret_recession_probability(self, prob: Optional[float]) -> MetricInterpretation:
-        if probe is None:
+        if prob is None:
             return MetricInterpretation(
                 metric="recession_probability",
                 status="unknown",
