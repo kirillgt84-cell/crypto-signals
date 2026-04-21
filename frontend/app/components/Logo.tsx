@@ -15,9 +15,9 @@ export function Logo({ collapsed = false, className }: LogoProps) {
         <div className="relative w-8 h-8">
           <svg viewBox="0 0 40 40" className="w-full h-full">
             {/* 3 ascending dark blue chart bars */}
-            <rect x="6" y="26" width="8" height="10" fill="#1e3a5f" rx="1"/>
-            <rect x="16" y="18" width="8" height="18" fill="#1e3a5f" rx="1"/>
-            <rect x="26" y="10" width="8" height="26" fill="#1e3a5f" rx="1"/>
+            <rect x="6" y="26" width="8" height="10" fill="#2563eb" rx="1"/>
+            <rect x="16" y="18" width="8" height="18" fill="#2563eb" rx="1"/>
+            <rect x="26" y="10" width="8" height="26" fill="#2563eb" rx="1"/>
           </svg>
         </div>
       </div>
@@ -30,9 +30,9 @@ export function Logo({ collapsed = false, className }: LogoProps) {
       <div className="relative w-8 h-8" data-testid="logo-icon">
         <svg viewBox="0 0 40 40" className="w-full h-full">
           {/* 3 ascending dark blue chart bars */}
-          <rect x="6" y="26" width="8" height="10" fill="#1e3a5f" rx="1"/>
-          <rect x="16" y="18" width="8" height="18" fill="#1e3a5f" rx="1"/>
-          <rect x="26" y="10" width="8" height="26" fill="#1e3a5f" rx="1"/>
+          <rect x="6" y="26" width="8" height="10" fill="#2563eb" rx="1"/>
+          <rect x="16" y="18" width="8" height="18" fill="#2563eb" rx="1"/>
+          <rect x="26" y="10" width="8" height="26" fill="#2563eb" rx="1"/>
         </svg>
       </div>
       <span className="text-lg font-bold tracking-tight uppercase text-[#1e3a5f] dark:text-foreground">
@@ -48,9 +48,9 @@ export function LogoIcon({ className, ...props }: { className?: string } & React
     <div className={cn("relative", className)}>
       <svg viewBox="0 0 40 40" className="w-full h-full" {...props}>
         {/* 3 ascending dark blue chart bars */}
-        <rect x="6" y="26" width="8" height="10" fill="#1e3a5f" rx="1"/>
-        <rect x="16" y="18" width="8" height="18" fill="#1e3a5f" rx="1"/>
-        <rect x="26" y="10" width="8" height="26" fill="#1e3a5f" rx="1"/>
+        <rect x="6" y="26" width="8" height="10" fill="#2563eb" rx="1"/>
+        <rect x="16" y="18" width="8" height="18" fill="#2563eb" rx="1"/>
+        <rect x="26" y="10" width="8" height="26" fill="#2563eb" rx="1"/>
       </svg>
     </div>
   )
