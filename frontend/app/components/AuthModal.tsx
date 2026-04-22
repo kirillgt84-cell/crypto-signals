@@ -1,11 +1,12 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useRef, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { motion, AnimatePresence } from "framer-motion"
 import { X, Mail, Lock, User } from "lucide-react"
 import { useAuth } from "../context/AuthContext"
 import { useLanguage } from "../context/LanguageContext"
+import { API_BASE_URL } from "@/app/lib/api"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
@@ -125,25 +126,64 @@ export function AuthModal({ isOpen, onClose, defaultTab = "login" }: AuthModalPr
           <Button variant="outline" onClick={() => handleOAuth("discord")} className="flex items-center gap-2">
             <DiscordIcon />Discord
           </Button>
-          <TelegramLoginButton onAuth={handleTelegramAuth} />
+          <TelegramLoginWidget onAuth={handleTelegramAuth} />
         </div>
       </DialogContent>
     </Dialog>
   )
 }
 
-function TelegramLoginButton({ onAuth }: { onAuth: (user: any) => void }) {
-  const { t } = useLanguage()
-  return (
-    <Button
-      variant="outline"
-      onClick={() => window.open("https://t.me/your_bot_username?start=auth", "_blank", "width=400,height=600")}
-      className="w-full flex items-center gap-2"
-      style={{ backgroundColor: "#0088cc", color: "white", borderColor: "#0088cc" }}
-    >
-      <TelegramIcon />{t("auth.telegram")}
-    </Button>
-  )
+function TelegramLoginWidget({ onAuth }: { onAuth: (user: any) => void }) {
+  const containerRef = useRef<HTMLDivElement>(null)
+  const [botName, setBotName] = useState<string>("")
+
+  useEffect(() => {
+    fetch(`${API_BASE_URL}/auth/oauth/telegram`, { cache: 'no-store' })
+      .then(res => res.json())
+      .then(data => {
+        if (data.bot_username) setBotName(data.bot_username)
+      })
+      .catch(() => {})
+  }, [])
+
+  useEffect(() => {
+    if (!botName || !containerRef.current) return
+    containerRef.current.innerHTML = ''
+
+    const script = document.createElement('script')
+    script.src = 'https://telegram.org/js/telegram-widget.js?22'
+    script.setAttribute('data-telegram-login', botName)
+    script.setAttribute('data-size', 'large')
+    script.setAttribute('data-request-access', 'write')
+    script.setAttribute('data-userpic', 'false')
+    script.async = true
+
+    const callbackName = 'onTelegramAuth_' + Math.random().toString(36).substr(2, 9)
+    script.setAttribute('data-onauth', callbackName)
+    // @ts-ignore
+    window[callbackName] = (user: any) => {
+      onAuth(user)
+      // @ts-ignore
+      delete window[callbackName]
+    }
+
+    containerRef.current.appendChild(script)
+
+    return () => {
+      // @ts-ignore
+      delete window[callbackName]
+    }
+  }, [botName, onAuth])
+
+  if (!botName) {
+    return (
+      <Button variant="outline" disabled className="w-full flex items-center gap-2">
+        <TelegramIcon />Telegram
+      </Button>
+    )
+  }
+
+  return <div ref={containerRef} className="w-full" />
 }
 
 function GoogleIcon() {

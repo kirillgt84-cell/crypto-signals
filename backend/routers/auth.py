@@ -310,8 +310,8 @@ async def oauth_login(provider: str):
     if provider == "telegram":
         # Telegram uses widget, not redirect
         return {
-            "bot_username": "your_bot_username",
-            "auth_url": f"https://t.me/{config['bot_username']}?start=auth"
+            "bot_username": TELEGRAM_BOT_NAME,
+            "auth_url": f"https://t.me/{TELEGRAM_BOT_NAME}?start=auth"
         }
     
     # Build OAuth URL
