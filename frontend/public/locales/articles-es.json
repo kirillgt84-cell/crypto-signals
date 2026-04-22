@@ -1,0 +1,158 @@
+{
+  "what-is-mvrv": {
+    "title": "¿Qué es el ratio MVRV?",
+    "subtitle": "Comprendiendo la valoración de Bitcoin a través de MVRV",
+    "sections": [
+      {
+        "heading": "Cómo funciona MVRV",
+        "content": "El ratio de Valor de Mercado a Valor Realizado (MVRV) es una de las métricas on-chain más poderosas para la valoración de Bitcoin. Compara la capitalización de mercado actual con la capitalización realizada, midiendo esencialmente cuánta ganancia o pérdida tiene el titular promedio.\n\nEl Valor de Mercado (MV) es simplemente el precio actual multiplicado por la oferta circulante. El Valor Realizado (RV) valora cada moneda al precio de su último movimiento on-chain, creando una métrica de costo base para toda la red. Cuando el MVRV está por encima de 3.5, Bitcoin históricamente se considera sobrevalorado. Cuando el MVRV cae por debajo de 1.0, el titular promedio tiene pérdidas, lo que históricamente señala valor profundo y fondos de mercado."
+      },
+      {
+        "heading": "Zonas clave",
+        "content": "• MVRV > 3.5 — Zona de euforia, riesgo elevado de corrección\n• MVRV 1.0–2.0 — Zona de acumulación de valor justo\n• MVRV < 1.0 — Zona de capitulación, posible fondo a largo plazo"
+      },
+      {
+        "heading": "Limitaciones",
+        "content": "MVRV funciona mejor para Bitcoin debido a su modelo UTXO transparente. Es menos confiable para activos con actividad off-chain significativa. Combine siempre MVRV con otras métricas como NUPL, flujos de exchange y contexto macro."
+      }
+    ],
+    "cta": "Ver datos MVRV en tiempo real →",
+    "ctaLink": "/"
+  },
+  "yield-curve-explained": {
+    "title": "Curva de rendimiento explicada",
+    "subtitle": "Lo que la curva de rendimiento nos dice sobre los mercados",
+    "sections": [
+      {
+        "heading": "Curva normal vs invertida",
+        "content": "La curva de rendimiento traza las tasas de interés de los bonos del Tesoro de EE.UU. a través de diferentes vencimientos. Una curva de rendimiento normal tiene pendiente ascendente: las tasas a largo plazo son más altas que las tasas a corto plazo. Una curva invertida ocurre cuando las tasas a corto plazo superan las tasas a largo plazo, lo que ha precedido a cada recesión en EE.UU. desde 1955."
+      },
+      {
+        "heading": "Por qué importan las inversiones para crypto",
+        "content": "Las curvas invertidas señalan política monetaria restrictiva y estrés económico inminente. En tales entornos, la liquidez abandona primero los activos de riesgo. Bitcoin históricamente se ha vendido durante la fase temprana de las inversiones antes de desacoplarse eventualmente a medida que se reducen las tasas."
+      },
+      {
+        "heading": "Spreads clave",
+        "content": "• Spread 10Y–2Y — El predictor clásico de recesión\n• Spread 10Y–3M — Preferido por la Fed para modelos de probabilidad de recesión\n• Spread 30Y–10Y — Refleja expectativas inflacionarias a largo plazo"
+      }
+    ],
+    "cta": "Ver datos de curva de rendimiento →",
+    "ctaLink": "/yield-curve"
+  },
+  "btc-spx-correlation": {
+    "title": "Correlación BTC vs S&P 500",
+    "subtitle": "¿Bitcoin es un activo de riesgo o oro digital?",
+    "sections": [
+      {
+        "heading": "Cuándo se dispara la correlación",
+        "content": "Durante los ciclos de restricción de la Fed (2018, 2022), la correlación BTC/SPX se disparó a 0.8+. Ambos activos se vendieron a medida que subían las tasas reales y la liquidez abandonaba los mercados. En estas fases, Bitcoin se comporta como una acción tecnológica apalancada en lugar de oro."
+      },
+      {
+        "heading": "Cuándo ocurre el desacoplamiento",
+        "content": "Durante los rallies alcistas nativos de crypto (2021, 2017) y las fases de flexibilización de la Fed, la correlación cayó por debajo de 0.2. Bitcoin lideró mientras las acciones se quedaban atrás, impulsado por ciclos de halving, aprobaciones de ETF y olas de adopción."
+      },
+      {
+        "heading": "Cómo usar esta métrica",
+        "content": "• Alta correlación (>0.7) — Opere BTC como activo de riesgo; observe VIX y DXY\n• Baja correlación (<0.3) — Dominan factores específicos de crypto; enfoque en datos on-chain\n• Correlación negativa — Raro pero poderoso; BTC como refugio seguro"
+      }
+    ],
+    "cta": "Seguir correlación BTC/SPX →",
+    "ctaLink": "/macro"
+  },
+  "bitcoin-etf-flows": {
+    "title": "Análisis de flujos ETF de Bitcoin",
+    "subtitle": "Cómo los flujos ETF mueven los mercados de Bitcoin",
+    "sections": [
+      {
+        "heading": "Por qué importan los flujos",
+        "content": "Los ETF spot deben comprar Bitcoin real para respaldar las acciones. Las entradas sostenidas crean presión de compra persistente, mientras que las salidas fuerzan ventas pasivas. Los datos de flujo diario ahora sirven como indicador de sentimiento institucional en tiempo real."
+      },
+      {
+        "heading": "Leyendo los datos",
+        "content": "• Flujos netos positivos — Acumulación institucional; tiende a sostener el precio\n• Flujos netos negativos — Toma de ganancias o risk-off; a menudo precede correcciones\n• Concentración de flujos — Entradas masivas en un solo emisor señalan adopción de asesores"
+      },
+      {
+        "heading": "Relación con el precio",
+        "content": "Los flujos típicamente anticipan el precio en 1–3 días durante cambios de tendencia, pero se rezagan durante movimientos parabólicos. El sobrepeso de GBTC demostró cómo las salidas impulsadas por desbloqueos pueden suprimir el precio incluso cuando aumenta la demanda spot."
+      }
+    ],
+    "cta": "Monitorear flujos ETF →",
+    "ctaLink": "/etf"
+  },
+  "vix-and-crypto": {
+    "title": "VIX y volatilidad crypto",
+    "subtitle": "El índice de miedo encuentra activos digitales",
+    "sections": [
+      {
+        "heading": "Por qué VIX predice crypto",
+        "content": "Durante el estrés del mercado, los gestores de riesgo aplican desapalancamiento entre activos. Cuando el VIX supera 25, las llamadas de margen golpean primero las carteras de acciones, luego se propagan a crypto cuando los traders venden sus activos más volátiles."
+      },
+      {
+        "heading": "Patrones históricos",
+        "content": "• VIX > 30 — Crypto típicamente cae 20–40% a medida que se acelera el risk-off\n• VIX 20–25 — Cautela elevada; las correlaciones entre BTC y SPX se disparan\n• VIX < 18 — Zona de complacencia; a menudo precede expansión de volatilidad"
+      },
+      {
+        "heading": "Multiplicador de volatilidad crypto",
+        "content": "La volatilidad de Bitcoin es típicamente 3–5 veces el VIX. Un spike del VIX de 20 a 30 (+50%) históricamente corresponde a una caída del BTC del 15–25%. Este multiplicador hace que el monitoreo del VIX sea esencial para la gestión de riesgos."
+      }
+    ],
+    "cta": "Datos VIX y correlaciones →",
+    "ctaLink": "/macro"
+  },
+  "on-chain-metrics": {
+    "title": "Guía de métricas on-chain",
+    "subtitle": "Leyendo la blockchain para alpha",
+    "sections": [
+      {
+        "heading": "Métricas clave",
+        "content": "MVRV — Identifica sobrevaloración (>3.5) y subvaloración (<1.0) de Bitcoin.\n\nNUPL — Muestra qué porción de la red está en ganancia. NUPL positivo en zona de codicia = máximos; negativo = mínimos.\n\nFlujos de exchange — Entradas netas = presión de venta. Salidas netas = acumulación.\n\nBallenas — Carteras con 1000+ BTC. Grandes salidas de exchanges = acumulación institucional.\n\nActividad de red — Direcciones activas, volumen de transacciones y hashrate."
+      },
+      {
+        "heading": "Combinando métricas",
+        "content": "Ninguna métrica es perfecta. Las señales más confiables surgen cuando múltiples métricas se alinean: MVRV en zona verde + salidas masivas de exchanges + balances crecientes de ballenas = fuerte configuración de acumulación."
+      }
+    ],
+    "cta": "Explorar datos on-chain →",
+    "ctaLink": "/dashboard"
+  },
+  "open-interest-trading": {
+    "title": "Open Interest en trading crypto",
+    "subtitle": "Lo que dice el interés abierto",
+    "sections": [
+      {
+        "heading": "Los cuatro escenarios de OI",
+        "content": "OI creciente + Precio creciente — Nuevo dinero en largos. Tendencia respaldada por convicción. Configuración alcista más saludable.\n\nOI creciente + Precio cayendo — Shorting agresivo. Si el precio se estabiliza, posible short squeeze. Observe tasas de financiamiento.\n\nOI decreciente + Precio cayendo — Largos capitulando. A menudo marca mínimos locales.\n\nOI decreciente + Precio creciente — Shorts cubriendo, no nuevos largos. Movimiento sin convicción."
+      },
+      {
+        "heading": "Tasa de financiamiento como filtro",
+        "content": "La tasa de financiamiento revela si los largos o shorts pagan prima. Financiamiento extremadamente positivo (>0.01%) = largos abarrotados — señal contraria de venta. Financiamiento extremadamente negativo = shorts abarrotados — señal contraria de compra."
+      }
+    ],
+    "cta": "Analizar OI y financiamiento →",
+    "ctaLink": "/signals"
+  },
+  "market-regimes": {
+    "title": "Entendiendo los regímenes de mercado",
+    "subtitle": "Playbook macro para crypto",
+    "sections": [
+      {
+        "heading": "Risk-On",
+        "content": "Caracterizado por VIX cayendo, curva de rendimiento empinada, fuerte correlación BTC/SPX y flujos ETF positivos. Crypto sube, altcoins superan a Bitcoin. Mejor estrategia: largo beta, acumulación de altcoins de alta convicción."
+      },
+      {
+        "heading": "Risk-Off (temprano)",
+        "content": "VIX se dispara por encima de 25, curva de rendimiento se invierte, correlación BTC/SPX alcanza máximo, flujos ETF negativos. La liquidez se evapora. Mejor estrategia: reducir apalancamiento, moverse a stablecoins, hedgear."
+      },
+      {
+        "heading": "Risk-Off (tardío)",
+        "content": "Fase de capitulación. Métricas on-chain en extremos (MVRV < 1, NUPL negativo), tasas de financiamiento profundamente negativas, OI colapsa. Todos son bajistas. Mejor estrategia: acumulación gradual, promedio de costo."
+      },
+      {
+        "heading": "Recuperación",
+        "content": "Curva de rendimiento se empinada, VIX cae desde máximos, BTC lidera, SPX se queda atrás. Se reanuda la acumulación on-chain. Mejor estrategia: largos spot, exposición selectiva a altcoins."
+      }
+    ],
+    "cta": "Señales de regímenes →",
+    "ctaLink": "/yield-curve"
+  }
+}

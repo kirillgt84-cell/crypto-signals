@@ -1,0 +1,158 @@
+{
+  "what-is-mvrv": {
+    "title": "What is MVRV Ratio?",
+    "subtitle": "Understanding Bitcoin Valuation Through MVRV",
+    "sections": [
+      {
+        "heading": "How MVRV Works",
+        "content": "The Market Value to Realized Value (MVRV) ratio is one of the most powerful on-chain metrics for Bitcoin valuation. It compares the current market capitalization of Bitcoin to the realized capitalization — essentially measuring how much profit or loss the average holder is sitting on.\n\nMarket Value (MV) is simply the current price multiplied by the circulating supply. Realized Value (RV) values each coin at the price of its last on-chain movement, creating a cost-basis metric for the entire network. When MVRV is above 3.5, Bitcoin is historically considered overvalued. When MVRV drops below 1.0, the average holder is underwater, which historically signals deep value and market bottoms."
+      },
+      {
+        "heading": "Key Zones to Watch",
+        "content": "• MVRV > 3.5 — Euphoria zone, elevated risk of correction\n• MVRV 1.0–2.0 — Fair value accumulation zone\n• MVRV < 1.0 — Capitulation zone, potential long-term bottom"
+      },
+      {
+        "heading": "Limitations",
+        "content": "MVRV works best for Bitcoin due to its transparent UTXO model. It becomes less reliable for assets with significant off-chain activity. Always combine MVRV with other metrics like NUPL, exchange flows and macro context."
+      }
+    ],
+    "cta": "Check live MVRV data on Mirkaso dashboard →",
+    "ctaLink": "/"
+  },
+  "yield-curve-explained": {
+    "title": "Yield Curve Explained",
+    "subtitle": "What the Yield Curve Tells Us About Markets",
+    "sections": [
+      {
+        "heading": "Normal vs Inverted Curve",
+        "content": "The yield curve plots the interest rates of US Treasury bonds across different maturities. A normal yield curve slopes upward: long-term rates are higher than short-term rates. An inverted yield curve occurs when short-term rates exceed long-term rates — this has preceded every US recession since 1955."
+      },
+      {
+        "heading": "Why Inversions Matter for Crypto",
+        "content": "Inverted curves signal tight monetary policy and looming economic stress. In such environments, liquidity leaves risk assets first. Bitcoin has historically sold off during the early phase of inversions before eventually decoupling as rates are cut."
+      },
+      {
+        "heading": "Key Spreads to Watch",
+        "content": "• 10Y–2Y spread — The classic recession predictor\n• 10Y–3M spread — Favored by the Fed for recession probability models\n• 30Y–10Y spread — Reflects long-term inflation expectations"
+      }
+    ],
+    "cta": "View live yield curve data on Mirkaso →",
+    "ctaLink": "/yield-curve"
+  },
+  "btc-spx-correlation": {
+    "title": "BTC vs S&P 500 Correlation",
+    "subtitle": "Is Bitcoin a Risk Asset or Digital Gold?",
+    "sections": [
+      {
+        "heading": "When Correlation Spikes",
+        "content": "During Fed tightening cycles (2018, 2022), BTC/SPX correlation surged to 0.8+. Both assets sold off as real rates rose and liquidity left risk markets. In these phases, Bitcoin behaves like a leveraged tech stock rather than gold."
+      },
+      {
+        "heading": "When Decoupling Happens",
+        "content": "During crypto-native bull runs (2021, 2017) and Fed easing phases, correlation dropped below 0.2. Bitcoin led while equities lagged, driven by halving cycles, ETF approvals and adoption waves rather than macro liquidity."
+      },
+      {
+        "heading": "How to Use This Metric",
+        "content": "• High correlation (>0.7) — Trade BTC as a risk asset; watch VIX and DXY\n• Low correlation (<0.3) — Crypto-specific factors dominate; focus on on-chain data\n• Negative correlation — Rare but powerful; BTC acting as safe haven"
+      }
+    ],
+    "cta": "Track BTC/SPX correlation live on Mirkaso →",
+    "ctaLink": "/macro"
+  },
+  "bitcoin-etf-flows": {
+    "title": "Bitcoin ETF Flows Analysis",
+    "subtitle": "How ETF Flows Move Bitcoin Markets",
+    "sections": [
+      {
+        "heading": "Why Flows Matter",
+        "content": "Spot ETFs must buy actual Bitcoin to back shares. Sustained inflows create persistent buy pressure, while outflows force passive selling. Daily flow data now serves as a real-time sentiment gauge for institutional demand."
+      },
+      {
+        "heading": "Reading the Data",
+        "content": "• Net positive flows — Institutional accumulation; tends to support price\n• Net negative flows — Profit-taking or risk-off; often precedes corrections\n• Flow concentration — Heavy inflows into a single issuer signal advisor/RIA adoption"
+      },
+      {
+        "heading": "Relationship to Price",
+        "content": "Flows typically lead price by 1–3 days during trend changes, but lag during parabolic moves. The GBTC overhang demonstrated how unlock-driven outflows can suppress price even as spot demand rises."
+      }
+    ],
+    "cta": "Monitor live ETF flows on Mirkaso →",
+    "ctaLink": "/etf"
+  },
+  "vix-and-crypto": {
+    "title": "VIX and Crypto Volatility",
+    "subtitle": "The Fear Index Meets Digital Assets",
+    "sections": [
+      {
+        "heading": "Why VIX Predicts Crypto",
+        "content": "Inverted curves signal tight monetary policy and looming economic stress. During market stress, risk managers enforce cross-asset deleveraging. When VIX exceeds 25, margin calls hit equity portfolios first, then cascade into crypto as traders sell their most volatile holdings."
+      },
+      {
+        "heading": "Historical Patterns",
+        "content": "• VIX > 30 — Crypto typically drops 20–40% as risk-off accelerates\n• VIX 20–25 — Elevated caution; correlations between BTC and SPX spike\n• VIX < 18 — Complacency zone; often precedes volatility expansion"
+      },
+      {
+        "heading": "Crypto Volatility Multiplier",
+        "content": "Bitcoin volatility is typically 3–5x the VIX. A VIX spike from 20 to 30 (+50%) historically corresponds to a BTC drop of 15–25%. This multiplier makes VIX monitoring essential for crypto risk management."
+      }
+    ],
+    "cta": "See live VIX and correlation data on Mirkaso →",
+    "ctaLink": "/macro"
+  },
+  "on-chain-metrics": {
+    "title": "On-Chain Metrics Guide",
+    "subtitle": "Reading the Blockchain for Alpha",
+    "sections": [
+      {
+        "heading": "Core Metrics Every Trader Should Know",
+        "content": "MVRV Ratio — Identifies when BTC is overvalued (>3.5) or undervalued (<1.0).\n\nNUPL (Net Unrealized Profit/Loss) — Shows what portion of the network is in profit. Positive NUPL in greed zone signals tops; negative NUPL in fear zone signals bottoms.\n\nExchange Flows — Net inflows to exchanges = selling pressure. Net outflows = accumulation and reduced liquid supply.\n\nWhale Movements — Wallets holding 1,000+ BTC. Large outflows from exchanges to cold wallets signal institutional accumulation.\n\nNetwork Activity — Active addresses, transaction volume and hash rate indicate network adoption and security."
+      },
+      {
+        "heading": "Combining Metrics",
+        "content": "No single metric is perfect. The most reliable signals emerge when multiple metrics align: MVRV in the green zone + heavy exchange outflows + rising whale balances = strong accumulation setup."
+      }
+    ],
+    "cta": "Explore on-chain data on Mirkaso →",
+    "ctaLink": "/dashboard"
+  },
+  "open-interest-trading": {
+    "title": "Open Interest in Crypto Trading",
+    "subtitle": "What Open Interest Tells You",
+    "sections": [
+      {
+        "heading": "The Four OI Scenarios",
+        "content": "Rising OI + Rising Price — New money entering longs. Trend backed by conviction. Healthiest bullish setup.\n\nRising OI + Falling Price — Aggressive shorting. If price stabilizes, a short squeeze becomes likely. Watch funding rates.\n\nFalling OI + Falling Price — Longs capitulating. Often marks local bottoms as weak hands exit.\n\nFalling OI + Rising Price — Shorts covering, not new longs. Move lacks conviction and is vulnerable to reversal."
+      },
+      {
+        "heading": "Funding Rate as a Filter",
+        "content": "Funding rate reveals whether longs or shorts are paying premium. Extreme positive funding (>0.01%) means overcrowded longs — a contrarian sell signal. Extreme negative funding suggests overcrowded shorts — a contrarian buy signal."
+      }
+    ],
+    "cta": "Analyze OI and funding on Mirkaso →",
+    "ctaLink": "/signals"
+  },
+  "market-regimes": {
+    "title": "Understanding Market Regimes",
+    "subtitle": "Market Regimes: The Macro Playbook",
+    "sections": [
+      {
+        "heading": "Risk-On",
+        "content": "Characterized by falling VIX, steep yield curve, strong BTC/SPX correlation and positive ETF flows. Crypto rallies, altcoins outperform Bitcoin, and leverage expands. Best strategy: long beta, accumulate high-conviction alts."
+      },
+      {
+        "heading": "Risk-Off Early",
+        "content": "VIX spikes above 25, yield curve inverts, BTC/SPX correlation peaks and ETF flows turn negative. Liquidity evaporates. Best strategy: reduce leverage, move to stablecoins or cash, hedge with shorts."
+      },
+      {
+        "heading": "Risk-Off Late",
+        "content": "Capitulation phase. On-chain metrics hit extremes (MVRV < 1, NUPL negative), funding rates deeply negative and OI collapses. Everyone is bearish. Best strategy: gradual accumulation, dollar-cost averaging into spot positions."
+      },
+      {
+        "heading": "Recovery / Transition",
+        "content": "Yield curve steepens, VIX falls from highs, BTC leads while SPX lags. On-chain accumulation resumes. Best strategy: spot longs, selective altcoin exposure, avoid excessive leverage until trend confirms."
+      }
+    ],
+    "cta": "Explore regime signals on Mirkaso →",
+    "ctaLink": "/yield-curve"
+  }
+}
