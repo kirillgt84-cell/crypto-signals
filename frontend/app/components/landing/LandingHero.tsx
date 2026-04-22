@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
-import { ArrowRight, BarChart3, TrendingUp, Shield } from "lucide-react"
+import { ArrowRight, BarChart3, Shield } from "lucide-react"
 import { useLanguage } from "@/app/context/LanguageContext"
 
 export function LandingHero() {
@@ -12,7 +12,7 @@ export function LandingHero() {
     <section className="container grid lg:grid-cols-2 place-items-center py-20 md:py-32 gap-10">
       <div className="text-center lg:text-start space-y-6">
         <div className="inline-flex items-center rounded-full border px-3 py-1 text-sm font-medium text-primary bg-primary/10">
-          <TrendingUp className="mr-2 h-4 w-4" />
+          <BarChart3 className="mr-2 h-4 w-4" />
           {t("landing.hero.badge")}
         </div>
 
@@ -52,44 +52,59 @@ export function LandingHero() {
         </div>
       </div>
 
-      {/* Visual side */}
+      {/* Visual side — abstract chart */}
       <div className="relative hidden lg:flex items-center justify-center">
-        <div className="relative w-full max-w-[500px] aspect-square">
-          {/* Abstract chart visual */}
-          <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-primary/20 via-primary/5 to-background border border-primary/10 p-6 flex flex-col gap-4">
-            <div className="flex items-center justify-between">
-              <div className="h-3 w-24 rounded-full bg-primary/20" />
-              <div className="h-3 w-12 rounded-full bg-primary/20" />
+        <div className="relative w-full max-w-[480px]">
+          <div className="rounded-2xl bg-gradient-to-br from-primary/15 via-primary/5 to-background border border-primary/10 p-6">
+            {/* Header skeleton */}
+            <div className="flex items-center justify-between mb-6">
+              <div className="h-2.5 w-20 rounded-full bg-primary/20" />
+              <div className="h-2.5 w-10 rounded-full bg-primary/20" />
             </div>
-            <div className="flex-1 rounded-xl bg-muted/50 p-4 flex items-end gap-2">
-              {[40, 65, 45, 80, 55, 90, 70, 85, 60, 95, 75, 88].map((h, i) => (
+
+            {/* Abstract bars */}
+            <div className="flex items-end gap-2 h-48 mb-6 px-2">
+              {[35, 55, 40, 70, 50, 85, 65, 90, 55, 80, 60, 95].map((h, i) => (
                 <div
                   key={i}
-                  className="flex-1 rounded-sm bg-primary/40"
+                  className="flex-1 rounded-t-sm bg-primary/30"
                   style={{ height: `${h}%` }}
                 />
               ))}
             </div>
-            <div className="grid grid-cols-3 gap-3">
-              <div className="rounded-lg bg-muted/50 p-3">
-                <div className="text-xs text-muted-foreground">BTC</div>
-                <div className="text-lg font-bold text-emerald-500">+2.4%</div>
+
+            {/* Abstract line chart overlay */}
+            <svg viewBox="0 0 400 60" className="w-full h-12 mb-4">
+              <path
+                d="M0,45 Q50,40 100,30 T200,25 T300,15 T400,10"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                className="text-primary/40"
+              />
+              <path
+                d="M0,50 Q50,45 100,35 T200,30 T300,20 T400,18"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                className="text-primary/20"
+              />
+            </svg>
+
+            {/* Bottom indicators */}
+            <div className="flex gap-3">
+              <div className="flex-1 rounded-lg bg-muted/50 p-3 space-y-2">
+                <div className="h-2 w-12 rounded-full bg-primary/20" />
+                <div className="h-2 w-8 rounded-full bg-primary/30" />
               </div>
-              <div className="rounded-lg bg-muted/50 p-3">
-                <div className="text-xs text-muted-foreground">ETH</div>
-                <div className="text-lg font-bold text-emerald-500">+1.8%</div>
+              <div className="flex-1 rounded-lg bg-muted/50 p-3 space-y-2">
+                <div className="h-2 w-12 rounded-full bg-primary/20" />
+                <div className="h-2 w-8 rounded-full bg-primary/30" />
               </div>
-              <div className="rounded-lg bg-muted/50 p-3">
-                <div className="text-xs text-muted-foreground">SOL</div>
-                <div className="text-lg font-bold text-red-500">-0.5%</div>
+              <div className="flex-1 rounded-lg bg-muted/50 p-3 space-y-2">
+                <div className="h-2 w-12 rounded-full bg-primary/20" />
+                <div className="h-2 w-8 rounded-full bg-primary/30" />
               </div>
-            </div>
-          </div>
-          {/* Floating badge */}
-          <div className="absolute -right-4 top-8 rounded-xl border bg-card p-3 shadow-lg">
-            <div className="text-xs text-muted-foreground">{t("landing.hero.signalLabel")}</div>
-            <div className="text-sm font-bold text-emerald-500 flex items-center gap-1">
-              <TrendingUp className="h-3 w-3" /> LONG
             </div>
           </div>
         </div>
