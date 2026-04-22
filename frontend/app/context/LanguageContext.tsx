@@ -61,8 +61,17 @@ function detectBrowserLanguage(): Language {
   return "en"
 }
 
+function getCookieLanguage(): Language | null {
+  if (typeof document === "undefined") return null
+  const match = document.cookie.match(/(?:^|; )language=([^;]*)/)
+  const lang = match ? decodeURIComponent(match[1]) : null
+  return lang && ALL_LANGUAGES.includes(lang as Language) ? (lang as Language) : null
+}
+
 function getInitialLanguage(): Language {
   if (typeof window === "undefined") return "en"
+  const cookieLang = getCookieLanguage()
+  if (cookieLang) return cookieLang
   const saved = localStorage.getItem(LANGUAGE_KEY) as Language | null
   if (saved && ALL_LANGUAGES.includes(saved)) return saved
   return detectBrowserLanguage()
@@ -88,6 +97,9 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
       await loadTranslations(lang)
       setLanguageState(lang)
       setIsLoaded(true)
+      if (typeof document !== "undefined") {
+        document.documentElement.lang = lang === 'zh' ? 'zh-CN' : lang
+      }
     }
     init()
   }, [])
@@ -97,6 +109,8 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
     setLanguageState(lang)
     if (typeof window !== "undefined") {
       localStorage.setItem(LANGUAGE_KEY, lang)
+      document.cookie = `language=${lang};path=/;max-age=31536000`
+      document.documentElement.lang = lang === 'zh' ? 'zh-CN' : lang
     }
   }, [])
 
