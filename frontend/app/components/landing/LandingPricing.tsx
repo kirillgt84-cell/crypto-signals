@@ -58,7 +58,9 @@ export function LandingPricing() {
               </CardTitle>
               <div>
                 <span className="text-3xl font-bold">{t(`${key}.price`)}</span>
-                <span className="text-muted-foreground"> /{t("landing.pricing.period")}</span>
+                {key !== "landing.pricing.enterprise" && (
+                  <span className="text-muted-foreground"> /{t("landing.pricing.period")}</span>
+                )}
               </div>
               <CardDescription>{t(`${key}.description`)}</CardDescription>
             </CardHeader>

@@ -16,9 +16,9 @@ export function LandingHero() {
           {t("landing.hero.badge")}
         </div>
 
-        <h1 className="text-4xl md:text-6xl font-bold tracking-tight">
+        <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold leading-[1.1]">
           {t("landing.hero.title1")}{" "}
-          <span className="inline bg-gradient-to-r from-primary to-primary/60 text-transparent bg-clip-text">
+          <span className="bg-gradient-to-r from-primary to-primary/60 text-transparent bg-clip-text">
             {t("landing.hero.titleHighlight")}
           </span>{" "}
           {t("landing.hero.title2")}
