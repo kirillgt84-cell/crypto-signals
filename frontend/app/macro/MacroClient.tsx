@@ -52,7 +52,7 @@ export default function MacroClient() {
     try {
       const [latestRes, corrRes, spxRes, goldRes] = await Promise.all([
         fetch(`${API_BASE_URL}/macro/latest`),
-        fetch(`${API_BASE_URL}/macro/correlations?limit=90`),
+        fetch(`${API_BASE_URL}/macro/correlations?limit=365`),
         fetch(`${API_BASE_URL}/macro/prices/spx500?limit=365`),
         fetch(`${API_BASE_URL}/macro/prices/gold?limit=365`),
       ]);
@@ -310,7 +310,7 @@ export default function MacroClient() {
                           </linearGradient>
                         </defs>
                         <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
-                        <XAxis dataKey="date" tick={{ fontSize: 10 }} minTickGap={30} tickFormatter={(val: string) => new Date(val).toLocaleDateString(locale, { month: 'short' })} />
+                        <XAxis dataKey="date" tick={{ fontSize: 10 }} minTickGap={30} tickFormatter={(val: string) => new Date(val).toLocaleDateString(locale, { month: 'short', year: '2-digit' })} />
                         <YAxis domain={[-1, 1]} tick={{ fontSize: 11 }} />
                         <Tooltip formatter={(value: number, name: string) => [value, name]} />
                         <Legend />
