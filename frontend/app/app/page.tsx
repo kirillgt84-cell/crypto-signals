@@ -1,25 +1,12 @@
 import { Metadata } from 'next'
-import LandingClient from './LandingClient'
+import AppClient from './AppClient'
 
 export const metadata: Metadata = {
-  title: 'Mirkaso — Precision in Investment Management',
-  description: 'Advanced analytics and trading intelligence platform for crypto traders and investors. Real-time signals, market heatmaps, macro analysis, and on-chain metrics.',
-  keywords: ['crypto signals', 'bitcoin analytics', 'trading signals', 'on-chain analysis', 'crypto dashboard', 'Mirkaso', 'investment management'],
-  openGraph: {
-    title: 'Mirkaso — Precision in Investment Management',
-    description: 'Advanced analytics and trading intelligence platform',
-    url: 'https://mirkaso.com',
-    siteName: 'Mirkaso',
-    locale: 'en_US',
-    type: 'website',
-  },
-  twitter: {
-    card: 'summary_large_image',
-    title: 'Mirkaso — Precision in Investment Management',
-    description: 'Advanced analytics and trading intelligence platform',
-  },
-  alternates: {
-    canonical: 'https://mirkaso.com',
+  title: 'Dashboard — Mirkaso',
+  description: 'Advanced analytics platform for crypto traders: on-chain metrics, trading signals, macro analysis, yield curve, ETF flows and market heatmaps.',
+  robots: {
+    index: false,
+    follow: false,
   },
 }
 
@@ -71,7 +58,12 @@ export default function HomePage() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
-      <LandingClient />
+      <section className="sr-only">
+        <h1>Mirkaso — Crypto Analytics & Trading Signals Platform</h1>
+        <h2>On-Chain Metrics, Derivatives Data and Macro Analysis for Bitcoin and Altcoins</h2>
+        <p>Real-time trading signals, market heatmaps, ETF flow tracking and yield curve analysis for crypto traders.</p>
+      </section>
+      <AppClient />
     </>
   )
 }

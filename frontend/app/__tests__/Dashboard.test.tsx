@@ -1,6 +1,6 @@
 import React from 'react'
 import { render, screen, waitFor, fireEvent } from '@testing-library/react'
-import Dashboard from '../page'
+import Dashboard from '../app/page'
 
 jest.mock('../context/AuthContext', () => ({
   useAuth: () => ({
