@@ -60,6 +60,16 @@ CREATE TABLE IF NOT EXISTS refresh_tokens (
     is_revoked BOOLEAN DEFAULT FALSE
 );
 
+-- Email verification codes
+CREATE TABLE IF NOT EXISTS email_verification_codes (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    code VARCHAR(6) NOT NULL,
+    expires_at TIMESTAMP NOT NULL,
+    used BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
 -- User preferences (timezone, language, etc)
 CREATE TABLE IF NOT EXISTS user_preferences (
     user_id INTEGER PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,

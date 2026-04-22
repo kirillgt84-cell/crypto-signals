@@ -39,6 +39,8 @@ interface AuthContextType {
   updatePreferences: (updates: Partial<UserPreferences>) => Promise<void>
   changePassword: (oldPassword: string, newPassword: string) => Promise<void>
   refreshUser: () => Promise<void>
+  sendVerificationEmail: () => Promise<void>
+  verifyEmail: (code: string) => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -254,6 +256,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }
 
+  const sendVerificationEmail = async () => {
+    const token = accessToken || localStorage.getItem("access_token")
+    if (!token) throw new Error("Not authenticated")
+    const res = await fetch(authUrl('/me/send-verification'), {
+      method: "POST", cache: 'no-store',
+      headers: { Authorization: `Bearer ${token}` }
+    })
+    if (!res.ok) {
+      const error = await res.json()
+      throw new Error(error.detail || "Failed to send verification email")
+    }
+  }
+
+  const verifyEmail = async (code: string) => {
+    const token = accessToken || localStorage.getItem("access_token")
+    if (!token) throw new Error("Not authenticated")
+    const res = await fetch(authUrl('/me/verify-email'), {
+      method: "POST", cache: 'no-store',
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ code })
+    })
+    if (!res.ok) {
+      const error = await res.json()
+      throw new Error(error.detail || "Verification failed")
+    }
+    await refreshUser()
+  }
+
   useEffect(() => {
     const handleMessage = (event: MessageEvent) => {
       if (event.origin !== window.location.origin) return
@@ -277,7 +307,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       value={{
         user, isLoading, isAuthenticated: !!user, isPro,
         login, register, logout, loginWithOAuth, loginWithTelegram, refreshToken,
-        updateProfile, updatePreferences, changePassword, refreshUser
+        updateProfile, updatePreferences, changePassword, refreshUser, sendVerificationEmail, verifyEmail
       }}
     >
       {children}

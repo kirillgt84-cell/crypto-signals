@@ -685,3 +685,73 @@ async def test_telegram(current_user: dict = Depends(get_current_user)):
     if not result["success"]:
         raise HTTPException(status_code=500, detail=result.get("error", "Failed to send Telegram message"))
     return {"message": "Test Telegram message sent", "message_id": result.get("message_id")}
+
+
+# ============= EMAIL VERIFICATION =============
+
+class VerifyEmailRequest(BaseModel):
+    code: str
+
+
+@router.post("/me/send-verification")
+async def send_verification_email(current_user: dict = Depends(get_current_user)):
+    """Send a 6-digit email verification code"""
+    if not current_user.get("email"):
+        raise HTTPException(status_code=400, detail="No email address on file")
+    if current_user.get("is_email_verified"):
+        raise HTTPException(status_code=400, detail="Email already verified")
+    
+    db = get_db()
+    # Clean up old codes for this user
+    await db.execute(
+        "DELETE FROM email_verification_codes WHERE user_id = $1",
+        [current_user["id"]]
+    )
+    
+    # Generate 6-digit code with leading zeros
+    code = f"{secrets.randbelow(1000000):06d}"
+    expires_at = datetime.utcnow() + timedelta(minutes=15)
+    
+    await db.execute(
+        """INSERT INTO email_verification_codes (user_id, code, expires_at)
+           VALUES ($1, $2, $3)""",
+        [current_user["id"], code, expires_at]
+    )
+    
+    html = f"""
+    <html>
+      <body style="font-family:Arial,sans-serif;padding:24px;">
+        <h2>Verify your email</h2>
+        <p>Your verification code is:</p>
+        <p style="font-size:32px;font-weight:bold;letter-spacing:4px;margin:16px 0;">{code}</p>
+        <p>This code expires in 15 minutes.</p>
+      </body>
+    </html>
+    """
+    result = await send_email(current_user["email"], "Mirkaso Email Verification", html)
+    if not result["success"]:
+        raise HTTPException(status_code=500, detail=result.get("error", "Failed to send email"))
+    return {"message": "Verification code sent"}
+
+
+@router.post("/me/verify-email")
+async def verify_email(req: VerifyEmailRequest, current_user: dict = Depends(get_current_user)):
+    """Verify email with a 6-digit code"""
+    db = get_db()
+    row = await db.query(
+        """SELECT id FROM email_verification_codes
+           WHERE user_id = $1 AND code = $2 AND used = FALSE AND expires_at > NOW()""",
+        [current_user["id"], req.code]
+    )
+    if not row:
+        raise HTTPException(status_code=400, detail="Invalid or expired verification code")
+    
+    await db.execute(
+        "UPDATE users SET is_email_verified = TRUE WHERE id = $1",
+        [current_user["id"]]
+    )
+    await db.execute(
+        "UPDATE email_verification_codes SET used = TRUE WHERE id = $1",
+        [row[0]["id"]]
+    )
+    return {"message": "Email verified successfully"}

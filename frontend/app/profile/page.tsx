@@ -28,6 +28,7 @@ import {
   Palette,
   Shield,
   Bell,
+  LogOut,
 } from "lucide-react"
 
 type ProfileTab = "overview" | "security" | "preferences" | "subscription"
@@ -42,7 +43,7 @@ const navIcons: Record<ProfileTab, React.ElementType> = {
 import { API_BASE_URL } from "@/app/lib/api"
 
 export default function ProfilePage() {
-  const { user, isLoading, isPro, updateProfile, updatePreferences, changePassword, refreshUser } = useAuth()
+  const { user, isLoading, isPro, updateProfile, updatePreferences, changePassword, refreshUser, logout, sendVerificationEmail, verifyEmail } = useAuth()
   const { theme, setTheme } = useTheme()
   const { language, setLanguage, t } = useLanguage()
 
@@ -56,6 +57,9 @@ export default function ProfilePage() {
   const [oldPassword, setOldPassword] = useState("")
   const [newPassword, setNewPassword] = useState("")
   const [confirmPassword, setConfirmPassword] = useState("")
+  const [verificationCode, setVerificationCode] = useState("")
+  const [verificationSent, setVerificationSent] = useState(false)
+  const [verifLoading, setVerifLoading] = useState(false)
 
   const showMessage = (msg: string, type: "success" | "error") => {
     if (type === "success") { setSuccess(msg); setError(null) }
@@ -172,6 +176,42 @@ export default function ProfilePage() {
     }
   }
 
+  const handleSendVerification = async () => {
+    setVerifLoading(true)
+    try {
+      await sendVerificationEmail()
+      setVerificationSent(true)
+      showMessage(t("profile.verificationSent"), "success")
+    } catch (e: any) {
+      showMessage(e.message || t("profile.verificationSendFailed"), "error")
+    } finally {
+      setVerifLoading(false)
+    }
+  }
+
+  const handleVerifyCode = async () => {
+    if (!verificationCode || verificationCode.length !== 6) {
+      showMessage(t("profile.enter6DigitCode"), "error")
+      return
+    }
+    setVerifLoading(true)
+    try {
+      await verifyEmail(verificationCode)
+      setVerificationCode("")
+      setVerificationSent(false)
+      showMessage(t("profile.emailVerified"), "success")
+    } catch (e: any) {
+      showMessage(e.message || t("profile.verificationFailed"), "error")
+    } finally {
+      setVerifLoading(false)
+    }
+  }
+
+  const handleLogout = async () => {
+    await logout()
+    window.location.href = "/"
+  }
+
   if (isLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center">
@@ -242,6 +282,15 @@ export default function ProfilePage() {
                     )
                   })}
                 </nav>
+                <div className="mt-4 px-2">
+                  <button
+                    onClick={handleLogout}
+                    className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-destructive hover:bg-destructive/10 transition-colors"
+                  >
+                    <LogOut className="h-4 w-4" />
+                    {t("common.signOut")}
+                  </button>
+                </div>
               </CardContent>
             </Card>
           </div>
@@ -268,11 +317,36 @@ export default function ProfilePage() {
                         <p className="text-xs text-muted-foreground">{user.email || "No email"}</p>
                         <div className="mt-1 flex items-center gap-2">
                           {user.is_email_verified ? (
-                            <Badge variant="outline" className="text-emerald-600 border-emerald-200"><CheckCircle className="mr-1 h-3 w-3" /> Verified</Badge>
+                            <Badge variant="outline" className="text-emerald-600 border-emerald-200"><CheckCircle className="mr-1 h-3 w-3" /> {t("profile.verified")}</Badge>
                           ) : (
-                            <Badge variant="outline" className="text-amber-600 border-amber-200"><AlertCircle className="mr-1 h-3 w-3" /> Unverified</Badge>
+                            <Badge variant="outline" className="text-amber-600 border-amber-200"><AlertCircle className="mr-1 h-3 w-3" /> {t("profile.unverified")}</Badge>
                           )}
-                          <Badge className={isPro ? "bg-violet-500" : "bg-slate-500"}>{isPro ? "Pro" : "Free"}</Badge>
+                          <Badge className={isPro ? "bg-violet-500" : "bg-slate-500"}>{isPro ? t("common.pro") : t("common.free")}</Badge>
+                          {!user.is_email_verified && user.email && (
+                            <div className="mt-2 space-y-2">
+                              {!verificationSent ? (
+                                <Button variant="outline" size="sm" onClick={handleSendVerification} disabled={verifLoading}>
+                                  {verifLoading && <Loader2 className="mr-2 h-3 w-3 animate-spin" />}
+                                  {t("profile.sendVerificationCode")}
+                                </Button>
+                              ) : (
+                                <div className="flex items-center gap-2">
+                                  <Input
+                                    type="text"
+                                    maxLength={6}
+                                    placeholder={t("profile.enterCode")}
+                                    value={verificationCode}
+                                    onChange={(e) => setVerificationCode(e.target.value.replace(/\D/g, ""))}
+                                    className="w-32 text-center"
+                                  />
+                                  <Button size="sm" onClick={handleVerifyCode} disabled={verifLoading}>
+                                    {verifLoading && <Loader2 className="mr-2 h-3 w-3 animate-spin" />}
+                                    {t("profile.verifyEmail")}
+                                  </Button>
+                                </div>
+                              )}
+                            </div>
+                          )}
                         </div>
                       </div>
                     </div>
