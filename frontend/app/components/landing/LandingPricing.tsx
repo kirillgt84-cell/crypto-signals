@@ -20,7 +20,6 @@ export function LandingPricing() {
   const plans = [
     { key: "landing.pricing.free", popular: false },
     { key: "landing.pricing.pro", popular: true },
-    { key: "landing.pricing.enterprise", popular: false },
   ]
 
   return (
@@ -37,7 +36,7 @@ export function LandingPricing() {
         </p>
       </div>
 
-      <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+      <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
         {plans.map(({ key, popular }) => (
           <Card
             key={key}
@@ -58,9 +57,7 @@ export function LandingPricing() {
               </CardTitle>
               <div>
                 <span className="text-3xl font-bold">{t(`${key}.price`)}</span>
-                {key !== "landing.pricing.enterprise" && (
-                  <span className="text-muted-foreground"> /{t("landing.pricing.period")}</span>
-                )}
+                <span className="text-muted-foreground"> /{t("landing.pricing.period")}</span>
               </div>
               <CardDescription>{t(`${key}.description`)}</CardDescription>
             </CardHeader>

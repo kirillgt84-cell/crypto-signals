@@ -5,13 +5,12 @@ import {
   Flame,
   Globe,
   TrendingUp,
-  PieChart,
+  Layers,
   Activity,
   Wallet,
   LineChart,
 } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
 import { useLanguage } from "@/app/context/LanguageContext"
 
 const traderFeatures = [
@@ -23,7 +22,7 @@ const traderFeatures = [
 
 const investorFeatures = [
   { icon: Globe, key: "landing.features.investor1" },
-  { icon: PieChart, key: "landing.features.investor2" },
+  { icon: Layers, key: "landing.features.investor2" },
   { icon: Wallet, key: "landing.features.investor3" },
   { icon: LineChart, key: "landing.features.investor4" },
 ]
@@ -34,9 +33,6 @@ export function LandingFeatures() {
   return (
     <section id="features" className="container py-24 sm:py-32 space-y-16">
       <div className="text-center space-y-4">
-        <Badge variant="secondary" className="text-sm">
-          {t("landing.features.badge")}
-        </Badge>
         <h2 className="text-3xl md:text-4xl font-bold">
           {t("landing.features.title1")}{" "}
           <span className="bg-gradient-to-b from-primary/60 to-primary text-transparent bg-clip-text">

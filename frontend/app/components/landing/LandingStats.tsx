@@ -6,7 +6,7 @@ export function LandingStats() {
   const { t } = useLanguage()
 
   const stats = [
-    { quantity: "10+", description: t("landing.stats.assets") },
+    { quantity: "100+", description: t("landing.stats.assets") },
     { quantity: "6", description: t("landing.stats.modules") },
     { quantity: "4", description: t("landing.stats.languages") },
     { quantity: "24/7", description: t("landing.stats.data") },

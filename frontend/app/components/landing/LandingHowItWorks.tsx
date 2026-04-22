@@ -28,11 +28,11 @@ export function LandingHowItWorks() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {steps.map(({ icon: Icon, key }, index) => (
-          <Card key={key} className="bg-muted/50 relative">
-            <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-8 h-8 rounded-full bg-primary text-primary-foreground text-sm font-bold flex items-center justify-center">
-              {index + 1}
-            </div>
-            <CardHeader className="pt-8">
+          <Card key={key} className="bg-muted/50">
+            <CardHeader className="pt-6">
+              <div className="mx-auto mb-3 inline-flex items-center justify-center rounded-full bg-primary text-primary-foreground text-sm font-bold w-8 h-8">
+                {index + 1}
+              </div>
               <CardTitle className="grid gap-4 place-items-center">
                 <div className="inline-flex items-center justify-center rounded-lg bg-primary/10 p-3">
                   <Icon className="h-6 w-6 text-primary" />
