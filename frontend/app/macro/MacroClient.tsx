@@ -45,7 +45,8 @@ export default function MacroClient() {
   const [spxPrices, setSpxPrices] = useState<MacroPrice[]>([]);
   const [goldPrices, setGoldPrices] = useState<MacroPrice[]>([]);
   const [loading, setLoading] = useState(true);
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
+  const locale = language === 'zh' ? 'zh-CN' : language;
 
   const fetchData = useCallback(async () => {
     try {
@@ -79,7 +80,7 @@ export default function MacroClient() {
     const base = data[data.length - 1]?.close_price || 1;
     return data
       .map((d) => ({
-        date: new Date(d.time).toLocaleDateString(),
+        date: d.time,
         value: ((d.close_price / base) * 100) - 100,
       }))
       .reverse();
@@ -99,7 +100,7 @@ export default function MacroClient() {
     .slice()
     .reverse()
     .map((c) => ({
-      date: new Date(c.date).toLocaleDateString(),
+      date: c.date,
       "BTC ↔ SPX": c.btc_spx_correlation != null ? Number(c.btc_spx_correlation).toFixed(2) : null,
       [t("macro.goldBtcLabel")]: c.gold_btc_correlation != null ? Number(c.gold_btc_correlation).toFixed(2) : null,
       VIX: c.vix_level != null ? Number(c.vix_level).toFixed(1) : null,
@@ -241,16 +242,16 @@ export default function MacroClient() {
                     <ResponsiveContainer width="100%" height={350}>
                       <LineChart data={mergedChart}>
                         <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
-                        <XAxis dataKey="date" tick={{ fontSize: 11 }} />
+                        <XAxis dataKey="date" tick={{ fontSize: 11 }} tickFormatter={(val: string) => new Date(val).toLocaleDateString(locale, { month: 'short', year: '2-digit' })} />
                         <YAxis tick={{ fontSize: 11 }} tickFormatter={(v: number) => `${v.toFixed(0)}%`} />
                         <Tooltip formatter={(value: number, name: string) => [`${value?.toFixed(1)}%`, name]} />
                         <Legend />
-                        <Line type="monotone" dataKey="spx" name="S&P 500" stroke="#6366f1" strokeWidth={2} dot={false} />
+                        <Line type="monotone" dataKey="spx" name={t("macro.sp500")} stroke="#6366f1" strokeWidth={2} dot={false} />
                         <Line type="monotone" dataKey="gold" name={t("macro.gold")} stroke="#f59e0b" strokeWidth={2} dot={false} />
                       </LineChart>
                     </ResponsiveContainer>
                   ) : (
-                    <div className="text-center py-16 text-muted-foreground">No price data yet. Macro sync runs every 4 hours.</div>
+                    <div className="text-center py-16 text-muted-foreground">{t("macro.noPriceData")}</div>
                   )}
                 </CardContent>
               </Card>
@@ -263,9 +264,7 @@ export default function MacroClient() {
                   </CardHeader>
                   <CardContent>
                     <p className="text-xs text-muted-foreground leading-relaxed">
-                      High correlation (&gt;0.7) means Bitcoin is trading like a risk asset — it falls when equities fall. 
-                      Low correlation (&lt;0.4) suggests crypto independence. 
-                      Historically, during Fed tightening phases (2022, 2018) correlation spiked to 0.8+, while in crypto-native bull runs (2021, 2017) it dropped below 0.2.
+                      {t("macro.btcSpxDescription")}
                     </p>
                   </CardContent>
                 </Card>
@@ -275,9 +274,7 @@ export default function MacroClient() {
                   </CardHeader>
                   <CardContent>
                     <p className="text-xs text-muted-foreground leading-relaxed">
-                      Negative correlation supports the &quot;digital gold&quot; thesis — BTC as a safe-haven asset. 
-                      Positive correlation means both are driven by the same macro factor (liquidity, inflation expectations). 
-                      In 2020–2021 both rose on stimulus; in 2022 both fell on rate hikes.
+                      {t("macro.goldBtcDescription")}
                     </p>
                   </CardContent>
                 </Card>
@@ -287,9 +284,7 @@ export default function MacroClient() {
                   </CardHeader>
                   <CardContent>
                     <p className="text-xs text-muted-foreground leading-relaxed">
-                      VIX &gt;25 historically coincides with crypto drawdowns of 20–40% as risk-off spreads across all assets. 
-                      VIX &lt;18 signals complacency — often precedes volatility expansion. 
-                      Crypto volatility is typically 3–5x VIX; a VIX spike from 20 to 30 often corresponds to BTC dropping 15–25%.
+                      {t("macro.vixDescription")}
                     </p>
                   </CardContent>
                 </Card>
@@ -315,7 +310,7 @@ export default function MacroClient() {
                           </linearGradient>
                         </defs>
                         <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
-                        <XAxis dataKey="date" tick={{ fontSize: 10 }} minTickGap={30} />
+                        <XAxis dataKey="date" tick={{ fontSize: 10 }} minTickGap={30} tickFormatter={(val: string) => new Date(val).toLocaleDateString(locale, { month: 'short' })} />
                         <YAxis domain={[-1, 1]} tick={{ fontSize: 11 }} />
                         <Tooltip formatter={(value: number, name: string) => [value, name]} />
                         <Legend />
@@ -325,7 +320,7 @@ export default function MacroClient() {
                       </AreaChart>
                     </ResponsiveContainer>
                   ) : (
-                    <div className="text-center py-16 text-muted-foreground">No correlation data yet.</div>
+                    <div className="text-center py-16 text-muted-foreground">{t("macro.noCorrelationData")}</div>
                   )}
                 </CardContent>
               </Card>
