@@ -140,20 +140,31 @@ export function AuthModal({ isOpen, onClose, defaultTab = "login" }: AuthModalPr
 }
 
 function TelegramLoginWidget({ onAuth }: { onAuth: (user: any) => void }) {
+  const { t } = useLanguage()
   const containerRef = useRef<HTMLDivElement>(null)
   const [botName, setBotName] = useState<string>("")
+  const [configured, setConfigured] = useState<boolean | null>(null)
 
   useEffect(() => {
     fetch(`${API_BASE_URL}/auth/oauth/telegram`, { cache: 'no-store' })
-      .then(res => res.json())
-      .then(data => {
-        if (data.bot_username) setBotName(data.bot_username)
+      .then(async res => {
+        if (!res.ok) {
+          setConfigured(false)
+          return
+        }
+        const data = await res.json()
+        if (data.bot_username) {
+          setBotName(data.bot_username)
+          setConfigured(true)
+        } else {
+          setConfigured(false)
+        }
       })
-      .catch(() => {})
+      .catch(() => setConfigured(false))
   }, [])
 
   useEffect(() => {
-    if (!botName || !containerRef.current) return
+    if (!botName || !containerRef.current || configured !== true) return
     containerRef.current.innerHTML = ''
 
     const script = document.createElement('script')
@@ -179,9 +190,17 @@ function TelegramLoginWidget({ onAuth }: { onAuth: (user: any) => void }) {
       // @ts-ignore
       delete window[callbackName]
     }
-  }, [botName, onAuth])
+  }, [botName, onAuth, configured])
 
-  if (!botName) {
+  if (configured === false) {
+    return (
+      <Button variant="outline" disabled className="w-full flex items-center gap-2 opacity-60 cursor-not-allowed" title={t("auth.telegramNotConfigured")}>
+        <TelegramIcon />Telegram
+      </Button>
+    )
+  }
+
+  if (configured !== true) {
     return (
       <Button variant="outline" disabled className="w-full flex items-center gap-2">
         <TelegramIcon />Telegram

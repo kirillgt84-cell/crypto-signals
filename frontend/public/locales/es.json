@@ -178,6 +178,7 @@
   "auth.orContinueWith": "O continuar con",
   "auth.google": "Google",
   "auth.telegram": "Telegram",
+  "auth.telegramNotConfigured": "Bot de Telegram no configurado",
   "newsletter.title": "Recibe análisis de mercado en tu bandeja de entrada",
   "newsletter.subtitle": "Análisis semanal de crypto y macro. Sin spam, cancela cuando quieras.",
   "newsletter.emailPlaceholder": "tu@ejemplo.com",

@@ -178,6 +178,7 @@
   "auth.orContinueWith": "Или войдите через",
   "auth.google": "Google",
   "auth.telegram": "Telegram",
+  "auth.telegramNotConfigured": "Telegram бот не настроен",
   "newsletter.title": "Получайте рыночную аналитику на почту",
   "newsletter.subtitle": "Еженедельный обзор крипто и макро. Без спама, отписка в любой момент.",
   "newsletter.emailPlaceholder": "you@example.com",

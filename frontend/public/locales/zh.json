@@ -178,6 +178,7 @@
   "auth.orContinueWith": "或通过以下方式登录",
   "auth.google": "谷歌",
   "auth.telegram": "电报",
+  "auth.telegramNotConfigured": "电报机器人未配置",
   "newsletter.title": "将市场洞察送达您的收件箱",
   "newsletter.subtitle": "每周加密与宏观分析。无垃圾邮件，随时取消订阅。",
   "newsletter.emailPlaceholder": "your@example.com",

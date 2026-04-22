@@ -319,9 +319,13 @@ async def oauth_login(provider: str):
     
     if provider == "telegram":
         # Telegram uses widget, not redirect
+        bot_name = TELEGRAM_BOT_NAME or ""
+        # Validate bot username: must end with 'bot' and contain no @
+        if not bot_name or "@" in bot_name or not bot_name.lower().endswith("bot"):
+            raise HTTPException(status_code=400, detail="Telegram bot is not configured")
         return {
-            "bot_username": TELEGRAM_BOT_NAME,
-            "auth_url": f"https://t.me/{TELEGRAM_BOT_NAME}?start=auth"
+            "bot_username": bot_name,
+            "auth_url": f"https://t.me/{bot_name}?start=auth"
         }
     
     if not config.get("client_id"):
