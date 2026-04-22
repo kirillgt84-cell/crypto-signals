@@ -22,31 +22,41 @@ JWT_SECRET = os.getenv("JWT_SECRET", "default-secret-change-in-production")
 JWT_ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE = int(os.getenv("JWT_ACCESS_EXPIRE", "60"))  # minutes
 REFRESH_TOKEN_EXPIRE = int(os.getenv("JWT_REFRESH_EXPIRE", "7"))  # days
+FRONTEND_URL = os.getenv("FRONTEND_URL", "https://mirkaso.com")
+
+# OAuth credentials from env
+GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID", "")
+GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET", "")
+TWITTER_CLIENT_ID = os.getenv("TWITTER_CLIENT_ID", "")
+TWITTER_CLIENT_SECRET = os.getenv("TWITTER_CLIENT_SECRET", "")
+DISCORD_CLIENT_ID = os.getenv("DISCORD_CLIENT_ID", "")
+DISCORD_CLIENT_SECRET = os.getenv("DISCORD_CLIENT_SECRET", "")
+TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "")
 
 # OAuth Config
 OAUTH_CONFIG = {
     "google": {
-        "client_id": "your-google-client-id",
-        "client_secret": "your-google-secret",
+        "client_id": GOOGLE_CLIENT_ID,
+        "client_secret": GOOGLE_CLIENT_SECRET,
         "auth_url": "https://accounts.google.com/o/oauth2/v2/auth",
         "token_url": "https://oauth2.googleapis.com/token",
         "userinfo_url": "https://www.googleapis.com/oauth2/v2/userinfo",
         "scopes": ["openid", "email", "profile"]
     },
     "telegram": {
-        "bot_token": "your-telegram-bot-token",
+        "bot_token": TELEGRAM_BOT_TOKEN,
         # Telegram uses widget auth, not OAuth2
     },
     "twitter": {
-        "client_id": "your-twitter-client-id",
-        "client_secret": "your-twitter-secret",
+        "client_id": TWITTER_CLIENT_ID,
+        "client_secret": TWITTER_CLIENT_SECRET,
         "auth_url": "https://twitter.com/i/oauth2/authorize",
         "token_url": "https://api.twitter.com/2/oauth2/token",
         "userinfo_url": "https://api.twitter.com/2/users/me",
     },
     "discord": {
-        "client_id": "your-discord-client-id",
-        "client_secret": "your-discord-secret",
+        "client_id": DISCORD_CLIENT_ID,
+        "client_secret": DISCORD_CLIENT_SECRET,
         "auth_url": "https://discord.com/api/oauth2/authorize",
         "token_url": "https://discord.com/api/oauth2/token",
         "userinfo_url": "https://discord.com/api/users/@me",
@@ -318,7 +328,7 @@ async def oauth_login(provider: str):
     import urllib.parse
     params = {
         "client_id": config["client_id"],
-        "redirect_uri": f"https://your-domain.com/api/v1/auth/oauth/{provider}/callback",
+        "redirect_uri": f"{FRONTEND_URL}/auth/callback",
         "response_type": "code",
         "scope": " ".join(config.get("scopes", [])),
         "state": secrets.token_urlsafe(16)
@@ -345,7 +355,7 @@ async def oauth_callback(provider: str, req: OAuthCallbackRequest):
                 "code": req.code,
                 "client_id": config["client_id"],
                 "client_secret": config["client_secret"],
-                "redirect_uri": f"https://your-domain.com/api/v1/auth/oauth/{provider}/callback"
+                "redirect_uri": f"{FRONTEND_URL}/auth/callback"
             }
         )
         
