@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import { useLanguage } from '@/app/context/LanguageContext';
 
 interface AssetData {
   asset: string;
@@ -39,6 +40,7 @@ const timeframes = [
 ];
 
 export default function HeatmapMatrix({ assets }: HeatmapMatrixProps) {
+  const { t } = useLanguage();
   const [selectedTf, setSelectedTf] = useState('impact_3m');
 
   // Sort by value desc
@@ -54,7 +56,7 @@ export default function HeatmapMatrix({ assets }: HeatmapMatrixProps) {
     <div className="w-full">
       <div className="flex items-center justify-between mb-3">
         <span className="text-xs font-semibold uppercase tracking-wider text-gray-400">
-          IMPACT HEATMAP
+          {t("heatmapMatrix.title")}
         </span>
         <div className="flex gap-1">
           {timeframes.map((tf) => (

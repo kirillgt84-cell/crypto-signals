@@ -54,7 +54,8 @@ interface AnalogMatch {
   recession_followed: boolean;
   lead_time_months: number | null;
   sp500_outcome: number | null;
-  narrative: string;
+  narrative_key: string;
+  narrative_params: Record<string, string>;
 }
 
 interface CrossMarketImpact {
@@ -71,9 +72,8 @@ interface CrossMarketImpact {
 interface InterpretationMetric {
   metric: string;
   status: string;
-  headline: string;
-  explanation: string;
-  historical_context: string;
+  key: string;
+  params: Record<string, string>;
   color: string;
   icon: string;
 }
@@ -91,7 +91,8 @@ interface DashboardData {
     regime: string;
     bias: string;
     risk_level: string;
-    narrative: string;
+    narrative_key: string;
+    narrative_params: Record<string, string>;
     impacts: CrossMarketImpact[];
   };
   historical_analogs: {
@@ -101,21 +102,23 @@ interface DashboardData {
       confidence: string;
       sp500_avg: number | null;
       sp500_range: number[] | null;
-      narrative: string;
+      narrative_key: string;
+      narrative_params: Record<string, string>;
     };
   };
   signals: {
-    active: { level: string; title: string; message: string }[];
+    active: { level: string; title_key: string; message_key: string; params: Record<string, string> }[];
     count: number;
   };
   interpretation?: {
     overall: {
-      assessment: string;
+      key: string;
+      params: Record<string, string>;
       risk_level: string;
       color: string;
     };
-    disclaimer: string;
-    signals: string[];
+    disclaimer_key: string;
+    signals: { level: string; key: string; params: Record<string, string> }[];
     metrics: InterpretationMetric[];
   };
 }
@@ -127,6 +130,14 @@ export default function YieldCurveClient() {
   const [error, setError] = useState<string | null>(null);
   const [activeMetricIndex, setActiveMetricIndex] = useState(0);
   const { t } = useLanguage();
+
+  const translate = (key: string, params: Record<string, string> = {}) => {
+    let text = t(key);
+    Object.entries(params).forEach(([k, v]) => {
+      text = text.replace(new RegExp(`\\{\\{${k}\\}\\}`, "g"), v);
+    });
+    return text;
+  };
 
   const fetchData = useCallback(async () => {
     try {
@@ -153,6 +164,17 @@ export default function YieldCurveClient() {
       case "normal": return t("yieldCurve.normal");
       case "humped": return t("yieldCurve.humped");
       default: return shape;
+    }
+  };
+
+  const regimeLabel = (regime: string) => {
+    switch (regime) {
+      case "risk_on": return t("yieldCurve.riskOn");
+      case "risk_off_early": return t("yieldCurve.riskOffEarly");
+      case "risk_off_late": return t("yieldCurve.riskOffLate");
+      case "recovery": return t("yieldCurve.recovery");
+      case "transition": return t("yieldCurve.transition");
+      default: return regime.replace(/_/g, " ").toUpperCase();
     }
   };
 
@@ -262,7 +284,7 @@ export default function YieldCurveClient() {
                     </Badge>
                     {data.yield_curve.inversion_active && (
                       <p className="text-xs text-red-500 mt-1 flex items-center gap-1">
-                        <AlertTriangle className="w-3 h-3" /> Inversion active
+                        <AlertTriangle className="w-3 h-3" /> {t("yieldCurve.inversionActive")}
                       </p>
                     )}
                   </CardContent>
@@ -337,19 +359,19 @@ export default function YieldCurveClient() {
                               {data.interpretation.overall.risk_level}
                             </Badge>
                           </div>
-                          <p className="text-sm font-medium leading-relaxed">{data.interpretation.overall.assessment}</p>
+                          <p className="text-sm font-medium leading-relaxed">{translate(data.interpretation.overall.key, data.interpretation.overall.params)}</p>
                         </div>
                       </div>
                     </CardContent>
                   </Card>
 
                   {/* Disclaimer */}
-                  {data.interpretation.disclaimer && (
+                  {data.interpretation.disclaimer_key && (
                     <Card className="border-blue-500/20 bg-blue-500/5">
                       <CardContent className="pt-4 pb-4">
                         <div className="flex items-start gap-3">
                           <Info className="w-4 h-4 text-blue-400 shrink-0 mt-0.5" />
-                          <p className="text-xs text-blue-300/80 leading-relaxed">{data.interpretation.disclaimer}</p>
+                          <p className="text-xs text-blue-300/80 leading-relaxed">{translate(data.interpretation.disclaimer_key)}</p>
                         </div>
                       </CardContent>
                     </Card>
@@ -379,7 +401,7 @@ export default function YieldCurveClient() {
                             metric.color === "blue" && "bg-blue-500",
                             metric.color === "gray" && "bg-gray-500",
                           )} />
-                          <span className="truncate">{metric.headline}</span>
+                          <span className="truncate">{translate(metric.key + ".headline", metric.params)}</span>
                         </button>
                       ))}
                     </div>
@@ -429,12 +451,12 @@ export default function YieldCurveClient() {
                                 )}>
                                   {metricIconMap[metric.icon] || <Activity className="w-5 h-5" />}
                                 </span>
-                                <p className="font-bold text-base">{metric.headline}</p>
+                                <p className="font-bold text-base">{translate(metric.key + ".headline", metric.params)}</p>
                               </div>
-                              <p className="text-sm text-muted-foreground leading-relaxed mb-5">{metric.explanation}</p>
+                              <p className="text-sm text-muted-foreground leading-relaxed mb-5">{translate(metric.key + ".explanation", metric.params)}</p>
                               <div className="bg-muted/50 rounded-lg p-4">
                                 <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-2">{t("yieldCurve.historicalContext")}</p>
-                                <p className="text-sm text-muted-foreground italic leading-relaxed">{metric.historical_context}</p>
+                                <p className="text-sm text-muted-foreground italic leading-relaxed">{translate(metric.key + ".historicalContext", metric.params)}</p>
                               </div>
                             </CardContent>
                           </Card>
@@ -511,11 +533,11 @@ export default function YieldCurveClient() {
                   <CardContent className="space-y-3">
                     <div className="flex items-center gap-3">
                       <Badge variant="outline" className={cn(regimeColor(data.market_regime.regime))}>
-                        {data.market_regime.regime.replace("_", " ").toUpperCase()}
+                        {regimeLabel(data.market_regime.regime)}
                       </Badge>
                       <span className="text-sm font-medium">{data.market_regime.bias}</span>
                     </div>
-                    <p className="text-sm text-muted-foreground">{data.market_regime.narrative}</p>
+                    <p className="text-sm text-muted-foreground">{translate(data.market_regime.narrative_key, data.market_regime.narrative_params)}</p>
                     <div className="text-xs text-muted-foreground">
                       {t("yieldCurve.assessment")}: <span className="font-bold text-foreground">{data.market_regime.risk_level}</span>
                     </div>
@@ -534,12 +556,12 @@ export default function YieldCurveClient() {
                       <>
                         <div className="flex items-center justify-between">
                           <span className="font-bold">{data.historical_analogs.matches[0].period}</span>
-                          <Badge variant="secondary">{data.historical_analogs.matches[0].similarity.toFixed(0)}% match</Badge>
+                          <Badge variant="secondary">{data.historical_analogs.matches[0].similarity.toFixed(0)}% {t("yieldCurve.match")}</Badge>
                         </div>
-                        <p className="text-sm text-muted-foreground">{data.historical_analogs.matches[0].narrative}</p>
-                        {data.historical_analogs.forecast.narrative && (
+                        <p className="text-sm text-muted-foreground">{translate(data.historical_analogs.matches[0].narrative_key, data.historical_analogs.matches[0].narrative_params)}</p>
+                        {data.historical_analogs.forecast.narrative_key && (
                           <p className="text-xs text-muted-foreground border-t border-dashed border-border pt-2">
-                            {data.historical_analogs.forecast.narrative}
+                            {translate(data.historical_analogs.forecast.narrative_key, data.historical_analogs.forecast.narrative_params)}
                           </p>
                         )}
                       </>
@@ -570,8 +592,8 @@ export default function YieldCurveClient() {
                             : "bg-amber-500/10 border-amber-500/30"
                         )}
                       >
-                        <p className="text-sm font-bold">{sig.title}</p>
-                        <p className="text-xs text-muted-foreground">{sig.message}</p>
+                        <p className="text-sm font-bold">{translate(sig.title_key, sig.params)}</p>
+                        <p className="text-xs text-muted-foreground">{translate(sig.message_key, sig.params)}</p>
                       </div>
                     ))}
                   </CardContent>
@@ -591,21 +613,21 @@ export default function YieldCurveClient() {
                         <div className="flex-1">
                           <div className="flex items-center gap-2 mb-1">
                             <span className="font-bold">{match.period}</span>
-                            <Badge variant="secondary">{match.similarity.toFixed(0)}%</Badge>
+                            <Badge variant="secondary">{match.similarity.toFixed(0)}% {t("yieldCurve.match")}</Badge>
                             {match.recession_followed ? (
                               <Badge variant="outline" className="bg-red-500/10 text-red-500 border-red-500/30">
-                                Recession
+                                {t("yieldCurve.recession")}
                               </Badge>
                             ) : (
                               <Badge variant="outline" className="bg-emerald-500/10 text-emerald-500 border-emerald-500/30">
-                                No Recession
+                                {t("yieldCurve.noRecession")}
                               </Badge>
                             )}
                           </div>
-                          <p className="text-sm text-muted-foreground">{match.narrative}</p>
+                          <p className="text-sm text-muted-foreground">{translate(match.narrative_key, match.narrative_params)}</p>
                           {match.lead_time_months && (
                             <p className="text-xs text-muted-foreground mt-1">
-                              Lead time: {match.lead_time_months} months
+                              {t("yieldCurve.leadTime").replace("{{months}}", String(match.lead_time_months))}
                             </p>
                           )}
                         </div>

@@ -1,6 +1,6 @@
 """
 Cross-Market Correlation Analyzer
-Анализ корреляций между yield curve и другими рынками
+Correlation analysis between yield curve and other markets
 """
 
 import pandas as pd
@@ -15,17 +15,17 @@ logger = logging.getLogger(__name__)
 
 
 class MarketRegime(Enum):
-    """Рыночные режимы на основе yield curve"""
-    RISK_ON = "risk_on"                    # Нормальная кривая, рост
-    RISK_OFF_EARLY = "risk_off_early"      # Начало инверсии
-    RISK_OFF_LATE = "risk_off_late"        # Глубокая инверсия
-    RECOVERY = "recovery"                  # Выход из инверсии
-    TRANSITION = "transition"              # Плоская кривая
+    """Market regimes based on yield curve"""
+    RISK_ON = "risk_on"                    # Normal curve, growth
+    RISK_OFF_EARLY = "risk_off_early"      # Beginning of inversion
+    RISK_OFF_LATE = "risk_off_late"        # Deep inversion
+    RECOVERY = "recovery"                  # Exiting inversion
+    TRANSITION = "transition"              # Flat curve
 
 
 @dataclass
 class MarketImpact:
-    """Влияние на конкретный рынок"""
+    """Impact on a specific market"""
     asset: str
     direction: str  # UP, DOWN, SIDEWAYS
     magnitude: str  # SMALL, MODERATE, LARGE, EXTREME
@@ -38,7 +38,7 @@ class MarketImpact:
 
 @dataclass
 class CrossMarketSignal:
-    """Комплексный сигнал для всех рынков"""
+    """Composite signal for all markets"""
     regime: MarketRegime
     yield_curve_shape: str
     recession_probability: float
@@ -46,20 +46,21 @@ class CrossMarketSignal:
     impacts: List[MarketImpact]
     overall_bias: str  # BULLISH, BEARISH, NEUTRAL
     risk_level: str    # LOW, MODERATE, HIGH, EXTREME
-    narrative: str
+    narrative_key: str
+    narrative_params: Dict[str, Any] = field(default_factory=dict)
 
 
 class CrossMarketAnalyzer:
     """
-    Анализатор межрыночных связей
+    Cross-market correlation analyzer
     
-    Базируется на исторических корреляциях между:
+    Based on historical correlations between:
     - Yield curve shape
     - Fed policy phase
     - Risk assets performance
     """
     
-    # Исторические корреляции по режимам
+    # Historical correlations by regime
     REGIME_IMPACTS = {
         MarketRegime.RISK_ON: {
             'bias': 'BULLISH',
@@ -133,7 +134,7 @@ class CrossMarketAnalyzer:
                         recession_prob: float,
                         fed_trend: str = "neutral") -> MarketRegime:
         """
-        Определение текущего рыночного режима
+        Determine current market regime
         """
         if curve_shape == "INVERTED":
             if recession_prob > 50:
@@ -146,7 +147,7 @@ class CrossMarketAnalyzer:
         
         elif curve_shape == "NORMAL":
             if recession_prob > 30:
-                # Нормализация после инверсии
+                # Normalization after inversion
                 return MarketRegime.RECOVERY
             else:
                 return MarketRegime.RISK_ON
@@ -159,7 +160,7 @@ class CrossMarketAnalyzer:
                                      recession_prob: float,
                                      fed_trend: str = "neutral") -> CrossMarketSignal:
         """
-        Генерация комплексного сигнала для всех рынков
+        Generate composite signal for all markets
         """
         regime = self.determine_regime(curve_shape, spread_10y2y, recession_prob, fed_trend)
         regime_data = self.REGIME_IMPACTS[regime]
@@ -178,8 +179,8 @@ class CrossMarketAnalyzer:
             )
             impacts.append(impact)
         
-        narrative = self._generate_narrative(regime, curve_shape, recession_prob)
-        
+        narrative_key, narrative_params = self._generate_narrative(regime, curve_shape, recession_prob)
+
         return CrossMarketSignal(
             regime=regime,
             yield_curve_shape=curve_shape,
@@ -188,11 +189,12 @@ class CrossMarketAnalyzer:
             impacts=impacts,
             overall_bias=regime_data['bias'],
             risk_level=regime_data['risk_level'],
-            narrative=narrative
+            narrative_key=narrative_key,
+            narrative_params=narrative_params,
         )
     
     def _get_drivers(self, regime: MarketRegime, asset: str) -> List[str]:
-        """Получить ключевые драйверы для актива в данном режиме"""
+        """Get key drivers for an asset in the given regime"""
         drivers = {
             MarketRegime.RISK_ON: {
                 'SP500': ['Economic growth', 'Earnings expansion', 'Low volatility'],
@@ -230,7 +232,7 @@ class CrossMarketAnalyzer:
     def _generate_narrative(self, regime: MarketRegime, 
                            curve_shape: str,
                            recession_prob: float) -> str:
-        """Генерация описания текущей ситуации"""
+        """Generate description of current situation"""
         
         narratives = {
             MarketRegime.RISK_ON: 
@@ -262,12 +264,12 @@ class CrossMarketAnalyzer:
                                      assets: pd.DataFrame,
                                      window: int = 90) -> pd.DataFrame:
         """
-        Расчёт rolling корреляций между yield curve и активами
+        Calculate rolling correlations between yield curve and assets
         """
-        # Объединение данных
+        # Merge data
         combined = pd.concat([yields, assets], axis=1).dropna()
         
-        # Расчёт изменений
+        # Calculate changes
         changes = combined.pct_change().dropna()
         
         # Rolling correlation
@@ -280,7 +282,7 @@ class CrossMarketAnalyzer:
 _analyzer = None
 
 def get_cross_market_analyzer() -> CrossMarketAnalyzer:
-    """Получить singleton instance"""
+    """Get singleton instance"""
     global _analyzer
     if _analyzer is None:
         _analyzer = CrossMarketAnalyzer()

@@ -1,5 +1,5 @@
 """
-FRED API Client для получения данных о кривой доходности
+FRED API Client for fetching yield curve data
 API: https://fred.stlouisfed.org/docs/api/fred/
 """
 
@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 
 FRED_BASE_URL = "https://api.stlouisfed.org/fred"
 
-# Series IDs для Treasury yields
+# Series IDs for Treasury yields
 TREASURY_SERIES = {
     "3M": "DGS3MO",    # 3-Month Treasury
     "2Y": "DGS2",      # 2-Year Treasury
@@ -32,7 +32,7 @@ class FREDConfig:
 
 
 class FREDClient:
-    """Клиент для FRED API"""
+    """FRED API client"""
     
     def __init__(self, config: Optional[FREDConfig] = None):
         self.config = config or FREDConfig(
@@ -42,7 +42,7 @@ class FREDClient:
             logger.warning("FRED_API_KEY not set!")
     
     async def _request(self, endpoint: str, params: Dict) -> Dict:
-        """Базовый метод запроса"""
+        """Base request method"""
         url = f"{self.config.base_url}/{endpoint}"
         params["api_key"] = self.config.api_key
         params["file_type"] = "json"
@@ -61,7 +61,7 @@ class FREDClient:
         end_date: Optional[str] = None,
         limit: int = 1000
     ) -> List[Dict]:
-        """Получить наблюдения для серии"""
+        """Get observations for a series"""
         params = {
             "series_id": series_id,
             "limit": limit,
@@ -80,7 +80,7 @@ class FREDClient:
         start_date: Optional[str] = None,
         end_date: Optional[str] = None
     ) -> Dict[str, List[Dict]]:
-        """Получить полную кривую доходности"""
+        """Get full yield curve"""
         result = {}
         
         for tenor, series_id in TREASURY_SERIES.items():
@@ -103,7 +103,7 @@ class FREDClient:
         tenor: str,
         years: int = 10
     ) -> List[Dict]:
-        """Получить исторические данные для тенора"""
+        """Get historical data for a tenor"""
         end = datetime.now()
         start = end - timedelta(days=years * 365)
         
@@ -120,11 +120,11 @@ class FREDClient:
 
 
 class YieldCurveCalculator:
-    """Калькулятор спредов и индикаторов"""
+    """Spread and indicator calculator"""
     
     @staticmethod
     def calculate_spreads(yields: Dict[str, float]) -> Dict[str, float]:
-        """Рассчитать ключевые спреды"""
+        """Calculate key spreads"""
         spreads = {}
         
         if "10Y" in yields and "2Y" in yields:
@@ -143,7 +143,7 @@ class YieldCurveCalculator:
     
     @staticmethod
     def calculate_recession_probability(spread_10y_3m: float) -> Dict:
-        """Рассчитать вероятность рецессии (модель NY Fed)"""
+        """Calculate recession probability (NY Fed model)"""
         import math
         
         beta_0 = -0.5334
@@ -172,7 +172,7 @@ class YieldCurveCalculator:
     
     @staticmethod
     def determine_curve_shape(yields: Dict[str, float]) -> str:
-        """Определить форму кривой"""
+        """Determine curve shape"""
         if "10Y" not in yields or "2Y" not in yields:
             return "unknown"
         

@@ -3,8 +3,8 @@ Historical Pattern Matching Engine
 Search for historical analogies of the current market situation"""
 
 import numpy as np
-from typing import List, Dict, Tuple, Optional
-from dataclasses import dataclass
+from typing import List, Dict, Tuple, Optional, Any
+from dataclasses import dataclass, field
 from datetime import datetime
 import logging
 
@@ -40,7 +40,8 @@ class HistoricalMatch:
     sp500_outcome: Optional[float]
     key_differences: List[str]
     key_similarities: List[str]
-    narrative: str
+    narrative_key: str
+    narrative_params: Dict[str, Any] = field(default_factory=dict)
 
 
 class PatternMatchingEngine:
@@ -290,6 +291,7 @@ class PatternMatchingEngine:
             if score >= min_similarity:
                 narrative = self._generate_narrative(current, case, score, similarities)
                 
+                narrative_key, narrative_params = narrative
                 match = HistoricalMatch(
                     period_name=case['period_name'],
                     start_date=case['start_date'],
@@ -301,35 +303,35 @@ class PatternMatchingEngine:
                     sp500_outcome=case['outcomes'].get('sp500_change'),
                     key_differences=differences[:3],
                     key_similarities=similarities[:3],
-                    narrative=narrative
+                    narrative_key=narrative_key,
+                    narrative_params=narrative_params,
                 )
                 matches.append(match)
         
         matches.sort(key=lambda x: x.similarity_score, reverse=True)
         return matches[:n]
     
-    def _generate_narrative(self, current: MarketState, historical: Dict, score: float, similarities: List[str]) -> str:
+    def _generate_narrative(self, current: MarketState, historical: Dict, score: float, similarities: List[str]) -> tuple:
         """Generation of human-readable analogy descriptions"""
         period = historical['period_name']
         context = historical['context']
-        recession = "with recession" if historical['recession_followed'] else "no recession"
         
         if score > 75:
-            strength = "Strong"
+            strength_key = "strong"
         elif score > 60:
-            strength = "Moderate"
+            strength_key = "moderate"
         else:
-            strength = "Weak"
+            strength_key = "weak"
         
-        narrative = f"{strength} similarity with {period} ({context}), {recession}."
+        key = f"yieldCurve.interpretations.pattern.narrative.{strength_key}"
+        params = {
+            "period": period,
+            "context": context,
+            "recession": "1" if historical['recession_followed'] else "0",
+            "leadTime": str(historical.get('lead_time_months', '')),
+        }
         
-        if similarities:
-            narrative += f" Key parallels: {', '.join(similarities[:2])}."
-        
-        if historical['recession_followed'] and historical.get('lead_time_months'):
-            narrative += f" Then the recession began through {historical['lead_time_months']} months."
-        
-        return narrative
+        return key, params
     
     def get_aggregated_forecast(self, matches: List[HistoricalMatch]) -> Dict:
         """Aggregation of forecasts based on top-N analogies"""
@@ -364,17 +366,13 @@ class PatternMatchingEngine:
         recession_cases = [m for m in matches if m.recession_followed]
         no_recession_cases = [m for m in matches if not m.recession_followed]
         
-        narrative = f"Based on {len(matches)} historical analogies: "
         if recession_prob > 60:
-            narrative += f"high probability of recession ({recession_prob:.0f}%). "
-            if recession_cases:
-                narrative += f"Recession scenarios: {', '.join(r.period_name for r in recession_cases[:2])}."
+            narrative_key = "yieldCurve.interpretations.forecast.highRecession"
         elif recession_prob > 40:
-            narrative += f"uncertainty (scenario balance). "
+            narrative_key = "yieldCurve.interpretations.forecast.uncertainty"
         else:
-            narrative += f"soft landing tendency ({100-recession_prob:.0f}%). "
-            if no_recession_cases:
-                narrative += f"Analogues without recession: {', '.join(r.period_name for r in no_recession_cases[:2])}."
+            narrative_key = "yieldCurve.interpretations.forecast.softLanding"
+        
         return {
             'recession_probability': round(recession_prob, 1),
             'confidence': confidence,
@@ -383,7 +381,13 @@ class PatternMatchingEngine:
             'top_analogies': [m.period_name for m in matches],
             'recession_scenarios': len(recession_cases),
             'soft_landing_scenarios': len(no_recession_cases),
-            'narrative': narrative
+            'narrative_key': narrative_key,
+            'narrative_params': {
+                'matches': str(len(matches)),
+                'prob': f"{recession_prob:.0f}",
+                'scenarios': ', '.join(r.period_name for r in recession_cases[:2]) if recession_cases else '',
+                'softScenarios': ', '.join(r.period_name for r in no_recession_cases[:2]) if no_recession_cases else '',
+            }
         }
 
 

@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { useLanguage } from '@/app/context/LanguageContext';
 
 interface AssetData {
   asset: string;
@@ -15,6 +16,7 @@ interface TacticalWheelProps {
 }
 
 export default function TacticalWheel({ assets, regime }: TacticalWheelProps) {
+  const { t } = useLanguage();
   const avgImpacts: Record<string, number> = {};
   assets.forEach((a) => {
     avgImpacts[a.asset] = (a.impact_3m + a.impact_6m) / 2;
@@ -49,7 +51,7 @@ export default function TacticalWheel({ assets, regime }: TacticalWheelProps) {
       <div className={`rounded-xl border ${rc.border} ${rc.bg} p-4`}>
         <div className="text-center mb-2">
           <span className={`text-xs font-semibold uppercase tracking-wider ${rc.text}`}>
-            TACTICAL WHEEL — {regime.toUpperCase().replace('-', ' ')}
+            {t("tacticalWheel.title").replace("{{regime}}", regime.toUpperCase().replace(/-/g, ' '))}
           </span>
         </div>
 
@@ -87,29 +89,29 @@ export default function TacticalWheel({ assets, regime }: TacticalWheelProps) {
 
           {/* Labels */}
           <div className="absolute top-2 left-1/2 -translate-x-1/2 text-[10px] text-red-400 font-medium">
-            RISK-OFF
+            {t("yieldCurve.riskOffShort")}
           </div>
           <div className="absolute bottom-2 left-1/2 -translate-x-1/2 text-[10px] text-green-400 font-medium">
-            RISK-ON
+            {t("yieldCurve.riskOnShort")}
           </div>
           <div className="absolute left-2 top-1/2 -translate-y-1/2 text-[10px] text-gray-400">
-            NEUTRAL
+            {t("yieldCurve.neutralShort")}
           </div>
           <div className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-gray-400">
-            NEUTRAL
+            {t("yieldCurve.neutralShort")}
           </div>
         </div>
 
         {/* Mini stats */}
         <div className="grid grid-cols-2 gap-3 text-center">
           <div className="bg-white/5 rounded-lg p-2">
-            <div className="text-[10px] text-gray-400 uppercase">Risk-On Avg</div>
+            <div className="text-[10px] text-gray-400 uppercase">{t("yieldCurve.riskOn")} Avg</div>
             <div className={`text-sm font-bold ${rOn > 0 ? 'text-green-400' : 'text-red-400'}`}>
               {rOn > 0 ? '+' : ''}{rOn.toFixed(1)}%
             </div>
           </div>
           <div className="bg-white/5 rounded-lg p-2">
-            <div className="text-[10px] text-gray-400 uppercase">Risk-Off Avg</div>
+            <div className="text-[10px] text-gray-400 uppercase">{t("yieldCurve.riskOff")} Avg</div>
             <div className={`text-sm font-bold ${rOff > 0 ? 'text-green-400' : 'text-red-400'}`}>
               {rOff > 0 ? '+' : ''}{rOff.toFixed(1)}%
             </div>

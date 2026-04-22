@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { TrendingUp, TrendingDown, Minus, AlertTriangle, ShieldCheck, Activity, ArrowUpRight, ArrowDownRight } from 'lucide-react';
+import { useLanguage } from '@/app/context/LanguageContext';
 
 interface AssetData {
   asset: string;
@@ -37,6 +38,7 @@ const colorClasses: Record<string, string> = {
 };
 
 export default function AssetCardTabs({ assets }: AssetCardTabsProps) {
+  const { t } = useLanguage();
   const [activeIndex, setActiveIndex] = useState(0);
   const active = assets[activeIndex];
 
@@ -79,19 +81,19 @@ export default function AssetCardTabs({ assets }: AssetCardTabsProps) {
 
         <div className="grid grid-cols-3 gap-4 mb-5">
           <div className="text-center">
-            <div className="text-xs text-gray-400 uppercase tracking-wider mb-1">3M</div>
+            <div className="text-xs text-gray-400 uppercase tracking-wider mb-1">{t("yieldCurve.3m")}</div>
             <div className={`text-2xl font-bold ${active.impact_3m > 0 ? 'text-green-400' : 'text-red-400'}`}>
               {active.impact_3m > 0 ? '+' : ''}{active.impact_3m}%
             </div>
           </div>
           <div className="text-center">
-            <div className="text-xs text-gray-400 uppercase tracking-wider mb-1">6M</div>
+            <div className="text-xs text-gray-400 uppercase tracking-wider mb-1">{t("yieldCurve.6m")}</div>
             <div className={`text-2xl font-bold ${active.impact_6m > 0 ? 'text-green-400' : 'text-red-400'}`}>
               {active.impact_6m > 0 ? '+' : ''}{active.impact_6m}%
             </div>
           </div>
           <div className="text-center">
-            <div className="text-xs text-gray-400 uppercase tracking-wider mb-1">AVG</div>
+            <div className="text-xs text-gray-400 uppercase tracking-wider mb-1">{t("yieldCurve.avg")}</div>
             <div className={`text-2xl font-bold ${isPositive ? 'text-green-400' : 'text-red-400'}`}>
               {isPositive ? '+' : ''}{avg}%
             </div>
@@ -101,7 +103,7 @@ export default function AssetCardTabs({ assets }: AssetCardTabsProps) {
         {/* Mini bar chart */}
         <div className="space-y-3">
           <div className="flex items-center gap-2">
-            <span className="text-xs w-8 text-gray-400">3M</span>
+            <span className="text-xs w-8 text-gray-400">{t("yieldCurve.3m")}</span>
             <div className="flex-1 h-2.5 bg-white/10 rounded-full overflow-hidden">
               <div
                 className={`h-full rounded-full transition-all duration-500 ${active.impact_3m > 0 ? 'bg-green-500' : 'bg-red-500'}`}
@@ -110,7 +112,7 @@ export default function AssetCardTabs({ assets }: AssetCardTabsProps) {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <span className="text-xs w-8 text-gray-400">6M</span>
+            <span className="text-xs w-8 text-gray-400">{t("yieldCurve.6m")}</span>
             <div className="flex-1 h-2.5 bg-white/10 rounded-full overflow-hidden">
               <div
                 className={`h-full rounded-full transition-all duration-500 ${active.impact_6m > 0 ? 'bg-green-500' : 'bg-red-500'}`}

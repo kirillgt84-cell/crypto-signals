@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { ScatterChart, Scatter, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ZAxis, Cell } from 'recharts';
+import { useLanguage } from '@/app/context/LanguageContext';
 
 interface AssetData {
   asset: string;
@@ -38,19 +39,27 @@ const CustomTooltip = ({ active, payload }: any) => {
   if (active && payload && payload.length) {
     const data = payload[0].payload;
     return (
-      <div className="bg-gray-900/95 border border-white/20 rounded-lg p-3 text-xs">
-        <div className="font-semibold text-white mb-1">{data.name}</div>
-        <div className="text-gray-400">Risk Level: <span className="text-white">{data.risk}</span></div>
-        <div className="text-gray-400">3M Impact: <span className={data.impact_3m > 0 ? 'text-green-400' : 'text-red-400'}>{data.impact_3m > 0 ? '+' : ''}{data.impact_3m}%</span></div>
-        <div className="text-gray-400">6M Impact: <span className={data.impact_6m > 0 ? 'text-green-400' : 'text-red-400'}>{data.impact_6m > 0 ? '+' : ''}{data.impact_6m}%</span></div>
-        <div className="text-gray-400">Avg Return: <span className={data.avg > 0 ? 'text-green-400' : 'text-red-400'}>{data.avg > 0 ? '+' : ''}{data.avg.toFixed(1)}%</span></div>
-      </div>
+      <TooltipContent data={data} />
     );
   }
   return null;
 };
 
+const TooltipContent = ({ data }: { data: any }) => {
+  const { t } = useLanguage();
+  return (
+    <div className="bg-gray-900/95 border border-white/20 rounded-lg p-3 text-xs">
+      <div className="font-semibold text-white mb-1">{data.name}</div>
+      <div className="text-gray-400">{t("riskReturnBubbles.riskLevel")}: <span className="text-white">{data.risk}</span></div>
+      <div className="text-gray-400">{t("yieldCurve.3m")} {t("riskReturnBubbles.3mImpact")}: <span className={data.impact_3m > 0 ? 'text-green-400' : 'text-red-400'}>{data.impact_3m > 0 ? '+' : ''}{data.impact_3m}%</span></div>
+      <div className="text-gray-400">{t("yieldCurve.6m")} {t("riskReturnBubbles.6mImpact")}: <span className={data.impact_6m > 0 ? 'text-green-400' : 'text-red-400'}>{data.impact_6m > 0 ? '+' : ''}{data.impact_6m}%</span></div>
+      <div className="text-gray-400">{t("riskReturnBubbles.avgReturn")}: <span className={data.avg > 0 ? 'text-green-400' : 'text-red-400'}>{data.avg > 0 ? '+' : ''}{data.avg.toFixed(1)}%</span></div>
+    </div>
+  );
+};
+
 export default function RiskReturnBubbles({ assets }: RiskReturnBubblesProps) {
+  const { t } = useLanguage();
   const data = assets.map((a) => {
     const avg = (a.impact_3m + a.impact_6m) / 2;
     const risk = riskMap[a.risk_level] || 5;
@@ -75,7 +84,7 @@ export default function RiskReturnBubbles({ assets }: RiskReturnBubblesProps) {
     <div className="w-full">
       <div className="text-center mb-2">
         <span className="text-xs font-semibold uppercase tracking-wider text-gray-400">
-          RISK / RETURN BUBBLES
+          {t("riskReturnBubbles.title")}
         </span>
       </div>
       <ResponsiveContainer width="100%" height={280}>

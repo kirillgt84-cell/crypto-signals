@@ -1,6 +1,6 @@
 """
 Yield Curve Intelligence Router
-Макро-аналитика: кривая доходности Treasury + исторические аналоги + cross-market regime
+Macro analytics: Treasury yield curve + historical analogs + cross-market regime
 """
 import logging
 from datetime import datetime
@@ -43,7 +43,7 @@ def _ensure_initialized():
 
 @router.get("/yield-curve/current")
 async def get_current_yield_curve():
-    """Текущая кривая доходности US Treasury"""
+    """Current US Treasury yield curve"""
     try:
         _ensure_initialized()
         data = await _fred_client.get_yield_curve()
@@ -66,7 +66,7 @@ async def get_current_yield_curve():
 
 @router.get("/yield-curve/spreads")
 async def get_yield_spreads():
-    """Ключевые спреды кривой доходности"""
+    """Key yield curve spreads"""
     try:
         _ensure_initialized()
         data = await _fred_client.get_yield_curve()
@@ -95,7 +95,7 @@ async def get_yield_spreads():
 
 @router.get("/yield-curve/recession-probability")
 async def get_recession_probability():
-    """Вероятность рецессии по модели NY Fed (Estrella-Mishkin)"""
+    """Recession probability via NY Fed model (Estrella-Mishkin)"""
     try:
         _ensure_initialized()
         data = await _fred_client.get_yield_curve()
@@ -119,7 +119,7 @@ async def get_recession_probability():
 
 @router.get("/analogs")
 async def get_historical_analogs():
-    """Исторические аналогии текущей ситуации (7 кейсов с 1966)"""
+    """Historical analogs of the current situation (7 cases since 1966)"""
     try:
         _ensure_initialized()
         data = await _fred_client.get_yield_curve()
@@ -167,7 +167,7 @@ async def get_historical_analogs():
 
 @router.get("/cross-market/signal")
 async def get_cross_market_signal():
-    """Cross-market regime signal + impact на активы"""
+    """Cross-market regime signal + asset impacts"""
     try:
         _ensure_initialized()
         data = await _fred_client.get_yield_curve()
@@ -220,7 +220,7 @@ async def get_cross_market_signal():
 
 @router.get("/yield-curve/interpret")
 async def get_yield_curve_interpretation():
-    """Развёрнутые интерпретации для всех метрик Yield Curve"""
+    """Detailed interpretations for all Yield Curve metrics"""
     try:
         _ensure_initialized()
 
@@ -312,7 +312,7 @@ async def get_yield_curve_interpretation():
 
 @router.get("/dashboard/yield")
 async def get_yield_dashboard():
-    """Unified yield curve dashboard — всё в одном ответе"""
+    """Unified yield curve dashboard — everything in one response"""
     try:
         _ensure_initialized()
 
@@ -380,14 +380,19 @@ async def get_yield_dashboard():
         if inversion_active:
             active_signals.append({
                 "level": "WARNING",
-                "title": "Yield Curve Inverted",
-                "message": f"{matches[0].period_name if matches else 'Unknown'} was similar ({matches[0].similarity_score:.0f}%)" if matches else "",
+                "title_key": "yieldCurve.signal.inversionTitle",
+                "message_key": "yieldCurve.signal.inversionMessage",
+                "params": {
+                    "period": matches[0].period_name if matches else "Unknown",
+                    "similarity": f"{matches[0].similarity_score:.0f}" if matches else "",
+                },
             })
         if recession.get("probability_12m", 0) > 40:
             active_signals.append({
                 "level": "CRITICAL" if recession["probability_12m"] > 60 else "WARNING",
-                "title": f"Recession Risk: {recession['probability_12m']:.0f}%",
-                "message": forecast.get("narrative", ""),
+                "title_key": "yieldCurve.signal.recessionTitle",
+                "message_key": "yieldCurve.signal.recessionMessage",
+                "params": {"probability": f"{recession['probability_12m']:.0f}"},
             })
 
         return {
@@ -403,7 +408,8 @@ async def get_yield_dashboard():
                 "regime": signal.regime.value,
                 "bias": signal.overall_bias,
                 "risk_level": signal.risk_level,
-                "narrative": signal.narrative,
+                "narrative_key": signal.narrative_key,
+                "narrative_params": signal.narrative_params,
                 "impacts": [
                     {
                         "asset": i.asset,
@@ -424,11 +430,16 @@ async def get_yield_dashboard():
                         "period": m.period_name,
                         "similarity": m.similarity_score,
                         "recession": m.recession_followed,
-                        "narrative": m.narrative,
+                        "narrative_key": m.narrative_key,
+                        "narrative_params": m.narrative_params,
                     }
                     for m in matches
                 ],
-                "forecast": forecast,
+                "forecast": {
+                    **forecast,
+                    "narrative_key": forecast.get("narrative_key", ""),
+                    "narrative_params": forecast.get("narrative_params", {}),
+                },
             },
             "signals": {
                 "active": active_signals,
@@ -436,19 +447,19 @@ async def get_yield_dashboard():
             },
             "interpretation": {
                 "overall": {
-                    "assessment": interpretation.overall_assessment,
+                    "key": interpretation.overall_key,
+                    "params": interpretation.overall_params,
                     "risk_level": interpretation.overall_risk_level,
                     "color": interpretation.overall_color,
                 },
                 "signals": interpretation.signals,
-                "disclaimer": interpretation.disclaimer,
+                "disclaimer_key": interpretation.disclaimer_key,
                 "metrics": [
                     {
                         "metric": m.metric,
                         "status": m.status,
-                        "headline": m.headline,
-                        "explanation": m.explanation,
-                        "historical_context": m.historical_context,
+                        "key": m.key,
+                        "params": m.params,
                         "color": m.color,
                         "icon": m.icon,
                     }
