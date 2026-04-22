@@ -23,5 +23,14 @@ export const metadata: Metadata = {
 };
 
 export default function SignalsPage() {
-  return <SignalsClient />;
+  return (
+    <>
+      <section className="sr-only">
+        <h1>Crypto Trading Signals — Volume Spikes & Open Interest Anomalies</h1>
+        <h2>Real-Time Market Scanner for Bitcoin, Ethereum and Altcoins</h2>
+        <p>Identify high-probability trading setups through volume spikes, OI anomalies and liquidation cluster analysis.</p>
+      </section>
+      <SignalsClient />
+    </>
+  )
 }

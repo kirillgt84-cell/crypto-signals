@@ -23,5 +23,14 @@ export const metadata: Metadata = {
 };
 
 export default function MacroPage() {
-  return <MacroClient />;
+  return (
+    <>
+      <section className="sr-only">
+        <h1>Macro Analysis — BTC/SPX Correlation, VIX & Gold Dynamics</h1>
+        <h2>Cross-Asset Correlation and Market Regime Tracking for Crypto Traders</h2>
+        <p>Track Bitcoin correlation with S&P 500, Gold and VIX to understand crypto risk regime and safe-haven dynamics.</p>
+      </section>
+      <MacroClient />
+    </>
+  )
 }

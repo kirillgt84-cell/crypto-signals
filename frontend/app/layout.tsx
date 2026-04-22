@@ -9,6 +9,7 @@ import { NewsletterPopup } from './components/NewsletterPopup'
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
+  metadataBase: new URL('https://mirkaso.com'),
   title: 'Mirkaso — Precision in Investment Management',
   description: 'Advanced analytics and trading intelligence platform',
   icons: {
