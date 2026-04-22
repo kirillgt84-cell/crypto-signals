@@ -150,19 +150,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null)
   }
 
-  const loginWithOAuth = (provider: string) => {
-    fetch(authUrl(`/oauth/${provider}`), { cache: 'no-store' })
-      .then(res => res.json())
-      .then(data => {
-        if (data.auth_url) {
-          const state = new URL(data.auth_url).searchParams.get("state")
-          if (state) localStorage.setItem("oauth_state", state)
-          const width = 500, height = 600
-          const left = window.screenX + (window.outerWidth - width) / 2
-          const top = window.screenY + (window.outerHeight - height) / 2
-          window.open(data.auth_url, `${provider}Auth`, `width=${width},height=${height},left=${left},top=${top}`)
-        }
-      })
+  const loginWithOAuth = async (provider: string) => {
+    const res = await fetch(authUrl(`/oauth/${provider}`), { cache: 'no-store' })
+    const data = await res.json()
+    if (!res.ok) {
+      throw new Error(data.detail || `${provider} OAuth is not configured`)
+    }
+    if (data.auth_url) {
+      const state = new URL(data.auth_url).searchParams.get("state")
+      if (state) localStorage.setItem("oauth_state", state)
+      const width = 500, height = 600
+      const left = window.screenX + (window.outerWidth - width) / 2
+      const top = window.screenY + (window.outerHeight - height) / 2
+      window.open(data.auth_url, `${provider}Auth`, `width=${width},height=${height},left=${left},top=${top}`)
+    }
   }
 
   const loginWithTelegram = async (telegramUser: any) => {

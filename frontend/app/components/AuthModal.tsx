@@ -48,7 +48,13 @@ export function AuthModal({ isOpen, onClose, defaultTab = "login" }: AuthModalPr
     }
   }
 
-  const handleOAuth = (provider: string) => loginWithOAuth(provider)
+  const handleOAuth = async (provider: string) => {
+    try {
+      await loginWithOAuth(provider)
+    } catch (err: any) {
+      setError(err.message || t("authModal.unknownError"))
+    }
+  }
 
   const handleTelegramAuth = (user: any) => {
     loginWithTelegram(user).then(() => {

@@ -324,6 +324,9 @@ async def oauth_login(provider: str):
             "auth_url": f"https://t.me/{TELEGRAM_BOT_NAME}?start=auth"
         }
     
+    if not config.get("client_id"):
+        raise HTTPException(status_code=400, detail=f"{provider.capitalize()} OAuth is not configured")
+    
     # Build OAuth URL
     import urllib.parse
     params = {
