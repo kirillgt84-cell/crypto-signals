@@ -229,35 +229,23 @@ class CrossMarketAnalyzer:
         regime_drivers = drivers.get(regime, {})
         return regime_drivers.get(asset, ['Macro factors'])
     
-    def _generate_narrative(self, regime: MarketRegime, 
+    def _generate_narrative(self, regime: MarketRegime,
                            curve_shape: str,
-                           recession_prob: float) -> str:
+                           recession_prob: float) -> tuple:
         """Generate description of current situation"""
-        
-        narratives = {
-            MarketRegime.RISK_ON: 
-                f"Normal yield curve ({curve_shape}) indicates a healthy economy. "
-                "Favorable environment for risk assets.",
-            
-            MarketRegime.RISK_OFF_EARLY:
-                f"Curve inversion ({curve_shape}) signals slowdown. "
-                f"Recession probability {recession_prob:.0f}%. "
-                "Rotation into defensive assets.",
-            
-            MarketRegime.RISK_OFF_LATE:
-                f"Deep inversion ({curve_shape}) with recession probability {recession_prob:.0f}%. "
-                "Defensive sentiment prevails. Defensive positioning justified.",
-            
-            MarketRegime.RECOVERY:
-                f"Curve recovery ({curve_shape}) after inversion. "
-                "Fed pivot possible. Favorable for growth assets.",
-            
-            MarketRegime.TRANSITION:
-                f"Transition period ({curve_shape}). "
-                "Uncertainty requires caution."
+        key_map = {
+            MarketRegime.RISK_ON: "yieldCurve.interpretations.crossMarketSignal.riskOn",
+            MarketRegime.RISK_OFF_EARLY: "yieldCurve.interpretations.crossMarketSignal.riskOffEarly",
+            MarketRegime.RISK_OFF_LATE: "yieldCurve.interpretations.crossMarketSignal.riskOffLate",
+            MarketRegime.RECOVERY: "yieldCurve.interpretations.crossMarketSignal.recovery",
+            MarketRegime.TRANSITION: "yieldCurve.interpretations.crossMarketSignal.transition",
         }
-        
-        return narratives.get(regime, "Undefined regime")
+        key = key_map.get(regime, "yieldCurve.interpretations.crossMarketSignal.undefined")
+        params = {
+            "shape": curve_shape,
+            "prob": f"{recession_prob:.1f}",
+        }
+        return key, params
     
     def calculate_correlation_matrix(self, 
                                      yields: pd.DataFrame,
