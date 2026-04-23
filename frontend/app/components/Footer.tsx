@@ -52,7 +52,7 @@ export function Footer() {
         </div>
 
         <div className="mt-12 pt-8 border-t text-center text-sm text-muted-foreground">
-          {t("footer.copyright")}
+          {t("footer.copyright").replace(/© \d{4}/, `© ${new Date().getFullYear()}`)}
         </div>
       </div>
     </footer>
