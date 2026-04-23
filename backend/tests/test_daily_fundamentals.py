@@ -252,20 +252,28 @@ class TestCollectFundamentals:
         mock_bg.side_effect = [
             {"nupl": "0.25", "d": "2026-04-14"},  # BTC nupl
             {"mvrv": "1.5", "d": "2026-04-14"},   # BTC mvrv
+            {"sopr": "1.01", "d": "2026-04-14"},  # BTC sopr
         ]
         mock_funding.return_value = 0.0001
         mock_bn24.return_value = {"price": 75000.0, "price_change_24h_pct": 1.5}
 
-        results = await collect_fundamentals()
+        with patch("daily_fundamentals.fetch_fred_m2", new_callable=AsyncMock, return_value=21000.5):
+            results = await collect_fundamentals()
 
         assert all(r["saved"] for r in results)
         btc_results = [r for r in results if r["symbol"] == "BTC"]
-        # BTC: mvrv, nupl, market_momentum, funding_rate
-        assert len(btc_results) == 4
+        # BTC: mvrv, nupl, sopr, market_momentum, funding_rate
+        assert len(btc_results) == 5
         assert btc_results[0]["metric"] == "mvrv"
         assert btc_results[1]["metric"] == "nupl"
-        assert btc_results[2]["metric"] == "market_momentum"
-        assert btc_results[3]["metric"] == "funding_rate"
+        assert btc_results[2]["metric"] == "sopr"
+        assert btc_results[3]["metric"] == "market_momentum"
+        assert btc_results[4]["metric"] == "funding_rate"
+
+        # M2 saved under GLOBAL
+        m2_results = [r for r in results if r["symbol"] == "GLOBAL" and r["metric"] == "m2"]
+        assert len(m2_results) == 1
+        assert m2_results[0]["value"] == 21000.5
 
         eth_results = [r for r in results if r["symbol"] == "ETH"]
         assert len(eth_results) == 2
@@ -310,13 +318,15 @@ class TestCollectFundamentals:
         mock_bg.side_effect = [
             {"nupl": "0.25"},
             {"mvrv": "1.5"},
+            {"sopr": "1.01"},
         ]
         mock_funding.return_value = None  # No funding data
         mock_bn24.return_value = None
 
         results = await collect_fundamentals()
 
-        # Only mvrv and nupl for BTC
-        assert len(results) == 2
+        # mvrv, nupl, sopr for BTC
+        assert len(results) == 3
         assert results[0]["metric"] == "mvrv"
         assert results[1]["metric"] == "nupl"
+        assert results[2]["metric"] == "sopr"

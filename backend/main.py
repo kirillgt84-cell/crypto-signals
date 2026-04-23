@@ -32,6 +32,7 @@ from routers.portfolio import router as portfolio_router
 from routers.macro import router as macro_router
 from routers.yield_curve import router as yield_curve_router
 from routers.newsletter import router as newsletter_router
+from routers.risk_parity import router as risk_parity_router
 from scheduler import start_scheduler, stop_scheduler
 
 # Глобальная переменная для scheduler
@@ -227,6 +228,7 @@ app.include_router(portfolio_router)
 app.include_router(macro_router)
 app.include_router(yield_curve_router)
 app.include_router(newsletter_router)
+app.include_router(risk_parity_router)
 
 # ============= Health Check =============
 @app.get("/health")

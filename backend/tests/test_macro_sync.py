@@ -51,3 +51,38 @@ class TestMacroSync:
             # Should insert despite only 2 days (wait, it needs 5 days)
             # With 2 btc rows, returns len=1, which is <5, so warning
             # Let's verify it didn't crash
+
+    @pytest.mark.asyncio
+    async def test_calculate_correlations_vix_btc(self, mock_db):
+        """VIX/BTC correlation should be calculated and saved."""
+        # 6 days of aligned data
+        btc_rows = [
+            {"day": f"2024-01-0{i}", "price": 40000 + i * 1000} for i in range(1, 7)
+        ]
+        call_count = 0
+        responses = [
+            [{"id": 1, "key": "spx500"}, {"id": 2, "key": "gold"}],  # 0 assets
+            btc_rows,  # 1 btc
+            [{"id": 3}],  # 2 vix id
+        ]
+        # Add spx/gold/vix for each of 6 days (18 items)
+        for i in range(6):
+            responses.append([{"close_price": 4000 + i * 50}])   # spx
+            responses.append([{"close_price": 1800 + i * 20}])   # gold
+            responses.append([{"close_price": 15 + i}])          # vix
+        responses.append([{"close_price": 19}])  # vix latest
+
+        async def query_impl(sql, args=None):
+            nonlocal call_count
+            r = responses[call_count]
+            call_count += 1
+            return r
+
+        mock_db.query = query_impl
+        with patch("services.macro_sync.get_db", return_value=mock_db):
+            await calculate_correlations()
+            # Verify insert was called with vix_btc_correlation
+            assert len(mock_db.executed) >= 1
+            sql, args = mock_db.executed[0]
+            assert "vix_btc_correlation" in sql
+            assert len(args) == 8  # date, btc_spx, gold_btc, vix_btc, vix_level, btc_price, spx_price, gold_price

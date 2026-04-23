@@ -7,7 +7,7 @@ export function LandingStats() {
 
   const stats = [
     { quantity: "100+", description: t("landing.stats.assets") },
-    { quantity: "6", description: t("landing.stats.modules") },
+    { quantity: "12", description: t("landing.stats.modules") },
     { quantity: "4", description: t("landing.stats.languages") },
     { quantity: "24/7", description: t("landing.stats.data") },
   ]

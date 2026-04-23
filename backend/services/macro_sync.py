@@ -90,6 +90,7 @@ async def calculate_correlations():
         btc_returns = []
         spx_returns = []
         gold_returns = []
+        vix_returns = []
 
         for row in btc_rows:
             day = row["day"]
@@ -103,10 +104,16 @@ async def calculate_correlations():
                 "SELECT close_price FROM macro_prices WHERE asset_id = $1 AND DATE(time AT TIME ZONE 'UTC') = $2 LIMIT 1",
                 [gold_id, day],
             )
+            vix_row = await db.query(
+                "SELECT close_price FROM macro_prices WHERE asset_id = $1 AND DATE(time AT TIME ZONE 'UTC') = $2 LIMIT 1",
+                [vix_id, day],
+            )
             if spx_row and gold_row:
                 btc_returns.append(btc_price)
                 spx_returns.append(spx_row[0]["close_price"])
                 gold_returns.append(gold_row[0]["close_price"])
+                if vix_row:
+                    vix_returns.append(vix_row[0]["close_price"])
 
         if len(btc_returns) < 5:
             logger.warning("[Macro] Not enough aligned data for correlation")
@@ -116,10 +123,12 @@ async def calculate_correlations():
         btc_r = [(btc_returns[i] - btc_returns[i - 1]) / btc_returns[i - 1] for i in range(1, len(btc_returns))]
         spx_r = [(spx_returns[i] - spx_returns[i - 1]) / spx_returns[i - 1] for i in range(1, len(spx_returns))]
         gold_r = [(gold_returns[i] - gold_returns[i - 1]) / gold_returns[i - 1] for i in range(1, len(gold_returns))]
+        vix_r = [(vix_returns[i] - vix_returns[i - 1]) / vix_returns[i - 1] for i in range(1, len(vix_returns))] if len(vix_returns) == len(btc_returns) else []
 
         # Correlations
         btc_spx_corr = float(np.corrcoef(btc_r, spx_r)[0, 1]) if len(btc_r) == len(spx_r) and len(btc_r) > 2 else None
         gold_btc_corr = float(np.corrcoef(gold_r, btc_r)[0, 1]) if len(gold_r) == len(btc_r) and len(gold_r) > 2 else None
+        vix_btc_corr = float(np.corrcoef(vix_r, btc_r)[0, 1]) if len(vix_r) == len(btc_r) and len(vix_r) > 2 else None
 
         # Latest VIX level
         vix_price = None
@@ -133,18 +142,19 @@ async def calculate_correlations():
 
         await db.execute(
             """INSERT INTO macro_correlations
-               (date, btc_spx_correlation, gold_btc_correlation, vix_level, btc_price, spx_price, gold_price)
-               VALUES ($1, $2, $3, $4, $5, $6, $7)
+               (date, btc_spx_correlation, gold_btc_correlation, vix_btc_correlation, vix_level, btc_price, spx_price, gold_price)
+               VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
                ON CONFLICT (date) DO UPDATE SET
                  btc_spx_correlation = EXCLUDED.btc_spx_correlation,
                  gold_btc_correlation = EXCLUDED.gold_btc_correlation,
+                 vix_btc_correlation = EXCLUDED.vix_btc_correlation,
                  vix_level = EXCLUDED.vix_level,
                  btc_price = EXCLUDED.btc_price,
                  spx_price = EXCLUDED.spx_price,
                  gold_price = EXCLUDED.gold_price,
                  calculated_at = NOW()""",
-            [datetime.utcnow().date(), btc_spx_corr, gold_btc_corr, vix_price, btc_returns[-1], spx_returns[-1], gold_returns[-1]],
+            [datetime.utcnow().date(), btc_spx_corr, gold_btc_corr, vix_btc_corr, vix_price, btc_returns[-1], spx_returns[-1], gold_returns[-1]],
         )
-        logger.info(f"[Macro] Correlations saved: BTC↔SPX={btc_spx_corr:.3f}, Gold↔BTC={gold_btc_corr:.3f}")
+        logger.info(f"[Macro] Correlations saved: BTC↔SPX={btc_spx_corr:.3f}, Gold↔BTC={gold_btc_corr:.3f}, VIX↔BTC={vix_btc_corr:.3f}")
     except Exception as e:
         logger.error(f"[Macro] Correlation calculation failed: {e}")

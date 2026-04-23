@@ -180,3 +180,38 @@ class TestPortfolioRouter:
         with patch("routers.portfolio.get_db", return_value=mock_db):
             resp = client.post("/api/v1/portfolio/alerts/read")
         assert resp.status_code == 200
+
+    def test_get_metrics_insufficient_history(self, client):
+        """Metrics should return available=False when not enough history."""
+        app.dependency_overrides[get_current_user] = mock_pro
+        mock_db = MagicMock()
+        mock_db.query = AsyncMock(return_value=[])
+        with patch("services.portfolio_metrics.get_db", return_value=mock_db):
+            resp = client.get("/api/v1/portfolio/metrics?days=90")
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["available"] is False
+        assert "minimum 5 days" in data["message"]
+
+    def test_get_metrics_success(self, client):
+        """Metrics should calculate drawdown, Sharpe, Sortino, Calmar."""
+        app.dependency_overrides[get_current_user] = mock_pro
+        mock_db = MagicMock()
+        mock_db.query = AsyncMock(return_value=[
+            {"date": "2026-01-01", "total_notional": 10000.0},
+            {"date": "2026-01-02", "total_notional": 10100.0},
+            {"date": "2026-01-03", "total_notional": 9900.0},
+            {"date": "2026-01-04", "total_notional": 10200.0},
+            {"date": "2026-01-05", "total_notional": 10300.0},
+            {"date": "2026-01-06", "total_notional": 10400.0},
+            {"date": "2026-01-07", "total_notional": 10500.0},
+        ])
+        with patch("services.portfolio_metrics.get_db", return_value=mock_db):
+            resp = client.get("/api/v1/portfolio/metrics?days=90")
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["available"] is True
+        assert "max_drawdown_pct" in data
+        assert "sharpe_ratio" in data
+        assert "sortino_ratio" in data
+        assert "calmar_ratio" in data

@@ -58,6 +58,19 @@ async def fetch_binance_24hr(client: httpx.AsyncClient, symbol: str):
         logger.error(f"[Fundamentals] Binance 24hr {symbol} error: {e}")
     return None
 
+async def fetch_fred_m2():
+    """Fetch latest M2 Money Stock from FRED API"""
+    try:
+        from services.macro_pulse.fred_client import FREDClient
+        client = FREDClient()
+        observations = await client.get_series_observations("M2SL", limit=2)
+        if observations and len(observations) > 0:
+            latest = observations[0]
+            return float(latest.get("value", 0))
+    except Exception as e:
+        logger.error(f"[FRED] M2 fetch error: {e}")
+    return None
+
 async def fetch_binance_funding(client: httpx.AsyncClient, symbol: str):
     """Fetch latest funding rate from Binance"""
     try:
@@ -100,6 +113,13 @@ def interpret_funding(rate: float):
         return "SHORT_OVERHEAT", "Shorts overheated"
     return "NEUTRAL", "Neutral"
 
+def interpret_sopr(sopr: float):
+    if sopr > 1.02:
+        return "PROFIT_TAKING", "Short-term holders taking profits"
+    if sopr < 0.98:
+        return "LOSS_SELLING", "Short-term holders selling at loss"
+    return "NEUTRAL", "Break-even zone"
+
 async def save_metric(db, symbol: str, name: str, value: float, raw_data: dict):
     try:
         await db.execute(
@@ -131,6 +151,7 @@ async def collect_fundamentals():
             if source == "bgeometrics":
                 nupl_data = await fetch_bgeometrics_last(client, "nupl")
                 mvrv_data = await fetch_bgeometrics_last(client, "mvrv")
+                sopr_data = await fetch_bgeometrics_last(client, "sopr")
                 
                 if nupl_data and mvrv_data:
                     nupl_val = float(nupl_data.get("nupl", 0))
@@ -154,6 +175,13 @@ async def collect_fundamentals():
                             "price_change_24h_pct": bn["price_change_24h_pct"],
                         }))
                 
+                if sopr_data:
+                    sopr_val = float(sopr_data.get("sopr", 0))
+                    results.append(await save_metric(db, symbol, "sopr", sopr_val, {
+                        "interpretation": interpret_sopr(sopr_val)[0],
+                        "description": interpret_sopr(sopr_val)[1],
+                    }))
+                
                 # Also save market_momentum for BTC from Binance
                 bn = await fetch_binance_24hr(client, symbol)
                 if bn:
@@ -176,6 +204,16 @@ async def collect_fundamentals():
                     "description": interpret_funding(funding)[1],
                 }))
     
+    # Fetch M2 Global Liquidity from FRED
+    m2_value = await fetch_fred_m2()
+    if m2_value:
+        results.append(await save_metric(db, "GLOBAL", "m2", m2_value, {
+            "source": "FRED",
+            "series": "M2SL",
+            "interpretation": "GLOBAL_LIQUIDITY",
+            "description": f"M2 Money Stock: ${m2_value:,.0f}B",
+        }))
+
     await db.close()
     logger.info("[Fundamentals] Collection finished")
     return results

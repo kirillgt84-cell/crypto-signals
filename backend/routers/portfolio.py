@@ -8,6 +8,7 @@ from database import get_db
 from routers.auth import get_current_user, get_current_user_optional
 from services.portfolio_crypto import encrypt, decrypt
 from services.portfolio_sync import sync_user_portfolio, get_portfolio_summary
+from services.portfolio_metrics import get_portfolio_metrics
 from fetchers.binance_portfolio import BinancePortfolioFetcher
 import logging
 
@@ -458,6 +459,15 @@ async def admin_sources(current_user: dict = Depends(get_current_user)):
         [],
     )
     return [dict(r) for r in rows]
+
+
+# ============= METRICS =============
+
+@router.get("/metrics")
+async def portfolio_metrics(days: int = 90, current_user: dict = Depends(get_current_user)):
+    """Get risk-adjusted portfolio metrics: drawdown, Sharpe, Sortino, Calmar."""
+    metrics = await get_portfolio_metrics(current_user["id"], days)
+    return metrics
 
 
 # ============= AI INSIGHT =============

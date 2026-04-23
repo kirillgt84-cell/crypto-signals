@@ -72,6 +72,12 @@ async def api_check():
             results["bgeometrics_mvrv"] = {"error": str(e)}
         
         try:
+            r = await client.get("https://bitcoin-data.com/api/v1/sopr/last", timeout=10)
+            results["bgeometrics_sopr"] = {"status": r.status_code, "data": r.json() if r.status_code == 200 else r.text[:200]}
+        except Exception as e:
+            results["bgeometrics_sopr"] = {"error": str(e)}
+        
+        try:
             r = await client.get("https://api.coingecko.com/api/v3/coins/bitcoin?localization=false&tickers=false&community_data=false&developer_data=false", timeout=10)
             results["coingecko"] = {"status": r.status_code, "has_market_data": "market_data" in r.json() if r.status_code == 200 else False}
         except Exception as e:
@@ -82,6 +88,14 @@ async def api_check():
             results["binance_funding"] = {"status": r.status_code, "data": r.json() if r.status_code == 200 else r.text[:200]}
         except Exception as e:
             results["binance_funding"] = {"error": str(e)}
+        
+        try:
+            from services.macro_pulse.fred_client import FREDClient
+            fred = FREDClient()
+            obs = await fred.get_series_observations("M2SL", limit=1)
+            results["fred_m2"] = {"status": 200 if obs else 404, "data": obs[0] if obs else None}
+        except Exception as e:
+            results["fred_m2"] = {"error": str(e)}
     return results
 
 @router.get("/{symbol}/mvrv")
@@ -135,6 +149,40 @@ async def get_funding(symbol: str):
     data["raw_data"] = _parse_raw_data(data.get("raw_data"))
     return data
 
+@router.get("/{symbol}/sopr")
+async def get_sopr(symbol: str):
+    """Get latest SOPR (Spent Output Profit Ratio) for symbol"""
+    db = get_db()
+    row = await db.query(
+        """SELECT value, raw_data, computed_at 
+           FROM fundamental_metrics 
+           WHERE symbol = $1 AND metric_name = 'sopr'
+           ORDER BY computed_at DESC LIMIT 1""",
+        [symbol.upper()]
+    )
+    if not row:
+        raise HTTPException(status_code=404, detail="SOPR data not available yet")
+    data = dict(row[0])
+    data["raw_data"] = _parse_raw_data(data.get("raw_data"))
+    return data
+
+@router.get("/{symbol}/m2")
+async def get_m2(symbol: str):
+    """Get latest M2 Global Liquidity from FRED"""
+    db = get_db()
+    row = await db.query(
+        """SELECT value, raw_data, computed_at 
+           FROM fundamental_metrics 
+           WHERE symbol = 'GLOBAL' AND metric_name = 'm2'
+           ORDER BY computed_at DESC LIMIT 1""",
+        []
+    )
+    if not row:
+        raise HTTPException(status_code=404, detail="M2 data not available yet")
+    data = dict(row[0])
+    data["raw_data"] = _parse_raw_data(data.get("raw_data"))
+    return data
+
 @router.get("/{symbol}/composite")
 async def get_composite(symbol: str):
     """Get composite fundamental health score"""
@@ -142,7 +190,7 @@ async def get_composite(symbol: str):
     rows = await db.query(
         """SELECT metric_name, value, raw_data 
            FROM fundamental_metrics 
-           WHERE symbol = $1 AND metric_name IN ('mvrv', 'nupl', 'funding_rate', 'market_momentum')
+           WHERE symbol = $1 AND metric_name IN ('mvrv', 'nupl', 'funding_rate', 'market_momentum', 'sopr', 'm2')
            ORDER BY computed_at DESC""",
         [symbol.upper()]
     )
@@ -178,12 +226,20 @@ async def get_composite(symbol: str):
         weights.append(0.35)
         interpretation["nupl"] = latest["nupl"].get("raw_data", {}).get("description", "")
     
+    if "sopr" in latest:
+        sopr = float(latest["sopr"]["value"])
+        sopr_norm = max(-1, min(1, (sopr - 1.0) / 0.02))  # 0.98->-1, 1.02->+1
+        components["sopr"] = {"value": sopr, "normalized": round(sopr_norm, 3), "weight": 0.20}
+        values.append(sopr_norm)
+        weights.append(0.20)
+        interpretation["sopr"] = latest["sopr"].get("raw_data", {}).get("description", "")
+    
     if "funding_rate" in latest:
         funding = float(latest["funding_rate"]["value"])
         funding_norm = max(-1, min(1, funding / 0.001))    # -0.001->-1, 0.001->+1
-        components["funding"] = {"value": funding, "normalized": round(funding_norm, 3), "weight": 0.30}
+        components["funding"] = {"value": funding, "normalized": round(funding_norm, 3), "weight": 0.20}
         values.append(funding_norm)
-        weights.append(0.30)
+        weights.append(0.20)
         interpretation["funding"] = latest["funding_rate"].get("raw_data", {}).get("description", "")
     
     if "market_momentum" in latest:
@@ -192,11 +248,18 @@ async def get_composite(symbol: str):
         components["market_momentum"] = {
             "value": momentum,
             "normalized": round(momentum_norm, 3),
-            "weight": 0.30
+            "weight": 0.20
         }
         values.append(momentum_norm)
-        weights.append(0.30)
+        weights.append(0.20)
         interpretation["market_momentum"] = "24h Market Momentum"
+    
+    if "m2" in latest:
+        m2 = float(latest["m2"]["value"])
+        # Normalize M2: compare to historical average (simplified)
+        m2_norm = 0.0  # placeholder for trend-based normalization
+        components["m2"] = {"value": m2, "normalized": m2_norm, "weight": 0.0}
+        interpretation["m2"] = latest["m2"].get("raw_data", {}).get("description", "")
     
     if not weights:
         raise HTTPException(status_code=404, detail="Fundamental data not available yet")

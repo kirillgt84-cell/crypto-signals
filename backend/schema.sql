@@ -361,6 +361,7 @@ CREATE TABLE IF NOT EXISTS macro_correlations (
     date DATE NOT NULL UNIQUE,
     btc_spx_correlation DOUBLE PRECISION,
     gold_btc_correlation DOUBLE PRECISION,
+    vix_btc_correlation DOUBLE PRECISION,
     vix_level DOUBLE PRECISION,
     btc_price DOUBLE PRECISION,
     spx_price DOUBLE PRECISION,
