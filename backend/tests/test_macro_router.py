@@ -83,3 +83,31 @@ class TestMacroRouter:
         assert "correlation" in data
         assert "prices" in data
         assert data["correlation"]["btc_price"] == 50000
+
+
+    def test_get_m2_comparison(self, client):
+        """M2 comparison should return aligned M2 + selected asset prices."""
+        mock_db = MagicMock()
+        mock_db.query = AsyncMock(side_effect=[
+            # M2 rows
+            [{"date": "2024-01-01", "value": 21000.0}, {"date": "2024-01-02", "value": 21100.0}],
+            # BTC rows
+            [{"date": "2024-01-01", "close_price": 42000.0}, {"date": "2024-01-02", "close_price": 43000.0}],
+            # SPX asset
+            [{"id": 1}],
+            # SPX rows
+            [{"date": "2024-01-01", "close_price": 4500.0}, {"date": "2024-01-02", "close_price": 4600.0}],
+            # Gold asset
+            [{"id": 2}],
+            # Gold rows
+            [{"date": "2024-01-01", "close_price": 2000.0}, {"date": "2024-01-02", "close_price": 2050.0}],
+        ])
+        with patch("routers.macro.get_db", return_value=mock_db):
+            resp = client.get("/api/v1/macro/m2-comparison?assets=btc,spx,gold&days=365")
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["dates"] == ["2024-01-01", "2024-01-02"]
+        assert data["series"]["m2"] == [21000.0, 21100.0]
+        assert data["series"]["btc"] == [42000.0, 43000.0]
+        assert data["series"]["spx"] == [4500.0, 4600.0]
+        assert data["series"]["gold"] == [2000.0, 2050.0]

@@ -46,21 +46,25 @@ export default function MacroClient() {
   const [spxPrices, setSpxPrices] = useState<MacroPrice[]>([]);
   const [goldPrices, setGoldPrices] = useState<MacroPrice[]>([]);
   const [loading, setLoading] = useState(true);
+  const [m2Data, setM2Data] = useState<any>(null);
+  const [m2Assets, setM2Assets] = useState<Set<string>>(new Set(["btc", "spx", "gold"]));
   const { t, language } = useLanguage();
   const locale = language === 'zh' ? 'zh-CN' : language;
 
   const fetchData = useCallback(async () => {
     try {
-      const [latestRes, corrRes, spxRes, goldRes] = await Promise.all([
+      const [latestRes, corrRes, spxRes, goldRes, m2Res] = await Promise.all([
         fetch(`${API_BASE_URL}/macro/latest`),
         fetch(`${API_BASE_URL}/macro/correlations?limit=365`),
         fetch(`${API_BASE_URL}/macro/prices/spx500?limit=365`),
         fetch(`${API_BASE_URL}/macro/prices/gold?limit=365`),
+        fetch(`${API_BASE_URL}/macro/m2-comparison?assets=btc,spx,gold,vix&days=365`),
       ]);
       if (latestRes.ok) setLatest(await latestRes.json());
       if (corrRes.ok) setCorrelations(await corrRes.json());
       if (spxRes.ok) setSpxPrices(await spxRes.json());
       if (goldRes.ok) setGoldPrices(await goldRes.json());
+      if (m2Res.ok) setM2Data(await m2Res.json());
     } catch (e) {
       console.error("Macro fetch failed", e);
     } finally {
@@ -262,6 +266,175 @@ export default function MacroClient() {
                   </CardContent>
                 </Card>
               </div>
+
+              {/* M2 Global Liquidity Comparison */}
+              {m2Data && m2Data.dates.length > 0 && (
+                <Card>
+                  <CardHeader className="pb-2">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                      <div>
+                        <CardTitle className="text-base">{t("macro.m2ComparisonTitle")}</CardTitle>
+                        <p className="text-xs text-muted-foreground mt-0.5">{t("macro.m2ComparisonSubtitle")}</p>
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        {[
+                          { key: "btc", label: t("macro.assetBTC"), color: "#f59e0b" },
+                          { key: "spx", label: t("macro.assetSPX"), color: "#10b981" },
+                          { key: "gold", label: t("macro.assetGold"), color: "#fbbf24" },
+                          { key: "vix", label: t("macro.assetVIX"), color: "#f43f5e" },
+                        ].map((asset) => {
+                          const active = m2Assets.has(asset.key);
+                          return (
+                            <button
+                              key={asset.key}
+                              onClick={() => {
+                                const next = new Set(m2Assets);
+                                if (next.has(asset.key)) next.delete(asset.key);
+                                else next.add(asset.key);
+                                setM2Assets(next);
+                              }}
+                              className={cn(
+                                "flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium transition-all border",
+                                active
+                                  ? "bg-primary/10 border-primary/30 text-primary"
+                                  : "bg-muted border-transparent text-muted-foreground opacity-60 hover:opacity-100"
+                              )}
+                            >
+                              <span
+                                className="w-2 h-2 rounded-full"
+                                style={{ backgroundColor: asset.color }}
+                              />
+                              {asset.label}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="h-[450px]">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <LineChart
+                          data={m2Data.dates.map((d: string, i: number) => ({
+                            date: d,
+                            m2: m2Data.series.m2[i],
+                            btc: m2Assets.has("btc") ? m2Data.series.btc?.[i] : null,
+                            spx: m2Assets.has("spx") ? m2Data.series.spx?.[i] : null,
+                            gold: m2Assets.has("gold") ? m2Data.series.gold?.[i] : null,
+                            vix: m2Assets.has("vix") ? m2Data.series.vix?.[i] : null,
+                          }))}
+                          margin={{ top: 5, right: 5, left: 5, bottom: 5 }}
+                        >
+                          <CartesianGrid strokeDasharray="3 3" stroke="#334155" opacity={0.3} />
+                          <XAxis
+                            dataKey="date"
+                            tick={{ fontSize: 10, fill: "#64748b" }}
+                            tickFormatter={(val: string) => {
+                              const d = new Date(val);
+                              return `${d.getMonth() + 1}/${d.getFullYear() % 100}`;
+                            }}
+                            interval="preserveStartEnd"
+                            minTickGap={30}
+                          />
+                          <YAxis
+                            yAxisId="left"
+                            tick={{ fontSize: 10, fill: "#64748b" }}
+                            tickFormatter={(v: number) => `$${(v / 1000).toFixed(1)}T`}
+                            width={55}
+                          />
+                          <YAxis
+                            yAxisId="right"
+                            orientation="right"
+                            tick={{ fontSize: 10, fill: "#64748b" }}
+                            width={65}
+                          />
+                          <Tooltip
+                            contentStyle={{
+                              backgroundColor: "#0f172a",
+                              border: "1px solid #334155",
+                              borderRadius: "8px",
+                              fontSize: "12px",
+                            }}
+                            labelStyle={{ color: "#94a3b8" }}
+                            formatter={(value: any, name: string) => {
+                              if (value == null) return ["—", name];
+                              if (name === "M2") return [`$${(value / 1000).toFixed(2)}T`, name];
+                              return [value.toLocaleString(undefined, { maximumFractionDigits: 0 }), name];
+                            }}
+                          />
+                          <Legend
+                            wrapperStyle={{ fontSize: "11px", paddingTop: "8px" }}
+                            iconType="circle"
+                            iconSize={6}
+                          />
+                          <Line
+                            yAxisId="left"
+                            type="monotone"
+                            dataKey="m2"
+                            name="M2"
+                            stroke="#6366f1"
+                            strokeWidth={2.5}
+                            dot={false}
+                            activeDot={{ r: 4 }}
+                          />
+                          {m2Assets.has("btc") && (
+                            <Line
+                              yAxisId="right"
+                              type="monotone"
+                              dataKey="btc"
+                              name={t("macro.assetBTC")}
+                              stroke="#f59e0b"
+                              strokeWidth={2}
+                              dot={false}
+                              activeDot={{ r: 4 }}
+                              connectNulls
+                            />
+                          )}
+                          {m2Assets.has("spx") && (
+                            <Line
+                              yAxisId="right"
+                              type="monotone"
+                              dataKey="spx"
+                              name={t("macro.assetSPX")}
+                              stroke="#10b981"
+                              strokeWidth={2}
+                              dot={false}
+                              activeDot={{ r: 4 }}
+                              connectNulls
+                            />
+                          )}
+                          {m2Assets.has("gold") && (
+                            <Line
+                              yAxisId="right"
+                              type="monotone"
+                              dataKey="gold"
+                              name={t("macro.assetGold")}
+                              stroke="#fbbf24"
+                              strokeWidth={2}
+                              dot={false}
+                              activeDot={{ r: 4 }}
+                              connectNulls
+                            />
+                          )}
+                          {m2Assets.has("vix") && (
+                            <Line
+                              yAxisId="right"
+                              type="monotone"
+                              dataKey="vix"
+                              name={t("macro.assetVIX")}
+                              stroke="#f43f5e"
+                              strokeWidth={2}
+                              dot={false}
+                              activeDot={{ r: 4 }}
+                              connectNulls
+                            />
+                          )}
+                        </LineChart>
+                      </ResponsiveContainer>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
 
               {/* Price Overlay Chart */}
               <Card>
