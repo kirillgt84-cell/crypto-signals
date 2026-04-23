@@ -260,3 +260,46 @@ class TestFundamentalsEndpoints:
         result = await raw_check("BTC")
         assert result["inserted"] is True
         assert result["row"]["symbol"] == "BTC"
+
+
+    @patch("routers.fundamentals.get_db")
+    async def test_get_m2_history(self, mock_get_db):
+        from routers.fundamentals import get_m2_history
+
+        mock_db = mock_get_db.return_value
+        mock_db.query = AsyncMock(return_value=[
+            {"date": "2024-01-01", "value": 21000.0, "raw_data": '{"source": "FRED"}'},
+            {"date": "2024-01-08", "value": 21100.0, "raw_data": '{"source": "FRED"}'},
+        ])
+
+        result = await get_m2_history("GLOBAL", days=365)
+        assert len(result) == 2
+        assert result[0]["value"] == 21000.0
+        assert result[0]["date"] == "2024-01-01"
+
+    @patch("routers.fundamentals.get_db")
+    async def test_get_m2_compare(self, mock_get_db):
+        from routers.fundamentals import get_m2_compare
+
+        mock_db = mock_get_db.return_value
+        mock_db.query = AsyncMock(side_effect=[
+            # M2 rows
+            [{"date": "2024-01-01", "value": 21000.0}],
+            # BTC rows
+            [{"date": "2024-01-01", "close_price": 42000.0}],
+            # SPX asset
+            [{"id": 1}],
+            # SPX rows
+            [{"date": "2024-01-01", "close_price": 4500.0}],
+            # Gold asset
+            [{"id": 2}],
+            # Gold rows
+            [{"date": "2024-01-01", "close_price": 2000.0}],
+        ])
+
+        result = await get_m2_compare("GLOBAL", days=365)
+        assert result["dates"] == ["2024-01-01"]
+        assert result["m2"] == [21000.0]
+        assert result["btc"] == [42000.0]
+        assert result["spx"] == [4500.0]
+        assert result["gold"] == [2000.0]

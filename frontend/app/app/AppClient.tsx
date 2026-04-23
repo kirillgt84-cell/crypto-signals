@@ -181,6 +181,67 @@ function MetricCard({
   )
 }
 
+// Sentiment Cards
+function SentimentCards({ data, loading }: { data: MarketData; loading: boolean }) {
+  const { t } = useLanguage()
+  const s = data?.sentiment
+  if (loading) {
+    return (
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 px-4 py-2 lg:px-6">
+        {[1, 2, 3].map((i) => (
+          <div key={i} className="h-20 flex items-center justify-center bg-muted/30 rounded-lg">
+            <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+          </div>
+        ))}
+      </div>
+    )
+  }
+  if (!s) return null
+
+  const signalBadge = (signal: string) => {
+    if (signal === "bullish")
+      return <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/10 text-emerald-500 uppercase">{t("dashboard.bullish")}</span>
+    if (signal === "bearish")
+      return <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-rose-500/10 text-rose-500 uppercase">{t("dashboard.bearish")}</span>
+    return <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/10 text-amber-500 uppercase">{t("dashboard.neutral")}</span>
+  }
+
+  return (
+    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 px-4 py-2 lg:px-6">
+      <div className="rounded-xl border bg-card p-4 flex items-center justify-between">
+        <div>
+          <p className="text-xs text-muted-foreground uppercase tracking-wider">{t("dashboard.longShortRatio")}</p>
+          <p className="text-xl font-bold font-mono mt-1">{s.long_short_ratio?.toFixed(2) ?? "—"}</p>
+          <p className="text-[10px] text-muted-foreground mt-0.5">
+            {t("dashboard.longAccounts")}: {s.long_accounts_pct?.toFixed(1) ?? 0}% · {t("dashboard.shortAccounts")}: {s.short_accounts_pct?.toFixed(1) ?? 0}%
+          </p>
+        </div>
+        {signalBadge(s.sentiment_signal)}
+      </div>
+      <div className="rounded-xl border bg-card p-4 flex items-center justify-between">
+        <div>
+          <p className="text-xs text-muted-foreground uppercase tracking-wider">{t("dashboard.topTraderRatio")}</p>
+          <p className="text-xl font-bold font-mono mt-1">{s.top_trader_ratio?.toFixed(2) ?? "—"}</p>
+          <p className="text-[10px] text-muted-foreground mt-0.5">
+            Long: {s.top_long_pct?.toFixed(1) ?? 0}% · Short: {s.top_short_pct?.toFixed(1) ?? 0}%
+          </p>
+        </div>
+        {signalBadge(s.sentiment_signal)}
+      </div>
+      <div className="rounded-xl border bg-card p-4 flex items-center justify-between">
+        <div>
+          <p className="text-xs text-muted-foreground uppercase tracking-wider">{t("dashboard.takerVolumeRatio")}</p>
+          <p className="text-xl font-bold font-mono mt-1">{s.taker_volume_ratio?.toFixed(2) ?? "—"}</p>
+          <p className="text-[10px] text-muted-foreground mt-0.5">
+            Buy: {s.taker_buy?.toFixed(1) ?? 0} · Sell: {s.taker_sell?.toFixed(1) ?? 0}
+          </p>
+        </div>
+        {signalBadge(s.sentiment_signal)}
+      </div>
+    </div>
+  )
+}
+
 // Row 1: OI Analysis Cards
 function OIAnalysisCards({ data, loading, timeframe }: { data: MarketData; loading: boolean; timeframe: string }) {
   const { t } = useLanguage()
@@ -794,6 +855,9 @@ export default function Dashboard() {
 
         {/* Row 1: OI Analysis Cards */}
         <OIAnalysisCards data={marketData} loading={loading} timeframe={timeframe} />
+
+        {/* Row 1.5: Sentiment Cards */}
+        <SentimentCards data={marketData} loading={loading} />
 
         {/* Row 2: TradingView Chart + OI Analysis + Fundamentals */}
         <div className="flex flex-col lg:flex-row gap-4 px-4 py-4 lg:px-6">

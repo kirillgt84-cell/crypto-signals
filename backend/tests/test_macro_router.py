@@ -56,8 +56,8 @@ class TestMacroRouter:
         """Correlations endpoint should return history."""
         mock_db = MagicMock()
         mock_db.query = AsyncMock(return_value=[
-            {"date": "2024-01-01", "btc_spx_correlation": 0.5, "gold_btc_correlation": -0.2, "vix_level": 15.0},
-            {"date": "2024-01-02", "btc_spx_correlation": 0.6, "gold_btc_correlation": -0.1, "vix_level": 16.0},
+            {"date": "2024-01-01", "btc_spx_correlation": 0.5, "gold_btc_correlation": -0.2, "vix_btc_correlation": -0.3, "vix_level": 15.0},
+            {"date": "2024-01-02", "btc_spx_correlation": 0.6, "gold_btc_correlation": -0.1, "vix_btc_correlation": -0.4, "vix_level": 16.0},
         ])
         with patch("routers.macro.get_db", return_value=mock_db):
             resp = client.get("/api/v1/macro/correlations?limit=30")
@@ -65,12 +65,13 @@ class TestMacroRouter:
         data = resp.json()
         assert len(data) == 2
         assert data[0]["btc_spx_correlation"] == 0.5
+        assert data[0]["vix_btc_correlation"] == -0.3
 
     def test_get_latest(self, client):
         """Latest endpoint should return combined snapshot."""
         mock_db = MagicMock()
         mock_db.query = AsyncMock(side_effect=[
-            [{"date": "2024-01-02", "btc_spx_correlation": 0.6, "gold_btc_correlation": -0.1, "vix_level": 16.0, "btc_price": 50000, "spx_price": 4600, "gold_price": 2000}],
+            [{"date": "2024-01-02", "btc_spx_correlation": 0.6, "gold_btc_correlation": -0.1, "vix_btc_correlation": -0.4, "vix_level": 16.0, "btc_price": 50000, "spx_price": 4600, "gold_price": 2000}],
             [{"key": "spx500", "name": "S&P 500"}, {"key": "gold", "name": "Gold"}],
             [{"close_price": 4600, "time": "2024-01-02"}],
             [{"close_price": 2000, "time": "2024-01-02"}],
