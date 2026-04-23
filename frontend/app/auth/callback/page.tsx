@@ -41,6 +41,7 @@ function OAuthCallbackHandler() {
           `${process.env.NEXT_PUBLIC_API_URL}/auth/oauth/${provider}/callback`,
           {
             method: "POST",
+            credentials: 'include',
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ code, state })
           }
@@ -55,8 +56,6 @@ function OAuthCallbackHandler() {
         window.opener?.postMessage(
           {
             type: "OAUTH_SUCCESS",
-            access_token: data.access_token,
-            refresh_token: data.refresh_token,
             user: data.user
           },
           window.location.origin

@@ -14,7 +14,6 @@ from routers.auth import (
 
 client = TestClient(app)
 
-
 @pytest.fixture
 def mock_db():
     """Return a mock db whose methods are AsyncMock."""
@@ -46,6 +45,43 @@ class TestJWTUtils:
         from fastapi import HTTPException
         with pytest.raises(HTTPException) as exc:
             verify_token(token)
+        assert exc.value.status_code == 401
+
+    @pytest.mark.asyncio
+    async def test_get_current_user_from_cookie(self):
+        from unittest.mock import AsyncMock, patch
+        from routers.auth import get_current_user
+        from starlette.requests import Request
+
+        token = create_access_token(42)
+        request = Request({
+            "type": "http",
+            "headers": [(b"cookie", f"access_token={token}".encode())],
+        })
+
+        with patch("routers.auth.get_db") as mock_get_db:
+            mock_db = mock_get_db.return_value
+            mock_db.query = AsyncMock(return_value=[{
+                "id": 42, "email": "test@test.com", "username": "test",
+                "avatar_url": None, "is_email_verified": True,
+                "subscription_tier": "free"
+            }])
+            result = await get_current_user(request=request)
+            assert result["id"] == 42
+
+    @pytest.mark.asyncio
+    async def test_get_current_user_from_cookie_invalid_token(self):
+        from routers.auth import get_current_user
+        from fastapi import HTTPException
+        from starlette.requests import Request
+
+        request = Request({
+            "type": "http",
+            "headers": [(b"cookie", b"access_token=bad.token.here")],
+        })
+
+        with pytest.raises(HTTPException) as exc:
+            await get_current_user(request=request)
         assert exc.value.status_code == 401
 
 
@@ -299,10 +335,14 @@ class TestRefreshLogout:
     async def test_refresh_token_unimplemented(self, mock_get_db, mock_db):
         mock_get_db.return_value = mock_db
         mock_db.query.return_value = []
-        from routers.auth import refresh_token, RefreshRequest
+        from routers.auth import refresh_token
         from fastapi import HTTPException
+        from starlette.requests import Request
+        async def receive():
+            return {"type": "http.request", "body": b'{"refresh_token": "some_token"}'}
+        req = Request({"type": "http", "method": "POST", "headers": []}, receive=receive)
         with pytest.raises(HTTPException) as exc:
-            await refresh_token(RefreshRequest(refresh_token="some_token"))
+            await refresh_token(req)
         assert exc.value.status_code == 401
 
     @patch("routers.auth.get_db")
@@ -326,7 +366,7 @@ class TestRefreshLogout:
         from routers.auth import logout
         from fastapi.security import HTTPAuthorizationCredentials
         creds = HTTPAuthorizationCredentials(scheme="Bearer", credentials=token)
-        resp = await logout(creds)
+        resp = await logout(credentials=creds)
         assert resp["message"] == "Logged out"
         # logout also triggers refresh token creation during login, so filter for the logout call
         logout_calls = [c for c in mock_db.execute.call_args_list if "is_revoked = TRUE" in str(c)]

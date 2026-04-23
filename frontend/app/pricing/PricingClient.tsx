@@ -67,12 +67,11 @@ export default function PricingClient() {
     setProcessing(true);
     setMessage(null);
     try {
-      const accessToken = localStorage.getItem("access_token");
       const res = await fetch(`${API_BASE_URL}/payments/create-trial`, {
         method: "POST",
+        credentials: 'include',
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${accessToken}`,
         },
         body: JSON.stringify({ billing_cycle: billingCycle }),
       });

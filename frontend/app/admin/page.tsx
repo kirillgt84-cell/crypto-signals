@@ -75,14 +75,12 @@ export default function AdminPage() {
 
   useEffect(() => {
     if (user?.subscription_tier !== "admin") return
-    const token = localStorage.getItem("access_token")
-
     const fetchData = async () => {
       try {
         const [usersRes, statsRes, reportsRes] = await Promise.all([
-          fetch(`${API_BASE_URL}/admin/users`, { cache: "no-store", headers: { Authorization: `Bearer ${token}` } }),
-          fetch(`${API_BASE_URL}/admin/stats`, { cache: "no-store", headers: { Authorization: `Bearer ${token}` } }),
-          fetch(`${API_BASE_URL}/admin/reports/status`, { cache: "no-store", headers: { Authorization: `Bearer ${token}` } }),
+          fetch(`${API_BASE_URL}/admin/users`, { cache: "no-store", credentials: 'include' }),
+          fetch(`${API_BASE_URL}/admin/stats`, { cache: "no-store", credentials: 'include' }),
+          fetch(`${API_BASE_URL}/admin/reports/status`, { cache: "no-store", credentials: 'include' }),
         ])
         if (!usersRes.ok || !statsRes.ok) {
           const err = await (usersRes.ok ? statsRes : usersRes).json()
@@ -96,10 +94,10 @@ export default function AdminPage() {
           setReportStatus(await reportsRes.json())
         }
         const [payRes, subRes, scanStatusRes, scanLogsRes] = await Promise.all([
-          fetch(`${API_BASE_URL}/payments/admin/payments`, { cache: "no-store", headers: { Authorization: `Bearer ${token}` } }),
-          fetch(`${API_BASE_URL}/payments/admin/subscriptions`, { cache: "no-store", headers: { Authorization: `Bearer ${token}` } }),
-          fetch(`${API_BASE_URL}/admin/scanner/status`, { cache: "no-store", headers: { Authorization: `Bearer ${token}` } }),
-          fetch(`${API_BASE_URL}/admin/scanner/logs`, { cache: "no-store", headers: { Authorization: `Bearer ${token}` } }),
+          fetch(`${API_BASE_URL}/payments/admin/payments`, { cache: "no-store", credentials: 'include' }),
+          fetch(`${API_BASE_URL}/payments/admin/subscriptions`, { cache: "no-store", credentials: 'include' }),
+          fetch(`${API_BASE_URL}/admin/scanner/status`, { cache: "no-store", credentials: 'include' }),
+          fetch(`${API_BASE_URL}/admin/scanner/logs`, { cache: "no-store", credentials: 'include' }),
         ])
         if (payRes.ok) setPayments(await payRes.json())
         if (subRes.ok) setSubscriptions(await subRes.json())
@@ -133,12 +131,12 @@ export default function AdminPage() {
   }, [stats])
 
   const handleTierChange = async (userId: number, newTier: string) => {
-    const token = localStorage.getItem("access_token")
     try {
       const res = await fetch(`${API_BASE_URL}/admin/users/${userId}`, {
         method: "PATCH",
         cache: "no-store",
-        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+        credentials: 'include',
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ subscription_tier: newTier }),
       })
       if (!res.ok) {
@@ -152,14 +150,14 @@ export default function AdminPage() {
   }
 
   const handleSendTest = async (type: "daily" | "weekly") => {
-    const token = localStorage.getItem("access_token")
     setSendingTest(true)
     setTestResult(null)
     try {
       const res = await fetch(`${API_BASE_URL}/admin/reports/send-test`, {
         method: "POST",
         cache: "no-store",
-        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+        credentials: 'include',
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ type }),
       })
       const data = await res.json()
@@ -173,12 +171,12 @@ export default function AdminPage() {
   }
 
   const handleToggleActive = async (userId: number, isActive: boolean) => {
-    const token = localStorage.getItem("access_token")
     try {
       const res = await fetch(`${API_BASE_URL}/admin/users/${userId}`, {
         method: "PATCH",
         cache: "no-store",
-        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+        credentials: 'include',
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ is_active: !isActive }),
       })
       if (!res.ok) {
@@ -330,10 +328,9 @@ export default function AdminPage() {
                   onClick={async () => {
                     setScannerLoading(true)
                     try {
-                      const token = localStorage.getItem("access_token")
                       const res = await fetch(`${API_BASE_URL}/admin/scanner/run`, {
                         method: "POST",
-                        headers: { Authorization: `Bearer ${token}` },
+                        credentials: 'include',
                       })
                       if (res.ok) alert("Scanner job triggered")
                     } finally {

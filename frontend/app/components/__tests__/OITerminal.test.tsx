@@ -29,9 +29,9 @@ describe("OITerminal", () => {
     const analysis = {
       status: "long_buildup",
       signal: "strong_bullish",
-      description: "OI↑ Price↑ Volume↑ — Smart money buying, crowd shorting.",
-      action: "Consider long entries",
-      tactic: "Don't fight the trend. Wait for pullbacks to EMA20/50 to enter long.",
+      description: "oi.description.longBuildup",
+      action: "oi.action.longBuildup",
+      tactic: "oi.tactic.longBuildup",
       color: "#22c55e",
       strength: 5,
       oi_change_pct: 5.2,
@@ -42,19 +42,19 @@ describe("OITerminal", () => {
     render(<OITerminal analysis={analysis} loading={false} />)
 
     expect(screen.getByText(/oiPanel.status/)).toBeInTheDocument()
-    expect(screen.getByText(/LONG BUILDUP/)).toBeInTheDocument()
+    expect(screen.getByText(/oi.status.long_buildup/)).toBeInTheDocument()
     expect(screen.getByText(analysis.description)).toBeInTheDocument()
     expect(screen.getByText(analysis.tactic)).toBeInTheDocument()
-    expect(screen.getByText(/CONSIDER LONG ENTRIES/)).toBeInTheDocument()
+    expect(screen.getByText(/OI.ACTION.LONGBUILDUP/)).toBeInTheDocument()
   })
 
   it("renders bearish analysis correctly", () => {
     const analysis = {
       status: "short_buildup",
       signal: "strong_bearish",
-      description: "OI↑ Price↓ Volume↑ — Smart money distributing to the crowd.",
-      action: "Consider short entries",
-      tactic: "Enter short on bounces to resistance. Don't catch a falling knife.",
+      description: "oi.description.shortBuildup",
+      action: "oi.action.shortBuildup",
+      tactic: "oi.tactic.shortBuildup",
       color: "#ef4444",
       strength: 5,
       oi_change_pct: 4.5,
@@ -64,17 +64,17 @@ describe("OITerminal", () => {
 
     render(<OITerminal analysis={analysis} loading={false} />)
 
-    expect(screen.getByText(/SHORT BUILDUP/)).toBeInTheDocument()
-    expect(screen.getByText(/CONSIDER SHORT ENTRIES/)).toBeInTheDocument()
+    expect(screen.getByText(/oi.status.short_buildup/)).toBeInTheDocument()
+    expect(screen.getByText(/OI.ACTION.SHORTBUILDUP/)).toBeInTheDocument()
   })
 
   it("renders neutral analysis correctly", () => {
     const analysis = {
       status: "neutral",
       signal: "neutral",
-      description: "OI→ (flat) — Insufficient data for analysis.",
-      action: "No trade",
-      tactic: "Wait for OI and price movement to form a signal.",
+      description: "oi.description.neutral",
+      action: "oi.action.neutral",
+      tactic: "oi.tactic.neutral",
       color: "#9ca3af",
       strength: 1,
       oi_change_pct: 0.5,
@@ -84,16 +84,16 @@ describe("OITerminal", () => {
 
     render(<OITerminal analysis={analysis} loading={false} />)
 
-    expect(screen.getByText(/NEUTRAL/)).toBeInTheDocument()
-    expect(screen.getByText("▓▓ NO TRADE ▓▓")).toBeInTheDocument()
+    expect(screen.getByText(/oi.status.neutral/)).toBeInTheDocument()
+    expect(screen.getByText("▓▓ OI.ACTION.NEUTRAL ▓▓")).toBeInTheDocument()
   })
 
   it("displays formatted change percentages", () => {
     const analysis = {
       status: "long_buildup",
       signal: "strong_bullish",
-      description: "OI↑ Price↑",
-      action: "LONG",
+      description: "oi.description.longBuildup",
+      action: "oi.action.longBuildup",
       color: "#22c55e",
       strength: 5,
       oi_change_pct: -3.5,
@@ -112,8 +112,8 @@ describe("OITerminal", () => {
     const analysis = {
       status: "long_buildup",
       signal: "strong_bullish",
-      description: "Some generic text without arrows",
-      action: "LONG",
+      description: "oi.description.longBuildup",
+      action: "oi.action.longBuildup",
       color: "#22c55e",
       strength: 5,
       oi_change_pct: 5.0,

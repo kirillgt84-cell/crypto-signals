@@ -7,6 +7,16 @@ from unittest.mock import AsyncMock, patch, MagicMock
 
 from fastapi import HTTPException
 
+class MockRequest:
+    def __init__(self, cookies=None, body=None):
+        self.cookies = cookies or {}
+        self._body = body
+        self.headers = {}
+        self.client = type('Client', (), {'host': '127.0.0.1'})()
+
+    async def json(self):
+        return self._body or {}
+
 # Patch get_db before importing router
 with patch("routers.auth.get_db") as mock_get_db:
     mock_db = MagicMock()
@@ -87,12 +97,12 @@ class TestGetCurrentUser:
         from fastapi.security import HTTPAuthorizationCredentials
         creds = HTTPAuthorizationCredentials(scheme="Bearer", credentials=token)
 
-        result = await get_current_user(creds)
+        result = await get_current_user(credentials=creds)
         assert result["id"] == 42
 
     async def test_get_current_user_no_credentials(self):
         with pytest.raises(HTTPException) as exc_info:
-            await get_current_user(None)
+            await get_current_user()
         assert exc_info.value.status_code == 401
 
     @patch("routers.auth.get_db")
@@ -105,7 +115,7 @@ class TestGetCurrentUser:
         creds = HTTPAuthorizationCredentials(scheme="Bearer", credentials=token)
 
         with pytest.raises(HTTPException) as exc_info:
-            await get_current_user(creds)
+            await get_current_user(credentials=creds)
         assert exc_info.value.status_code == 401
 
 
@@ -224,6 +234,8 @@ class TestLogin:
 
 @pytest.mark.asyncio
 class TestOAuth:
+    @patch("routers.auth.GOOGLE_CLIENT_ID", "test_client_id")
+    @patch("routers.auth.GOOGLE_CLIENT_SECRET", "test_secret")
     async def test_oauth_login_google(self):
         result = await oauth_login("google")
         assert "auth_url" in result
@@ -356,6 +368,7 @@ class TestTelegramAuth:
                 await telegram_auth(req)
             assert exc_info.value.status_code == 401
             assert "expired" in exc_info.value.detail.lower()
+            assert "expired" in exc_info.value.detail.lower()
 
     def test_verify_telegram_auth(self):
         data = {
@@ -408,11 +421,11 @@ class TestUserEndpoints:
         from fastapi.security import HTTPAuthorizationCredentials
         creds = HTTPAuthorizationCredentials(scheme="Bearer", credentials=token)
 
-        result = await logout(creds)
+        result = await logout(credentials=creds)
         assert result["message"] == "Logged out"
 
     async def test_logout_no_creds(self):
-        result = await logout(None)
+        result = await logout()
         assert result["message"] == "Logged out"
 
 

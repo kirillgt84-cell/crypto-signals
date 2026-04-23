@@ -132,14 +132,12 @@ interface PortfolioModel {
 export default function PortfolioClient() {
   const { user } = useAuth();
   const { collapsed: sidebarCollapsed, toggle: toggleSidebar } = useSidebar();
-  const [token, setToken] = useState<string | null>(null);
   const [mounted, setMounted] = useState(false);
   const [summary, setSummary] = useState<PortfolioSummary | null>(null);
   const { t } = useLanguage();
 
   useEffect(() => {
     setMounted(true);
-    setToken(localStorage.getItem("access_token"));
   }, []);
   const [history, setHistory] = useState<any[]>([]);
   const [models, setModels] = useState<PortfolioModel[]>([]);
@@ -184,14 +182,13 @@ export default function PortfolioClient() {
   ]);
 
   const headers = {
-    Authorization: `Bearer ${token || ""}`,
     "Content-Type": "application/json",
   };
 
   const fetchSummary = useCallback(async () => {
-    if (!token) return;
+    if (!user) return;
     try {
-      const res = await fetch(`${API_BASE_URL}/portfolio/summary`, { headers });
+      const res = await fetch(`${API_BASE_URL}/portfolio/summary`, { credentials: 'include', headers });
       if (res.ok) {
         const data = await res.json();
         setSummary(data);
@@ -199,31 +196,31 @@ export default function PortfolioClient() {
     } catch (e) {
       console.error("Failed to fetch summary", e);
     }
-  }, [token]);
+  }, [user]);
 
   const fetchHistory = useCallback(async () => {
-    if (!token) return;
+    if (!user) return;
     try {
-      const res = await fetch(`${API_BASE_URL}/portfolio/history`, { headers });
+      const res = await fetch(`${API_BASE_URL}/portfolio/history`, { credentials: 'include', headers });
       if (res.ok) setHistory(await res.json());
     } catch (e) {
       console.error("Failed to fetch history", e);
     }
-  }, [token]);
+  }, [user]);
 
   const fetchModels = useCallback(async () => {
     try {
-      const res = await fetch(`${API_BASE_URL}/portfolio/models`, token ? { headers } : {});
+      const res = await fetch(`${API_BASE_URL}/portfolio/models`, { credentials: 'include', headers });
       if (res.ok) setModels(await res.json());
     } catch (e) {
       console.error("Failed to fetch models", e);
     }
-  }, [token]);
+  }, [user]);
 
   const fetchDeviation = useCallback(async () => {
-    if (!token) return;
+    if (!user) return;
     try {
-      const res = await fetch(`${API_BASE_URL}/portfolio/models/deviation`, { headers });
+      const res = await fetch(`${API_BASE_URL}/portfolio/models/deviation`, { credentials: 'include', headers });
       if (res.ok) {
         const data = await res.json();
         setDeviation(data.deviations);
@@ -232,27 +229,27 @@ export default function PortfolioClient() {
     } catch (e) {
       // No model selected yet
     }
-  }, [token]);
+  }, [user]);
 
   const fetchAlerts = useCallback(async () => {
-    if (!token) return;
+    if (!user) return;
     try {
-      const res = await fetch(`${API_BASE_URL}/portfolio/alerts`, { headers });
+      const res = await fetch(`${API_BASE_URL}/portfolio/alerts`, { credentials: 'include', headers });
       if (res.ok) setAlerts(await res.json());
     } catch (e) {
       console.error("Failed to fetch alerts", e);
     }
-  }, [token]);
+  }, [user]);
 
   const fetchAlertSettings = useCallback(async () => {
-    if (!token) return;
+    if (!user) return;
     try {
-      const res = await fetch(`${API_BASE_URL}/portfolio/alerts/settings`, { headers });
+      const res = await fetch(`${API_BASE_URL}/portfolio/alerts/settings`, { credentials: 'include', headers });
       if (res.ok) setAlertSettings(await res.json());
     } catch (e) {
       console.error("Failed to fetch alert settings", e);
     }
-  }, [token]);
+  }, [user]);
 
   useEffect(() => {
     fetchSummary();
@@ -264,11 +261,12 @@ export default function PortfolioClient() {
   }, [fetchSummary, fetchHistory, fetchModels, fetchDeviation, fetchAlerts, fetchAlertSettings]);
 
   const handleSync = async () => {
-    if (!token) return;
+    if (!user) return;
     setSyncing(true);
     try {
       const res = await fetch(`${API_BASE_URL}/portfolio/sync`, {
         method: "POST",
+        credentials: 'include',
         headers,
       });
       if (res.ok) {
@@ -281,11 +279,12 @@ export default function PortfolioClient() {
   };
 
   const handleConnect = async () => {
-    if (!token || !apiKey.trim() || !apiSecret.trim()) return;
+    if (!user || !apiKey.trim() || !apiSecret.trim()) return;
     setLoading(true);
     try {
       const res = await fetch(`${API_BASE_URL}/portfolio/connect/binance`, {
         method: "POST",
+        credentials: 'include',
         headers,
         body: JSON.stringify({ api_key: apiKey.trim(), api_secret: apiSecret.trim(), market_type: marketType }),
       });
@@ -304,18 +303,19 @@ export default function PortfolioClient() {
   };
 
   const handleDisconnect = async () => {
-    if (!token) return;
+    if (!user) return;
     if (!confirm(`Disconnect Binance ${marketType}?`)) return;
-    await fetch(`${API_BASE_URL}/portfolio/disconnect/binance?market_type=${marketType}`, { method: "DELETE", headers });
+    await fetch(`${API_BASE_URL}/portfolio/disconnect/binance?market_type=${marketType}`, { method: "DELETE", credentials: 'include', headers });
     await fetchSummary();
   };
 
   const handleAddManual = async () => {
-    if (!token || !manualSymbol.trim() || !manualAmount || !manualPrice) return;
+    if (!user || !manualSymbol.trim() || !manualAmount || !manualPrice) return;
     setLoading(true);
     try {
       const res = await fetch(`${API_BASE_URL}/portfolio/manual/assets`, {
         method: "POST",
+        credentials: 'include',
         headers,
         body: JSON.stringify({
           asset_symbol: manualSymbol.trim().toUpperCase(),
@@ -337,19 +337,21 @@ export default function PortfolioClient() {
   };
 
   const handleRemoveManual = async (symbol: string) => {
-    if (!token) return;
+    if (!user) return;
     if (!confirm(`Remove ${symbol}?`)) return;
     await fetch(`${API_BASE_URL}/portfolio/manual/assets/${symbol}`, {
       method: "DELETE",
+      credentials: 'include',
       headers,
     });
     await fetchSummary();
   };
 
   const handleSelectModel = async (modelId: number) => {
-    if (!token) return;
+    if (!user) return;
     await fetch(`${API_BASE_URL}/portfolio/models/select`, {
       method: "POST",
+      credentials: 'include',
       headers,
       body: JSON.stringify({ model_id: modelId }),
     });
@@ -358,7 +360,7 @@ export default function PortfolioClient() {
   };
 
   const handleCreateCustomModel = async () => {
-    if (!token) return;
+    if (!user) return;
     const assets = customAssets.filter((a) => a.target_weight > 0);
     const total = assets.reduce((sum, a) => sum + a.target_weight, 0);
     if (total < 99.99 || total > 100.01) {
@@ -368,6 +370,7 @@ export default function PortfolioClient() {
     try {
       const res = await fetch(`${API_BASE_URL}/portfolio/models/custom`, {
         method: "POST",
+        credentials: 'include',
         headers,
         body: JSON.stringify({ name: customName, description: customDesc, assets }),
       });
@@ -387,11 +390,12 @@ export default function PortfolioClient() {
   };
 
   const handleDeleteCustomModel = async (modelId: number) => {
-    if (!token) return;
+    if (!user) return;
     if (!confirm("Delete this custom model?")) return;
     try {
       const res = await fetch(`${API_BASE_URL}/portfolio/models/custom/${modelId}`, {
         method: "DELETE",
+        credentials: 'include',
         headers,
       });
       if (res.ok) {
@@ -407,10 +411,10 @@ export default function PortfolioClient() {
   };
 
   const fetchAiInsight = async () => {
-    if (!token || !summary) return;
+    if (!user || !summary) return;
     setAiInsight(t("common.loading"));
     try {
-      const res = await fetch(`${API_BASE_URL}/portfolio/ai-insight`, { headers });
+      const res = await fetch(`${API_BASE_URL}/portfolio/ai-insight`, { credentials: 'include', headers });
       if (res.ok) {
         const data = await res.json();
         setAiInsight(data.insight || "No insight available.");

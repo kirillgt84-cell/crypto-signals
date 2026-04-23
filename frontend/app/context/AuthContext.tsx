@@ -52,40 +52,29 @@ const authUrl = (path: string) => `${API_BASE_URL}/auth${path}?_cb=${Date.now()}
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [isLoading, setIsLoading] = useState(true)
-  const [accessToken, setAccessToken] = useState<string | null>(null)
 
   const isPro = user?.subscription_tier === "pro"
 
   useEffect(() => {
     const initAuth = async () => {
-      const storedToken = localStorage.getItem("access_token")
-      const storedRefresh = localStorage.getItem("refresh_token")
-      if (storedToken) {
-        setAccessToken(storedToken)
-        try {
-          const res = await fetch(authUrl('/me'), {
-            cache: 'no-store',
-            headers: { Authorization: `Bearer ${storedToken}` }
-          })
-          if (res.ok) {
-            const userData = await res.json()
-            setUser(userData)
-          } else if (res.status === 401 && storedRefresh) {
-            const refreshed = await refreshToken()
-            if (refreshed) {
-              await refreshUser()
-            } else {
-              logout()
-            }
-          } else if (res.status !== 401) {
-            // Network or server error: keep current token, don't force logout
-            // User stays logged in; next navigation will retry
+      try {
+        const res = await fetch(authUrl('/me'), {
+          cache: 'no-store',
+          credentials: 'include',
+        })
+        if (res.ok) {
+          const userData = await res.json()
+          setUser(userData)
+        } else if (res.status === 401) {
+          const refreshed = await refreshToken()
+          if (refreshed) {
+            await refreshUser()
           } else {
-            logout()
+            setUser(null)
           }
-        } catch {
-          // Network error on /me: don't logout immediately
         }
+      } catch {
+        // Network error on /me: don't force logout
       }
       setIsLoading(false)
     }
@@ -93,17 +82,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   useEffect(() => {
-    if (!accessToken) return
+    if (!user) return
     const interval = setInterval(async () => {
       const ok = await refreshToken()
       if (ok) await refreshUser()
     }, 10 * 60 * 1000)
     return () => clearInterval(interval)
-  }, [accessToken])
+  }, [user])
 
   const login = async (email: string, password: string) => {
     const res = await fetch(authUrl('/login'), {
       method: "POST", cache: 'no-store',
+      credentials: 'include',
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email, password })
     })
@@ -112,15 +102,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       throw new Error(error.detail || "Login failed")
     }
     const data = await res.json()
-    localStorage.setItem("access_token", data.access_token)
-    localStorage.setItem("refresh_token", data.refresh_token)
-    setAccessToken(data.access_token)
     setUser(data.user)
   }
 
   const register = async (email: string, password: string, username?: string) => {
     const res = await fetch(authUrl('/register'), {
       method: "POST", cache: 'no-store',
+      credentials: 'include',
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email, password, username })
     })
@@ -129,24 +117,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       throw new Error(error.detail || "Registration failed")
     }
     const data = await res.json()
-    localStorage.setItem("access_token", data.access_token)
-    localStorage.setItem("refresh_token", data.refresh_token)
-    setAccessToken(data.access_token)
     setUser(data.user)
   }
 
   const logout = async () => {
-    if (accessToken) {
-      try {
-        await fetch(authUrl('/logout'), {
-          method: "POST", cache: 'no-store',
-          headers: { Authorization: `Bearer ${accessToken}` }
-        })
-      } catch {}
-    }
-    localStorage.removeItem("access_token")
-    localStorage.removeItem("refresh_token")
-    setAccessToken(null)
+    try {
+      await fetch(authUrl('/logout'), {
+        method: "POST", cache: 'no-store',
+        credentials: 'include',
+      })
+    } catch {}
     setUser(null)
   }
 
@@ -158,7 +138,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
     if (data.auth_url) {
       const state = new URL(data.auth_url).searchParams.get("state")
-      if (state) localStorage.setItem("oauth_state", state)
+      if (state) sessionStorage.setItem("oauth_state", state)
       const width = 500, height = 600
       const left = window.screenX + (window.outerWidth - width) / 2
       const top = window.screenY + (window.outerHeight - height) / 2
@@ -169,6 +149,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const loginWithTelegram = async (telegramUser: any) => {
     const res = await fetch(authUrl('/telegram'), {
       method: "POST", cache: 'no-store',
+      credentials: 'include',
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(telegramUser)
     })
@@ -177,48 +158,37 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       throw new Error(error.detail || "Telegram auth failed")
     }
     const data = await res.json()
-    localStorage.setItem("access_token", data.access_token)
-    localStorage.setItem("refresh_token", data.refresh_token)
-    setAccessToken(data.access_token)
     setUser(data.user)
   }
 
   const refreshToken = async (): Promise<boolean> => {
-    const refresh = localStorage.getItem("refresh_token")
-    if (!refresh) return false
     try {
       const res = await fetch(authUrl('/refresh'), {
         method: "POST", cache: 'no-store',
+        credentials: 'include',
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ refresh_token: refresh })
       })
       if (!res.ok) { return false }
-      const data = await res.json()
-      localStorage.setItem("access_token", data.access_token)
-      localStorage.setItem("refresh_token", data.refresh_token)
-      setAccessToken(data.access_token)
       return true
     } catch { return false }
   }
 
   const refreshUser = async () => {
-    const token = accessToken || localStorage.getItem("access_token")
-    if (!token) return
     try {
       const res = await fetch(authUrl('/me'), {
         cache: 'no-store',
-        headers: { Authorization: `Bearer ${token}` }
+        credentials: 'include',
       })
       if (res.ok) { const userData = await res.json(); setUser(userData) }
     } catch {}
   }
 
   const updateProfile = async (updates: Partial<Pick<User, "username" | "avatar_url" | "subscription_tier">>) => {
-    const token = accessToken || localStorage.getItem("access_token")
-    if (!token) throw new Error("Not authenticated")
+    if (!user) throw new Error("Not authenticated")
     const res = await fetch(authUrl('/me'), {
       method: "PATCH", cache: 'no-store',
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      credentials: 'include',
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(updates)
     })
     if (!res.ok) {
@@ -229,11 +199,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   const updatePreferences = async (updates: Partial<UserPreferences>) => {
-    const token = accessToken || localStorage.getItem("access_token")
-    if (!token) throw new Error("Not authenticated")
+    if (!user) throw new Error("Not authenticated")
     const res = await fetch(authUrl('/me'), {
       method: "PATCH", cache: 'no-store',
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      credentials: 'include',
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(updates)
     })
     if (!res.ok) {
@@ -244,11 +214,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   const changePassword = async (oldPassword: string, newPassword: string) => {
-    const token = accessToken || localStorage.getItem("access_token")
-    if (!token) throw new Error("Not authenticated")
+    if (!user) throw new Error("Not authenticated")
     const res = await fetch(authUrl('/me/password'), {
       method: "PATCH", cache: 'no-store',
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      credentials: 'include',
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ old_password: oldPassword, new_password: newPassword })
     })
     if (!res.ok) {
@@ -258,11 +228,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   const sendVerificationEmail = async () => {
-    const token = accessToken || localStorage.getItem("access_token")
-    if (!token) throw new Error("Not authenticated")
+    if (!user) throw new Error("Not authenticated")
     const res = await fetch(authUrl('/me/send-verification'), {
       method: "POST", cache: 'no-store',
-      headers: { Authorization: `Bearer ${token}` }
+      credentials: 'include',
     })
     if (!res.ok) {
       const error = await res.json()
@@ -271,11 +240,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   const verifyEmail = async (code: string) => {
-    const token = accessToken || localStorage.getItem("access_token")
-    if (!token) throw new Error("Not authenticated")
+    if (!user) throw new Error("Not authenticated")
     const res = await fetch(authUrl('/me/verify-email'), {
       method: "POST", cache: 'no-store',
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      credentials: 'include',
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ code })
     })
     if (!res.ok) {
@@ -289,10 +258,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const handleMessage = (event: MessageEvent) => {
       if (event.origin !== window.location.origin) return
       if (event.data.type === "OAUTH_SUCCESS") {
-        const { access_token, refresh_token, user } = event.data
-        localStorage.setItem("access_token", access_token)
-        localStorage.setItem("refresh_token", refresh_token)
-        setAccessToken(access_token)
+        const { user } = event.data
         setUser(user)
       }
       if (event.data.type === "OAUTH_ERROR") {

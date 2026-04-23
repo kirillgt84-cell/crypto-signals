@@ -12,6 +12,8 @@ from datetime import datetime
 from contextlib import asynccontextmanager
 import re as re_module
 
+from middleware import limiter, _rate_limit_exceeded_handler, RateLimitExceeded, SecurityHeadersMiddleware
+
 # Setup logging
 logging.basicConfig(level=logging.INFO)
 print("DEBUG: main.py loaded - version with change percentages")
@@ -123,6 +125,13 @@ app = FastAPI(
     version="2.0.0",
     lifespan=lifespan
 )
+
+# Rate limiting
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
+# Security headers middleware
+app.add_middleware(SecurityHeadersMiddleware)
 
 # CORS configuration — allow all Vercel preview deployments + local dev
 _default_origins = [

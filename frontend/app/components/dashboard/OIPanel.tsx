@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { TrendingUp, TrendingDown, Minus, DollarSign, BarChart2, Activity } from 'lucide-react';
+import { useLanguage } from '../../context/LanguageContext';
 
 interface OIAnalysis {
   open_interest: number;
@@ -20,10 +21,11 @@ interface OIAnalysis {
 }
 
 export default function OIPanel({ data }: { data: OIAnalysis }) {
+  const { t } = useLanguage();
   const { analysis } = data;
   const isBullish = analysis.signal.includes('bullish');
   const isBearish = analysis.signal.includes('bearish');
-  
+
   const formatNumber = (num: number) => {
     if (num >= 1e9) return (num / 1e9).toFixed(2) + 'B';
     if (num >= 1e6) return (num / 1e6).toFixed(2) + 'M';
@@ -52,12 +54,12 @@ export default function OIPanel({ data }: { data: OIAnalysis }) {
             <Activity className="w-5 h-5 text-blue-400" />
           </div>
           <div>
-            <h3 className="font-semibold text-foreground">Open Interest</h3>
+            <h3 className="font-semibold text-foreground">{t('oiPanel.title')}</h3>
             <p className="text-xs text-gray-500 uppercase tracking-wider">{data.timeframe || '1h'}</p>
           </div>
         </div>
         <div className={`px-3 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider bg-gradient-to-r ${getSignalColor()} text-foreground shadow-lg ${getSignalGlow()}`}>
-          {analysis.status.replace(/_/g, ' ')}
+          {t(`oi.status.${analysis.status}`)}
         </div>
       </div>
 
@@ -113,7 +115,7 @@ export default function OIPanel({ data }: { data: OIAnalysis }) {
           <span className="font-mono">{analysis.strength}/5</span>
         </div>
         <div className="h-2 bg-gray-800 rounded-full overflow-hidden">
-          <div 
+          <div
             className={`h-full rounded-full bg-gradient-to-r ${getSignalColor()} transition-all duration-1000`}
             style={{ width: `${(analysis.strength / 5) * 100}%` }}
           />
@@ -122,14 +124,14 @@ export default function OIPanel({ data }: { data: OIAnalysis }) {
 
       {/* Analysis Description */}
       <div className={`p-4 rounded-xl border bg-gradient-to-r ${
-        isBullish 
-          ? 'from-green-500/10 to-transparent border-green-500/20' 
-          : isBearish 
+        isBullish
+          ? 'from-green-500/10 to-transparent border-green-500/20'
+          : isBearish
             ? 'from-red-500/10 to-transparent border-red-500/20'
             : 'from-gray-500/10 to-transparent border-gray-500/20'
       }`}>
         <p className="text-sm text-gray-300 leading-relaxed">
-          {analysis.description}
+          {t(analysis.description)}
         </p>
       </div>
 
@@ -137,7 +139,7 @@ export default function OIPanel({ data }: { data: OIAnalysis }) {
       <div className="mt-4 flex items-center gap-3">
         <div className="flex-1 p-3 rounded-xl bg-blue-500/10 border border-blue-500/20">
           <p className="text-xs text-blue-400 uppercase mb-1">Recommendation</p>
-          <p className="text-sm font-medium text-foreground">{analysis.action}</p>
+          <p className="text-sm font-medium text-foreground">{t(analysis.action)}</p>
         </div>
       </div>
     </div>

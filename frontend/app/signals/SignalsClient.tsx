@@ -63,7 +63,6 @@ export default function SignalsClient() {
     setLoading(true);
     setError(null);
     try {
-      const token = localStorage.getItem("access_token");
       const params = new URLSearchParams();
       params.set("min_score", String(minScore));
       params.set("limit", "50");
@@ -72,7 +71,7 @@ export default function SignalsClient() {
       if (category !== "all") params.set("category", category);
 
       const res = await fetch(`${API_BASE_URL}/scanner/anomalies?${params.toString()}`, {
-        headers: { Authorization: `Bearer ${token}` },
+        credentials: 'include',
       });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
@@ -90,9 +89,8 @@ export default function SignalsClient() {
   const fetchScannerStatus = useCallback(async () => {
     if (!isPro) return;
     try {
-      const token = localStorage.getItem("access_token");
       const res = await fetch(`${API_BASE_URL}/scanner/status`, {
-        headers: { Authorization: `Bearer ${token}` },
+        credentials: 'include',
       });
       if (res.ok) setScannerStatus(await res.json());
     } catch (e) {
@@ -103,9 +101,8 @@ export default function SignalsClient() {
   const fetchScannerSettings = useCallback(async () => {
     if (!isPro) return;
     try {
-      const token = localStorage.getItem("access_token");
       const res = await fetch(`${API_BASE_URL}/scanner/settings`, {
-        headers: { Authorization: `Bearer ${token}` },
+        credentials: 'include',
       });
       if (res.ok) setScannerSettings(await res.json());
     } catch (e) {
@@ -116,10 +113,10 @@ export default function SignalsClient() {
   const saveScannerSettings = async (updates: any) => {
     if (!isPro) return;
     try {
-      const token = localStorage.getItem("access_token");
       const res = await fetch(`${API_BASE_URL}/scanner/settings`, {
         method: "PATCH",
-        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+        credentials: 'include',
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(updates),
       });
       if (res.ok) {
@@ -134,10 +131,9 @@ export default function SignalsClient() {
     if (!isPro) return;
     setScanningNow(true);
     try {
-      const token = localStorage.getItem("access_token");
       const res = await fetch(`${API_BASE_URL}/scanner/scan-now`, {
         method: "POST",
-        headers: { Authorization: `Bearer ${token}` },
+        credentials: 'include',
       });
       if (res.ok) {
         const data = await res.json();

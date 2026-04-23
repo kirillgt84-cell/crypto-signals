@@ -135,9 +135,8 @@ export default function ProfilePage() {
   const handleTestEmail = async () => {
     setLoadingAction("test-email")
     try {
-      const token = localStorage.getItem("access_token")
       const res = await fetch(`${API_BASE_URL}/auth/me/test-email`, {
-        method: "POST", cache: "no-store", headers: { Authorization: `Bearer ${token}` }
+        method: "POST", cache: "no-store", credentials: 'include'
       })
       if (!res.ok) { const err = await res.json(); throw new Error(err.detail || "Failed") }
       showMessage(t("profile.testEmailSent"), "success")
@@ -151,9 +150,8 @@ export default function ProfilePage() {
   const handleTestTelegram = async () => {
     setLoadingAction("test-telegram")
     try {
-      const token = localStorage.getItem("access_token")
       const res = await fetch(`${API_BASE_URL}/auth/me/test-telegram`, {
-        method: "POST", cache: "no-store", headers: { Authorization: `Bearer ${token}` }
+        method: "POST", cache: "no-store", credentials: 'include'
       })
       if (!res.ok) { const err = await res.json(); throw new Error(err.detail || "Failed") }
       showMessage(t("profile.testTelegramSent"), "success")
@@ -166,8 +164,7 @@ export default function ProfilePage() {
 
   const handleTelegramConnect = async () => {
     try {
-      const token = localStorage.getItem("access_token")
-      const res = await fetch(`${API_BASE_URL}/auth/me/telegram-link`, { cache: "no-store", headers: { Authorization: `Bearer ${token}` } })
+      const res = await fetch(`${API_BASE_URL}/auth/me/telegram-link`, { cache: "no-store", credentials: 'include' })
       if (!res.ok) { const err = await res.json(); throw new Error(err.detail || "Failed") }
       const data = await res.json()
       window.open(data.deep_link, "_blank")

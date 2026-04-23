@@ -59,8 +59,11 @@ class TestAuthUpgrade:
         mock_create_access.return_value = "new-access-token"
         mock_create_refresh.return_value = "new-refresh-token"
         
-        from routers.auth import RefreshRequest
-        result = await refresh_token(RefreshRequest(refresh_token="old-refresh-token"))
+        from starlette.requests import Request
+        async def receive():
+            return {"type": "http.request", "body": b'{"refresh_token": "old-refresh-token"}'}
+        req = Request({"type": "http", "method": "POST", "headers": []}, receive=receive)
+        result = await refresh_token(req)
         assert result["access_token"] == "new-access-token"
         assert result["refresh_token"] == "new-refresh-token"
         assert result["expires_in"] == 60 * 60
@@ -80,7 +83,10 @@ class TestAuthUpgrade:
         }])
         mock_checkpw.return_value = False
         
+        from starlette.requests import Request
+        async def receive():
+            return {"type": "http.request", "body": b'{"refresh_token": "bad-token"}'}
+        req = Request({"type": "http", "method": "POST", "headers": []}, receive=receive)
         with pytest.raises(HTTPException) as exc_info:
-            from routers.auth import RefreshRequest
-            await refresh_token(RefreshRequest(refresh_token="bad-token"))
+            await refresh_token(req)
         assert exc_info.value.status_code == 401

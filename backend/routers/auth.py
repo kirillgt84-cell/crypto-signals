@@ -14,6 +14,7 @@ import secrets
 import httpx
 from database import get_db
 from services.notifications import send_email, send_telegram_message, TELEGRAM_BOT_NAME
+from middleware import limiter, set_auth_cookies, clear_auth_cookies, ACCESS_COOKIE_NAME, REFRESH_COOKIE_NAME
 
 router = APIRouter(prefix="/api/v1/auth", tags=["auth"])
 
@@ -142,12 +143,22 @@ def verify_token(token: str) -> Optional[int]:
     except jwt.InvalidTokenError:
         raise HTTPException(status_code=401, detail="Invalid token")
 
-async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)) -> dict:
-    """Dependency to get current user from JWT"""
-    if not credentials:
+async def get_current_user(request: Request = None, credentials: HTTPAuthorizationCredentials = Depends(security)) -> dict:
+    """Dependency to get current user from JWT (cookie or Authorization header)"""
+    from fastapi.security import HTTPAuthorizationCredentials
+    token = None
+    
+    # Try Authorization header first
+    if isinstance(credentials, HTTPAuthorizationCredentials):
+        token = credentials.credentials
+    elif request:
+        # Fallback to cookie
+        token = request.cookies.get(ACCESS_COOKIE_NAME)
+    
+    if not token:
         raise HTTPException(status_code=401, detail="Not authenticated")
     
-    user_id = verify_token(credentials.credentials)
+    user_id = verify_token(token)
     if not user_id:
         raise HTTPException(status_code=401, detail="Invalid token")
     
@@ -163,12 +174,19 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(s
     return dict(user[0])
 
 
-async def get_current_user_optional(credentials: HTTPAuthorizationCredentials = Depends(security)) -> Optional[dict]:
+async def get_current_user_optional(request: Request = None, credentials: HTTPAuthorizationCredentials = Depends(security)) -> Optional[dict]:
     """Optional dependency — returns user dict or None without raising 401."""
-    if not credentials:
+    from fastapi.security import HTTPAuthorizationCredentials
+    token = None
+    if isinstance(credentials, HTTPAuthorizationCredentials):
+        token = credentials.credentials
+    elif request:
+        token = request.cookies.get(ACCESS_COOKIE_NAME)
+    
+    if not token:
         return None
     try:
-        user_id = verify_token(credentials.credentials)
+        user_id = verify_token(token)
         if not user_id:
             return None
         db = get_db()
@@ -183,7 +201,8 @@ async def get_current_user_optional(credentials: HTTPAuthorizationCredentials = 
 # ============= EMAIL/PASSWORD AUTH =============
 
 @router.post("/register", response_model=TokenResponse)
-async def register(req: RegisterRequest):
+@limiter.limit("5/minute")
+async def register(req: RegisterRequest, request: Request = None, response: Response = None):
     """Register with email and password"""
     db = get_db()
     
@@ -222,6 +241,9 @@ async def register(req: RegisterRequest):
     access_token = create_access_token(user["id"])
     refresh_token = create_refresh_token(user["id"])
     
+    if response:
+        set_auth_cookies(response, access_token, refresh_token, ACCESS_TOKEN_EXPIRE, REFRESH_TOKEN_EXPIRE)
+    
     return {
         "access_token": access_token,
         "refresh_token": refresh_token,
@@ -231,7 +253,8 @@ async def register(req: RegisterRequest):
     }
 
 @router.post("/login", response_model=TokenResponse)
-async def login(req: LoginRequest):
+@limiter.limit("5/minute")
+async def login(req: LoginRequest, request: Request = None, response: Response = None):
     """Login with email and password"""
     db = get_db()
     
@@ -256,6 +279,9 @@ async def login(req: LoginRequest):
     # Remove password_hash from response
     user_dict = {k: v for k, v in user.items() if k != "password_hash"}
     
+    if response:
+        set_auth_cookies(response, access_token, refresh_token, ACCESS_TOKEN_EXPIRE, REFRESH_TOKEN_EXPIRE)
+    
     return {
         "access_token": access_token,
         "refresh_token": refresh_token,
@@ -265,10 +291,21 @@ async def login(req: LoginRequest):
     }
 
 @router.post("/refresh")
-async def refresh_token(body: RefreshRequest):
-    """Refresh access token using refresh token"""
+@limiter.limit("10/minute")
+async def refresh_token(request: Request = None, response: Response = None):
+    """Refresh access token using refresh token from cookie"""
     db = get_db()
-    refresh_token = body.refresh_token
+    refresh_token = None
+    if request:
+        refresh_token = request.cookies.get(REFRESH_COOKIE_NAME)
+    
+    if not refresh_token and request:
+        # Fallback to body for backward compatibility during transition
+        body = await request.json()
+        refresh_token = body.get("refresh_token")
+    
+    if not refresh_token:
+        raise HTTPException(status_code=401, detail="No refresh token provided")
 
     # Find valid refresh tokens
     tokens = await db.query(
@@ -283,6 +320,9 @@ async def refresh_token(body: RefreshRequest):
 
             access_token = create_access_token(t["user_id"])
             new_refresh = create_refresh_token(t["user_id"])
+            
+            if response:
+                set_auth_cookies(response, access_token, new_refresh, ACCESS_TOKEN_EXPIRE, REFRESH_TOKEN_EXPIRE)
 
             return {
                 "access_token": access_token,
@@ -294,17 +334,31 @@ async def refresh_token(body: RefreshRequest):
     raise HTTPException(status_code=401, detail="Invalid refresh token")
 
 @router.post("/logout")
-async def logout(credentials: HTTPAuthorizationCredentials = Depends(security)):
-    """Logout - revoke refresh tokens"""
-    if not credentials:
-        return {"message": "Logged out"}
-    user_id = verify_token(credentials.credentials)
+async def logout(request: Request = None, response: Response = None, credentials: HTTPAuthorizationCredentials = Depends(security)):
+    """Logout - revoke refresh tokens and clear cookies"""
+    from fastapi.security import HTTPAuthorizationCredentials
+    user_id = None
+    if isinstance(credentials, HTTPAuthorizationCredentials):
+        user_id = verify_token(credentials.credentials)
+    else:
+        # Try cookie
+        if request:
+            access_token = request.cookies.get(ACCESS_COOKIE_NAME)
+            if access_token:
+                try:
+                    user_id = verify_token(access_token)
+                except Exception:
+                    pass
+    
     if user_id:
         db = get_db()
         await db.execute(
             "UPDATE refresh_tokens SET is_revoked = TRUE WHERE user_id = $1",
             [user_id]
         )
+    
+    if response:
+        clear_auth_cookies(response)
     return {"message": "Logged out"}
 
 # ============= OAUTH =============
@@ -346,7 +400,8 @@ async def oauth_login(provider: str):
     return {"auth_url": auth_url}
 
 @router.post("/oauth/{provider}/callback")
-async def oauth_callback(provider: str, req: OAuthCallbackRequest):
+@limiter.limit("10/minute")
+async def oauth_callback(provider: str, req: OAuthCallbackRequest, request: Request = None, response: Response = None):
     """Handle OAuth callback"""
     if provider not in OAUTH_CONFIG:
         raise HTTPException(status_code=400, detail="Unknown provider")
@@ -456,6 +511,9 @@ async def oauth_callback(provider: str, req: OAuthCallbackRequest):
         [user_id]
     )
     
+    if response:
+        set_auth_cookies(response, access_token, refresh_token, ACCESS_TOKEN_EXPIRE, REFRESH_TOKEN_EXPIRE)
+    
     return {
         "access_token": access_token,
         "refresh_token": refresh_token,
@@ -480,7 +538,8 @@ def verify_telegram_auth(data: dict, bot_token: str) -> bool:
     return h.hexdigest() == check_hash
 
 @router.post("/telegram")
-async def telegram_auth(req: TelegramAuthRequest):
+@limiter.limit("10/minute")
+async def telegram_auth(req: TelegramAuthRequest, request: Request = None, response: Response = None):
     """Handle Telegram widget auth"""
     config = OAUTH_CONFIG["telegram"]
     
@@ -546,6 +605,9 @@ async def telegram_auth(req: TelegramAuthRequest):
         [user_id]
     )
     
+    if response:
+        set_auth_cookies(response, access_token, refresh_token, ACCESS_TOKEN_EXPIRE, REFRESH_TOKEN_EXPIRE)
+    
     return {
         "access_token": access_token,
         "refresh_token": refresh_token,
@@ -584,9 +646,11 @@ class PasswordChangeRequest(BaseModel):
     new_password: str
 
 @router.patch("/me/password")
+@limiter.limit("5/minute")
 async def change_password(
     req: PasswordChangeRequest,
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user),
+    request: Request = None
 ):
     """Change password with old password verification"""
     db = get_db()
@@ -663,7 +727,8 @@ async def get_telegram_link(current_user: dict = Depends(get_current_user)):
 
 
 @router.post("/me/test-email")
-async def test_email(current_user: dict = Depends(get_current_user)):
+@limiter.limit("5/minute")
+async def test_email(current_user: dict = Depends(get_current_user), request: Request = None):
     """Send a test email to the current user"""
     if not current_user.get("email"):
         raise HTTPException(status_code=400, detail="No email address on file")
@@ -684,7 +749,8 @@ async def test_email(current_user: dict = Depends(get_current_user)):
 
 
 @router.post("/me/test-telegram")
-async def test_telegram(current_user: dict = Depends(get_current_user)):
+@limiter.limit("5/minute")
+async def test_telegram(current_user: dict = Depends(get_current_user), request: Request = None):
     """Send a test Telegram message to the current user"""
     db = get_db()
     row = await db.query(
@@ -711,7 +777,8 @@ class VerifyEmailRequest(BaseModel):
 
 
 @router.post("/me/send-verification")
-async def send_verification_email(current_user: dict = Depends(get_current_user)):
+@limiter.limit("3/hour")
+async def send_verification_email(current_user: dict = Depends(get_current_user), request: Request = None):
     """Send a 6-digit email verification code"""
     if not current_user.get("email"):
         raise HTTPException(status_code=400, detail="No email address on file")
@@ -752,7 +819,8 @@ async def send_verification_email(current_user: dict = Depends(get_current_user)
 
 
 @router.post("/me/verify-email")
-async def verify_email(req: VerifyEmailRequest, current_user: dict = Depends(get_current_user)):
+@limiter.limit("10/minute")
+async def verify_email(req: VerifyEmailRequest, current_user: dict = Depends(get_current_user), request: Request = None):
     """Verify email with a 6-digit code"""
     db = get_db()
     row = await db.query(

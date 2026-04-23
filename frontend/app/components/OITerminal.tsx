@@ -53,27 +53,20 @@ export function OITerminal({ analysis, loading }: OITerminalProps) {
   }
 
   const getDirection = (type: "oi" | "price" | "volume"): "up" | "down" | "flat" => {
-    if (!analysis?.description) return "flat"
-    const desc = analysis.description.toLowerCase()
+    if (!analysis) return "flat"
     if (type === "oi") {
-      if (desc.includes("oi↑") || desc.includes("rising") || desc.includes("accumulat") || desc.includes("buildup")) return "up"
-      if (desc.includes("oi↓") || desc.includes("falling") || desc.includes("distribution") || desc.includes("unwinding")) return "down"
-      if (analysis.oi_change_pct && analysis.oi_change_pct > 1) return "up"
-      if (analysis.oi_change_pct && analysis.oi_change_pct < -1) return "down"
+      if (analysis.oi_change_pct !== undefined && analysis.oi_change_pct > 1.0) return "up"
+      if (analysis.oi_change_pct !== undefined && analysis.oi_change_pct < -1.0) return "down"
       return "flat"
     }
     if (type === "price") {
-      if (desc.includes("price↑") || desc.includes("rising") || desc.includes("uptrend") || desc.includes("growth")) return "up"
-      if (desc.includes("price↓") || desc.includes("falling") || desc.includes("downtrend") || desc.includes("decline")) return "down"
-      if (analysis.price_change_pct && analysis.price_change_pct > 0.5) return "up"
-      if (analysis.price_change_pct && analysis.price_change_pct < -0.5) return "down"
+      if (analysis.price_change_pct !== undefined && analysis.price_change_pct > 0.5) return "up"
+      if (analysis.price_change_pct !== undefined && analysis.price_change_pct < -0.5) return "down"
       return "flat"
     }
     if (type === "volume") {
-      if (desc.includes("volume↑") || desc.includes("vol↑") || desc.includes("high") || desc.includes("elevated")) return "up"
-      if (desc.includes("volume↓") || desc.includes("vol↓") || desc.includes("low")) return "down"
-      if (analysis.volume_change_pct && analysis.volume_change_pct > 10) return "up"
-      if (analysis.volume_change_pct && analysis.volume_change_pct < -10) return "down"
+      if (analysis.volume_change_pct !== undefined && analysis.volume_change_pct > 10) return "up"
+      if (analysis.volume_change_pct !== undefined && analysis.volume_change_pct < -10) return "down"
       return "flat"
     }
     return "flat"
@@ -132,10 +125,10 @@ export function OITerminal({ analysis, loading }: OITerminalProps) {
           >
             <Radio className="w-4 h-4" style={{ color: isNeutral ? "#9ca3af" : signalColor }} />
           </motion.div>
-          OI ANALYSIS
+          {t("oiPanel.title")}
         </CardTitle>
         <CardDescription className="text-[10px] text-muted-foreground">
-          Open Interest + Price + Volume
+          {t("oiPanel.subtitle")}
         </CardDescription>
       </CardHeader>
       <CardContent className="flex-1 flex flex-col">
@@ -202,12 +195,12 @@ export function OITerminal({ analysis, loading }: OITerminalProps) {
                     border: `1px solid ${isNeutral ? "#6b7280" : signalColor}`,
                   }}
                 >
-                  {isBullish ? "🟢" : isBearish ? "🔴" : "⚪"} {analysis.status?.replace(/_/g, " ").toUpperCase()}
+                  {isBullish ? "🟢" : isBearish ? "🔴" : "⚪"} {t(`oi.status.${analysis.status}`)}
                 </span>
               </div>
-              <p className="text-sm leading-relaxed text-foreground/90">{analysis.description}</p>
+              <p className="text-sm leading-relaxed text-foreground/90">{t(analysis.description)}</p>
               {analysis.tactic && (
-                <p className="text-xs text-muted-foreground leading-relaxed mt-2">{analysis.tactic}</p>
+                <p className="text-xs text-muted-foreground leading-relaxed mt-2">{t(analysis.tactic)}</p>
               )}
             </div>
 
@@ -227,7 +220,7 @@ export function OITerminal({ analysis, loading }: OITerminalProps) {
               } : {}}
               transition={{ duration: 2, repeat: Infinity }}
             >
-              ▓▓ {(analysis.action || "WAIT").toUpperCase()} ▓▓
+              ▓▓ {t(analysis.action).toUpperCase()} ▓▓
             </motion.div>
           </div>
         ) : (
