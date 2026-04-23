@@ -7,3 +7,11 @@ data/*.csv
 *.parquet
 .DS_Store
 .vercel
+
+# Coverage & build artifacts
+coverage/
+.coverage
+tsconfig.tsbuildinfo
+*.tsbuildinfo
+screenshot.js
+
