@@ -136,6 +136,8 @@ app.add_middleware(SecurityHeadersMiddleware)
 # CORS configuration — allow all Vercel preview deployments + local dev
 _default_origins = [
     "http://localhost:3000",
+    "https://mirkaso.com",
+    "https://www.mirkaso.com",
     "https://crypto-signals.vercel.app",
     "https://crypto-signals-chi.vercel.app",
 ]
@@ -181,14 +183,18 @@ class GuaranteedCORS:
         async def wrapped_send(message):
             if message["type"] == "http.response.start":
                 headers = list(message.get("headers", []))
-                if allowed:
+                # Only inject CORS if headers aren't already present (preserve CORSMiddleware output)
+                has_cors_origin = any(h[0].lower() == b"access-control-allow-origin" for h in headers)
+                if allowed and not has_cors_origin:
                     headers.append((b"access-control-allow-origin", origin.encode("latin-1")))
                     headers.append((b"access-control-allow-credentials", b"true"))
                     headers.append((b"vary", b"Origin"))
-                # Always allow these for simplicity on API routes
-                headers.append((b"access-control-allow-methods", b"GET, POST, PUT, DELETE, OPTIONS, PATCH"))
-                headers.append((b"access-control-allow-headers", b"*"))
-                headers.append((b"access-control-max-age", b"86400"))
+                # Ensure OPTIONS preflights always get method/header allowances
+                has_cors_methods = any(h[0].lower() == b"access-control-allow-methods" for h in headers)
+                if not has_cors_methods:
+                    headers.append((b"access-control-allow-methods", b"GET, POST, PUT, DELETE, OPTIONS, PATCH"))
+                    headers.append((b"access-control-allow-headers", b"*"))
+                    headers.append((b"access-control-max-age", b"86400"))
                 message["headers"] = headers
             await send(message)
 

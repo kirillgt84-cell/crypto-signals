@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <!-- Background -->
+  <rect width="200" height="200" fill="transparent"/>
+  
+  <!-- 3 ascending chart bars in dark blue -->
+  <rect x="40" y="120" width="30" height="50" fill="#1e3a5f" rx="2"/>
+  <rect x="85" y="90" width="30" height="80" fill="#1e3a5f" rx="2"/>
+  <rect x="130" y="60" width="30" height="110" fill="#1e3a5f" rx="2"/>
+  
+  <!-- MIRKASO text -->
+  <text x="100" y="175" font-family="Arial, sans-serif" font-size="28" font-weight="bold" 
+        fill="#1e3a5f" text-anchor="middle">MIRKASO</text>
+</svg>
