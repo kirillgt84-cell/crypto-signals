@@ -40,6 +40,7 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
     { href: '/portfolio', label: t('sidebar.portfolio'), icon: Wallet },
     { href: '/signals', label: t('sidebar.signals'), icon: Zap },
     { href: '/macro', label: t('sidebar.macro'), icon: Globe },
+    { href: '/risk-parity', label: t('sidebar.riskParity'), icon: TrendingUp },
     { href: '/yield-curve', label: t('sidebar.yieldCurve'), icon: TrendingUp },
     { href: '/pricing', label: t('sidebar.pricing'), icon: Crown },
     ...(isAdmin ? [{ href: '/admin', label: t('sidebar.admin'), icon: Shield }] : []),

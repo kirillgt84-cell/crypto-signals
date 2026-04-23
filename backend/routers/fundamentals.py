@@ -183,6 +183,96 @@ async def get_m2(symbol: str):
     data["raw_data"] = _parse_raw_data(data.get("raw_data"))
     return data
 
+
+@router.get("/{symbol}/m2/history")
+async def get_m2_history(symbol: str, days: int = 365):
+    """Get M2 Global Liquidity history"""
+    from datetime import datetime, timedelta
+    db = get_db()
+    cutoff = datetime.utcnow() - timedelta(days=days)
+    rows = await db.query(
+        """SELECT computed_at::date as date, value, raw_data
+           FROM fundamental_metrics 
+           WHERE symbol = 'GLOBAL' AND metric_name = 'm2'
+           AND computed_at > $1
+           ORDER BY computed_at ASC""",
+        [cutoff]
+    )
+    return [
+        {
+            "date": str(r["date"]),
+            "value": float(r["value"]),
+            "raw_data": _parse_raw_data(r.get("raw_data"))
+        }
+        for r in rows
+    ]
+
+
+@router.get("/{symbol}/m2/compare")
+async def get_m2_compare(symbol: str, days: int = 365):
+    """Get M2 history aligned with BTC, SPX and Gold prices for chart overlay"""
+    from datetime import datetime, timedelta
+    db = get_db()
+    cutoff = datetime.utcnow() - timedelta(days=days)
+
+    # M2 history
+    m2_rows = await db.query(
+        """SELECT computed_at::date as date, value
+           FROM fundamental_metrics 
+           WHERE symbol = 'GLOBAL' AND metric_name = 'm2'
+           AND computed_at > $1
+           ORDER BY computed_at ASC""",
+        [cutoff]
+    )
+
+    # BTC daily close from oi_history
+    btc_rows = await db.query(
+        """SELECT DISTINCT ON (DATE(time)) DATE(time) as date, price as close_price
+           FROM oi_history 
+           WHERE symbol = 'BTCUSDT' AND time > $1
+           ORDER BY DATE(time), time DESC""",
+        [cutoff]
+    )
+
+    # SPX
+    spx_asset = await db.query("SELECT id FROM macro_assets WHERE key = 'spx500' LIMIT 1", [])
+    spx_rows = []
+    if spx_asset:
+        spx_rows = await db.query(
+            """SELECT DISTINCT ON (DATE(time)) DATE(time) as date, close_price
+               FROM macro_prices WHERE asset_id = $1 AND time > $2
+               ORDER BY DATE(time), time DESC""",
+            [spx_asset[0]["id"], cutoff]
+        )
+
+    # Gold
+    gold_asset = await db.query("SELECT id FROM macro_assets WHERE key = 'gold' LIMIT 1", [])
+    gold_rows = []
+    if gold_asset:
+        gold_rows = await db.query(
+            """SELECT DISTINCT ON (DATE(time)) DATE(time) as date, close_price
+               FROM macro_prices WHERE asset_id = $1 AND time > $2
+               ORDER BY DATE(time), time DESC""",
+            [gold_asset[0]["id"], cutoff]
+        )
+
+    # Build maps
+    btc_map = {str(r["date"]): float(r["close_price"]) for r in btc_rows}
+    spx_map = {str(r["date"]): float(r["close_price"]) for r in spx_rows}
+    gold_map = {str(r["date"]): float(r["close_price"]) for r in gold_rows}
+
+    result = {"dates": [], "m2": [], "btc": [], "spx": [], "gold": []}
+    for r in m2_rows:
+        d = str(r["date"])
+        result["dates"].append(d)
+        result["m2"].append(float(r["value"]))
+        result["btc"].append(btc_map.get(d))
+        result["spx"].append(spx_map.get(d))
+        result["gold"].append(gold_map.get(d))
+
+    return result
+
+
 @router.get("/{symbol}/composite")
 async def get_composite(symbol: str):
     """Get composite fundamental health score"""

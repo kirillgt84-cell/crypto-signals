@@ -32,6 +32,7 @@ interface CorrelationData {
   date: string;
   btc_spx_correlation: number;
   gold_btc_correlation: number;
+  vix_btc_correlation: number;
   vix_level: number;
   btc_price: number;
   spx_price: number;
@@ -103,6 +104,7 @@ export default function MacroClient() {
       date: c.date,
       "BTC ↔ SPX": c.btc_spx_correlation != null ? Number(c.btc_spx_correlation).toFixed(2) : null,
       [t("macro.goldBtcLabel")]: c.gold_btc_correlation != null ? Number(c.gold_btc_correlation).toFixed(2) : null,
+      "VIX ↔ BTC": c.vix_btc_correlation != null ? Number(c.vix_btc_correlation).toFixed(2) : null,
       VIX: c.vix_level != null ? Number(c.vix_level).toFixed(1) : null,
     }));
 
@@ -112,6 +114,22 @@ export default function MacroClient() {
     if (v > 0.7) return "text-red-500";
     if (v > 0.4) return "text-amber-500";
     return "text-emerald-500";
+  };
+
+  const vixBtcCorrColor = (val: number | null | undefined) => {
+    if (val == null) return "text-slate-500";
+    if (val < -0.5) return "text-emerald-500";
+    if (val < -0.2) return "text-blue-500";
+    if (val <= 0.2) return "text-amber-500";
+    return "text-rose-500";
+  };
+
+  const vixBtcCorrText = (val: number | null | undefined) => {
+    if (val == null) return t("macro.vixBtcNeutral");
+    if (val < -0.5) return t("macro.vixBtcStrongNegative");
+    if (val < -0.2) return t("macro.vixBtcModerateNegative");
+    if (val <= 0.2) return t("macro.vixBtcNeutral");
+    return t("macro.vixBtcPositive");
   };
 
   return (
@@ -178,7 +196,7 @@ export default function MacroClient() {
               </div>
 
               {/* Correlation Cards */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 <Card className="border-l-4 border-l-indigo-500">
                   <CardHeader className="pb-2">
                     <CardTitle className="text-sm font-medium">{t("macro.btcSpxCorrelation")}</CardTitle>
@@ -230,6 +248,19 @@ export default function MacroClient() {
                     </p>
                   </CardContent>
                 </Card>
+                <Card className="border-l-4 border-l-purple-500">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-medium">{t("macro.vixBtcCorrelation")}</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className={cn("text-3xl font-bold", vixBtcCorrColor(corr?.vix_btc_correlation))}>
+                      {corr?.vix_btc_correlation != null ? corr.vix_btc_correlation.toFixed(2) : "—"}
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {vixBtcCorrText(corr?.vix_btc_correlation)}
+                    </p>
+                  </CardContent>
+                </Card>
               </div>
 
               {/* Price Overlay Chart */}
@@ -257,7 +288,7 @@ export default function MacroClient() {
               </Card>
 
               {/* Metric Interpretations */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 <Card className="border-l-4 border-l-indigo-500">
                   <CardHeader className="pb-2">
                     <CardTitle className="text-sm font-medium">{t("macro.btcSpxMeaning")}</CardTitle>
@@ -288,6 +319,16 @@ export default function MacroClient() {
                     </p>
                   </CardContent>
                 </Card>
+                <Card className="border-l-4 border-l-purple-500">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-medium">{t("macro.vixBtcMeaning")}</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-xs text-muted-foreground leading-relaxed">
+                      {t("macro.vixBtcDescription")}
+                    </p>
+                  </CardContent>
+                </Card>
               </div>
 
               {/* Correlation History Chart */}
@@ -308,6 +349,10 @@ export default function MacroClient() {
                             <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.3}/>
                             <stop offset="95%" stopColor="#f59e0b" stopOpacity={0}/>
                           </linearGradient>
+                          <linearGradient id="gradVixBtc" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor="#f43f5e" stopOpacity={0.3}/>
+                            <stop offset="95%" stopColor="#f43f5e" stopOpacity={0}/>
+                          </linearGradient>
                         </defs>
                         <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
                         <XAxis dataKey="date" tick={{ fontSize: 10 }} minTickGap={30} tickFormatter={(val: string) => new Date(val).toLocaleDateString(locale, { month: 'short', year: '2-digit' })} />
@@ -317,6 +362,7 @@ export default function MacroClient() {
                         <ReferenceLine y={0} stroke="#6b7280" strokeDasharray="3 3" />
                         <Area type="monotone" dataKey="BTC ↔ SPX" stroke="#6366f1" fill="url(#gradBtcSpx)" strokeWidth={2} dot={false} />
                         <Area type="monotone" dataKey={t("macro.goldBtcLabel")} stroke="#f59e0b" fill="url(#gradGoldBtc)" strokeWidth={2} dot={false} />
+                        <Area type="monotone" dataKey="VIX ↔ BTC" stroke="#f43f5e" fill="url(#gradVixBtc)" strokeWidth={2} dot={false} />
                       </AreaChart>
                     </ResponsiveContainer>
                   ) : (

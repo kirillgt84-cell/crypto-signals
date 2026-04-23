@@ -2,7 +2,17 @@
 
 import { useEffect, useState } from "react"
 import { motion } from "framer-motion"
-import { Activity, AlertCircle, Loader2, Info } from "lucide-react"
+import { Activity, AlertCircle, Loader2, Info, Globe } from "lucide-react"
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  Legend,
+} from "recharts"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { cn } from "@/lib/utils"
 import { useLanguage } from "../context/LanguageContext"
@@ -26,6 +36,14 @@ interface FundamentalsData {
     }
     computed_at: string
   } | null
+  sopr: {
+    value: number
+    raw_data: {
+      interpretation: string
+      description: string
+    }
+    computed_at: string
+  } | null
   composite: {
     score: number
     sentiment: string
@@ -42,6 +60,8 @@ interface FundamentalsCardProps {
 const METRIC_INFO: Record<string, string> = {
   mvrv: "Market Value to Realized Value — ratio of market cap to realized cap. Shows if an asset is overvalued or undervalued.",
   nupl: "Net Unrealized Profit/Loss — share of unrealized profit/loss. Reflects market emotional state.",
+  sopr: "Spent Output Profit Ratio — ratio of sold price to purchase price. >1 = profit-taking, <1 = loss realization.",
+  m2: "Global M2 money supply in trillions USD. Broad measure of liquidity. Expansion typically supports risk-on assets.",
   funding: "Fee for holding margin positions. Positive = longs overpay, negative = shorts overpay.",
   market_momentum: "Price change over 24 hours. Reflects short-term market impulse.",
 }
@@ -65,6 +85,13 @@ function getFundingInterpretation(value: number): string {
   if (value < -0.001) return "Shorts overpay. Pressure on shorts may trigger a short squeeze."
   if (value <= 0.001) return "Neutral funding. Balance between longs and shorts."
   return "Longs overpay. Overheated long market, high liquidation risk."
+}
+
+function getSOPRInterpretation(value: number): string {
+  if (value < 0.98) return "Capitulation. Sellers realizing heavy losses — often marks a local market bottom."
+  if (value < 1.0) return "Loss zone. Sellers breaking even or slightly underwater. Transitional area."
+  if (value < 1.02) return "Profit zone. Sellers taking modest profits. Healthy bull market signal."
+  return "Extreme profit-taking. Distribution phase with elevated reversal risk."
 }
 
 function ZoneCard({
@@ -138,30 +165,164 @@ function ZoneBar({
   )
 }
 
+function M2Chart({ data }: { data: { dates: string[]; m2: number[]; btc: (number | null)[]; spx: (number | null)[]; gold: (number | null)[] } }) {
+  const { t } = useLanguage()
+  const chartData = data.dates.map((d, i) => ({
+    date: d,
+    m2: data.m2[i],
+    btc: data.btc[i],
+    spx: data.spx[i],
+    gold: data.gold[i],
+  }))
+
+  const formatDate = (d: string) => {
+    const [year, month] = d.split("-")
+    return `${month}/${year.slice(2)}`
+  }
+
+  const formatT = (v: number) => `$${(v / 1000).toFixed(2)}T`
+  const formatPrice = (v: number) =>
+    v >= 1000 ? `$${v.toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ",")}` : `$${v.toFixed(2)}`
+
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Globe className="w-4 h-4 text-slate-400" />
+          <span className="text-sm font-semibold text-slate-200">{t("fundamentals.m2ChartTitle")}</span>
+        </div>
+        <span className="text-xs text-slate-500">{t("fundamentals.m2ChartSubtitle")}</span>
+      </div>
+      <div className="h-[260px] w-full">
+        <ResponsiveContainer width="100%" height="100%">
+          <LineChart data={chartData} margin={{ top: 5, right: 5, left: 5, bottom: 5 }}>
+            <CartesianGrid strokeDasharray="3 3" stroke="#334155" opacity={0.3} />
+            <XAxis
+              dataKey="date"
+              tick={{ fontSize: 10, fill: "#64748b" }}
+              tickFormatter={formatDate}
+              interval="preserveStartEnd"
+              minTickGap={30}
+            />
+            <YAxis
+              yAxisId="left"
+              tick={{ fontSize: 10, fill: "#64748b" }}
+              tickFormatter={formatT}
+              width={55}
+            />
+            <YAxis
+              yAxisId="right"
+              orientation="right"
+              tick={{ fontSize: 10, fill: "#64748b" }}
+              tickFormatter={formatPrice}
+              width={65}
+            />
+            <Tooltip
+              contentStyle={{
+                backgroundColor: "#0f172a",
+                border: "1px solid #334155",
+                borderRadius: "8px",
+                fontSize: "12px",
+              }}
+              labelStyle={{ color: "#94a3b8" }}
+              formatter={(value: any, name: string) => {
+                if (value == null) return ["—", name]
+                if (name === "M2") return [formatT(value), name]
+                return [formatPrice(value), name]
+              }}
+            />
+            <Legend
+              wrapperStyle={{ fontSize: "11px", paddingTop: "8px" }}
+              iconType="circle"
+              iconSize={6}
+            />
+            <Line
+              yAxisId="left"
+              type="monotone"
+              dataKey="m2"
+              name="M2"
+              stroke="#6366f1"
+              strokeWidth={2}
+              dot={false}
+              activeDot={{ r: 4 }}
+            />
+            <Line
+              yAxisId="right"
+              type="monotone"
+              dataKey="btc"
+              name="BTC"
+              stroke="#f59e0b"
+              strokeWidth={2}
+              dot={false}
+              activeDot={{ r: 4 }}
+              connectNulls
+            />
+            <Line
+              yAxisId="right"
+              type="monotone"
+              dataKey="spx"
+              name="S&P 500"
+              stroke="#10b981"
+              strokeWidth={2}
+              dot={false}
+              activeDot={{ r: 4 }}
+              connectNulls
+            />
+            <Line
+              yAxisId="right"
+              type="monotone"
+              dataKey="gold"
+              name="Gold"
+              stroke="#fbbf24"
+              strokeWidth={2}
+              dot={false}
+              activeDot={{ r: 4 }}
+              connectNulls
+            />
+          </LineChart>
+        </ResponsiveContainer>
+      </div>
+    </div>
+  )
+}
+
 export function FundamentalsCard({ symbol, loading: parentLoading }: FundamentalsCardProps) {
   const { t } = useLanguage()
-  const [data, setData] = useState<FundamentalsData>({ mvrv: null, nupl: null, composite: null })
+  const [data, setData] = useState<FundamentalsData>({ mvrv: null, nupl: null, sopr: null, composite: null })
   const [loading, setLoading] = useState(true)
+
+  const [m2Data, setM2Data] = useState<{ dates: string[]; m2: number[]; btc: (number | null)[]; spx: (number | null)[]; gold: (number | null)[] } | null>(null)
+  const [m2Loading, setM2Loading] = useState(false)
 
   useEffect(() => {
     const fetchFundamentals = async () => {
       setLoading(true)
+      setM2Loading(true)
       try {
-        const [mvrvRes, nuplRes, compositeRes] = await Promise.allSettled([
+        const [mvrvRes, nuplRes, soprRes, compositeRes, m2CompareRes] = await Promise.allSettled([
           fetch(`${API_BASE_URL}/fundamentals/${symbol}/mvrv`, { cache: "no-store" }),
           fetch(`${API_BASE_URL}/fundamentals/${symbol}/nupl`, { cache: "no-store" }),
+          fetch(`${API_BASE_URL}/fundamentals/${symbol}/sopr`, { cache: "no-store" }),
           fetch(`${API_BASE_URL}/fundamentals/${symbol}/composite`, { cache: "no-store" }),
+          fetch(`${API_BASE_URL}/fundamentals/GLOBAL/m2/compare?days=365`, { cache: "no-store" }),
         ])
 
         const mvrv = mvrvRes.status === "fulfilled" && mvrvRes.value.ok ? await mvrvRes.value.json() : null
         const nupl = nuplRes.status === "fulfilled" && nuplRes.value.ok ? await nuplRes.value.json() : null
+        const sopr = soprRes.status === "fulfilled" && soprRes.value.ok ? await soprRes.value.json() : null
         const composite = compositeRes.status === "fulfilled" && compositeRes.value.ok ? await compositeRes.value.json() : null
 
-        setData({ mvrv, nupl, composite })
+        setData({ mvrv, nupl, sopr, composite })
+
+        if (m2CompareRes.status === "fulfilled" && m2CompareRes.value.ok) {
+          const m2json = await m2CompareRes.value.json()
+          setM2Data(m2json)
+        }
       } catch (e) {
         console.error("Failed to fetch fundamentals:", e)
       } finally {
         setLoading(false)
+        setM2Loading(false)
       }
     }
 
@@ -188,7 +349,7 @@ export function FundamentalsCard({ symbol, loading: parentLoading }: Fundamental
     )
   }
 
-  const hasAnyData = data.mvrv || data.nupl || data.composite
+  const hasAnyData = data.mvrv || data.nupl || data.sopr || data.composite || m2Data
 
   if (!hasAnyData) {
     return (
@@ -320,6 +481,33 @@ export function FundamentalsCard({ symbol, loading: parentLoading }: Fundamental
           </motion.div>
         )}
 
+        {/* SOPR */}
+        {data.sopr && (
+          <motion.div
+            initial={{ opacity: 0, x: -10 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.17 }}
+          >
+            <ZoneCard
+              title="SOPR"
+              valueFormatted={data.sopr.value.toFixed(4)}
+              interpretation={getSOPRInterpretation(data.sopr.value)}
+              infoKey="sopr"
+            >
+              <ZoneBar
+                segments={[
+                  { color: "bg-blue-400" },
+                  { color: "bg-emerald-500" },
+                  { color: "bg-yellow-400" },
+                  { color: "bg-rose-500" },
+                ]}
+                indicatorPosition={Math.min(100, Math.max(0, ((data.sopr.value - 0.96) / 0.08) * 100))}
+                labels={["<0.98", "0.98–1.0", "1.0–1.02", ">1.02"]}
+              />
+            </ZoneCard>
+          </motion.div>
+        )}
+
         {/* Market Momentum (alt fallback) */}
         {comps.market_momentum && !data.mvrv && (
           <motion.div
@@ -379,12 +567,29 @@ export function FundamentalsCard({ symbol, loading: parentLoading }: Fundamental
           </motion.div>
         )}
 
+        {/* M2 Chart */}
+        {m2Data && m2Data.dates.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.22 }}
+          >
+            <M2Chart data={m2Data} />
+          </motion.div>
+        )}
+
         {/* Components mini grid */}
         {data.composite && (
           <motion.div
             className={cn(
               "grid gap-2 pt-2 border-t border-slate-800",
-              Object.keys(comps).length <= 2 ? "grid-cols-2" : Object.keys(comps).length === 3 ? "grid-cols-3" : "grid-cols-4"
+              Object.keys(comps).length <= 2
+                ? "grid-cols-2"
+                : Object.keys(comps).length === 3
+                ? "grid-cols-3"
+                : Object.keys(comps).length <= 4
+                ? "grid-cols-4"
+                : "grid-cols-6"
             )}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -405,6 +610,15 @@ export function FundamentalsCard({ symbol, loading: parentLoading }: Fundamental
                 <p className="text-xs font-mono font-bold text-popover-foreground">
                   {comps.nupl.normalized > 0 ? "+" : ""}
                   {comps.nupl.normalized.toFixed(2)}
+                </p>
+              </div>
+            )}
+            {comps.sopr && (
+              <div className="text-center">
+                <p className="text-[10px] text-slate-500 uppercase">SOPR</p>
+                <p className="text-xs font-mono font-bold text-popover-foreground">
+                  {comps.sopr.normalized > 0 ? "+" : ""}
+                  {comps.sopr.normalized.toFixed(2)}
                 </p>
               </div>
             )}

@@ -129,6 +129,36 @@ interface PortfolioModel {
   asset_allocations: { asset_symbol: string; asset_name: string; target_weight: number }[];
 }
 
+function getMetricColor(metric: string, value: number): string {
+  switch (metric) {
+    case "sharpe":
+      return value >= 1.5 ? "text-emerald-500" : value >= 0.5 ? "text-amber-500" : "text-rose-500";
+    case "sortino":
+      return value >= 2 ? "text-emerald-500" : value >= 1 ? "text-amber-500" : "text-rose-500";
+    case "max_drawdown":
+      return Math.abs(value) <= 0.1 ? "text-emerald-500" : Math.abs(value) <= 0.25 ? "text-amber-500" : "text-rose-500";
+    case "calmar":
+      return value >= 2 ? "text-emerald-500" : value >= 0.5 ? "text-amber-500" : "text-rose-500";
+    case "volatility":
+      return value <= 0.2 ? "text-emerald-500" : value <= 0.4 ? "text-amber-500" : "text-rose-500";
+    case "cagr":
+    case "total_return":
+      return value >= 0 ? "text-emerald-500" : "text-rose-500";
+    default:
+      return "text-foreground";
+  }
+}
+
+function getRiskInterpretation(metrics: any, t: any): string {
+  if (!metrics) return "";
+  const sharpe = metrics.sharpe_ratio ?? 0;
+  const maxDD = Math.abs(metrics.max_drawdown ?? 0);
+  if (sharpe >= 1.5 && maxDD <= 0.15) return t("portfolio.riskInterpretationExcellent");
+  if (sharpe >= 0.5 && maxDD <= 0.25) return t("portfolio.riskInterpretationGood");
+  if (sharpe >= 0 && maxDD <= 0.4) return t("portfolio.riskInterpretationModerate");
+  return t("portfolio.riskInterpretationPoor");
+}
+
 export default function PortfolioClient() {
   const { user } = useAuth();
   const { collapsed: sidebarCollapsed, toggle: toggleSidebar } = useSidebar();
@@ -154,12 +184,15 @@ export default function PortfolioClient() {
   const [manualAmount, setManualAmount] = useState("");
   const [manualPrice, setManualPrice] = useState("");
   const [manualSide, setManualSide] = useState("LONG");
-  const [activeTab, setActiveTab] = useState<"assets" | "allocation" | "models" | "history">("assets");
+  const [activeTab, setActiveTab] = useState<"assets" | "allocation" | "models" | "history" | "risk">("assets");
   const [marketType, setMarketType] = useState("futures");
   const [alerts, setAlerts] = useState<any[]>([]);
   const [alertOpen, setAlertOpen] = useState(false);
   const [alertSettings, setAlertSettings] = useState<any[]>([]);
   const [equityTimeframe, setEquityTimeframe] = useState<"daily" | "weekly">("daily");
+  const [riskPeriod, setRiskPeriod] = useState<30 | 90 | 180 | 365>(90);
+  const [riskMetrics, setRiskMetrics] = useState<any>(null);
+  const [riskLoading, setRiskLoading] = useState(false);
 
   // Custom model dialog state
   const [customOpen, setCustomOpen] = useState(false);
@@ -251,6 +284,19 @@ export default function PortfolioClient() {
     }
   }, [user]);
 
+  const fetchRiskMetrics = useCallback(async () => {
+    if (!user) return;
+    setRiskLoading(true);
+    try {
+      const res = await fetch(`${API_BASE_URL}/portfolio/metrics?days=${riskPeriod}`, { credentials: 'include', headers });
+      if (res.ok) setRiskMetrics(await res.json());
+    } catch (e) {
+      console.error("Failed to fetch risk metrics", e);
+    } finally {
+      setRiskLoading(false);
+    }
+  }, [user, riskPeriod]);
+
   useEffect(() => {
     fetchSummary();
     fetchHistory();
@@ -258,7 +304,8 @@ export default function PortfolioClient() {
     fetchDeviation();
     fetchAlerts();
     fetchAlertSettings();
-  }, [fetchSummary, fetchHistory, fetchModels, fetchDeviation, fetchAlerts, fetchAlertSettings]);
+    fetchRiskMetrics();
+  }, [fetchSummary, fetchHistory, fetchModels, fetchDeviation, fetchAlerts, fetchAlertSettings, fetchRiskMetrics]);
 
   const handleSync = async () => {
     if (!user) return;
@@ -585,13 +632,13 @@ export default function PortfolioClient() {
           </div>
 
           {/* Tabs */}
-          <div className="flex items-center gap-2 mb-6 border-b">
-            {(["assets", "allocation", "models", "history"] as const).map((tab) => (
+          <div className="flex items-center gap-2 mb-6 border-b overflow-x-auto">
+            {(["assets", "allocation", "models", "history", "risk"] as const).map((tab) => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
                 className={cn(
-                  "px-4 py-2 text-sm font-medium border-b-2 transition-colors",
+                  "px-4 py-2 text-sm font-medium border-b-2 transition-colors whitespace-nowrap",
                   activeTab === tab
                     ? "border-indigo-500 text-indigo-600"
                     : "border-transparent text-muted-foreground hover:text-foreground"
@@ -601,6 +648,7 @@ export default function PortfolioClient() {
                 {tab === "allocation" && t("portfolio.allocation")}
                 {tab === "models" && t("portfolio.models")}
                 {tab === "history" && t("portfolio.history")}
+                {tab === "risk" && t("portfolio.riskMetrics")}
               </button>
             ))}
           </div>
@@ -843,6 +891,86 @@ export default function PortfolioClient() {
                   </div>
                 )}
               </div>
+            </div>
+          )}
+
+          {/* Risk Metrics Tab */}
+          {activeTab === "risk" && (
+            <div className="space-y-6">
+              <div className="flex items-center justify-between">
+                <h2 className="text-lg font-semibold">{t("portfolio.riskMetrics")}</h2>
+                <div className="flex items-center gap-2">
+                  {[30, 90, 180, 365].map((d) => (
+                    <Button
+                      key={d}
+                      size="sm"
+                      variant={riskPeriod === d ? "default" : "outline"}
+                      onClick={() => setRiskPeriod(d as 30 | 90 | 180 | 365)}
+                    >
+                      {t(`portfolio.period${d}d` as any)}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+
+              {riskLoading ? (
+                <div className="text-center py-16 text-muted-foreground">{t("common.loading")}</div>
+              ) : riskMetrics ? (
+                <>
+                  <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
+                    {[
+                      { key: "sharpe_ratio", label: t("portfolio.sharpeRatio"), desc: t("portfolio.sharpeDescription"), format: (v: number) => v.toFixed(2), colorKey: "sharpe" },
+                      { key: "sortino_ratio", label: t("portfolio.sortinoRatio"), desc: t("portfolio.sortinoDescription"), format: (v: number) => v.toFixed(2), colorKey: "sortino" },
+                      { key: "max_drawdown", label: t("portfolio.maxDrawdown"), desc: t("portfolio.maxDrawdownDescription"), format: (v: number) => `${(v * 100).toFixed(1)}%`, colorKey: "max_drawdown" },
+                      { key: "calmar_ratio", label: t("portfolio.calmarRatio"), desc: t("portfolio.calmarDescription"), format: (v: number) => v.toFixed(2), colorKey: "calmar" },
+                      { key: "volatility", label: t("portfolio.volatility"), desc: t("portfolio.volatilityDescription"), format: (v: number) => `${(v * 100).toFixed(1)}%`, colorKey: "volatility" },
+                      { key: "cagr", label: t("portfolio.cagr"), desc: t("portfolio.cagrDescription"), format: (v: number) => `${(v * 100).toFixed(1)}%`, colorKey: "cagr" },
+                    ].map((item) => {
+                      const value = riskMetrics[item.key];
+                      return (
+                        <div key={item.key} className="rounded-xl border bg-card p-5 space-y-2">
+                          <p className="text-xs text-muted-foreground uppercase tracking-wider">{item.label}</p>
+                          <p className={cn("text-2xl font-bold", getMetricColor(item.colorKey, value ?? 0))}>
+                            {value != null ? item.format(value) : "—"}
+                          </p>
+                          <p className="text-xs text-muted-foreground leading-relaxed">{item.desc}</p>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {/* Total Return */}
+                  <div className="rounded-xl border bg-card p-5 flex items-center justify-between">
+                    <div>
+                      <p className="text-xs text-muted-foreground uppercase tracking-wider">{t("portfolio.totalReturn")}</p>
+                      <p className={cn("text-3xl font-bold mt-1", getMetricColor("total_return", riskMetrics.total_return ?? 0))}>
+                        {riskMetrics.total_return != null ? `${(riskMetrics.total_return * 100).toFixed(1)}%` : "—"}
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-1">{t("portfolio.totalReturnDescription")}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-xs text-muted-foreground uppercase tracking-wider">Period</p>
+                      <p className="text-sm text-muted-foreground mt-1">{riskMetrics.period_days ?? riskPeriod} days</p>
+                    </div>
+                  </div>
+
+                  {/* Interpretation Box */}
+                  <div className="rounded-xl border bg-card p-6">
+                    <h3 className="text-sm font-semibold mb-2 flex items-center gap-2">
+                      <AlertTriangle className="h-4 w-4 text-indigo-500" />
+                      {t("portfolio.riskInterpretationTitle")}
+                    </h3>
+                    <p className="text-sm text-muted-foreground leading-relaxed">
+                      {getRiskInterpretation(riskMetrics, t)}
+                    </p>
+                  </div>
+                </>
+              ) : (
+                <div className="text-center py-16 border rounded-xl bg-muted/20">
+                  <TrendingUp className="h-10 w-10 mx-auto text-muted-foreground mb-3" />
+                  <p className="text-muted-foreground">{t("portfolio.noHistory")}</p>
+                </div>
+              )}
             </div>
           )}
 
