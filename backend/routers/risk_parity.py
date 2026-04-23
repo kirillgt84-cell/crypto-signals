@@ -104,6 +104,11 @@ async def calculate_weights(body: CalculateRequest):
             "date_from": str(returns.index[0]),
             "date_to": str(returns.index[-1]),
         }
+    except HTTPException:
+        raise
+    except RuntimeError as e:
+        logger.error(f"Risk parity calculate failed (provider): {e}")
+        raise HTTPException(status_code=503, detail=str(e))
     except Exception as e:
         logger.error(f"Risk parity calculate failed: {e}")
         raise HTTPException(status_code=500, detail=f"Calculation failed: {str(e)}")
@@ -121,6 +126,11 @@ async def run_backtest(body: BacktestRequest):
             rebalance_freq=body.rebalance_freq,
         )
         return result
+    except HTTPException:
+        raise
+    except RuntimeError as e:
+        logger.error(f"Risk parity backtest failed (provider): {e}")
+        raise HTTPException(status_code=503, detail=str(e))
     except Exception as e:
         logger.error(f"Risk parity backtest failed: {e}")
         raise HTTPException(status_code=500, detail=f"Backtest failed: {str(e)}")

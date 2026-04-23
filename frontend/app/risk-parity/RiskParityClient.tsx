@@ -131,6 +131,8 @@ export default function RiskParityClient() {
   const [weightsData, setWeightsData] = useState<WeightsResult | null>(null);
   const [backtestData, setBacktestData] = useState<BacktestResult | null>(null);
   const [backtestPeriod, setBacktestPeriod] = useState("10y");
+  const [backtestError, setBacktestError] = useState<string | null>(null);
+  const [calculateError, setCalculateError] = useState<string | null>(null);
 
   useEffect(() => {
     fetch(`${API_BASE_URL}/risk-parity/strategies`)
@@ -153,9 +155,13 @@ export default function RiskParityClient() {
     const tickers = getTickers();
     if (tickers.length === 0) return;
     setCalculateLoading(true);
+    setCalculateError(null);
     try {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 25000);
       const res = await fetch(`${API_BASE_URL}/risk-parity/calculate`, {
         method: "POST",
+        credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           tickers,
@@ -165,10 +171,18 @@ export default function RiskParityClient() {
           target_vol: 0.1,
           period: "5y",
         }),
+        signal: controller.signal,
       });
-      if (res.ok) setWeightsData(await res.json());
-    } catch (e) {
+      clearTimeout(timeout);
+      if (res.ok) {
+        setWeightsData(await res.json());
+      } else {
+        const err = await res.json().catch(() => ({}));
+        setCalculateError(err.detail || `Error ${res.status}`);
+      }
+    } catch (e: any) {
       console.error("Calculate failed", e);
+      setCalculateError(e.name === "AbortError" ? "Request timed out. Try again." : "Network error. Check connection.");
     } finally {
       setCalculateLoading(false);
     }
@@ -178,9 +192,13 @@ export default function RiskParityClient() {
     const tickers = getTickers();
     if (tickers.length === 0) return;
     setBacktestLoading(true);
+    setBacktestError(null);
     try {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 45000);
       const res = await fetch(`${API_BASE_URL}/risk-parity/backtest`, {
         method: "POST",
+        credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           tickers,
@@ -188,10 +206,18 @@ export default function RiskParityClient() {
           lookback: 90,
           rebalance_freq: 30,
         }),
+        signal: controller.signal,
       });
-      if (res.ok) setBacktestData(await res.json());
-    } catch (e) {
+      clearTimeout(timeout);
+      if (res.ok) {
+        setBacktestData(await res.json());
+      } else {
+        const err = await res.json().catch(() => ({}));
+        setBacktestError(err.detail || `Error ${res.status}`);
+      }
+    } catch (e: any) {
       console.error("Backtest failed", e);
+      setBacktestError(e.name === "AbortError" ? "Request timed out. Yahoo Finance may be unavailable. Try a shorter period." : "Network error. Check connection.");
     } finally {
       setBacktestLoading(false);
     }
@@ -341,6 +367,12 @@ export default function RiskParityClient() {
               {t("riskParity.calculate")}
             </Button>
 
+            {calculateError && (
+              <div className="mb-4 p-3 rounded-lg bg-rose-500/10 border border-rose-500/20 text-sm text-rose-500">
+                {calculateError}
+              </div>
+            )}
+
             {weightsData && (
               <div className="space-y-6">
                 {/* Weights Bar Chart */}
@@ -459,6 +491,12 @@ export default function RiskParityClient() {
                 </Button>
               </div>
             </div>
+
+            {backtestError && (
+              <div className="p-3 rounded-lg bg-rose-500/10 border border-rose-500/20 text-sm text-rose-500">
+                {backtestError}
+              </div>
+            )}
 
             {backtestData && (
               <div className="space-y-6">

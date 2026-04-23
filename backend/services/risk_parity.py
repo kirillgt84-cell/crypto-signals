@@ -32,16 +32,41 @@ __all__ = [
 ]
 
 
+_PRICE_CACHE: Dict[str, pd.DataFrame] = {}
+
+
 def _fetch_prices_yf(tickers: List[str], period: str = "10y", interval: str = "1d") -> pd.DataFrame:
-    """Download historical adjusted close prices from Yahoo Finance."""
+    """Download historical adjusted close prices from Yahoo Finance with cache and retry."""
     import yfinance as yf
-    data = yf.download(tickers, period=period, interval=interval, progress=False, auto_adjust=True)
-    if isinstance(data.columns, pd.MultiIndex):
-        prices = data["Close"]
-    else:
-        prices = data[["Close"]] if len(tickers) == 1 else data["Close"]
-    prices = prices.dropna(how="all").dropna(axis=1, how="all")
-    return prices
+    import time
+
+    cache_key = ",".join(sorted(tickers)) + f"|{period}|{interval}"
+    if cache_key in _PRICE_CACHE:
+        logger.info(f"[RiskParity] Using cached prices for {tickers}")
+        return _PRICE_CACHE[cache_key]
+
+    last_error = None
+    for attempt in range(3):
+        try:
+            data = yf.download(tickers, period=period, interval=interval, progress=False, auto_adjust=True, threads=False)
+            if isinstance(data.columns, pd.MultiIndex):
+                prices = data["Close"]
+            else:
+                prices = data[["Close"]] if len(tickers) == 1 else data["Close"]
+            prices = prices.dropna(how="all").dropna(axis=1, how="all")
+            if len(prices) < 10:
+                raise ValueError(f"Only {len(prices)} rows returned from Yahoo Finance")
+            _PRICE_CACHE[cache_key] = prices
+            logger.info(f"[RiskParity] Fetched {len(prices)} rows for {tickers}")
+            return prices
+        except Exception as e:
+            last_error = e
+            logger.warning(f"[RiskParity] Yahoo Finance attempt {attempt + 1} failed: {e}")
+            if attempt < 2:
+                time.sleep(2 ** attempt)  # 1s, 2s
+
+    logger.error(f"[RiskParity] All Yahoo Finance attempts failed: {last_error}")
+    raise RuntimeError(f"Unable to fetch prices from Yahoo Finance. The data provider may be blocking cloud IPs. Please try again later. Original error: {last_error}")
 
 
 def calculate_returns(prices: pd.DataFrame) -> pd.DataFrame:
