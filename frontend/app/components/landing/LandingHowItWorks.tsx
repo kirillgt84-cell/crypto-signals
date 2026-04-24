@@ -1,14 +1,14 @@
 "use client"
 
-import { Fingerprint, ScanSearch, BrainCircuit, Rocket } from "lucide-react"
+import { UserPlus, Layers, BarChart3, Target } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { useLanguage } from "@/app/context/LanguageContext"
 
 const steps = [
-  { icon: Fingerprint, key: "landing.howItWorks.step1" },
-  { icon: ScanSearch, key: "landing.howItWorks.step2" },
-  { icon: BrainCircuit, key: "landing.howItWorks.step3" },
-  { icon: Rocket, key: "landing.howItWorks.step4" },
+  { icon: UserPlus, key: "landing.howItWorks.step1" },
+  { icon: Layers, key: "landing.howItWorks.step2" },
+  { icon: BarChart3, key: "landing.howItWorks.step3" },
+  { icon: Target, key: "landing.howItWorks.step4" },
 ]
 
 export function LandingHowItWorks() {
@@ -35,7 +35,7 @@ export function LandingHowItWorks() {
               </div>
               <CardTitle className="grid gap-4 place-items-center">
                 <div className="inline-flex items-center justify-center rounded-lg bg-primary/10 p-3">
-                  <Icon className="h-6 w-6 text-primary" />
+                  <Icon className="h-6 w-6 text-primary" strokeWidth={1.5} />
                 </div>
                 {t(`${key}.title`)}
               </CardTitle>

@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import Link from "next/link"
-import { Menu, X } from "lucide-react"
+import { Menu, X, ArrowUpRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import { useLanguage } from "@/app/context/LanguageContext"
@@ -28,12 +28,12 @@ export function LandingNavbar() {
         </Link>
 
         {/* Desktop nav */}
-        <nav className="hidden md:flex items-center gap-6">
+        <nav className="hidden md:flex items-center gap-8">
           {navLinks.map((link) => (
             <a
               key={link.href}
               href={link.href}
-              className="text-base font-medium text-muted-foreground transition-colors hover:text-foreground"
+              className="text-lg font-medium text-muted-foreground transition-colors hover:text-foreground"
             >
               {t(link.key)}
             </a>
@@ -46,7 +46,10 @@ export function LandingNavbar() {
             <Link href="/app">{t("landing.nav.signIn")}</Link>
           </Button>
           <Button size="sm" asChild>
-            <Link href="/app">{t("landing.nav.getStarted")}</Link>
+            <Link href="/app">
+              APP
+              <ArrowUpRight className="h-4 w-4 ml-1" />
+            </Link>
           </Button>
         </div>
 
@@ -67,7 +70,7 @@ export function LandingNavbar() {
                     key={link.href}
                     href={link.href}
                     onClick={() => setIsOpen(false)}
-                    className="text-lg font-medium text-muted-foreground transition-colors hover:text-foreground"
+                    className="text-xl font-medium text-muted-foreground transition-colors hover:text-foreground"
                   >
                     {t(link.key)}
                   </a>
@@ -80,7 +83,8 @@ export function LandingNavbar() {
                 </Button>
                 <Button asChild>
                   <Link href="/app" onClick={() => setIsOpen(false)}>
-                    {t("landing.nav.getStarted")}
+                    APP
+                    <ArrowUpRight className="h-4 w-4 ml-1" />
                   </Link>
                 </Button>
               </div>

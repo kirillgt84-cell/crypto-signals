@@ -856,7 +856,7 @@
   "landing.pricing.free.feature7": "4种语言支持 + 社区访问",
   "landing.pricing.free.feature8": "邮件市场摘要",
   "landing.pricing.pro.name": "专业版",
-  "landing.pricing.pro.price": "$29",
+  "landing.pricing.pro.price": "$19",
   "landing.pricing.pro.description": "解锁高级分析、AI洞察和专业风险管理工具。",
   "landing.pricing.pro.cta": "开始试用",
   "landing.pricing.pro.feature1": "市场异常扫描器",
@@ -995,5 +995,9 @@
   "landing.features.investor6.title": "知道市场走向何方",
   "landing.features.investor6.description": "收益率曲线、ETF流向、M2、相关性——完整宏观地图。",
   "landing.features.investor7.title": "在历史中测试策略——自信地交易",
-  "landing.features.investor7.description": "回测配置模型：看它们在牛市、熊市和横盘市场中的表现。"
+  "landing.features.investor7.description": "回测配置模型：看它们在牛市、熊市和横盘市场中的表现。",
+  "landing.pricing.yearly": "按年付费",
+  "landing.pricing.monthly": "按月付费",
+  "landing.pricing.billedYearly": "/月（按年计费）",
+  "landing.pricing.save": "Save 24%"
 }

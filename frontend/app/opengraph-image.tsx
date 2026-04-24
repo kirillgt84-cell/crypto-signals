@@ -2,7 +2,7 @@ import { ImageResponse } from 'next/og'
 
 export const runtime = 'edge'
 
-export const alt = 'Mirkaso — Precision in Investment Management'
+export const alt = 'Mirkaso — Crypto Trading Signals & Investment Analytics Dashboard'
 export const size = { width: 1200, height: 630 }
 
 export const contentType = 'image/png'
@@ -47,14 +47,14 @@ export default function OpenGraphImage() {
         </div>
         <div
           style={{
-            fontSize: 36,
+            fontSize: 32,
             color: '#94a3b8',
             textAlign: 'center',
             maxWidth: '800px',
             lineHeight: 1.4,
           }}
         >
-          Precision in Investment Management
+          Crypto Trading Signals & Investment Analytics Dashboard
         </div>
         <div
           style={{

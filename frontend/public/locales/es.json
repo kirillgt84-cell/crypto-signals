@@ -872,7 +872,7 @@
   "landing.pricing.free.feature7": "4 idiomas + acceso a la comunidad",
   "landing.pricing.free.feature8": "Resumen de mercado por email",
   "landing.pricing.pro.name": "Pro",
-  "landing.pricing.pro.price": "$29",
+  "landing.pricing.pro.price": "$19",
   "landing.pricing.pro.description": "Desbloquea análisis avanzado, insights de IA y herramientas profesionales de gestión de riesgo.",
   "landing.pricing.pro.cta": "Probar",
   "landing.pricing.pro.feature1": "Escáner de anomalías del mercado",
@@ -995,5 +995,9 @@
   "positionCalc.warnMaxLeverage": "El apalancamiento calculado excede el límite del exchange de 125x. Aleje el stop de la entrada.",
   "positionCalc.warnAllocation": "La asignación excede el depósito — necesitarás apalancamiento",
   "positionCalc.okMessage": "Los parámetros de la posición se ven saludables",
-  "positionCalc.disclaimer": "La calculadora no considera comisiones, deslizamiento ni tasas de funding. Verifica siempre en tu exchange antes de ejecutar."
+  "positionCalc.disclaimer": "La calculadora no considera comisiones, deslizamiento ni tasas de funding. Verifica siempre en tu exchange antes de ejecutar.",
+  "landing.pricing.yearly": "Anual",
+  "landing.pricing.monthly": "Mensual",
+  "landing.pricing.billedYearly": "/mes facturado anualmente",
+  "landing.pricing.save": "Save 24%"
 }

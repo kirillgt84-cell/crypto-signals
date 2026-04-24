@@ -46,7 +46,7 @@ export function LandingFeatures() {
   const { t } = useLanguage()
 
   return (
-    <section id="features" className="container py-24 sm:py-32 space-y-16">
+    <section id="features" className="container py-16 sm:py-20 space-y-12">
       <div className="text-center space-y-4">
         <h2 className="text-3xl md:text-4xl font-bold">
           {t("landing.features.title1")}{" "}

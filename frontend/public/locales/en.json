@@ -872,7 +872,7 @@
   "landing.pricing.free.feature7": "4 languages + community access",
   "landing.pricing.free.feature8": "Email market summaries",
   "landing.pricing.pro.name": "Pro",
-  "landing.pricing.pro.price": "$29",
+  "landing.pricing.pro.price": "$19",
   "landing.pricing.pro.description": "Unlock advanced analytics, AI insights, and professional risk management tools.",
   "landing.pricing.pro.cta": "Start Trial",
   "landing.pricing.pro.feature1": "Market anomaly scanner",
@@ -995,5 +995,9 @@
   "positionCalc.warnMaxLeverage": "Calculated leverage exceeds 125x exchange limit. Move stop further from entry.",
   "positionCalc.warnAllocation": "Allocation exceeds deposit — you will need leverage",
   "positionCalc.okMessage": "Position parameters look healthy",
-  "positionCalc.disclaimer": "Calculator does not account for fees, slippage, or funding rates. Always verify on your exchange before executing."
+  "positionCalc.disclaimer": "Calculator does not account for fees, slippage, or funding rates. Always verify on your exchange before executing.",
+  "landing.pricing.yearly": "Yearly",
+  "landing.pricing.monthly": "Monthly",
+  "landing.pricing.billedYearly": "/mo billed annually",
+  "landing.pricing.save": "Save 24%"
 }

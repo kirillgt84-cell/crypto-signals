@@ -872,7 +872,7 @@
   "landing.pricing.free.feature7": "4 языка + поддержка сообщества",
   "landing.pricing.free.feature8": "Email-дайджест рынка",
   "landing.pricing.pro.name": "Pro",
-  "landing.pricing.pro.price": "$29",
+  "landing.pricing.pro.price": "$19",
   "landing.pricing.pro.description": "Продвинутая аналитика, AI-инсайты и профессиональные инструменты риск-менеджмента.",
   "landing.pricing.pro.cta": "Попробовать",
   "landing.pricing.pro.feature1": "Сканер аномалий рынка",
@@ -995,5 +995,9 @@
   "positionCalc.warnMaxLeverage": "Рассчитанное плечо превышает лимит биржи 125x. Отодвиньте стоп дальше от входа.",
   "positionCalc.warnAllocation": "Аллокация превышает депозит — потребуется плечо",
   "positionCalc.okMessage": "Параметры позиции выглядят нормально",
-  "positionCalc.disclaimer": "Калькулятор не учитывает комиссии, проскальзывание и фандинг. Всегда проверяйте на бирже перед исполнением."
+  "positionCalc.disclaimer": "Калькулятор не учитывает комиссии, проскальзывание и фандинг. Всегда проверяйте на бирже перед исполнением.",
+  "landing.pricing.yearly": "Годовой",
+  "landing.pricing.monthly": "Месячный",
+  "landing.pricing.billedYearly": "/мес при оплате за год",
+  "landing.pricing.save": "Save 24%"
 }
