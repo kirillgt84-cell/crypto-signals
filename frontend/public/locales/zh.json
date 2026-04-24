@@ -132,7 +132,7 @@
   "macro.noPriceData": "暂无价格数据。宏观同步每 4 小时运行一次。",
   "macro.noCorrelationData": "暂无相关性数据。",
   "macro.correlationHistoryInterpretationTitle": "如何阅读此图表",
-  "macro.correlationHistoryInterpretation": "Y轴范围从 -1 到 +1。数值高于 0 表示资产同向运动（正相关），低于 0 表示反向运动（负相关）。零线是脱钩点。BTC↔SPX 高于 +0.7 意味着比特币像科技股一样交易——股市跌它也跌。Gold↔BTC 转正意味着两者受同一宏观力量驱动（流动性、通胀）。VIX↔BTC 低于 -0.5 意味着比特币充当恐慌对冲工具——市场恐慌时它可能上涨。关注相关性突然飙升：这通常意味着宏观冲击（美联储决议、战争、银行危机）正在迫使所有资产同步运动。"
+  "macro.correlationHistoryInterpretation": "Y轴范围从 -1 到 +1。数值高于 0 表示资产同向运动（正相关），低于 0 表示反向运动（负相关）。零线是脱钩点。BTC↔SPX 高于 +0.7 意味着比特币像科技股一样交易——股市跌它也跌。Gold↔BTC 转正意味着两者受同一宏观力量驱动（流动性、通胀）。VIX↔BTC 低于 -0.5 意味着比特币充当恐慌对冲工具——市场恐慌时它可能上涨。关注相关性突然飙升：这通常意味着宏观冲击（美联储决议、战争、银行危机）正在迫使所有资产同步运动。",
   "macro.m2ComparisonTitle": "全球 M2 流动性",
   "macro.m2ComparisonSubtitle": "与选定资产对比",
   "macro.assetBTC": "比特币",

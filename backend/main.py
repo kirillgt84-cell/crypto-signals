@@ -199,7 +199,28 @@ class GuaranteedCORS:
                 message["headers"] = headers
             await send(message)
 
-        await self.app(scope, receive, wrapped_send)
+        try:
+            await self.app(scope, receive, wrapped_send)
+        except Exception:
+            # If the app raised before sending a response, send a 500 with CORS headers
+            headers = [
+                (b"content-type", b"application/json"),
+                (b"access-control-allow-methods", b"GET, POST, PUT, DELETE, OPTIONS, PATCH"),
+                (b"access-control-allow-headers", b"*"),
+                (b"access-control-max-age", b"86400"),
+            ]
+            if allowed:
+                headers.append((b"access-control-allow-origin", origin.encode("latin-1")))
+                headers.append((b"access-control-allow-credentials", b"true"))
+            await send({
+                "type": "http.response.start",
+                "status": 500,
+                "headers": headers,
+            })
+            await send({
+                "type": "http.response.body",
+                "body": b'{"detail":"Internal server error"}',
+            })
 
 app.add_middleware(GuaranteedCORS, allowed_origins=_default_origins, allowed_regex=r"https://.*\.vercel\.app")
 
