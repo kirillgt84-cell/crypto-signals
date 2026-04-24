@@ -8,6 +8,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { path: '/signals', priority: 0.9, changefreq: 'daily' as const },
     { path: '/macro', priority: 0.9, changefreq: 'daily' as const },
     { path: '/crypto-metrics', priority: 0.9, changefreq: 'daily' as const },
+    { path: '/position-calc', priority: 0.8, changefreq: 'weekly' as const },
     { path: '/yield-curve', priority: 0.9, changefreq: 'daily' as const },
     { path: '/etf', priority: 0.8, changefreq: 'daily' as const },
     { path: '/heatmap', priority: 0.8, changefreq: 'daily' as const },
