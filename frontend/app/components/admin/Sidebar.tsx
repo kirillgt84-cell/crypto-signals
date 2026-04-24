@@ -15,7 +15,8 @@ import {
   Network,
   Scale,
   GitBranch,
-  ScanEye
+  ScanEye,
+  PieChart
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Logo } from '../Logo';
@@ -41,6 +42,7 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
     { href: '/portfolio', label: t('sidebar.portfolio'), icon: Briefcase },
     { href: '/signals', label: t('sidebar.signals'), icon: ScanEye },
     { href: '/macro', label: t('sidebar.macro'), icon: Network },
+    { href: '/crypto-metrics', label: t('sidebar.cryptoMetrics'), icon: PieChart },
     { href: '/risk-parity', label: t('sidebar.riskParity'), icon: Scale },
     { href: '/yield-curve', label: t('sidebar.yieldCurve'), icon: GitBranch },
     { href: '/pricing', label: t('sidebar.pricing'), icon: Crown },

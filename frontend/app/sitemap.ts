@@ -7,6 +7,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { path: '', priority: 1.0, changefreq: 'daily' as const },
     { path: '/signals', priority: 0.9, changefreq: 'daily' as const },
     { path: '/macro', priority: 0.9, changefreq: 'daily' as const },
+    { path: '/crypto-metrics', priority: 0.9, changefreq: 'daily' as const },
     { path: '/yield-curve', priority: 0.9, changefreq: 'daily' as const },
     { path: '/etf', priority: 0.8, changefreq: 'daily' as const },
     { path: '/heatmap', priority: 0.8, changefreq: 'daily' as const },
