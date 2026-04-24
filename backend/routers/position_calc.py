@@ -2,6 +2,7 @@
 Position Calculator — Pro-only trading tool.
 Calculates position size, leverage, and allocation based on risk parameters.
 """
+import math
 from typing import Literal
 from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel, Field, field_validator
@@ -47,8 +48,9 @@ class PositionCalcRequest(BaseModel):
 class PositionCalcResponse(BaseModel):
     quantity: float
     position_value: float
-    allocation: float
+    allocation_pct: float
     leverage: float
+    exchange_leverage: int
     risk_amount: float
     stop_distance: float
 
@@ -74,12 +76,14 @@ def _calculate(req: PositionCalcRequest) -> PositionCalcResponse:
 
     # Leverage
     leverage = position_value / req.portfolio_balance if req.portfolio_balance > 0 else 0
+    exchange_leverage = max(1, math.ceil(leverage)) if leverage > 0 else 1
 
     return PositionCalcResponse(
         quantity=round(quantity, 6),
         position_value=round(position_value, 2),
-        allocation=round(position_value, 2),
+        allocation_pct=round((position_value / req.portfolio_balance) * 100, 2),
         leverage=round(leverage, 1),
+        exchange_leverage=exchange_leverage,
         risk_amount=round(risk_amount, 2),
         stop_distance=round(stop_distance, 2),
     )

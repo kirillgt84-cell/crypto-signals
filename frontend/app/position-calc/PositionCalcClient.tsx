@@ -26,8 +26,9 @@ import {
 interface CalcResult {
   quantity: number
   position_value: number
-  allocation: number
+  allocation_pct: number
   leverage: number
+  exchange_leverage: number
   risk_amount: number
   stop_distance: number
 }
@@ -129,8 +130,9 @@ export default function PositionCalcClient() {
     return {
       quantity,
       position_value,
-      allocation: position_value,
+      allocation_pct: (position_value / bal) * 100,
       leverage,
+      exchange_leverage: Math.max(1, Math.ceil(leverage)),
       risk_amount,
       stop_distance,
     }
@@ -350,12 +352,17 @@ export default function PositionCalcClient() {
                     />
                     <ResultItem
                       label={t("positionCalc.allocation")}
-                      value={`$${result.allocation.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+                      value={`${result.allocation_pct.toFixed(2)}%`}
                     />
                     <ResultItem
                       label={t("positionCalc.leverage")}
                       value={`${result.leverage.toFixed(1)}x`}
                       warn={result.leverage > 10}
+                    />
+                    <ResultItem
+                      label={t("positionCalc.exchangeLeverage")}
+                      value={`${result.exchange_leverage}x`}
+                      highlight
                     />
                     <ResultItem
                       label={t("positionCalc.riskAmount")}
@@ -375,13 +382,13 @@ export default function PositionCalcClient() {
                         {t("positionCalc.warnLeverage")}
                       </div>
                     )}
-                    {result.allocation > parseFloat(form.portfolio_balance) && (
+                    {result.allocation_pct > 100 && (
                       <div className="flex items-center gap-2 text-red-500 text-sm">
                         <AlertTriangle className="h-4 w-4" />
                         {t("positionCalc.warnAllocation")}
                       </div>
                     )}
-                    {result.leverage <= 10 && result.allocation <= parseFloat(form.portfolio_balance) && (
+                    {result.leverage <= 10 && result.allocation_pct <= 100 && (
                       <div className="flex items-center gap-2 text-emerald-500 text-sm">
                         <TrendingUp className="h-4 w-4" />
                         {t("positionCalc.okMessage")}
