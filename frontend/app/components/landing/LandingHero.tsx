@@ -4,7 +4,6 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import {
   ArrowRight,
-  CandlestickChart,
   LayoutGrid,
   GitCompare,
   Gauge,
@@ -37,12 +36,7 @@ export function LandingHero() {
 
   return (
     <section className="container grid lg:grid-cols-2 place-items-center py-20 md:py-32 gap-10">
-      <div className="text-center lg:text-start space-y-6">
-        <div className="inline-flex items-center rounded-full border px-3 py-1 text-sm font-medium text-primary bg-primary/10">
-          <CandlestickChart className="mr-2 h-4 w-4" />
-          {t("landing.hero.badge")}
-        </div>
-
+      <div className="flex flex-col justify-center text-center lg:text-start gap-6">
         <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold leading-[1.1]">
           {t("landing.hero.title1")}{" "}
           <span className="bg-gradient-to-r from-primary to-primary/60 text-transparent bg-clip-text">
@@ -57,9 +51,6 @@ export function LandingHero() {
               {t("landing.hero.ctaPrimary")}
               <ArrowRight className="h-4 w-4" />
             </Link>
-          </Button>
-          <Button size="lg" variant="outline" asChild>
-            <Link href="/pricing">{t("landing.hero.ctaSecondary")}</Link>
           </Button>
         </div>
       </div>
