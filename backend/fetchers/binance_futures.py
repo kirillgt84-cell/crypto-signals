@@ -92,6 +92,22 @@ class BinanceFuturesFetcher:
                 volume_change_pct = 0
                 volume = 0
             
+            # Get 24hr ticker data for real 24h volume and price change
+            ticker_24h = {}
+            try:
+                async with session.get(
+                    f"{self.BASE_URL}/fapi/v1/ticker/24hr",
+                    params={"symbol": symbol},
+                    headers={"Accept": "application/json"}
+                ) as resp:
+                    ticker_24h = await resp.json()
+            except Exception as e:
+                print(f"DEBUG: ticker/24hr failed for {symbol}: {e}")
+            
+            quote_volume_24h = float(ticker_24h.get('quoteVolume', 0) or 0)
+            real_volume_24h = float(ticker_24h.get('volume', 0) or 0)
+            price_change_24h_pct = float(ticker_24h.get('priceChangePercent', 0) or 0)
+            
             # Get mark price as fallback if klines failed
             mark_price = None
             try:
@@ -116,7 +132,10 @@ class BinanceFuturesFetcher:
                 "oi_change_value": round(oi_change_value, 2),
                 "price": final_price,
                 "price_change_24h": round(price_change_pct, 2) if 'current_close' in locals() else 0,
+                "price_change_24h_pct": round(price_change_24h_pct, 2),
                 "volume_24h": volume,
+                "quote_volume_24h": round(quote_volume_24h, 2),
+                "real_volume_24h": round(real_volume_24h, 2),
                 "volume_change": round(volume_change_pct, 2) if 'volume_change_pct' in locals() and volume_change_pct != 0 else 0.01,
                 "interpretation": self._interpret_oi(oi_change_pct, price_change_pct)
             }

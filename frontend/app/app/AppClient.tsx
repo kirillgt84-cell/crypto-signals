@@ -271,7 +271,7 @@ function OIAnalysisCards({ data, loading, timeframe }: { data: MarketData; loadi
       <MetricCard
         title={t("dashboard.futuresVolume")}
         value={formatVolumeUSD((data?.volume || 0) * (data?.price || 0))}
-        subvalue={data?.volume_change !== undefined && data?.volume_change !== 0 ? `${data.volume_change >= 0 ? "+" : ""}${data.volume_change.toFixed(2)}% (${formatTfLabel(timeframe)})` : `${formatTfLabel(timeframe)} volume`}
+        subvalue={data?.volume_change !== undefined && data?.volume_change !== 0 ? `${data.volume_change >= 0 ? "+" : ""}${data.volume_change.toFixed(2)}% (24h)` : `24h volume`}
         trend={data?.volume_change > 0 ? "Rising" : data?.volume_change < 0 ? "Falling" : "Stable"}
         trendUp={data?.volume_change >= 0}
         icon={BarChartHorizontal}
