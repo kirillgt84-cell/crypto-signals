@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button"
 import {
   ArrowRight,
   CandlestickChart,
-  ShieldCheck,
   LayoutGrid,
   GitCompare,
   Gauge,
@@ -16,7 +15,6 @@ import {
   TrendingUp,
   Network,
   Scale,
-  Activity,
   BarChart4,
 } from "lucide-react"
 import { useLanguage } from "@/app/context/LanguageContext"
@@ -53,10 +51,6 @@ export function LandingHero() {
           {t("landing.hero.title2")}
         </h1>
 
-        <p className="text-xl text-muted-foreground md:w-10/12 mx-auto lg:mx-0">
-          {t("landing.hero.description")}
-        </p>
-
         <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
           <Button size="lg" asChild className="gap-2">
             <Link href="/app">
@@ -67,17 +61,6 @@ export function LandingHero() {
           <Button size="lg" variant="outline" asChild>
             <Link href="/pricing">{t("landing.hero.ctaSecondary")}</Link>
           </Button>
-        </div>
-
-        <div className="flex flex-wrap items-center justify-center lg:justify-start gap-6 text-sm text-muted-foreground pt-4">
-          <div className="flex items-center gap-2">
-            <ShieldCheck className="h-4 w-4 text-primary" />
-            <span>{t("landing.hero.trust1")}</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <Activity className="h-4 w-4 text-primary" />
-            <span>{t("landing.hero.trust2")}</span>
-          </div>
         </div>
       </div>
 
