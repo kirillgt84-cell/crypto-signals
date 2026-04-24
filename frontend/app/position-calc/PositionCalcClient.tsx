@@ -43,6 +43,7 @@ interface FormState {
   risk_value: string
   entry_price: string
   stop_price: string
+  buffer_pct: string
 }
 
 const INITIAL_FORM: FormState = {
@@ -52,6 +53,7 @@ const INITIAL_FORM: FormState = {
   risk_value: "1",
   entry_price: "",
   stop_price: "",
+  buffer_pct: "5",
 }
 
 export default function PositionCalcClient() {
@@ -123,22 +125,35 @@ export default function PositionCalcClient() {
     const entry = parseFloat(form.entry_price)
     const stop = parseFloat(form.stop_price)
     const riskVal = parseFloat(form.risk_value)
+    const buffer = parseFloat(form.buffer_pct) || 0
 
     const risk_amount = form.risk_type === "percent" ? bal * (riskVal / 100) : riskVal
     const stop_distance = form.direction === "long" ? entry - stop : stop - entry
     const quantity = risk_amount / stop_distance
     const position_value = quantity * entry
-    const leverage = position_value / bal
+
+    // Liquidation price based on buffer
+    let liq_price: number
+    if (buffer > 0) {
+      const bm = 1 + buffer / 100
+      liq_price = form.direction === "long" ? stop / bm : stop / (2 - bm)
+    } else {
+      liq_price = stop
+    }
+    const liq_dist = Math.abs(entry - liq_price)
+    const leverage = liq_dist > 0 ? entry / liq_dist : 0
+    const margin = leverage > 0 ? position_value / leverage : position_value
+    const exchange_leverage = Math.min(Math.max(1, Math.ceil(leverage)), 125)
 
     return {
       quantity,
       position_value,
-      margin: risk_amount,
+      margin,
       allocation_pct: (position_value / bal) * 100,
       leverage,
-      exchange_leverage: Math.min(Math.max(1, Math.ceil(leverage)), 125),
+      exchange_leverage,
+      liquidation_price: liq_price,
       risk_amount,
-      liquidation_price: entry,
       max_leverage_exceeded: leverage > 125,
       stop_distance,
     }
@@ -333,6 +348,28 @@ export default function PositionCalcClient() {
                     {errors.stop_price && <p className="text-xs text-red-500 mt-1">{errors.stop_price}</p>}
                   </div>
                 </div>
+
+                {/* Buffer */}
+                <div>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <Label className="text-sm font-medium">{t("positionCalc.buffer")}</Label>
+                    <span className="text-xs text-muted-foreground">{form.buffer_pct}%</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="0"
+                    max="20"
+                    step="1"
+                    value={form.buffer_pct}
+                    onChange={(e) => updateField("buffer_pct", e.target.value)}
+                    className="w-full accent-primary"
+                  />
+                  <div className="flex justify-between text-[10px] text-muted-foreground mt-1">
+                    <span>{t("positionCalc.bufferOff")}</span>
+                    <span>5%</span>
+                    <span>20%</span>
+                  </div>
+                </div>
               </CardContent>
             </Card>
 
@@ -361,14 +398,19 @@ export default function PositionCalcClient() {
                       value={`${result.allocation_pct.toFixed(2)}%`}
                     />
                     <ResultItem
-                      label={t("positionCalc.leverage")}
-                      value={`${result.leverage.toFixed(1)}x`}
-                      warn={result.leverage > 10}
+                      label={t("positionCalc.margin")}
+                      value={`$${result.margin.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+                      highlight
                     />
                     <ResultItem
                       label={t("positionCalc.exchangeLeverage")}
                       value={`${result.exchange_leverage}x`}
                       highlight
+                    />
+                    <ResultItem
+                      label={t("positionCalc.liquidationPrice")}
+                      value={`$${result.liquidation_price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+                      warn={result.max_leverage_exceeded}
                     />
                     <ResultItem
                       label={t("positionCalc.riskAmount")}

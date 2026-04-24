@@ -1,6 +1,6 @@
 """
 Position Calculator — Pro-only trading tool.
-Concept: margin = risk_amount. Leverage auto-calculated so liquidation = stop.
+Concept: leverage auto-calculated so liquidation lands at stop ± buffer.
 """
 import math
 from typing import Literal
@@ -20,6 +20,7 @@ class PositionCalcRequest(BaseModel):
     risk_value: float = Field(gt=0)
     entry_price: float = Field(gt=0)
     stop_price: float = Field(gt=0)
+    buffer_pct: float = Field(default=5.0, ge=0, le=50)
 
     @field_validator("risk_value")
     @classmethod
@@ -57,6 +58,7 @@ class PositionCalcResponse(BaseModel):
     liquidation_price: float
     risk_amount: float
     stop_distance: float
+    buffer_pct: float
     max_leverage_exceeded: bool
 
 
@@ -73,25 +75,32 @@ def _calculate(req: PositionCalcRequest) -> PositionCalcResponse:
     else:
         stop_distance = req.stop_price - req.entry_price
 
-    # Quantity: how many units to buy/sell
+    # Quantity
     quantity = risk_amount / stop_distance
-
-    # Position value at entry
     position_value = quantity * req.entry_price
 
-    # Leverage: entry / stop_distance gives liquidation exactly at stop
-    # (simplified isolated margin: liquidation = entry * (1 - 1/leverage) for long)
-    leverage = req.entry_price / stop_distance if stop_distance > 0 else 0
+    # Liquidation price based on buffer
+    # buffer_pct=0  → liquidation = stop (aggressive, min margin)
+    # buffer_pct=5  → stop is 5% above liquidation (safe)
+    if req.buffer_pct > 0:
+        buffer_mult = 1 + (req.buffer_pct / 100)
+        if req.direction == "long":
+            liquidation_price = req.stop_price / buffer_mult
+        else:
+            liquidation_price = req.stop_price / (2 - buffer_mult)
+    else:
+        liquidation_price = req.stop_price
 
-    # Margin required = risk_amount by design (position_value / leverage = risk_amount)
-    margin = risk_amount
+    # Leverage: entry / distance_to_liquidation
+    liq_distance = abs(req.entry_price - liquidation_price)
+    leverage = req.entry_price / liq_distance if liq_distance > 0 else 0
 
-    # Exchange leverage: what to set on the exchange
+    # Margin required
+    margin = position_value / leverage if leverage > 0 else position_value
+
+    # Exchange leverage with cap
     raw_exchange_leverage = max(1, math.ceil(leverage)) if leverage > 0 else 1
     exchange_leverage = min(raw_exchange_leverage, MAX_EXCHANGE_LEVERAGE)
-
-    # Liquidation price (simplified, exact at stop for this model)
-    liquidation_price = req.stop_price
 
     return PositionCalcResponse(
         quantity=round(quantity, 6),
@@ -103,6 +112,7 @@ def _calculate(req: PositionCalcRequest) -> PositionCalcResponse:
         liquidation_price=round(liquidation_price, 2),
         risk_amount=round(risk_amount, 2),
         stop_distance=round(stop_distance, 2),
+        buffer_pct=req.buffer_pct,
         max_leverage_exceeded=raw_exchange_leverage > MAX_EXCHANGE_LEVERAGE,
     )
 
