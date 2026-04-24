@@ -2,8 +2,9 @@
 
 import { LandingNavbar } from "./components/landing/LandingNavbar"
 import { LandingHero } from "./components/landing/LandingHero"
-import { LandingStats } from "./components/landing/LandingStats"
 import { LandingFeatures } from "./components/landing/LandingFeatures"
+import { LandingStats } from "./components/landing/LandingStats"
+import { LandingBenefits } from "./components/landing/LandingBenefits"
 import { LandingHowItWorks } from "./components/landing/LandingHowItWorks"
 import { LandingPricing } from "./components/landing/LandingPricing"
 import { LandingFAQ } from "./components/landing/LandingFAQ"
@@ -16,8 +17,9 @@ export default function LandingClient() {
       <LandingNavbar />
       <main className="flex-1">
         <LandingHero />
-        <LandingStats />
         <LandingFeatures />
+        <LandingStats />
+        <LandingBenefits />
         <LandingHowItWorks />
         <LandingPricing />
         <LandingFAQ />
