@@ -1,7 +1,7 @@
 "use client"
 
 import { LandingNavbar } from "./components/landing/LandingNavbar"
-import { LandingHero } from "./components/landing/LandingHero"
+
 import { LandingFeatures } from "./components/landing/LandingFeatures"
 import { LandingStats } from "./components/landing/LandingStats"
 import { LandingBenefits } from "./components/landing/LandingBenefits"
@@ -16,7 +16,6 @@ export default function LandingClient() {
     <div className="flex min-h-screen flex-col">
       <LandingNavbar />
       <main className="flex-1">
-        <LandingHero />
         <LandingFeatures />
         <LandingStats />
         <LandingBenefits />
