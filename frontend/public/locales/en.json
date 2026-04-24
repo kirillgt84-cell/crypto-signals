@@ -958,7 +958,8 @@
   "positionCalc.quantity": "Quantity",
   "positionCalc.positionValue": "Position Value",
   "positionCalc.allocation": "Allocation",
-  "positionCalc.leverage": "Effective Leverage",
+  "positionCalc.margin": "Margin Required",
+  "positionCalc.liquidationPrice": "Liquidation Price",
   "positionCalc.exchangeLeverage": "Set Leverage",
   "positionCalc.riskAmount": "Risk Amount",
   "positionCalc.stopDistance": "Stop Distance",
@@ -974,7 +975,7 @@
   "positionCalc.errorRisk": "Risk must be greater than 0",
   "positionCalc.errorRiskPercent": "Risk percent cannot exceed 100",
   "positionCalc.errorRiskFixed": "Risk amount cannot exceed deposit",
-  "positionCalc.warnLeverage": "Leverage above 10x — high risk of liquidation",
+  "positionCalc.warnMaxLeverage": "Calculated leverage exceeds 125x exchange limit. Move stop further from entry.",
   "positionCalc.warnAllocation": "Allocation exceeds deposit — you will need leverage",
   "positionCalc.okMessage": "Position parameters look healthy",
   "positionCalc.disclaimer": "Calculator does not account for fees, slippage, or funding rates. Always verify on your exchange before executing."

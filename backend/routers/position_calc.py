@@ -1,6 +1,6 @@
 """
 Position Calculator — Pro-only trading tool.
-Calculates position size, leverage, and allocation based on risk parameters.
+Concept: margin = risk_amount. Leverage auto-calculated so liquidation = stop.
 """
 import math
 from typing import Literal
@@ -9,6 +9,8 @@ from pydantic import BaseModel, Field, field_validator
 from routers.auth import get_current_user
 
 router = APIRouter(prefix="/api/v1/position-calc", tags=["position-calc"])
+
+MAX_EXCHANGE_LEVERAGE = 125
 
 
 class PositionCalcRequest(BaseModel):
@@ -48,15 +50,18 @@ class PositionCalcRequest(BaseModel):
 class PositionCalcResponse(BaseModel):
     quantity: float
     position_value: float
+    margin: float
     allocation_pct: float
     leverage: float
     exchange_leverage: int
+    liquidation_price: float
     risk_amount: float
     stop_distance: float
+    max_leverage_exceeded: bool
 
 
 def _calculate(req: PositionCalcRequest) -> PositionCalcResponse:
-    # Risk amount
+    # Risk amount in USD
     if req.risk_type == "percent":
         risk_amount = req.portfolio_balance * (req.risk_value / 100)
     else:
@@ -68,24 +73,37 @@ def _calculate(req: PositionCalcRequest) -> PositionCalcResponse:
     else:
         stop_distance = req.stop_price - req.entry_price
 
-    # Quantity
+    # Quantity: how many units to buy/sell
     quantity = risk_amount / stop_distance
 
-    # Position value
+    # Position value at entry
     position_value = quantity * req.entry_price
 
-    # Leverage
-    leverage = position_value / req.portfolio_balance if req.portfolio_balance > 0 else 0
-    exchange_leverage = max(1, math.ceil(leverage)) if leverage > 0 else 1
+    # Leverage: entry / stop_distance gives liquidation exactly at stop
+    # (simplified isolated margin: liquidation = entry * (1 - 1/leverage) for long)
+    leverage = req.entry_price / stop_distance if stop_distance > 0 else 0
+
+    # Margin required = risk_amount by design (position_value / leverage = risk_amount)
+    margin = risk_amount
+
+    # Exchange leverage: what to set on the exchange
+    raw_exchange_leverage = max(1, math.ceil(leverage)) if leverage > 0 else 1
+    exchange_leverage = min(raw_exchange_leverage, MAX_EXCHANGE_LEVERAGE)
+
+    # Liquidation price (simplified, exact at stop for this model)
+    liquidation_price = req.stop_price
 
     return PositionCalcResponse(
         quantity=round(quantity, 6),
         position_value=round(position_value, 2),
+        margin=round(margin, 2),
         allocation_pct=round((position_value / req.portfolio_balance) * 100, 2),
         leverage=round(leverage, 1),
         exchange_leverage=exchange_leverage,
+        liquidation_price=round(liquidation_price, 2),
         risk_amount=round(risk_amount, 2),
         stop_distance=round(stop_distance, 2),
+        max_leverage_exceeded=raw_exchange_leverage > MAX_EXCHANGE_LEVERAGE,
     )
 
 

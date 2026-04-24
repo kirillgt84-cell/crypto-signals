@@ -958,7 +958,8 @@
   "positionCalc.quantity": "数量",
   "positionCalc.positionValue": "仓位名义价值",
   "positionCalc.allocation": "资金占用",
-  "positionCalc.leverage": "实际杠杆",
+  "positionCalc.margin": "所需保证金",
+  "positionCalc.liquidationPrice": "爆仓价格",
   "positionCalc.exchangeLeverage": "交易所杠杆设置",
   "positionCalc.riskAmount": "风险金额",
   "positionCalc.stopDistance": "止损距离",
@@ -974,7 +975,7 @@
   "positionCalc.errorRisk": "风险必须大于 0",
   "positionCalc.errorRiskPercent": "风险百分比不能超过 100",
   "positionCalc.errorRiskFixed": "风险金额不能超过账户余额",
-  "positionCalc.warnLeverage": "杠杆超过 10 倍 — 爆仓风险高",
+  "positionCalc.warnMaxLeverage": "计算杠杆超过交易所 125 倍限制。请将止损远离入场价。",
   "positionCalc.warnAllocation": "资金占用超过余额 — 需要使用杠杆",
   "positionCalc.okMessage": "仓位参数看起来健康",
   "positionCalc.disclaimer": "计算器未考虑手续费、滑点和资金费率。执行前请在交易所核实。"

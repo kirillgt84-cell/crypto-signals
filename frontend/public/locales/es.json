@@ -958,7 +958,8 @@
   "positionCalc.quantity": "Cantidad",
   "positionCalc.positionValue": "Valor de la Posición",
   "positionCalc.allocation": "Asignación",
-  "positionCalc.leverage": "Apalancamiento Efectivo",
+  "positionCalc.margin": "Margen Requerido",
+  "positionCalc.liquidationPrice": "Precio de Liquidación",
   "positionCalc.exchangeLeverage": "Apalancamiento en Exchange",
   "positionCalc.riskAmount": "Monto de Riesgo",
   "positionCalc.stopDistance": "Distancia al Stop",
@@ -974,7 +975,7 @@
   "positionCalc.errorRisk": "El riesgo debe ser mayor a 0",
   "positionCalc.errorRiskPercent": "El riesgo en porcentaje no puede exceder 100",
   "positionCalc.errorRiskFixed": "El riesgo no puede exceder el depósito",
-  "positionCalc.warnLeverage": "Apalancamiento mayor a 10x — alto riesgo de liquidación",
+  "positionCalc.warnMaxLeverage": "El apalancamiento calculado excede el límite del exchange de 125x. Aleje el stop de la entrada.",
   "positionCalc.warnAllocation": "La asignación excede el depósito — necesitarás apalancamiento",
   "positionCalc.okMessage": "Los parámetros de la posición se ven saludables",
   "positionCalc.disclaimer": "La calculadora no considera comisiones, deslizamiento ni tasas de funding. Verifica siempre en tu exchange antes de ejecutar."

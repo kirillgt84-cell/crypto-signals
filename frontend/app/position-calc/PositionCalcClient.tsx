@@ -26,11 +26,14 @@ import {
 interface CalcResult {
   quantity: number
   position_value: number
+  margin: number
   allocation_pct: number
   leverage: number
   exchange_leverage: number
+  liquidation_price: number
   risk_amount: number
   stop_distance: number
+  max_leverage_exceeded: boolean
 }
 
 interface FormState {
@@ -130,10 +133,13 @@ export default function PositionCalcClient() {
     return {
       quantity,
       position_value,
+      margin: risk_amount,
       allocation_pct: (position_value / bal) * 100,
       leverage,
-      exchange_leverage: Math.max(1, Math.ceil(leverage)),
+      exchange_leverage: Math.min(Math.max(1, Math.ceil(leverage)), 125),
       risk_amount,
+      liquidation_price: entry,
+      max_leverage_exceeded: leverage > 125,
       stop_distance,
     }
   }, [form, validate])
@@ -376,10 +382,10 @@ export default function PositionCalcClient() {
 
                   {/* Warnings */}
                   <div className="mt-4 space-y-2">
-                    {result.leverage > 10 && (
-                      <div className="flex items-center gap-2 text-amber-500 text-sm">
-                        <ShieldAlert className="h-4 w-4" />
-                        {t("positionCalc.warnLeverage")}
+                    {result.max_leverage_exceeded && (
+                      <div className="flex items-center gap-2 text-red-500 text-sm">
+                        <AlertTriangle className="h-4 w-4" />
+                        {t("positionCalc.warnMaxLeverage")}
                       </div>
                     )}
                     {result.allocation_pct > 100 && (
@@ -388,7 +394,7 @@ export default function PositionCalcClient() {
                         {t("positionCalc.warnAllocation")}
                       </div>
                     )}
-                    {result.leverage <= 10 && result.allocation_pct <= 100 && (
+                    {!result.max_leverage_exceeded && result.allocation_pct <= 100 && (
                       <div className="flex items-center gap-2 text-emerald-500 text-sm">
                         <TrendingUp className="h-4 w-4" />
                         {t("positionCalc.okMessage")}

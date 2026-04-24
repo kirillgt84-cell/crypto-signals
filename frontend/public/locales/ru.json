@@ -958,7 +958,8 @@
   "positionCalc.quantity": "Количество",
   "positionCalc.positionValue": "Номинал позиции",
   "positionCalc.allocation": "Аллокация",
-  "positionCalc.leverage": "Эффективное плечо",
+  "positionCalc.margin": "Маржа",
+  "positionCalc.liquidationPrice": "Цена ликвидации",
   "positionCalc.exchangeLeverage": "Плечо на бирже",
   "positionCalc.riskAmount": "Риск в деньгах",
   "positionCalc.stopDistance": "Дистанция до стопа",
@@ -974,7 +975,7 @@
   "positionCalc.errorRisk": "Риск должен быть больше 0",
   "positionCalc.errorRiskPercent": "Риск в процентах не может превышать 100",
   "positionCalc.errorRiskFixed": "Риск не может превышать депозит",
-  "positionCalc.warnLeverage": "Плечо выше 10x — высокий риск ликвидации",
+  "positionCalc.warnMaxLeverage": "Рассчитанное плечо превышает лимит биржи 125x. Отодвиньте стоп дальше от входа.",
   "positionCalc.warnAllocation": "Аллокация превышает депозит — потребуется плечо",
   "positionCalc.okMessage": "Параметры позиции выглядят нормально",
   "positionCalc.disclaimer": "Калькулятор не учитывает комиссии, проскальзывание и фандинг. Всегда проверяйте на бирже перед исполнением."
