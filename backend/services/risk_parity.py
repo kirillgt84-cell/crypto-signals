@@ -232,9 +232,9 @@ def backtest_strategy(
                 equity[-1] *= (1 - cost)
                 current_weights = new_weights
                 weight_history.append({
-                    "date": dates[i],
-                    "weights": new_weights.copy(),
-                    "turnover": turnover,
+                    "date": str(dates[i]),
+                    "weights": [float(w) for w in new_weights],
+                    "turnover": float(turnover),
                 })
         else:
             current_weights = drifted
@@ -273,14 +273,14 @@ def _calculate_metrics(returns: pd.Series, equity: pd.Series) -> Dict[str, any]:
     calmar = cagr / abs(max_dd) if max_dd != 0 else 0
 
     return {
-        "cagr": round(cagr, 4),
-        "annualized_volatility": round(vol, 4),
-        "sharpe_ratio": round(sharpe, 3),
-        "sortino_ratio": round(sortino, 3),
-        "max_drawdown": round(max_dd, 4),
-        "calmar_ratio": round(calmar, 3),
-        "total_return": round((equity.iloc[-1] / equity.iloc[0]) - 1, 4),
-        "num_days": len(returns),
+        "cagr": float(round(cagr, 4)),
+        "annualized_volatility": float(round(vol, 4)),
+        "sharpe_ratio": float(round(sharpe, 3)),
+        "sortino_ratio": float(round(sortino, 3)),
+        "max_drawdown": float(round(max_dd, 4)),
+        "calmar_ratio": float(round(calmar, 3)),
+        "total_return": float(round((equity.iloc[-1] / equity.iloc[0]) - 1, 4)),
+        "num_days": int(len(returns)),
     }
 
 

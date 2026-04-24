@@ -422,7 +422,7 @@ export default function RiskParityClient() {
                   </CardHeader>
                   <CardContent>
                     <div className="h-[300px]">
-                      <ResponsiveContainer width="100%" height="100%">
+                      <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
                         <BarChart
                           data={weightsChartData}
                           layout="vertical"
@@ -484,7 +484,7 @@ export default function RiskParityClient() {
                     </CardHeader>
                     <CardContent>
                       <div className="h-[200px]">
-                        <ResponsiveContainer width="100%" height="100%">
+                        <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
                           <BarChart data={rcChartData} margin={{ top: 5, right: 30, left: 40, bottom: 5 }}>
                             <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
                             <XAxis dataKey="ticker" tick={{ fontSize: 11 }} />
@@ -559,7 +559,7 @@ export default function RiskParityClient() {
                   </CardHeader>
                   <CardContent>
                     <div className="h-[350px]">
-                      <ResponsiveContainer width="100%" height="100%">
+                      <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
                         <LineChart data={equityChartData} margin={{ top: 5, right: 5, left: 5, bottom: 5 }}>
                           <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
                           <XAxis

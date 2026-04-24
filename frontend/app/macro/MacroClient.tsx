@@ -313,7 +313,7 @@ export default function MacroClient() {
                   </CardHeader>
                   <CardContent>
                     <div className="h-[450px]">
-                      <ResponsiveContainer width="100%" height="100%">
+                      <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
                         <LineChart
                           data={m2Data.dates.map((d: string, i: number) => ({
                             date: d,
@@ -443,7 +443,7 @@ export default function MacroClient() {
                 </CardHeader>
                 <CardContent>
                   {mergedChart.length > 0 ? (
-                    <ResponsiveContainer width="100%" height={350}>
+                    <ResponsiveContainer width="100%" height={350} minWidth={0} minHeight={0}>
                       <LineChart data={mergedChart}>
                         <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
                         <XAxis dataKey="date" tick={{ fontSize: 11 }} tickFormatter={(val: string) => new Date(val).toLocaleDateString(locale, { month: 'short', year: '2-digit' })} />
@@ -511,7 +511,7 @@ export default function MacroClient() {
                 </CardHeader>
                 <CardContent>
                   {corrChart.length > 0 ? (
-                    <ResponsiveContainer width="100%" height={300}>
+                    <ResponsiveContainer width="100%" height={300} minWidth={0} minHeight={0}>
                       <AreaChart data={corrChart}>
                         <defs>
                           <linearGradient id="gradBtcSpx" x1="0" y1="0" x2="0" y2="1">

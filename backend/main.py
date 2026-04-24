@@ -201,8 +201,9 @@ class GuaranteedCORS:
 
         try:
             await self.app(scope, receive, wrapped_send)
-        except Exception:
+        except Exception as exc:
             # If the app raised before sending a response, send a 500 with CORS headers
+            logger.exception(f"GuaranteedCORS caught unhandled exception: {exc}")
             headers = [
                 (b"content-type", b"application/json"),
                 (b"access-control-allow-methods", b"GET, POST, PUT, DELETE, OPTIONS, PATCH"),

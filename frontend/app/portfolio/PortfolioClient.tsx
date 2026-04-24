@@ -799,7 +799,7 @@ export default function PortfolioClient() {
                   {t("portfolio.allocation")}
                 </h3>
                 {pieData.length > 0 ? (
-                  <ResponsiveContainer width="100%" height={320}>
+                  <ResponsiveContainer width="100%" height={320} minWidth={0} minHeight={0}>
                     <RePieChart>
                       <Pie
                         data={pieData}
@@ -868,7 +868,7 @@ export default function PortfolioClient() {
               </div>
               <div className="rounded-xl border bg-card p-6">
                 {history.length > 0 ? (
-                  <ResponsiveContainer width="100%" height={400}>
+                  <ResponsiveContainer width="100%" height={400} minWidth={0} minHeight={0}>
                     <AreaChart data={history.slice().reverse()}>
                       <defs>
                         <linearGradient id="colorNotional" x1="0" y1="0" x2="0" y2="1">
