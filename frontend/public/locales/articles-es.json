@@ -154,5 +154,101 @@
     ],
     "cta": "Señales de regímenes →",
     "ctaLink": "/yield-curve"
+  },
+  "risk-parity-explained": {
+    "title": "¿Qué es Risk Parity?",
+    "subtitle": "Construyendo carteras todo-clima con contribución de riesgo igual",
+    "sections": [
+      {
+        "heading": "El problema del 60/40 tradicional",
+        "content": "Las carteras tradicionales asignan 60% a acciones y 40% a bonos por capital. Pero las acciones son 3–4x más volátiles que los bonos, así que en realidad el 80–90% del riesgo proviene de las acciones. Cuando las acciones caen, la cartera 'balanceada' cae con ellas. Risk Parity resuelve esto asignando capital para que cada activo aporte igualmente al riesgo total."
+      },
+      {
+        "heading": "Cómo funciona Risk Parity",
+        "content": "Risk Parity usa datos de volatilidad y correlación para calcular pesos donde cada activo — acciones, bonos, commodities, oro, cripto — tiene el mismo presupuesto de riesgo. Si un activo es muy volátil, recibe menos capital. Si dos activos están altamente correlacionados, su peso combinado se reduce para evitar concentración. El resultado es una cartera que se comporta más consistentemente en todos los regímenes económicos: crecimiento, recesión, inflación y deflación."
+      },
+      {
+        "heading": "Apalancamiento y retornos esperados",
+        "content": "Como las carteras Risk Parity están fuertemente ponderadas hacia activos de baja volatilidad como los bonos, sus retornos brutos pueden ser modestos. Para alcanzar retornos similares a los de acciones, los gestores aplican apalancamiento — típicamente 2–3x. Esto es contraintuitivo pero matemáticamente sólido: una cartera apalancada de activos diversificados de baja volatilidad es históricamente más segura que una cartera concentrada en acciones sin apalancamiento."
+      },
+      {
+        "heading": "Cripto en Risk Parity",
+        "content": "Bitcoin y Ethereum añaden beneficios de diversificación debido a su baja correlación con activos tradicionales. Incluso una asignación del 5–10% en cripto puede mejorar significativamente el ratio de Sharpe. Sin embargo, la volatilidad de la cripto es extrema, por lo que la optimización RP típicamente asigna a la cripto un peso pequeño con un gran presupuesto de riesgo."
+      }
+    ],
+    "cta": "Construye tu cartera Risk Parity en Mirkaso →",
+    "ctaLink": "/risk-parity"
+  },
+  "portfolio-risk-metrics": {
+    "title": "Métricas de riesgo de cartera",
+    "subtitle": "Sharpe, Sortino, máximo drawdown, Calmar y volatilidad",
+    "sections": [
+      {
+        "heading": "Ratio de Sharpe",
+        "content": "El ratio de Sharpe mide el retorno por unidad de riesgo total (volatilidad). Un Sharpe por encima de 1.5 se considera excelente; por debajo de 0.5 es pobre. Penaliza por igual la volatilidad al alza y a la baja — esta es su principal limitación: no toda la volatilidad es mala."
+      },
+      {
+        "heading": "Ratio de Sortino",
+        "content": "Sortino mejora Sharpe al mirar solo la volatilidad a la baja. Responde: ¿cuánto retorno obtienes por unidad de mal riesgo? Un Sortino alto significa que tu cartera genera buenos retornos sin caídas severas. Esto es a menudo más relevante para inversores en cripto."
+      },
+      {
+        "heading": "Máximo Drawdown y Calmar",
+        "content": "El máximo drawdown es la mayor caída de pico a valle. Para carteras balanceadas, 15–25% es típico; por encima de 40% indica riesgo excesivo. El ratio de Calmar divide el CAGR por el máximo drawdown — un Calmar por encima de 2.0 es fuerte, lo que significa que la cartera crece de forma estable sin pérdidas catastróficas."
+      },
+      {
+        "heading": "Volatilidad y CAGR",
+        "content": "Una volatilidad anualizada del 10–15% es moderada; por encima del 30% es alta para la mayoría de inversores. El CAGR (tasa de crecimiento anual compuesta) muestra el retorno anual suavizado. Comparar el CAGR con la volatilidad revela si los retornos justifican el viaje. En Mirkaso puedes analizar las seis métricas en ventanas de 30/90/180/365 días."
+      }
+    ],
+    "cta": "Analiza las métricas de riesgo de tu cartera en Mirkaso →",
+    "ctaLink": "/portfolio"
+  },
+  "sentiment-analysis": {
+    "title": "Análisis de sentimiento en cripto",
+    "subtitle": "Leyendo el estado de ánimo del mercado con datos de Binance",
+    "sections": [
+      {
+        "heading": "Ratio Long/Short",
+        "content": "El ratio Long/Short en Binance muestra cómo se posicionan los traders. Cuando el ratio supera 3.0 (75% largos), el mercado está saturado de largos y vulnerable a squeezes largos. Cuando cae por debajo de 1.0, el pesimismo es extremo y un squeeze corto es más probable."
+      },
+      {
+        "heading": "Ratio de top traders",
+        "content": "Binance publica datos de posiciones de top traders — cuentas con el historial de PnL más alto. Cuando los top traders están fuertemente netos largos mientras la multitud está corta, señala convicción de dinero inteligente. Las divergencias entre top traders y la base de usuarios general a menudo preceden movimientos mayores."
+      },
+      {
+        "heading": "Taker Volume Ratio",
+        "content": "El Taker Buy Volume mide órdenes de mercado de compra (compra agresiva). El Taker Sell Volume golpea el bid (venta agresiva). Cuando el Taker Buy Ratio supera el 55%, la presión compradora domina. Lecturas sostenidas por encima del 60% a menudo acompañan rupturas al alza; ventas sostenidas por encima del 60% señalan distribución."
+      },
+      {
+        "heading": "Cómo combinar señales de sentimiento",
+        "content": "El sentimiento funciona mejor como herramienta contraria en extremos y como confirmación en tendencias. En una tendencia alcista fuerte, los altos ratios largos pueden persistir semanas — no luches contra la tendencia. En resistencia tras un rally del 50%+, los ratios largos extremos se convierten en advertencia. Combina siempre el sentimiento con datos on-chain y estructura de precios."
+      }
+    ],
+    "cta": "Ver datos de sentimiento en vivo en Mirkaso →",
+    "ctaLink": "/app"
+  },
+  "m2-liquidity": {
+    "title": "M2 Liquidez Global y Cripto",
+    "subtitle": "Por qué la masa monetaria importa para Bitcoin",
+    "sections": [
+      {
+        "heading": "¿Qué es M2?",
+        "content": "M2 es una medida amplia de la masa monetaria que incluye efectivo, depósitos a la vista, cuentas de ahorro y dinero casi líquido fácilmente convertible. Es el principal indicador que los bancos centrales usan para rastrear la liquidez en la economía. Cuando M2 crece, más dólares persiguen los mismos activos — acciones, bienes raíces y Bitcoin."
+      },
+      {
+        "heading": "M2 y Bitcoin: la correlación",
+        "content": "Los mayores rallies alcistas de Bitcoin (2013, 2017, 2021, 2024) coincidieron con la expansión de M2. Por el contrario, el mercado bajista de 2022 se alineó con la primera contracción de M2 en décadas. La correlación no es perfecta — Bitcoin también tiene ciclos de halving y olas de adopción — pero la liquidez es la marea que levanta todos los barcos."
+      },
+      {
+        "heading": "M2 vs otros activos",
+        "content": "En Mirkaso puedes superponer M2 con Bitcoin, S&P 500, oro y VIX. El oro típicamente lidera M2 por 3–6 meses como cobertura contra la inflación. Las acciones se mueven con M2 durante la expansión pero caen más rápido durante la contracción. El VIX se correlaciona inversamente: cuando M2 se expande, el miedo cae; cuando M2 se contrae, la volatilidad sube."
+      },
+      {
+        "heading": "Implicaciones de trading",
+        "content": "Los datos de M2 se publican mensualmente con un desfase, por lo que es un indicador de régimen, no una herramienta de timing. Usa la dirección de M2 para establecer tu sesgo macro: la expansión favorece posiciones largas spot en BTC y activos de riesgo; la contracción favorece la cautela, stablecoins y coberturas. Combina M2 con la curva de rendimiento y VIX para una imagen macro completa."
+      }
+    ],
+    "cta": "Explora el overlay de liquidez M2 en Mirkaso →",
+    "ctaLink": "/macro"
   }
 }

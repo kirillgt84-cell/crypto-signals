@@ -25,7 +25,7 @@ const LANGUAGE_FLAGS: Record<Language, string> = {
 interface LanguageContextType {
   language: Language
   setLanguage: (lang: Language) => void
-  t: (key: string) => string
+  t: (key: string, vars?: Record<string, string | number>) => string
   isLoaded: boolean
   languages: Language[]
   languageNames: Record<Language, string>
@@ -115,10 +115,16 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const t = useCallback(
-    (key: string): string => {
+    (key: string, vars?: Record<string, string | number>): string => {
       const dict = translations[language]
       if (!dict) return key
-      return dict[key] ?? key
+      let text = dict[key] ?? key
+      if (vars) {
+        Object.entries(vars).forEach(([k, v]) => {
+          text = text.replace(new RegExp(`\\{\\{${k}\\}\\}`, "g"), String(v))
+        })
+      }
+      return text
     },
     [language]
   )

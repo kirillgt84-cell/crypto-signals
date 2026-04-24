@@ -3,6 +3,7 @@ import Link from "next/link"
 import { ArrowLeft, Mail, Send, MessageCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { TeamSection } from "./TeamSection"
 
 export const metadata: Metadata = {
   title: "Contact Mirkaso — Support & Inquiries",
@@ -88,6 +89,8 @@ export default function ContactPage() {
             </CardContent>
           </Card>
         </div>
+
+        <TeamSection />
 
         <div className="mt-12 rounded-xl border p-6">
           <h2 className="text-lg font-semibold mb-2">Response Time</h2>

@@ -17,7 +17,7 @@ import {
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Zap, RefreshCw, ArrowUpRight, ArrowDownRight, Filter, Play, Activity, Settings2, Mail, MessageCircle } from "lucide-react";
+import { ScanEye, RefreshCw, ArrowUpRight, ArrowDownRight, Filter, Play, Activity, Settings2, Mail, MessageCircle } from "lucide-react";
 import Sidebar from "../components/admin/Sidebar";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
@@ -206,7 +206,7 @@ export default function SignalsClient() {
         <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div>
             <h1 className="text-2xl font-bold tracking-wider text-foreground flex items-center gap-2">
-              <Zap className="h-6 w-6 text-amber-400" />
+              <ScanEye className="h-6 w-6 text-amber-400" />
               SIGNALS
             </h1>
             <p className="mt-1 text-sm text-slate-400">

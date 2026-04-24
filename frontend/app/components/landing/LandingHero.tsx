@@ -2,8 +2,37 @@
 
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
-import { ArrowRight, BarChart3, Shield } from "lucide-react"
+import {
+  ArrowRight,
+  CandlestickChart,
+  ShieldCheck,
+  LayoutGrid,
+  GitCompare,
+  Gauge,
+  ClipboardCheck,
+  CircleDollarSign,
+  Coins,
+  Building2,
+  TrendingUp,
+  Network,
+  Scale,
+  Activity,
+  BarChart4,
+} from "lucide-react"
 import { useLanguage } from "@/app/context/LanguageContext"
+
+const benefits = [
+  { icon: BarChart4, key: "landing.hero.benefit1" },
+  { icon: GitCompare, key: "landing.hero.benefit2" },
+  { icon: Gauge, key: "landing.hero.benefit3" },
+  { icon: ClipboardCheck, key: "landing.hero.benefit4" },
+  { icon: CircleDollarSign, key: "landing.hero.benefit5" },
+  { icon: Coins, key: "landing.hero.benefit6" },
+  { icon: Building2, key: "landing.hero.benefit7" },
+  { icon: TrendingUp, key: "landing.hero.benefit8" },
+  { icon: Network, key: "landing.hero.benefit9" },
+  { icon: Scale, key: "landing.hero.benefit10" },
+]
 
 export function LandingHero() {
   const { t } = useLanguage()
@@ -12,7 +41,7 @@ export function LandingHero() {
     <section className="container grid lg:grid-cols-2 place-items-center py-20 md:py-32 gap-10">
       <div className="text-center lg:text-start space-y-6">
         <div className="inline-flex items-center rounded-full border px-3 py-1 text-sm font-medium text-primary bg-primary/10">
-          <BarChart3 className="mr-2 h-4 w-4" />
+          <CandlestickChart className="mr-2 h-4 w-4" />
           {t("landing.hero.badge")}
         </div>
 
@@ -42,69 +71,45 @@ export function LandingHero() {
 
         <div className="flex flex-wrap items-center justify-center lg:justify-start gap-6 text-sm text-muted-foreground pt-4">
           <div className="flex items-center gap-2">
-            <Shield className="h-4 w-4 text-primary" />
+            <ShieldCheck className="h-4 w-4 text-primary" />
             <span>{t("landing.hero.trust1")}</span>
           </div>
           <div className="flex items-center gap-2">
-            <BarChart3 className="h-4 w-4 text-primary" />
+            <Activity className="h-4 w-4 text-primary" />
             <span>{t("landing.hero.trust2")}</span>
           </div>
         </div>
       </div>
 
-      {/* Visual side — abstract chart */}
+      {/* Visual side — benefits bento grid */}
       <div className="relative hidden lg:flex items-center justify-center">
         <div className="relative w-full max-w-[480px]">
-          <div className="rounded-2xl bg-gradient-to-br from-primary/15 via-primary/5 to-background border border-primary/10 p-6">
-            {/* Header skeleton */}
-            <div className="flex items-center justify-between mb-6">
-              <div className="h-2.5 w-20 rounded-full bg-primary/20" />
-              <div className="h-2.5 w-10 rounded-full bg-primary/20" />
+          <div className="rounded-2xl bg-gradient-to-br from-primary/15 via-primary/5 to-background border border-primary/10 p-5 space-y-3">
+            {/* Main highlight card */}
+            <div className="col-span-2 p-3 rounded-xl bg-primary/10 border border-primary/20">
+              <div className="flex items-center gap-2 mb-1">
+                <LayoutGrid className="h-4 w-4 text-primary" />
+                <span className="text-sm font-semibold">{t("landing.hero.benefit0.title")}</span>
+              </div>
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                {t("landing.hero.benefit0.description")}
+              </p>
             </div>
 
-            {/* Abstract bars */}
-            <div className="flex items-end gap-2 h-48 mb-6 px-2">
-              {[35, 55, 40, 70, 50, 85, 65, 90, 55, 80, 60, 95].map((h, i) => (
+            {/* Benefits grid */}
+            <div className="grid grid-cols-2 gap-2">
+              {benefits.map(({ icon: Icon, key }) => (
                 <div
-                  key={i}
-                  className="flex-1 rounded-t-sm bg-primary/30"
-                  style={{ height: `${h}%` }}
-                />
+                  key={key}
+                  className="p-2.5 rounded-lg bg-muted/40 border border-border/50 hover:border-primary/30 transition-colors"
+                >
+                  <Icon className="h-4 w-4 text-primary mb-1.5" />
+                  <p className="text-xs font-medium leading-tight">{t(`${key}.title`)}</p>
+                  <p className="text-[10px] text-muted-foreground leading-tight mt-0.5">
+                    {t(`${key}.description`)}
+                  </p>
+                </div>
               ))}
-            </div>
-
-            {/* Abstract line chart overlay */}
-            <svg viewBox="0 0 400 60" className="w-full h-12 mb-4">
-              <path
-                d="M0,45 Q50,40 100,30 T200,25 T300,15 T400,10"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                className="text-primary/40"
-              />
-              <path
-                d="M0,50 Q50,45 100,35 T200,30 T300,20 T400,18"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                className="text-primary/20"
-              />
-            </svg>
-
-            {/* Bottom indicators */}
-            <div className="flex gap-3">
-              <div className="flex-1 rounded-lg bg-muted/50 p-3 space-y-2">
-                <div className="h-2 w-12 rounded-full bg-primary/20" />
-                <div className="h-2 w-8 rounded-full bg-primary/30" />
-              </div>
-              <div className="flex-1 rounded-lg bg-muted/50 p-3 space-y-2">
-                <div className="h-2 w-12 rounded-full bg-primary/20" />
-                <div className="h-2 w-8 rounded-full bg-primary/30" />
-              </div>
-              <div className="flex-1 rounded-lg bg-muted/50 p-3 space-y-2">
-                <div className="h-2 w-12 rounded-full bg-primary/20" />
-                <div className="h-2 w-8 rounded-full bg-primary/30" />
-              </div>
             </div>
           </div>
         </div>

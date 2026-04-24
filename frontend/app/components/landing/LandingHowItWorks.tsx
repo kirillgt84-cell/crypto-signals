@@ -1,13 +1,13 @@
 "use client"
 
-import { UserPlus, Search, BarChart3, Rocket } from "lucide-react"
+import { Fingerprint, ScanSearch, BrainCircuit, Rocket } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { useLanguage } from "@/app/context/LanguageContext"
 
 const steps = [
-  { icon: UserPlus, key: "landing.howItWorks.step1" },
-  { icon: Search, key: "landing.howItWorks.step2" },
-  { icon: BarChart3, key: "landing.howItWorks.step3" },
+  { icon: Fingerprint, key: "landing.howItWorks.step1" },
+  { icon: ScanSearch, key: "landing.howItWorks.step2" },
+  { icon: BrainCircuit, key: "landing.howItWorks.step3" },
   { icon: Rocket, key: "landing.howItWorks.step4" },
 ]
 

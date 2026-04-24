@@ -6,7 +6,7 @@ import {
   User,
   LogOut,
   Settings,
-  Wallet,
+  Receipt,
   LayoutDashboard,
   ChevronDown,
   HelpCircle,
@@ -118,7 +118,7 @@ export function UserMenu({ onOpenAuth }: UserMenuProps) {
               <span>{t("sidebar.dashboard")}</span>
             </Link>
             <Link href="/trades" onClick={() => setOpen(false)} className="flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm hover:bg-accent transition-colors">
-              <Wallet className="size-4 text-muted-foreground" />
+              <Receipt className="size-4 text-muted-foreground" />
               <span>{t("userMenu.myTrades")}</span>
             </Link>
           </div>

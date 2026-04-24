@@ -1,29 +1,29 @@
 "use client"
 
 import {
-  BarChart3,
+  CandlestickChart,
   Flame,
-  Globe,
+  Network,
   TrendingUp,
   Layers,
-  Activity,
-  Wallet,
+  Radio,
+  PieChart,
   LineChart,
 } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { useLanguage } from "@/app/context/LanguageContext"
 
 const traderFeatures = [
-  { icon: BarChart3, key: "landing.features.trader1" },
+  { icon: CandlestickChart, key: "landing.features.trader1" },
   { icon: Flame, key: "landing.features.trader2" },
-  { icon: Activity, key: "landing.features.trader3" },
+  { icon: Radio, key: "landing.features.trader3" },
   { icon: TrendingUp, key: "landing.features.trader4" },
 ]
 
 const investorFeatures = [
-  { icon: Globe, key: "landing.features.investor1" },
+  { icon: Network, key: "landing.features.investor1" },
   { icon: Layers, key: "landing.features.investor2" },
-  { icon: Wallet, key: "landing.features.investor3" },
+  { icon: PieChart, key: "landing.features.investor3" },
   { icon: LineChart, key: "landing.features.investor4" },
 ]
 

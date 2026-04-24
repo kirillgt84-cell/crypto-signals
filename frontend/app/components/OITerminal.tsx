@@ -1,7 +1,7 @@
 "use client"
 
 import { motion } from "framer-motion"
-import { Activity, BarChart3, DollarSign, Radio } from "lucide-react"
+import { Zap, BarChart4, BadgeDollarSign, Radio } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { useLanguage } from "../context/LanguageContext"
 
@@ -141,7 +141,7 @@ export function OITerminal({ analysis, loading }: OITerminalProps) {
               initial={{ x: -10 }}
               animate={{ x: 0 }}
             >
-              <BarChart3 className="w-5 h-5 shrink-0" style={{ color: getColor(oiDir) }} />
+              <BarChart4 className="w-5 h-5 shrink-0" style={{ color: getColor(oiDir) }} />
               <span className="text-sm font-bold w-14 shrink-0" style={{ color: getColor(oiDir) }}>OI</span>
               <ProgressBar dir={oiDir} />
               <span className="text-xl font-bold shrink-0" style={{ color: getColor(oiDir) }}>{getArrow(oiDir)}</span>
@@ -158,7 +158,7 @@ export function OITerminal({ analysis, loading }: OITerminalProps) {
               animate={{ x: 0 }}
               transition={{ delay: 0.1 }}
             >
-              <DollarSign className="w-5 h-5 shrink-0" style={{ color: getColor(priceDir) }} />
+              <BadgeDollarSign className="w-5 h-5 shrink-0" style={{ color: getColor(priceDir) }} />
               <span className="text-sm font-bold w-14 shrink-0" style={{ color: getColor(priceDir) }}>PRICE</span>
               <ProgressBar dir={priceDir} />
               <span className="text-xl font-bold shrink-0" style={{ color: getColor(priceDir) }}>{getArrow(priceDir)}</span>
@@ -175,7 +175,7 @@ export function OITerminal({ analysis, loading }: OITerminalProps) {
               animate={{ x: 0 }}
               transition={{ delay: 0.2 }}
             >
-              <Activity className="w-5 h-5 shrink-0" style={{ color: getColor(volumeDir) }} />
+              <Zap className="w-5 h-5 shrink-0" style={{ color: getColor(volumeDir) }} />
               <span className="text-sm font-bold w-14 shrink-0" style={{ color: getColor(volumeDir) }}>VOLUME</span>
               <ProgressBar dir={volumeDir} />
               <span className="text-xl font-bold shrink-0" style={{ color: getColor(volumeDir) }}>{getArrow(volumeDir)}</span>

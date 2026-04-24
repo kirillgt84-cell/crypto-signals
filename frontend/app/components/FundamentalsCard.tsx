@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { motion } from "framer-motion"
-import { Activity, AlertCircle, Loader2, Info } from "lucide-react"
+import { Microscope, AlertCircle, Loader2, Info } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { cn } from "@/lib/utils"
 import { useLanguage } from "../context/LanguageContext"
@@ -194,7 +194,7 @@ export function FundamentalsCard({ symbol, loading: parentLoading }: Fundamental
       <Card className="border-amber-500/30">
         <CardHeader className="pb-2">
           <CardTitle className="flex items-center gap-2 text-sm font-bold tracking-widest text-foreground">
-            <Activity className="w-4 h-4" />
+            <Microscope className="w-4 h-4" />
             {t("fundamentals.title")}
           </CardTitle>
         </CardHeader>
@@ -214,7 +214,7 @@ export function FundamentalsCard({ symbol, loading: parentLoading }: Fundamental
       <Card className="border-amber-500/30">
         <CardHeader className="pb-2">
           <CardTitle className="flex items-center gap-2 text-sm font-bold tracking-widest text-foreground">
-            <Activity className="w-4 h-4" />
+            <Microscope className="w-4 h-4" />
             {t("fundamentals.title")}
           </CardTitle>
         </CardHeader>
@@ -255,7 +255,7 @@ export function FundamentalsCard({ symbol, loading: parentLoading }: Fundamental
     <Card className="border-amber-500/30">
       <CardHeader className="pb-2">
         <CardTitle className="flex items-center gap-2 text-sm font-bold tracking-widest text-foreground">
-          <Activity className="w-4 h-4" />
+          <Microscope className="w-4 h-4" />
           {t("fundamentals.title")}
         </CardTitle>
       </CardHeader>

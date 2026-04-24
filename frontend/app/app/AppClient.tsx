@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react"
 import { useSidebar } from "@/hooks/useSidebar"
 import Link from "next/link"
-import { TrendingUp, TrendingDown, Minus, Activity, BarChart3, Wallet, Target, Zap, Loader2, ArrowRight, Radio } from "lucide-react"
+import { TrendingUp, TrendingDown, Minus, Activity, BarChart4, BarChartHorizontal, Wallet, Crosshair, BadgeDollarSign, GitCompare, Loader2 } from "lucide-react"
 import { UserMenu } from "@/app/components/UserMenu"
 import { AuthModal } from "@/app/components/AuthModal"
 import { ProBlurOverlay } from "@/app/components/ProBlurOverlay"
@@ -256,7 +256,7 @@ function OIAnalysisCards({ data, loading, timeframe }: { data: MarketData; loadi
         subvalue={`24h: ${(data?.change_24h || 0) >= 0 ? "+" : ""}${(data?.change_24h || 0).toFixed(2)}%`}
         trend={(data?.change_24h || 0) >= 0 ? "Rising" : "Falling"}
         trendUp={(data?.change_24h || 0) >= 0}
-        icon={BarChart3}
+        icon={BadgeDollarSign}
         loading={loading}
       />
       <MetricCard
@@ -265,7 +265,7 @@ function OIAnalysisCards({ data, loading, timeframe }: { data: MarketData; loadi
         subvalue={`${(data?.oi / 1e6)?.toFixed(2) || "0.00"}M contracts`}
         trend={data?.oi_change > 0 ? "Rising" : data?.oi_change < 0 ? "Falling" : "Stable"}
         trendUp={data?.oi_change >= 0}
-        icon={Activity}
+        icon={BarChart4}
         loading={loading}
       />
       <MetricCard
@@ -274,7 +274,7 @@ function OIAnalysisCards({ data, loading, timeframe }: { data: MarketData; loadi
         subvalue={data?.volume_change !== undefined && data?.volume_change !== 0 ? `${data.volume_change >= 0 ? "+" : ""}${data.volume_change.toFixed(2)}% (${formatTfLabel(timeframe)})` : `${formatTfLabel(timeframe)} volume`}
         trend={data?.volume_change > 0 ? "Rising" : data?.volume_change < 0 ? "Falling" : "Stable"}
         trendUp={data?.volume_change >= 0}
-        icon={BarChart3}
+        icon={BarChartHorizontal}
         loading={loading}
       />
       <MetricCard
@@ -283,7 +283,7 @@ function OIAnalysisCards({ data, loading, timeframe }: { data: MarketData; loadi
         subvalue={data?.spot_volume_change !== undefined && data?.spot_volume_change !== 0 ? `${data.spot_volume_change >= 0 ? "+" : ""}${data.spot_volume_change.toFixed(2)}% (${formatTfLabel(timeframe)})` : `${formatTfLabel(timeframe)} volume`}
         trend={data?.spot_volume_change > 0 ? "Rising" : data?.spot_volume_change < 0 ? "Falling" : "Stable"}
         trendUp={data?.spot_volume_change >= 0}
-        icon={BarChart3}
+        icon={Activity}
         loading={loading}
       />
       <MetricCard
@@ -292,7 +292,7 @@ function OIAnalysisCards({ data, loading, timeframe }: { data: MarketData; loadi
         subvalue={getCVDInterpretation(data?.cvd || 0, data?.cvd_change || 0).text}
         trend={(data?.cvd || 0) > 0 ? "Buying" : (data?.cvd || 0) < 0 ? "Selling" : "Neutral"}
         trendUp={(data?.cvd || 0) > 0}
-        icon={Activity}
+        icon={GitCompare}
         loading={loading}
       />
     </div>
@@ -874,7 +874,7 @@ export default function Dashboard() {
           <Card className="flex flex-col">
             <CardHeader className="gap-2 pb-2">
               <CardTitle className="flex items-center gap-2 text-sm font-bold tracking-widest text-amber-500">
-                <Target className="w-4 h-4" />
+                <Crosshair className="w-4 h-4" />
                 {t("dashboard.entryLevels")}
               </CardTitle>
             </CardHeader>

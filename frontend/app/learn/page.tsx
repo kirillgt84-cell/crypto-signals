@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 export const metadata: Metadata = {
   title: "Learn — Crypto Trading & Market Analysis Guides | Mirkaso",
   description: "Educational guides on crypto metrics: MVRV, yield curve, ETF flows, on-chain analysis, open interest and market regimes. Level up your trading knowledge.",
-  keywords: ['crypto education', 'trading guides', 'on-chain analysis', 'yield curve explained', 'bitcoin etf flows', 'mvrv ratio'],
+  keywords: ['crypto education', 'trading guides', 'on-chain analysis', 'yield curve explained', 'bitcoin etf flows', 'mvrv ratio', 'risk parity', 'portfolio risk metrics', 'sentiment analysis', 'm2 liquidity'],
   openGraph: {
     title: "Learn — Crypto Trading & Market Analysis Guides | Mirkaso",
     description: "Educational guides on crypto metrics and market analysis",
@@ -60,6 +60,26 @@ const articles = [
     slug: "market-regimes",
     title: "Understanding Market Regimes",
     description: "Identify risk-on, risk-off and transition phases in crypto markets.",
+  },
+  {
+    slug: "risk-parity-explained",
+    title: "What is Risk Parity?",
+    description: "Build all-weather portfolios with equal risk contribution across equities, bonds, gold and crypto.",
+  },
+  {
+    slug: "portfolio-risk-metrics",
+    title: "Portfolio Risk Metrics Explained",
+    description: "Sharpe, Sortino, Max Drawdown, Calmar, Volatility and CAGR — measure risk like a pro.",
+  },
+  {
+    slug: "sentiment-analysis",
+    title: "Crypto Sentiment Analysis",
+    description: "Read market mood with Binance Long/Short ratio, Top Trader positioning and Taker Volume.",
+  },
+  {
+    slug: "m2-liquidity",
+    title: "M2 Global Liquidity & Crypto",
+    description: "Why money supply matters for Bitcoin and how to use M2 as a macro regime indicator.",
   },
 ]
 

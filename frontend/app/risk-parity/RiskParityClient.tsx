@@ -23,7 +23,7 @@ import {
   Cell,
 } from "recharts";
 import {
-  Globe,
+  Scale,
   Calculator,
   TrendingUp,
   Settings,
@@ -92,7 +92,7 @@ const STRATEGY_LABELS: Record<string, string> = {
   benchmark_100_equity: "100% Equity",
 };
 
-function getInterpretation(data: BacktestResult | null): string {
+function getInterpretation(data: BacktestResult | null, t: (key: string, vars?: Record<string, string | number>) => string): string {
   if (!data) return "";
   const rp = data.strategies.risk_parity;
   const b6040 = data.strategies.benchmark_60_40;
@@ -101,20 +101,35 @@ function getInterpretation(data: BacktestResult | null): string {
   const parts: string[] = [];
   if (rp.max_drawdown > b6040.max_drawdown) {
     parts.push(
-      `Risk Parity had a deeper drawdown (${(Math.abs(rp.max_drawdown) * 100).toFixed(1)}%) than 60/40 (${(Math.abs(b6040.max_drawdown) * 100).toFixed(1)}%).`
+      t("riskParity.interpretDrawdownWorse", {
+        rp: (Math.abs(rp.max_drawdown) * 100).toFixed(1),
+        b6040: (Math.abs(b6040.max_drawdown) * 100).toFixed(1),
+      })
     );
   } else {
     parts.push(
-      `Risk Parity reduced max drawdown to ${(Math.abs(rp.max_drawdown) * 100).toFixed(1)}% vs ${(Math.abs(b6040.max_drawdown) * 100).toFixed(1)}% for 60/40.`
+      t("riskParity.interpretDrawdownBetter", {
+        rp: (Math.abs(rp.max_drawdown) * 100).toFixed(1),
+        b6040: (Math.abs(b6040.max_drawdown) * 100).toFixed(1),
+      })
     );
   }
 
   if (rp.sharpe_ratio > b6040.sharpe_ratio) {
-    parts.push(`Sharpe ratio improved from ${b6040.sharpe_ratio.toFixed(2)} to ${rp.sharpe_ratio.toFixed(2)}.`);
+    parts.push(
+      t("riskParity.interpretSharpe", {
+        b6040: b6040.sharpe_ratio.toFixed(2),
+        rp: rp.sharpe_ratio.toFixed(2),
+      })
+    );
   }
 
   if (rp.cagr > b100.cagr * 0.5) {
-    parts.push(`CAGR of ${(rp.cagr * 100).toFixed(1)}% achieved with significantly lower volatility than 100% equity.`);
+    parts.push(
+      t("riskParity.interpretCagr", {
+        cagr: (rp.cagr * 100).toFixed(1),
+      })
+    );
   }
 
   return parts.join(" ");
@@ -285,7 +300,7 @@ export default function RiskParityClient() {
           {/* Header */}
           <div className="mb-8">
             <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2">
-              <Globe className="h-6 w-6 text-indigo-500" />
+              <Scale className="h-6 w-6 text-indigo-500" />
               {t("riskParity.title")}
             </h1>
             <p className="text-muted-foreground text-sm mt-1">
@@ -350,6 +365,29 @@ export default function RiskParityClient() {
                 )}
               </button>
             </div>
+
+            {/* Strategy Guide */}
+            <Card className="mt-4">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium">{t("riskParity.strategyInterpretationTitle")}</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs text-muted-foreground leading-relaxed">
+                  <div className="p-3 rounded-lg bg-muted/50">
+                    <p className="font-semibold text-foreground mb-1">{t("riskParity.allWeather")}</p>
+                    <p>{t("riskParity.strategyAllWeatherDesc")}</p>
+                  </div>
+                  <div className="p-3 rounded-lg bg-muted/50">
+                    <p className="font-semibold text-foreground mb-1">{t("riskParity.allWeatherCrypto")}</p>
+                    <p>{t("riskParity.strategyAllWeatherCryptoDesc")}</p>
+                  </div>
+                  <div className="p-3 rounded-lg bg-muted/50">
+                    <p className="font-semibold text-foreground mb-1">{t("riskParity.inverseVol")}</p>
+                    <p>{t("riskParity.strategyInverseVolDesc")}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           </div>
 
           {/* Calculate Section */}
@@ -407,6 +445,18 @@ export default function RiskParityClient() {
                         </BarChart>
                       </ResponsiveContainer>
                     </div>
+                  </CardContent>
+                </Card>
+
+                {/* Weights Interpretation */}
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-medium">{t("riskParity.weightsInterpretationTitle")}</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-sm text-muted-foreground leading-relaxed">
+                      {t("riskParity.weightsInterpretation")}
+                    </p>
                   </CardContent>
                 </Card>
 
@@ -591,6 +641,30 @@ export default function RiskParityClient() {
                   </CardContent>
                 </Card>
 
+                {/* Metrics Guide */}
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-medium">{t("riskParity.metricsInterpretationTitle")}</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 text-xs text-muted-foreground leading-relaxed">
+                      {[
+                        { label: "CAGR", desc: t("riskParity.metricCagrDesc") },
+                        { label: "Sharpe", desc: t("riskParity.metricSharpeDesc") },
+                        { label: "Sortino", desc: t("riskParity.metricSortinoDesc") },
+                        { label: t("riskParity.maxDrawdown"), desc: t("riskParity.metricMaxDrawdownDesc") },
+                        { label: "Calmar", desc: t("riskParity.metricCalmarDesc") },
+                        { label: t("riskParity.volatility"), desc: t("riskParity.metricVolatilityDesc") },
+                      ].map((item) => (
+                        <div key={item.label} className="p-3 rounded-lg bg-muted/50">
+                          <p className="font-semibold text-foreground mb-1">{item.label}</p>
+                          <p>{item.desc}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+
                 {/* Interpretation */}
                 <Card>
                   <CardHeader>
@@ -600,7 +674,7 @@ export default function RiskParityClient() {
                   </CardHeader>
                   <CardContent>
                     <p className="text-sm text-muted-foreground leading-relaxed">
-                      {getInterpretation(backtestData)}
+                      {getInterpretation(backtestData, t)}
                     </p>
                   </CardContent>
                 </Card>

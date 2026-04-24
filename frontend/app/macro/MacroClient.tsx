@@ -17,7 +17,7 @@ import {
   Area,
   ReferenceLine,
 } from "recharts";
-import { TrendingUp, TrendingDown, Activity, Globe, Gem, AlertTriangle } from "lucide-react";
+import { TrendingUp, TrendingDown, Activity, Network, Gem, AlertTriangle } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useLanguage } from "@/app/context/LanguageContext";
 
@@ -143,7 +143,7 @@ export default function MacroClient() {
         <div className="p-4 lg:p-8 max-w-7xl mx-auto">
           <div className="mb-8">
             <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2">
-              <Globe className="h-6 w-6 text-indigo-500" />
+              <Network className="h-6 w-6 text-indigo-500" />
               {t("macro.title")}
             </h1>
             <p className="text-muted-foreground text-sm mt-1">
@@ -541,6 +541,18 @@ export default function MacroClient() {
                   ) : (
                     <div className="text-center py-16 text-muted-foreground">{t("macro.noCorrelationData")}</div>
                   )}
+                </CardContent>
+              </Card>
+
+              {/* Correlation History Interpretation */}
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium">{t("macro.correlationHistoryInterpretationTitle")}</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm text-muted-foreground leading-relaxed">
+                    {t("macro.correlationHistoryInterpretation")}
+                  </p>
                 </CardContent>
               </Card>
             </div>

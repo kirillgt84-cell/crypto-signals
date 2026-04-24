@@ -154,5 +154,101 @@
     ],
     "cta": "Explore regime signals on Mirkaso →",
     "ctaLink": "/yield-curve"
+  },
+  "risk-parity-explained": {
+    "title": "What is Risk Parity?",
+    "subtitle": "Building All-Weather Portfolios with Equal Risk Contribution",
+    "sections": [
+      {
+        "heading": "The Problem with 60/40",
+        "content": "Traditional portfolios allocate 60% to stocks and 40% to bonds by capital. But stocks are 3–4x more volatile than bonds, so in reality 80–90% of portfolio risk comes from equities alone. When equities crash, the so-called balanced portfolio crashes with them. Risk Parity solves this by allocating capital so that each asset contributes equally to total portfolio risk."
+      },
+      {
+        "heading": "How Risk Parity Works",
+        "content": "Risk Parity uses volatility and correlation data to calculate weights where every asset — equities, bonds, commodities, gold, crypto — has the same risk budget. If one asset is highly volatile, it receives a smaller capital allocation. If two assets are highly correlated, their combined weight is reduced to avoid concentration. The result is a portfolio that performs more consistently across all economic regimes: growth, recession, inflation, and deflation."
+      },
+      {
+        "heading": "Leverage & Expected Returns",
+        "content": "Because Risk Parity portfolios are heavily weighted toward low-volatility assets like bonds, their raw returns can be modest. To reach equity-like returns, managers apply leverage — typically 2–3x. This is counter-intuitive but mathematically sound: a leveraged portfolio of diversified low-volatility assets is historically safer than an unleveraged concentrated equity portfolio."
+      },
+      {
+        "heading": "Crypto in Risk Parity",
+        "content": "Bitcoin and Ethereum add diversification benefits due to their low correlation with traditional assets. Even a 5–10% crypto allocation can improve Sharpe ratio significantly. However, crypto volatility is extreme, so RP optimization typically assigns crypto a small weight with a large risk contribution budget."
+      }
+    ],
+    "cta": "Build your Risk Parity portfolio on Mirkaso →",
+    "ctaLink": "/risk-parity"
+  },
+  "portfolio-risk-metrics": {
+    "title": "Portfolio Risk Metrics Explained",
+    "subtitle": "Sharpe, Sortino, Max Drawdown, Calmar & Volatility",
+    "sections": [
+      {
+        "heading": "Sharpe Ratio",
+        "content": "The Sharpe Ratio measures return per unit of total risk (volatility). A Sharpe above 1.5 is considered excellent; below 0.5 is poor. It penalizes both upside and downside volatility equally, which is its main limitation — not all volatility is bad."
+      },
+      {
+        "heading": "Sortino Ratio",
+        "content": "Sortino improves on Sharpe by looking only at downside volatility. It answers: how much return do you get per unit of bad risk? A high Sortino means your portfolio generates strong returns without severe drawdowns. This is often more relevant for crypto investors."
+      },
+      {
+        "heading": "Max Drawdown & Calmar",
+        "content": "Max Drawdown is the largest peak-to-trough decline. For balanced portfolios, 15–25% is typical; above 40% indicates excessive risk. The Calmar Ratio divides CAGR by Max Drawdown — a Calmar above 2.0 is strong, meaning the portfolio grows steadily without catastrophic losses."
+      },
+      {
+        "heading": "Volatility & CAGR",
+        "content": "Annualized volatility of 10–15% is moderate; above 30% is high for most investors. CAGR (Compound Annual Growth Rate) shows the smoothed yearly return. Comparing CAGR to volatility reveals whether returns justify the ride. On Mirkaso, you can analyze all six metrics across 30/90/180/365-day windows."
+      }
+    ],
+    "cta": "Analyze your portfolio risk metrics on Mirkaso →",
+    "ctaLink": "/portfolio"
+  },
+  "sentiment-analysis": {
+    "title": "Crypto Sentiment Analysis",
+    "subtitle": "Reading the Market Mood with Binance Data",
+    "sections": [
+      {
+        "heading": "Long/Short Ratio",
+        "content": "The Long/Short Ratio on Binance shows how traders are positioned. When the ratio exceeds 3.0 (75% longs), the market is overcrowded on the long side and vulnerable to long squeezes. When it drops below 1.0, bearishness is extreme and a short squeeze becomes more likely."
+      },
+      {
+        "heading": "Top Trader Ratio",
+        "content": "Binance publishes position data for top traders — accounts with the highest PnL history. When top traders are heavily net long while the crowd is short, it signals smart money conviction. Divergences between top traders and the broader user base often precede major moves."
+      },
+      {
+        "heading": "Taker Volume Ratio",
+        "content": "Taker Buy Volume measures market orders that hit the ask (aggressive buying). Taker Sell Volume hits the bid (aggressive selling). When Taker Buy Ratio exceeds 55%, buying pressure is dominant. Sustained readings above 60% often accompany breakouts; sustained sells above 60% signal distribution."
+      },
+      {
+        "heading": "How to Combine Sentiment Signals",
+        "content": "Sentiment works best as a contrarian tool at extremes and a confirmation tool in trends. In a strong uptrend, high long ratios can persist for weeks — don't fight the trend. At resistance after a 50%+ rally, extreme long ratios become a warning. Always pair sentiment with on-chain data and price structure."
+      }
+    ],
+    "cta": "View live sentiment data on Mirkaso →",
+    "ctaLink": "/app"
+  },
+  "m2-liquidity": {
+    "title": "M2 Global Liquidity & Crypto",
+    "subtitle": "Why Money Supply Matters for Bitcoin",
+    "sections": [
+      {
+        "heading": "What is M2?",
+        "content": "M2 is a broad measure of money supply that includes cash, checking deposits, savings accounts, and easily convertible near-money. It is the primary metric central banks use to track liquidity in the economy. When M2 grows, more dollars chase the same assets — stocks, real estate, and Bitcoin."
+      },
+      {
+        "heading": "M2 and Bitcoin: The Correlation",
+        "content": "Bitcoin's largest bull runs (2013, 2017, 2021, 2024) coincided with expanding M2. Conversely, the 2022 bear market aligned with the first M2 contraction in decades. The correlation is not perfect — Bitcoin also has halving cycles and adoption waves — but liquidity is the tide that lifts all boats."
+      },
+      {
+        "heading": "M2 vs Other Assets",
+        "content": "On Mirkaso, you can overlay M2 with Bitcoin, S&P 500, Gold, and VIX. Gold typically leads M2 by 3–6 months as an inflation hedge. Equities move with M2 during expansion but crash faster during contraction. VIX inversely correlates: when M2 expands, fear falls; when M2 contracts, volatility rises."
+      },
+      {
+        "heading": "Trading Implications",
+        "content": "M2 data is released monthly with a lag, so it is a regime indicator, not a timing tool. Use M2 direction to set your macro bias: expansion favors long spot positions in BTC and risk assets; contraction favors caution, stablecoins, and hedges. Combine M2 with yield curve and VIX for a complete macro picture."
+      }
+    ],
+    "cta": "Explore M2 liquidity overlay on Mirkaso →",
+    "ctaLink": "/macro"
   }
 }

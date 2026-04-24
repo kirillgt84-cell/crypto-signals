@@ -26,6 +26,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { path: '/learn/on-chain-metrics', priority: 0.6, changefreq: 'monthly' as const },
     { path: '/learn/open-interest-trading', priority: 0.6, changefreq: 'monthly' as const },
     { path: '/learn/market-regimes', priority: 0.6, changefreq: 'monthly' as const },
+    { path: '/risk-parity', priority: 0.8, changefreq: 'daily' as const },
+    { path: '/portfolio', priority: 0.8, changefreq: 'daily' as const },
+    { path: '/learn/risk-parity-explained', priority: 0.6, changefreq: 'monthly' as const },
+    { path: '/learn/portfolio-risk-metrics', priority: 0.6, changefreq: 'monthly' as const },
+    { path: '/learn/sentiment-analysis', priority: 0.6, changefreq: 'monthly' as const },
+    { path: '/learn/m2-liquidity', priority: 0.6, changefreq: 'monthly' as const },
   ]
 
   return routes.map((route) => ({

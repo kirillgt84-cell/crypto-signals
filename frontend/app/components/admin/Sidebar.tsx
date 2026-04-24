@@ -6,15 +6,16 @@ import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { 
   LayoutDashboard,
-  Shield,
+  ShieldCheck,
   ChevronLeft,
   ChevronRight,
   Menu,
-  Zap,
   Crown,
-  Wallet,
-  Globe,
-  TrendingUp
+  Briefcase,
+  Network,
+  Scale,
+  GitBranch,
+  ScanEye
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Logo } from '../Logo';
@@ -37,13 +38,13 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
 
   const navItems = [
     { href: '/', label: t('sidebar.dashboard'), icon: LayoutDashboard },
-    { href: '/portfolio', label: t('sidebar.portfolio'), icon: Wallet },
-    { href: '/signals', label: t('sidebar.signals'), icon: Zap },
-    { href: '/macro', label: t('sidebar.macro'), icon: Globe },
-    { href: '/risk-parity', label: t('sidebar.riskParity'), icon: TrendingUp },
-    { href: '/yield-curve', label: t('sidebar.yieldCurve'), icon: TrendingUp },
+    { href: '/portfolio', label: t('sidebar.portfolio'), icon: Briefcase },
+    { href: '/signals', label: t('sidebar.signals'), icon: ScanEye },
+    { href: '/macro', label: t('sidebar.macro'), icon: Network },
+    { href: '/risk-parity', label: t('sidebar.riskParity'), icon: Scale },
+    { href: '/yield-curve', label: t('sidebar.yieldCurve'), icon: GitBranch },
     { href: '/pricing', label: t('sidebar.pricing'), icon: Crown },
-    ...(isAdmin ? [{ href: '/admin', label: t('sidebar.admin'), icon: Shield }] : []),
+    ...(isAdmin ? [{ href: '/admin', label: t('sidebar.admin'), icon: ShieldCheck }] : []),
   ];
 
   return (
