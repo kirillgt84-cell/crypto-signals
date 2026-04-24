@@ -177,7 +177,7 @@ async def get_oi_analysis(
         db = get_db()
         
         # Ищем OI за соответствующий таймфрейм назад
-        hours_map = {"1h": 1, "4h": 4, "1d": 24, "3d": 72, "1w": 168}
+        hours_map = {"15m": 0.25, "1h": 1, "4h": 4, "1d": 24, "3d": 72, "1w": 168}
         hours = hours_map.get(timeframe, 1)
         minutes = hours * 60
         
@@ -214,22 +214,25 @@ async def get_oi_analysis(
                 [symbol_upper]
             )
         
-        # Расчет изменения OI из БД (если есть история)
-        if old_data and len(old_data) > 0:
+        # Если fetcher уже дал OI change (через openInterestHist), оставляем его
+        # Иначе fallback на расчет из БД
+        if data.get('oi_change_24h', 0) == 0 and old_data and len(old_data) > 0:
             old_oi = old_data[0]['open_interest']
             current_oi = data.get('open_interest', 0)
             oi_change_pct = ((current_oi - old_oi) / old_oi * 100) if old_oi > 0 else 0
             data['oi_change_24h'] = round(oi_change_pct, 2)
             data['oi_change_value'] = round(current_oi - old_oi, 2)
-            print(f"DEBUG router: OI calc - current={current_oi}, old={old_oi}, change={oi_change_pct:.2f}%")
-            
-            # Расчет изменения фьючерсного объема
+            print(f"DEBUG router fallback: OI calc - current={current_oi}, old={old_oi}, change={oi_change_pct:.2f}%")
+        else:
+            print(f"DEBUG router: using fetcher OI change={data.get('oi_change_24h', 0)}%")
+        
+        # Расчет изменения фьючерсного и спотового объема из БД
+        if old_data and len(old_data) > 0:
             old_volume = old_data[0].get('volume', 0) or 0
             current_volume = data.get('volume_24h', 0)
             volume_change_pct = ((current_volume - old_volume) / old_volume * 100) if old_volume > 0 else 0
             data['volume_change'] = round(volume_change_pct, 2)
             
-            # Расчет изменения спотового объема
             old_spot_volume = old_data[0].get('spot_volume', 0) or 0
             spot_data = await fetcher.get_spot_volume(symbol_upper, timeframe)
             current_spot_volume = spot_data.get('spot_volume', 0)
@@ -237,9 +240,6 @@ async def get_oi_analysis(
             data['spot_volume'] = current_spot_volume
             data['spot_volume_change'] = round(spot_volume_change_pct, 2)
         else:
-            # Нет исторических данных - оставляем 0
-            data['oi_change_24h'] = 0
-            data['oi_change_value'] = 0
             data['volume_change'] = data.get('volume_change', 0)
             spot_data = await fetcher.get_spot_volume(symbol_upper, timeframe)
             data['spot_volume'] = spot_data.get('spot_volume', 0)

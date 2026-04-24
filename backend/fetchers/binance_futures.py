@@ -23,22 +23,46 @@ class BinanceFuturesFetcher:
     async def get_oi_analysis(self, symbol: str = "BTCUSDT", timeframe: str = "1h") -> Dict:
         """
         Получает Open Interest + цену + объем + интерпретацию
-        timeframe: 1h, 4h, 1d - влияет на расчет изменений
+        timeframe: 15m, 1h, 4h, 1d - влияет на расчет изменений
         """
         session = await self._get_session()
         
-        # Маппинг таймфреймов к часам для расчета изменений
-        tf_hours = {"1h": 1, "4h": 4, "1d": 24}
-        hours = tf_hours.get(timeframe, 1)
-        
         try:
-            # Текущий OI
+            # Текущий OI (всегда snapshot)
             async with session.get(
                 f"{self.BASE_URL}/fapi/v1/openInterest",
                 params={"symbol": symbol},
                 headers={"Accept": "application/json"}
             ) as resp:
                 oi_data = await resp.json()
+            
+            # Исторический OI для расчета изменения за выбранный таймфрейм
+            # Binance поддерживает: 5m, 15m, 30m, 1h, 2h, 4h, 6h, 12h, 1d
+            oi_hist_data = None
+            supported_tf = ["5m", "15m", "30m", "1h", "2h", "4h", "6h", "12h", "1d"]
+            if timeframe in supported_tf:
+                try:
+                    async with session.get(
+                        f"{self.BASE_URL}/fapi/v1/openInterestHist",
+                        params={"symbol": symbol, "period": timeframe, "limit": 2},
+                        headers={"Accept": "application/json"}
+                    ) as resp:
+                        oi_hist_data = await resp.json()
+                except Exception as e:
+                    print(f"DEBUG: openInterestHist failed for {symbol} {timeframe}: {e}")
+            
+            current_oi = float(oi_data['openInterest'])
+            
+            # Расчет изменения OI из исторических данных
+            oi_change_pct = 0
+            oi_change_value = 0
+            if isinstance(oi_hist_data, list) and len(oi_hist_data) >= 2:
+                prev_oi = float(oi_hist_data[-2].get('sumOpenInterest', 0))
+                curr_oi_hist = float(oi_hist_data[-1].get('sumOpenInterest', 0))
+                if prev_oi > 0:
+                    oi_change_pct = ((curr_oi_hist - prev_oi) / prev_oi) * 100
+                    oi_change_value = curr_oi_hist - prev_oi
+                print(f"DEBUG: OI hist change {timeframe}: prev={prev_oi}, curr={curr_oi_hist}, change={oi_change_pct:.2f}%")
             
             # Цена и объем за период (берем изменение за указанный период из klines)
             async with session.get(
@@ -47,8 +71,6 @@ class BinanceFuturesFetcher:
                 headers={"Accept": "application/json"}
             ) as resp:
                 klines = await resp.json()
-            
-            current_oi = float(oi_data['openInterest'])
             
             # Расчет изменения цены и объема за период
             print(f"DEBUG: klines type={type(klines)}, is_list={isinstance(klines, list)}")
@@ -69,11 +91,6 @@ class BinanceFuturesFetcher:
                 price_change_pct = 0
                 volume_change_pct = 0
                 volume = 0
-            
-            # OI change рассчитывается в router из истории БД (scheduler сохраняет OI каждые 5 мин)
-            # Здесь оставляем только текущее значение
-            oi_change_pct = 0
-            oi_change_value = 0
             
             # Get mark price as fallback if klines failed
             mark_price = None

@@ -34,7 +34,7 @@ import { API_BASE_URL } from "@/app/lib/api"
 const symbols = ["BTC", "ETH", "SOL", "BNB", "XRP", "DOGE", "ADA", "LINK", "AVAX", "POL"]
 
 const timeframes = [
-  { value: "15", label: "M15", api: "1h" },
+  { value: "15", label: "M15", api: "15m" },
   { value: "60", label: "1H", api: "1h" },
   { value: "240", label: "4H", api: "4h" },
   { value: "D", label: "1D", api: "1d" },
