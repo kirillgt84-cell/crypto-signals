@@ -22,7 +22,7 @@ async def sync_macro_prices():
             asset_id = asset["id"]
             key = asset["key"]
             try:
-                hist = await fetcher.get_historical(key, period="1y", interval="1d")
+                hist = await fetcher.get_historical(key, period="5y", interval="1d")
                 for candle in hist:
                     dt = candle["time"]
                     if isinstance(dt, datetime) and dt.tzinfo is not None:

@@ -55,10 +55,10 @@ export default function MacroClient() {
     try {
       const [latestRes, corrRes, spxRes, goldRes, m2Res] = await Promise.all([
         fetch(`${API_BASE_URL}/macro/latest`),
-        fetch(`${API_BASE_URL}/macro/correlations?limit=365`),
-        fetch(`${API_BASE_URL}/macro/prices/spx500?limit=365`),
-        fetch(`${API_BASE_URL}/macro/prices/gold?limit=365`),
-        fetch(`${API_BASE_URL}/macro/m2-comparison?assets=btc,spx,gold,vix&days=365`),
+        fetch(`${API_BASE_URL}/macro/correlations?limit=60&interval=monthly`),
+        fetch(`${API_BASE_URL}/macro/prices/spx500?limit=60&interval=monthly`),
+        fetch(`${API_BASE_URL}/macro/prices/gold?limit=60&interval=monthly`),
+        fetch(`${API_BASE_URL}/macro/m2-comparison?assets=btc,spx,gold,vix&days=1825`),
       ]);
       if (latestRes.ok) setLatest(await latestRes.json());
       if (corrRes.ok) setCorrelations(await corrRes.json());
@@ -331,7 +331,7 @@ export default function MacroClient() {
                             tick={{ fontSize: 10, fill: "#64748b" }}
                             tickFormatter={(val: string) => {
                               const d = new Date(val);
-                              return `${d.getMonth() + 1}/${d.getFullYear() % 100}`;
+                              return d.toLocaleDateString(locale, { month: 'short', year: 'numeric' });
                             }}
                             interval="preserveStartEnd"
                             minTickGap={30}
@@ -446,7 +446,7 @@ export default function MacroClient() {
                     <ResponsiveContainer width="100%" height={350} minWidth={0} minHeight={0}>
                       <LineChart data={mergedChart}>
                         <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
-                        <XAxis dataKey="date" tick={{ fontSize: 11 }} tickFormatter={(val: string) => new Date(val).toLocaleDateString(locale, { month: 'short', year: '2-digit' })} />
+                        <XAxis dataKey="date" tick={{ fontSize: 11 }} tickFormatter={(val: string) => new Date(val).toLocaleDateString(locale, { month: 'short', year: 'numeric' })} />
                         <YAxis tick={{ fontSize: 11 }} tickFormatter={(v: number) => `${v.toFixed(0)}%`} />
                         <Tooltip formatter={(value: number, name: string) => [`${value?.toFixed(1)}%`, name]} />
                         <Legend />
@@ -528,7 +528,7 @@ export default function MacroClient() {
                           </linearGradient>
                         </defs>
                         <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
-                        <XAxis dataKey="date" tick={{ fontSize: 10 }} minTickGap={30} tickFormatter={(val: string) => new Date(val).toLocaleDateString(locale, { month: 'short', year: '2-digit' })} />
+                        <XAxis dataKey="date" tick={{ fontSize: 10 }} minTickGap={30} tickFormatter={(val: string) => new Date(val).toLocaleDateString(locale, { month: 'short', year: 'numeric' })} />
                         <YAxis domain={[-1, 1]} tick={{ fontSize: 11 }} />
                         <Tooltip formatter={(value: number, name: string) => [value, name]} />
                         <Legend />

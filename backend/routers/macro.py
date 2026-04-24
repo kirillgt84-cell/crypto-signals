@@ -18,26 +18,60 @@ async def list_macro_assets():
 
 
 @router.get("/prices/{asset_key}")
-async def get_macro_prices(asset_key: str, limit: int = 90):
+async def get_macro_prices(asset_key: str, limit: int = 90, interval: str = "daily"):
     db = get_db()
     asset = await db.query("SELECT id FROM macro_assets WHERE key = $1 LIMIT 1", [asset_key])
     if not asset:
         return {"error": "Asset not found"}
-    rows = await db.query(
-        """SELECT time, close_price, volume FROM macro_prices
-           WHERE asset_id = $1 ORDER BY time DESC LIMIT $2""",
-        [asset[0]["id"], limit],
-    )
+
+    if interval == "monthly":
+        rows = await db.query(
+            """SELECT DISTINCT ON (DATE_TRUNC('month', time))
+                      time as month,
+                      time,
+                      close_price,
+                      volume
+               FROM macro_prices
+               WHERE asset_id = $1
+               ORDER BY DATE_TRUNC('month', time), time DESC
+               LIMIT $2""",
+            [asset[0]["id"], limit],
+        )
+    else:
+        rows = await db.query(
+            """SELECT time, close_price, volume FROM macro_prices
+               WHERE asset_id = $1 ORDER BY time DESC LIMIT $2""",
+            [asset[0]["id"], limit],
+        )
     return [dict(r) for r in rows]
 
 
 @router.get("/correlations")
-async def get_correlations(limit: int = 90):
+async def get_correlations(limit: int = 90, interval: str = "daily"):
     db = get_db()
-    rows = await db.query(
-        """SELECT * FROM macro_correlations ORDER BY date DESC LIMIT $1""",
-        [limit],
-    )
+    if interval == "monthly":
+        rows = await db.query(
+            """SELECT DISTINCT ON (DATE_TRUNC('month', date))
+                      date as month,
+                      date,
+                      btc_spx_correlation,
+                      gold_btc_correlation,
+                      vix_btc_correlation,
+                      vix_level,
+                      btc_price,
+                      spx_price,
+                      gold_price,
+                      calculated_at
+               FROM macro_correlations
+               ORDER BY DATE_TRUNC('month', date), date DESC
+               LIMIT $1""",
+            [limit],
+        )
+    else:
+        rows = await db.query(
+            """SELECT * FROM macro_correlations ORDER BY date DESC LIMIT $1""",
+            [limit],
+        )
     return [dict(r) for r in rows]
 
 
