@@ -10,7 +10,7 @@ export function LandingHero() {
 
   return (
     <section className="container flex flex-col items-center justify-center text-center py-20 md:py-32 gap-6">
-      <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold leading-[1.1] max-w-4xl">
+      <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold leading-[1.15] max-w-4xl">
         {t("landing.hero.title1")}{" "}
         <span className="bg-gradient-to-r from-primary to-primary/60 text-transparent bg-clip-text">
           {t("landing.hero.titleHighlight")}
