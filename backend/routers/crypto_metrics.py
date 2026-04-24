@@ -13,7 +13,7 @@ from fastapi import APIRouter
 from pydantic import BaseModel
 
 logger = logging.getLogger(__name__)
-router = APIRouter(prefix="/crypto-metrics", tags=["crypto-metrics"])
+router = APIRouter(prefix="/api/v1/crypto-metrics", tags=["crypto-metrics"])
 
 # In-memory cache with TTL
 _cache: dict = {}
