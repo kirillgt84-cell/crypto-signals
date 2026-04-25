@@ -28,6 +28,7 @@ import {
   TrendingUp,
   Settings,
   Loader2,
+  Bot,
 } from "lucide-react";
 
 interface Strategy {
@@ -137,7 +138,7 @@ function getInterpretation(data: BacktestResult | null, t: (key: string, vars?: 
 
 export default function RiskParityClient() {
   const { collapsed: sidebarCollapsed, toggle: toggleSidebar } = useSidebar();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const [strategies, setStrategies] = useState<Strategy[]>([]);
   const [selectedStrategy, setSelectedStrategy] = useState<string | null>(null);
   const [customTickers, setCustomTickers] = useState("");
@@ -148,6 +149,8 @@ export default function RiskParityClient() {
   const [backtestPeriod, setBacktestPeriod] = useState("10y");
   const [backtestError, setBacktestError] = useState<string | null>(null);
   const [calculateError, setCalculateError] = useState<string | null>(null);
+  const [aiInsight, setAiInsight] = useState<string>("");
+  const [aiInsightLoading, setAiInsightLoading] = useState(false);
 
   useEffect(() => {
     fetch(`${API_BASE_URL}/risk-parity/strategies`)
@@ -238,6 +241,36 @@ export default function RiskParityClient() {
     }
   };
 
+  const fetchAiInsight = async () => {
+    const tickers = getTickers();
+    if (tickers.length === 0) return;
+    setAiInsightLoading(true);
+    setAiInsight("");
+    try {
+      const res = await fetch(`${API_BASE_URL}/risk-parity/ai-insight?lang=${language}`, {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          tickers,
+          backtest: backtestData,
+          weights: weightsData,
+          period: backtestPeriod,
+        }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setAiInsight(data.insight || "No insight available.");
+      } else {
+        setAiInsight("AI insight unavailable at the moment.");
+      }
+    } catch {
+      setAiInsight("AI insight unavailable at the moment.");
+    } finally {
+      setAiInsightLoading(false);
+    }
+  };
+
   const weightsChartData = weightsData
     ? Object.keys(weightsData.risk_parity.weights).map((ticker) => ({
         ticker,
@@ -314,27 +347,27 @@ export default function RiskParityClient() {
               <Settings className="h-5 w-5 text-indigo-500" />
               {t("riskParity.selectStrategy")}
             </h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
               {strategies.map((s) => (
                 <button
                   key={s.id}
                   onClick={() => setSelectedStrategy(s.id)}
                   className={cn(
-                    "rounded-xl border p-5 text-left transition-all",
+                    "rounded-xl border p-7 text-left transition-all",
                     selectedStrategy === s.id
                       ? "border-indigo-500 bg-indigo-500/5 ring-1 ring-indigo-500"
                       : "border-border hover:border-indigo-300"
                   )}
                 >
-                  <h3 className="font-semibold mb-1">{s.name}</h3>
-                  <p className="text-xs text-muted-foreground mb-3">
+                  <h3 className="text-lg font-semibold mb-2">{s.name}</h3>
+                  <p className="text-sm text-muted-foreground mb-4">
                     {s.description}
                   </p>
-                  <div className="flex flex-wrap gap-1">
+                  <div className="flex flex-wrap gap-2">
                     {s.tickers.map((t) => (
                       <span
                         key={t}
-                        className="text-[10px] px-1.5 py-0.5 rounded bg-muted font-mono"
+                        className="text-xs px-2.5 py-1 rounded-md bg-muted font-mono"
                       >
                         {t}
                       </span>
@@ -345,14 +378,14 @@ export default function RiskParityClient() {
               <button
                 onClick={() => setSelectedStrategy("custom")}
                 className={cn(
-                  "rounded-xl border p-5 text-left transition-all",
+                  "rounded-xl border p-7 text-left transition-all",
                   selectedStrategy === "custom"
                     ? "border-indigo-500 bg-indigo-500/5 ring-1 ring-indigo-500"
                     : "border-border hover:border-indigo-300"
                 )}
               >
-                <h3 className="font-semibold mb-1">{t("riskParity.custom")}</h3>
-                <p className="text-xs text-muted-foreground mb-3">
+                <h3 className="text-lg font-semibold mb-2">{t("riskParity.custom")}</h3>
+                <p className="text-sm text-muted-foreground mb-4">
                   {t("riskParity.customTickers")}
                 </p>
                 {selectedStrategy === "custom" && (
@@ -360,7 +393,7 @@ export default function RiskParityClient() {
                     value={customTickers}
                     onChange={(e) => setCustomTickers(e.target.value)}
                     placeholder="SPY, TLT, GLD, BTC-USD"
-                    className="text-xs"
+                    className="text-sm"
                   />
                 )}
               </button>
@@ -678,6 +711,36 @@ export default function RiskParityClient() {
                     </p>
                   </CardContent>
                 </Card>
+
+                {/* AI Insight */}
+                <div className="rounded-xl border bg-card p-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-lg font-semibold flex items-center gap-2">
+                      <Bot className="h-5 w-5 text-indigo-500" />
+                      {t("riskParity.aiInsight")}
+                    </h3>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={fetchAiInsight}
+                      disabled={aiInsightLoading}
+                    >
+                      {aiInsightLoading ? (
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      ) : null}
+                      {t("common.analyze")}
+                    </Button>
+                  </div>
+                  {aiInsight ? (
+                    <div className="text-sm text-muted-foreground leading-relaxed whitespace-pre-wrap">
+                      {aiInsight}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-muted-foreground">
+                      {t("riskParity.aiInsightDescription")}
+                    </p>
+                  )}
+                </div>
               </div>
             )}
           </div>

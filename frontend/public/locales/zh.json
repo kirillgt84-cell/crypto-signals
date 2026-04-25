@@ -1,5 +1,6 @@
 {
   "common.loading": "加载中...",
+  "common.analyze": "分析",
   "common.error": "错误",
   "common.save": "保存",
   "common.cancel": "取消",
@@ -556,6 +557,8 @@
   "riskParity.interpretDrawdownBetter": "风险平价将最大回撤降至 {{rp}}%，而 60/40 为 {{b6040}}%。",
   "riskParity.interpretSharpe": "夏普比率从 {{b6040}} 提升至 {{rp}}。",
   "riskParity.interpretCagr": "实现了 {{cagr}}% 的复合年均增长率，波动率显著低于 100% 股票组合。",
+  "riskParity.aiInsight": "AI 洞察",
+  "riskParity.aiInsightDescription": "点击分析，获取风险平价配置和回测结果的 AI 解读。",
   "admin.title": "管理后台",
   "admin.subtitle": "概览、分析与用户管理。",
   "admin.totalUsers": "总用户数",

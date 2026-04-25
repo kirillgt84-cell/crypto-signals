@@ -1,5 +1,6 @@
 {
   "common.loading": "Cargando...",
+  "common.analyze": "Analizar",
   "common.error": "Error",
   "common.save": "Guardar",
   "common.cancel": "Cancelar",
@@ -556,6 +557,8 @@
   "riskParity.interpretDrawdownBetter": "Risk Parity redujo el máximo drawdown a {{rp}}% vs {{b6040}}% para 60/40.",
   "riskParity.interpretSharpe": "El ratio de Sharpe mejoró de {{b6040}} a {{rp}}.",
   "riskParity.interpretCagr": "CAGR de {{cagr}}% logrado con volatilidad significativamente menor que 100% equity.",
+  "riskParity.aiInsight": "Análisis de IA",
+  "riskParity.aiInsightDescription": "Haz clic en Analizar para obtener una interpretación con IA de la asignación de risk parity y los resultados del backtest.",
   "admin.title": "Panel de Admin",
   "admin.subtitle": "Resumen, análisis y gestión de usuarios.",
   "admin.totalUsers": "Usuarios Totales",

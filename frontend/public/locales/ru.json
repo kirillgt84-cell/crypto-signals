@@ -1,5 +1,6 @@
 {
   "common.loading": "Загрузка...",
+  "common.analyze": "Анализировать",
   "common.error": "Ошибка",
   "common.save": "Сохранить",
   "common.cancel": "Отмена",
@@ -556,6 +557,8 @@
   "riskParity.interpretDrawdownBetter": "Risk Parity снизил макс. просадку до {{rp}}% против {{b6040}}% у 60/40.",
   "riskParity.interpretSharpe": "Коэффициент Шарпа улучшился с {{b6040}} до {{rp}}.",
   "riskParity.interpretCagr": "CAGR {{cagr}}% достигнут при значительно меньшей волатильности, чем 100% акции.",
+  "riskParity.aiInsight": "AI Анализ",
+  "riskParity.aiInsightDescription": "Нажмите Анализировать, чтобы получить AI-интерпретацию распределения risk parity и результатов бэктеста.",
   "admin.title": "Админ-панель",
   "admin.subtitle": "Обзор, аналитика и управление пользователями.",
   "admin.totalUsers": "Всего пользователей",

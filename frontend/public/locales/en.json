@@ -1,5 +1,6 @@
 {
   "common.loading": "Loading...",
+  "common.analyze": "Analyze",
   "common.error": "Error",
   "common.save": "Save",
   "common.cancel": "Cancel",
@@ -556,6 +557,8 @@
   "riskParity.interpretDrawdownBetter": "Risk Parity reduced max drawdown to {{rp}}% vs {{b6040}}% for 60/40.",
   "riskParity.interpretSharpe": "Sharpe ratio improved from {{b6040}} to {{rp}}.",
   "riskParity.interpretCagr": "CAGR of {{cagr}}% achieved with significantly lower volatility than 100% equity.",
+  "riskParity.aiInsight": "AI Insight",
+  "riskParity.aiInsightDescription": "Click Analyze to get an AI-powered interpretation of the risk parity allocation and backtest results.",
   "admin.title": "Admin Dashboard",
   "admin.subtitle": "Overview, analytics and user management.",
   "admin.totalUsers": "Total Users",
