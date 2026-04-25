@@ -2,7 +2,7 @@
 Portfolio router: Binance API connection, sync, manual assets, models, deviation.
 """
 from typing import Optional
-from fastapi import APIRouter, HTTPException, Depends, Request
+from fastapi import APIRouter, HTTPException, Depends, Request, Query
 from pydantic import BaseModel
 from database import get_db
 from routers.auth import get_current_user, get_current_user_optional
@@ -480,10 +480,14 @@ OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions"
 
 
 @router.get("/ai-insight")
-async def ai_insight(current_user: dict = Depends(get_current_user)):
+async def ai_insight(lang: str = Query("en", description="User language: en, ru, es, zh"), current_user: dict = Depends(get_current_user)):
     """Get AI interpretation of portfolio allocation. Neutral wording, no investment advice."""
     summary = await get_portfolio_summary(current_user["id"])
     assets = summary.get("assets", []) if summary else []
+
+    # Map lang codes to language names for the prompt
+    LANG_NAMES = {"en": "English", "ru": "Russian", "es": "Spanish", "zh": "Chinese"}
+    language_name = LANG_NAMES.get(lang, "English")
 
     # Fallback to selected model if real portfolio is empty
     if not assets:
@@ -511,7 +515,8 @@ async def ai_insight(current_user: dict = Depends(get_current_user)):
             "Describe the current distribution, concentration risks, and how it compares to typical diversified portfolios. "
             "Do NOT give investment advice or recommend buying/selling. Keep it under 200 words.\n\n"
             f"Model portfolio value: ${total:,.2f} (notional)\n"
-            "Allocation by asset:\n" + "\n".join(lines)
+            "Allocation by asset:\n" + "\n".join(lines) +
+            f"\n\nRespond in {language_name}."
         )
     else:
         total = summary.get("total_notional", 0)
@@ -528,7 +533,8 @@ async def ai_insight(current_user: dict = Depends(get_current_user)):
             "Describe the current distribution, concentration risks, and how it compares to typical diversified portfolios. "
             "Do NOT give investment advice or recommend buying/selling. Keep it under 200 words.\n\n"
             f"Total portfolio value: ${total:,.2f}\n"
-            "Allocation by category:\n" + "\n".join(lines)
+            "Allocation by category:\n" + "\n".join(lines) +
+            f"\n\nRespond in {language_name}."
         )
 
     if not OPENROUTER_API_KEY:

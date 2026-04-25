@@ -394,7 +394,7 @@ class TestAiInsight:
         }
         from routers.portfolio import ai_insight
         with patch("routers.portfolio.OPENROUTER_API_KEY", ""):
-            result = await ai_insight({"id": 42})
+            result = await ai_insight(lang="en", current_user={"id": 42})
         assert "require" in result["insight"].lower()
 
     @patch("routers.portfolio.get_db")
@@ -405,5 +405,5 @@ class TestAiInsight:
         mock_db.query = AsyncMock(return_value=[])
         from routers.portfolio import ai_insight
         with pytest.raises(HTTPException) as exc:
-            await ai_insight({"id": 42})
+            await ai_insight(lang="en", current_user={"id": 42})
         assert exc.value.status_code == 400

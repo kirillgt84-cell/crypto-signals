@@ -164,7 +164,7 @@ export default function PortfolioClient() {
   const { collapsed: sidebarCollapsed, toggle: toggleSidebar } = useSidebar();
   const [mounted, setMounted] = useState(false);
   const [summary, setSummary] = useState<PortfolioSummary | null>(null);
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
 
   useEffect(() => {
     setMounted(true);
@@ -461,7 +461,7 @@ export default function PortfolioClient() {
     if (!user || !summary) return;
     setAiInsight(t("common.loading"));
     try {
-      const res = await fetch(`${API_BASE_URL}/portfolio/ai-insight`, { credentials: 'include', headers });
+      const res = await fetch(`${API_BASE_URL}/portfolio/ai-insight?lang=${language}`, { credentials: 'include', headers });
       if (res.ok) {
         const data = await res.json();
         setAiInsight(data.insight || "No insight available.");
