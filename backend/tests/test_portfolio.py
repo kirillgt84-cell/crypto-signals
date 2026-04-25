@@ -397,9 +397,12 @@ class TestAiInsight:
             result = await ai_insight({"id": 42})
         assert "require" in result["insight"].lower()
 
+    @patch("routers.portfolio.get_db")
     @patch("routers.portfolio.get_portfolio_summary")
-    async def test_ai_insight_empty_portfolio(self, mock_summary):
+    async def test_ai_insight_empty_portfolio(self, mock_summary, mock_get_db, mock_db):
         mock_summary.return_value = {"assets": []}
+        mock_get_db.return_value = mock_db
+        mock_db.query = AsyncMock(return_value=[])
         from routers.portfolio import ai_insight
         with pytest.raises(HTTPException) as exc:
             await ai_insight({"id": 42})

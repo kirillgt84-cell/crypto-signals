@@ -483,25 +483,53 @@ OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions"
 async def ai_insight(current_user: dict = Depends(get_current_user)):
     """Get AI interpretation of portfolio allocation. Neutral wording, no investment advice."""
     summary = await get_portfolio_summary(current_user["id"])
-    if not summary or not summary.get("assets"):
-        raise HTTPException(status_code=400, detail="Portfolio is empty")
+    assets = summary.get("assets", []) if summary else []
 
-    total = summary.get("total_notional", 0)
-    categories = summary.get("categories", {})
-    lines = []
-    for cat_name, data in categories.items():
-        weight = data.get("weight_pct", 0)
-        pnl = data.get("pnl", 0)
-        lines.append(f"- {cat_name}: {weight:.1f}% (${data.get('notional', 0):,.0f}), PnL: ${pnl:,.2f}")
+    # Fallback to selected model if real portfolio is empty
+    if not assets:
+        db = get_db()
+        settings = await db.query(
+            "SELECT selected_model_id FROM user_portfolio_settings WHERE user_id = $1",
+            [current_user["id"]],
+        )
+        if not settings or not settings[0].get("selected_model_id"):
+            raise HTTPException(status_code=400, detail="Portfolio is empty. Add assets or select a model.")
 
-    prompt = (
-        "You are a neutral portfolio analytics assistant. "
-        "Analyze the following crypto portfolio allocation. "
-        "Describe the current distribution, concentration risks, and how it compares to typical diversified portfolios. "
-        "Do NOT give investment advice or recommend buying/selling. Keep it under 200 words.\n\n"
-        f"Total portfolio value: ${total:,.2f}\n"
-        "Allocation by category:\n" + "\n".join(lines)
-    )
+        model_id = settings[0]["selected_model_id"]
+        model_assets = await db.query(
+            "SELECT asset_symbol, asset_name, target_weight FROM portfolio_model_assets WHERE model_id = $1 ORDER BY target_weight DESC",
+            [model_id],
+        )
+        if not model_assets:
+            raise HTTPException(status_code=400, detail="Portfolio is empty. Add assets or select a model.")
+
+        total = 100.0
+        lines = [f"- {a['asset_name'] or a['asset_symbol']}: {float(a['target_weight']):.1f}%" for a in model_assets]
+        prompt = (
+            "You are a neutral portfolio analytics assistant. "
+            "Analyze the following model portfolio allocation. "
+            "Describe the current distribution, concentration risks, and how it compares to typical diversified portfolios. "
+            "Do NOT give investment advice or recommend buying/selling. Keep it under 200 words.\n\n"
+            f"Model portfolio value: ${total:,.2f} (notional)\n"
+            "Allocation by asset:\n" + "\n".join(lines)
+        )
+    else:
+        total = summary.get("total_notional", 0)
+        categories = summary.get("categories", {})
+        lines = []
+        for cat_name, data in categories.items():
+            weight = data.get("weight_pct", 0)
+            pnl = data.get("pnl", 0)
+            lines.append(f"- {cat_name}: {weight:.1f}% (${data.get('notional', 0):,.0f}), PnL: ${pnl:,.2f}")
+
+        prompt = (
+            "You are a neutral portfolio analytics assistant. "
+            "Analyze the following crypto portfolio allocation. "
+            "Describe the current distribution, concentration risks, and how it compares to typical diversified portfolios. "
+            "Do NOT give investment advice or recommend buying/selling. Keep it under 200 words.\n\n"
+            f"Total portfolio value: ${total:,.2f}\n"
+            "Allocation by category:\n" + "\n".join(lines)
+        )
 
     if not OPENROUTER_API_KEY:
         return {"insight": "AI insights require OPENROUTER_API_KEY to be configured."}

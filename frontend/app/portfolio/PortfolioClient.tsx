@@ -983,7 +983,7 @@ export default function PortfolioClient() {
                 </Button>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 {models.map((model) => {
                   const isSelected = selectedModelId === model.id;
                   const hasAssets = model.asset_allocations && model.asset_allocations.length > 0;
@@ -991,14 +991,14 @@ export default function PortfolioClient() {
                     <div
                       key={model.id}
                       className={cn(
-                        "rounded-xl border p-5 transition-all relative",
+                        "rounded-xl border p-6 transition-all relative",
                         isSelected
                           ? "border-indigo-500 bg-indigo-500/5 ring-1 ring-indigo-500"
                           : "border-border hover:border-indigo-300"
                       )}
                     >
-                      <div className="flex items-center justify-between mb-2">
-                        <h3 className="font-semibold">{model.name}</h3>
+                      <div className="flex items-center justify-between mb-3">
+                        <h3 className="text-xl font-semibold">{model.name}</h3>
                         <div className="flex items-center gap-2">
                           {isSelected && <CheckCircle2 className="h-5 w-5 text-indigo-500" />}
                           {model.is_custom && (
@@ -1016,10 +1016,10 @@ export default function PortfolioClient() {
                           )}
                         </div>
                       </div>
-                      <p className="text-sm text-muted-foreground mb-3">{model.description}</p>
-                      <div className="space-y-1 mb-4">
+                      <p className="text-base text-muted-foreground mb-4">{model.description}</p>
+                      <div className="space-y-2 mb-5">
                         {(hasAssets ? model.asset_allocations : model.allocations).map((a: any) => (
-                          <div key={a.asset_symbol || a.category_name} className="flex items-center justify-between text-xs">
+                          <div key={a.asset_symbol || a.category_name} className="flex items-center justify-between text-sm">
                             <span>{a.asset_name || a.asset_symbol || a.category_name}</span>
                             <span className="font-medium">{a.target_weight}%</span>
                           </div>
