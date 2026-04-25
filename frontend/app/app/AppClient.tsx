@@ -26,7 +26,6 @@ import { FundamentalsCard } from "@/app/components/FundamentalsCard"
 import Sidebar from "@/app/components/admin/Sidebar"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { cn } from "@/lib/utils"
-import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip } from "recharts"
 
 // API Base URL - hardcoded to ensure correct path (updated)
 import { API_BASE_URL } from "@/app/lib/api"
@@ -824,6 +823,12 @@ export default function Dashboard() {
         {/* Header */}
         <header className="flex h-16 items-center justify-between border-b border-border px-4 lg:px-6">
           <div className="flex items-center gap-4">
+            <Link href="/" className="flex items-center gap-2 shrink-0">
+              <Logo className="h-8 w-auto" />
+            </Link>
+            <div className="w-px h-6 bg-border hidden sm:block" />
+            <UserMenu onOpenAuth={() => setAuthOpen(true)} />
+            <div className="w-px h-6 bg-border hidden sm:block" />
             <CoinSearch onSelect={(sym) => setSymbol(sym.replace("USDT", ""))} currentSymbol={symbol + "USDT"} />
             <Select value={timeframe} onValueChange={setTimeframe}>
               <SelectTrigger className="w-20">
@@ -836,7 +841,6 @@ export default function Dashboard() {
               </SelectContent>
             </Select>
             {loading && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />}
-            <UserMenu onOpenAuth={() => setAuthOpen(true)} />
           </div>
           <div className="flex items-center gap-2">
             <ThemeToggle />
