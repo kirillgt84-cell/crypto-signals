@@ -68,7 +68,7 @@ async def fetch_fred_m2_history(start_date: str = "2019-01-01", limit: int = 100
         results = []
         for obs in (observations or []):
             val = obs.get("value")
-            if val is not None and val != ".":
+            if val and val != ".":
                 results.append({
                     "date": obs.get("date"),
                     "value": float(val),

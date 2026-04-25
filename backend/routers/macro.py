@@ -200,8 +200,42 @@ async def get_latest_macro():
     }
 
 
+async def _fetch_btc_from_binance(cutoff: datetime) -> list:
+    """Fetch BTC daily closes from Binance spot API as fallback."""
+    import httpx
+    start_ms = int(cutoff.timestamp() * 1000)
+    end_ms = int(datetime.utcnow().timestamp() * 1000)
+    all_candles = []
+    current_start = start_ms
+    try:
+        async with httpx.AsyncClient(timeout=30) as client:
+            while current_start < end_ms:
+                resp = await client.get(
+                    "https://api.binance.com/api/v3/klines",
+                    params={
+                        "symbol": "BTCUSDT",
+                        "interval": "1d",
+                        "startTime": current_start,
+                        "limit": 1000,
+                    }
+                )
+                candles = resp.json()
+                if not isinstance(candles, list) or len(candles) == 0:
+                    break
+                all_candles.extend(candles)
+                current_start = candles[-1][0] + 1
+        results = []
+        for c in all_candles:
+            dt = datetime.fromtimestamp(c[0] / 1000).strftime("%Y-%m-%d")
+            results.append({"date": dt, "close_price": float(c[4])})
+        return results
+    except Exception as e:
+        logger.warning(f"Binance BTC fallback failed: {e}")
+        return []
+
+
 @router.get("/m2-comparison")
-async def get_m2_comparison(assets: str = "btc,spx,gold", days: int = 365):
+async def get_m2_comparison(assets: str = "btc", days: int = 365):
     """Get M2 Global Liquidity history aligned with selected asset prices for chart overlay.
     Assets: comma-separated list of keys (btc, spx, gold, vix). M2 is always included."""
     db = get_db()
@@ -231,7 +265,7 @@ async def get_m2_comparison(assets: str = "btc,spx,gold", days: int = 365):
             fred_rows = []
             for obs in (fred_obs or []):
                 val = obs.get("value")
-                if val is not None and val != ".":
+                if val and val != ".":
                     fred_rows.append({"date": obs.get("date"), "value": float(val)})
             # FRED returns desc; reverse to ascending
             fred_rows.reverse()
@@ -249,7 +283,7 @@ async def get_m2_comparison(assets: str = "btc,spx,gold", days: int = 365):
 
     asset_keys = [k.strip().lower() for k in assets.split(",") if k.strip()]
 
-    # BTC from oi_history, fallback to macro_prices
+    # BTC from oi_history, fallback to macro_prices, then Binance API
     if "btc" in asset_keys:
         btc_rows = await db.query(
             """SELECT DISTINCT ON (DATE(time)) DATE(time) as date, price as close_price
@@ -259,7 +293,7 @@ async def get_m2_comparison(assets: str = "btc,spx,gold", days: int = 365):
             [cutoff]
         )
         if len(btc_rows) < 10:
-            # Fallback to macro_prices if BTC is tracked there
+            # Fallback 1: macro_prices if BTC is tracked there
             btc_asset = await db.query("SELECT id FROM macro_assets WHERE key = 'btc' LIMIT 1", [])
             if btc_asset:
                 btc_rows = await db.query(
@@ -268,6 +302,9 @@ async def get_m2_comparison(assets: str = "btc,spx,gold", days: int = 365):
                        ORDER BY DATE(time), time DESC""",
                     [btc_asset[0]["id"], cutoff]
                 )
+        if len(btc_rows) < 10:
+            # Fallback 2: Binance API
+            btc_rows = await _fetch_btc_from_binance(cutoff)
         btc_map = {str(r["date"]): float(r["close_price"]) for r in btc_rows}
         result["series"]["btc"] = [btc_map.get(d) for d in dates]
 

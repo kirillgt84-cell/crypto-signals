@@ -47,7 +47,7 @@ export default function MacroClient() {
   const [goldPrices, setGoldPrices] = useState<MacroPrice[]>([]);
   const [loading, setLoading] = useState(true);
   const [m2Data, setM2Data] = useState<any>(null);
-  const [m2Assets, setM2Assets] = useState<Set<string>>(new Set(["btc", "spx", "gold"]));
+  const [m2Assets, setM2Assets] = useState<Set<string>>(new Set(["btc"]));
   const { t, language } = useLanguage();
   const locale = language === 'zh' ? 'zh-CN' : language;
 
@@ -58,7 +58,7 @@ export default function MacroClient() {
         fetch(`${API_BASE_URL}/macro/correlations?limit=60&interval=monthly`),
         fetch(`${API_BASE_URL}/macro/prices/spx500?limit=60&interval=monthly`),
         fetch(`${API_BASE_URL}/macro/prices/gold?limit=60&interval=monthly`),
-        fetch(`${API_BASE_URL}/macro/m2-comparison?assets=btc,spx,gold,vix&days=1825`),
+        fetch(`${API_BASE_URL}/macro/m2-comparison?assets=btc&days=1825`),
       ]);
       if (latestRes.ok) setLatest(await latestRes.json());
       if (corrRes.ok) setCorrelations(await corrRes.json());
@@ -280,9 +280,6 @@ export default function MacroClient() {
                       <div className="flex flex-wrap gap-2">
                         {[
                           { key: "btc", label: t("macro.assetBTC"), color: "#f59e0b" },
-                          { key: "spx", label: t("macro.assetSPX"), color: "#10b981" },
-                          { key: "gold", label: t("macro.assetGold"), color: "#fbbf24" },
-                          { key: "vix", label: t("macro.assetVIX"), color: "#f43f5e" },
                         ].map((asset) => {
                           const active = m2Assets.has(asset.key);
                           return (
@@ -412,42 +409,7 @@ export default function MacroClient() {
                               connectNulls
                             />
                           )}
-                          {m2Assets.has("spx") && (
-                            <Line
-                              type="monotone"
-                              dataKey="spx"
-                              name={t("macro.assetSPX")}
-                              stroke="#10b981"
-                              strokeWidth={2}
-                              dot={false}
-                              activeDot={{ r: 4 }}
-                              connectNulls
-                            />
-                          )}
-                          {m2Assets.has("gold") && (
-                            <Line
-                              type="monotone"
-                              dataKey="gold"
-                              name={t("macro.assetGold")}
-                              stroke="#fbbf24"
-                              strokeWidth={2}
-                              dot={false}
-                              activeDot={{ r: 4 }}
-                              connectNulls
-                            />
-                          )}
-                          {m2Assets.has("vix") && (
-                            <Line
-                              type="monotone"
-                              dataKey="vix"
-                              name={t("macro.assetVIX")}
-                              stroke="#f43f5e"
-                              strokeWidth={2}
-                              dot={false}
-                              activeDot={{ r: 4 }}
-                              connectNulls
-                            />
-                          )}
+
                         </LineChart>
                       </ResponsiveContainer>
                     </div>
