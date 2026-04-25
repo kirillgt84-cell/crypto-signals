@@ -17,7 +17,7 @@ describe("LandingNavbar", () => {
     expect(screen.getByText("landing.nav.pricing")).toBeInTheDocument()
     expect(screen.getByText("landing.nav.faq")).toBeInTheDocument()
     expect(screen.getByText("landing.nav.signIn")).toBeInTheDocument()
-    expect(screen.getByText("landing.nav.getStarted")).toBeInTheDocument()
+    expect(screen.getByText("landing.nav.app")).toBeInTheDocument()
   })
 })
 

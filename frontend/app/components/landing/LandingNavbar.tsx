@@ -23,15 +23,7 @@ export function LandingNavbar() {
   const { user, isAuthenticated } = useAuth()
   const [mobileOpen, setMobileOpen] = useState(false)
   const [authOpen, setAuthOpen] = useState(false)
-  const [authTab, setAuthTab] = useState<"login" | "register">("login")
-
   const openLogin = () => {
-    setAuthTab("login")
-    setAuthOpen(true)
-  }
-
-  const openRegister = () => {
-    setAuthTab("register")
     setAuthOpen(true)
   }
 
@@ -70,9 +62,11 @@ export function LandingNavbar() {
                 <Button variant="ghost" size="sm" onClick={openLogin}>
                   {t("landing.nav.signIn")}
                 </Button>
-                <Button size="sm" onClick={openRegister}>
-                  {t("landing.nav.getStarted")}
-                  <ArrowUpRight className="h-4 w-4 ml-1" />
+                <Button size="sm" asChild>
+                  <Link href="/app">
+                    {t("landing.nav.app")}
+                    <ArrowUpRight className="h-4 w-4 ml-1" />
+                  </Link>
                 </Button>
               </>
             )}
@@ -113,9 +107,11 @@ export function LandingNavbar() {
                       <Button variant="outline" onClick={() => { setMobileOpen(false); openLogin(); }}>
                         {t("landing.nav.signIn")}
                       </Button>
-                      <Button onClick={() => { setMobileOpen(false); openRegister(); }}>
-                        {t("landing.nav.getStarted")}
-                        <ArrowUpRight className="h-4 w-4 ml-1" />
+                      <Button asChild>
+                        <Link href="/app" onClick={() => setMobileOpen(false)}>
+                          {t("landing.nav.app")}
+                          <ArrowUpRight className="h-4 w-4 ml-1" />
+                        </Link>
                       </Button>
                     </>
                   )}
@@ -126,7 +122,7 @@ export function LandingNavbar() {
         </div>
       </header>
 
-      <AuthModal isOpen={authOpen} onClose={() => setAuthOpen(false)} defaultTab={authTab} />
+      <AuthModal isOpen={authOpen} onClose={() => setAuthOpen(false)} />
     </>
   )
 }
