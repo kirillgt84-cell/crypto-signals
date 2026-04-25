@@ -37,6 +37,12 @@ export function LandingNavbar() {
 
           {/* Desktop nav */}
           <nav className="hidden md:flex items-center gap-8">
+            <Link
+              href="/app"
+              className="text-lg font-medium text-muted-foreground transition-colors hover:text-foreground"
+            >
+              {t("landing.nav.app")}
+            </Link>
             {navLinks.map((link) => (
               <a
                 key={link.href}
@@ -58,17 +64,9 @@ export function LandingNavbar() {
                 </Link>
               </Button>
             ) : (
-              <>
-                <Button variant="ghost" size="sm" onClick={openLogin}>
-                  {t("landing.nav.signIn")}
-                </Button>
-                <Button size="sm" asChild>
-                  <Link href="/app">
-                    {t("landing.nav.app")}
-                    <ArrowUpRight className="h-4 w-4 ml-1" />
-                  </Link>
-                </Button>
-              </>
+              <Button variant="ghost" size="sm" onClick={openLogin}>
+                {t("landing.nav.signIn")}
+              </Button>
             )}
           </div>
 
@@ -84,6 +82,13 @@ export function LandingNavbar() {
               </SheetTrigger>
               <SheetContent side="right" className="w-[280px]">
                 <div className="flex flex-col gap-6 mt-8">
+                  <Link
+                    href="/app"
+                    onClick={() => setMobileOpen(false)}
+                    className="text-xl font-medium text-muted-foreground transition-colors hover:text-foreground"
+                  >
+                    {t("landing.nav.app")}
+                  </Link>
                   {navLinks.map((link) => (
                     <a
                       key={link.href}
@@ -103,17 +108,9 @@ export function LandingNavbar() {
                       </Link>
                     </Button>
                   ) : (
-                    <>
-                      <Button variant="outline" onClick={() => { setMobileOpen(false); openLogin(); }}>
-                        {t("landing.nav.signIn")}
-                      </Button>
-                      <Button asChild>
-                        <Link href="/app" onClick={() => setMobileOpen(false)}>
-                          {t("landing.nav.app")}
-                          <ArrowUpRight className="h-4 w-4 ml-1" />
-                        </Link>
-                      </Button>
-                    </>
+                    <Button variant="outline" onClick={() => { setMobileOpen(false); openLogin(); }}>
+                      {t("landing.nav.signIn")}
+                    </Button>
                   )}
                 </div>
               </SheetContent>
