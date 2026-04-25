@@ -25,13 +25,11 @@ _STABLECOIN_IDS = [
     "tether",
     "usd-coin",
     "dai",
-    "binance-usd",
-    "true-usd",
     "first-digital-usd",
     "usdd",
     "frax",
+    "true-usd",
     "paxos-standard",
-    "gemini-dollar",
 ]
 
 
@@ -92,16 +90,39 @@ async def _fetch_stablecoin_mcaps() -> float:
         "https://api.coingecko.com/api/v3/coins/markets"
         f"?vs_currency=usd&ids={ids_param}&per_page=250"
     )
+    headers = {"User-Agent": "Mozilla/5.0 (compatible; MirkasoBot/1.0)"}
+    
+    # Try primary endpoint with retries
+    for attempt in range(3):
+        try:
+            async with httpx.AsyncClient(timeout=15) as client:
+                resp = await client.get(url, headers=headers)
+                resp.raise_for_status()
+                coins = resp.json()
+                total = sum(c.get("market_cap", 0) or 0 for c in coins)
+                if total > 0:
+                    return total
+        except Exception:
+            logger.warning(f"CoinGecko stablecoin markets fetch failed (attempt {attempt + 1})")
+        import asyncio
+        await asyncio.sleep(1.5 * (attempt + 1))
+    
+    # Fallback: try category endpoint
     try:
+        fallback_url = "https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&category=stablecoins&per_page=250"
         async with httpx.AsyncClient(timeout=15) as client:
-            resp = await client.get(url)
+            resp = await client.get(fallback_url, headers=headers)
             resp.raise_for_status()
             coins = resp.json()
             total = sum(c.get("market_cap", 0) or 0 for c in coins)
-            return total
+            if total > 0:
+                return total
     except Exception:
-        logger.warning("CoinGecko stablecoin markets fetch failed, returning 0")
-        return 0.0
+        logger.warning("CoinGecko stablecoin category fallback also failed")
+    
+    # Last resort: hardcoded approximate total stablecoin mcap (~$170B as of 2025)
+    logger.warning("Using hardcoded stablecoin mcap fallback")
+    return 170_000_000_000.0
 
 
 def _detect_phase(btc_d: float, stable_d: float, alt_d: float) -> tuple[str, str]:

@@ -21,6 +21,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useLanguage } from "@/app/context/LanguageContext";
 import { API_BASE_URL } from "@/app/lib/api";
+import { TradingViewChart } from "@/app/components/TradingViewChart";
 
 interface FlowData {
   btc_to_alt: boolean;
@@ -184,6 +185,13 @@ export default function CryptoMetricsClient() {
                 </CardContent>
               </Card>
 
+              {/* TradingView Chart */}
+              <Card>
+                <CardContent className="p-0 overflow-hidden rounded-xl">
+                  <TradingViewChart symbol="BTC" timeframe="D" />
+                </CardContent>
+              </Card>
+
               {/* Phase */}
               <Card className={cn("border-l-4", phaseColors[data.phase] || "border-l-slate-500")}>
                 <CardHeader className="pb-2">
@@ -198,7 +206,9 @@ export default function CryptoMetricsClient() {
                       {t(`cryptoMetrics.phase.${data.phase}`) || data.phase}
                     </span>
                   </div>
-                  <p className="text-sm text-muted-foreground leading-relaxed">{data.phase_description}</p>
+                  <p className="text-sm text-muted-foreground leading-relaxed">
+                    {t(`cryptoMetrics.phaseDesc.${data.phase}`) || data.phase_description}
+                  </p>
                 </CardContent>
               </Card>
 
@@ -262,7 +272,13 @@ export default function CryptoMetricsClient() {
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-sm text-muted-foreground leading-relaxed">{data.interpretation}</p>
+                  <p className="text-sm text-muted-foreground leading-relaxed">
+                    {t(`cryptoMetrics.interpretation.${data.phase}`, {
+                      btc_d: formatPct(data.btc_dominance),
+                      stable_d: formatPct(data.stable_dominance),
+                      alt_d: formatPct(data.alt_dominance),
+                    }) || data.interpretation}
+                  </p>
                 </CardContent>
               </Card>
 

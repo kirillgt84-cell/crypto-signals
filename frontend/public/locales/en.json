@@ -1006,5 +1006,17 @@
   "dashboard.connectWallet": "Connect Wallet",
   "dashboard.connectWalletDesc": "Connect your crypto wallet for portfolio sync",
   "dashboard.walletStatus": "Status",
-  "dashboard.notConnected": "Not connected"
+  "dashboard.notConnected": "Not connected",
+  "cryptoMetrics.phaseDesc.BTC_ACCUMULATION": "BTC dominance is rising gradually. Smart money often accumulates BTC before broader alt rallies.",
+  "cryptoMetrics.phaseDesc.BTC_EXPANSION": "Bitcoin dominates while stablecoins shrink. This is typical of early bull phases where BTC leads the market.",
+  "cryptoMetrics.phaseDesc.ALTSEASON": "Altcoins are gaining dominance while BTC retreats. Capital is rotating from BTC into higher-beta assets.",
+  "cryptoMetrics.phaseDesc.DISTRIBUTION": "Bitcoin dominance is falling while stablecoins grow. This can signal profit-taking and preparation for lower prices.",
+  "cryptoMetrics.phaseDesc.RISK_OFF": "Stablecoin dominance is elevated. Capital is fleeing risk assets. Historically this precedes or accompanies market corrections.",
+  "cryptoMetrics.phaseDesc.TRANSITION": "The market is in a transitional phase. No clear dominance trend is dominant — wait for confirmation.",
+  "cryptoMetrics.interpretation.BTC_ACCUMULATION": "BTC dominance at {{btc_d}} is rising while altcoin share is compressed. Institutional and smart-money accumulation typically precedes the next leg up.",
+  "cryptoMetrics.interpretation.BTC_EXPANSION": "Bitcoin captures {{btc_d}} of total market cap while stablecoins shrink to {{stable_d}}. This pattern historically marks early-stage bull markets where BTC outperforms alts.",
+  "cryptoMetrics.interpretation.ALTSEASON": "Altcoins now represent {{alt_d}} of the market as BTC dominance fades to {{btc_d}}. Capital is rotating into higher-risk assets — a classic altseason signature.",
+  "cryptoMetrics.interpretation.DISTRIBUTION": "Bitcoin dominance is declining ({{btc_d}}) while stablecoins grow ({{stable_d}}). Profit-taking is underway — capital is moving to safety.",
+  "cryptoMetrics.interpretation.RISK_OFF": "Stablecoin dominance has climbed to {{stable_d}}. Investors are moving to the sidelines. This often coincides with macro uncertainty or local tops.",
+  "cryptoMetrics.interpretation.TRANSITION": "Market is mixed: BTC {{btc_d}}, alts {{alt_d}}, stables {{stable_d}}. No decisive trend yet — patience is warranted until dominance breaks in one direction."
 }

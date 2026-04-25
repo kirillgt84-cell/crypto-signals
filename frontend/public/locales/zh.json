@@ -1006,5 +1006,17 @@
   "dashboard.connectWallet": "连接钱包",
   "dashboard.connectWalletDesc": "连接您的加密钱包以同步投资组合",
   "dashboard.walletStatus": "状态",
-  "dashboard.notConnected": "未连接"
+  "dashboard.notConnected": "未连接",
+  "cryptoMetrics.phaseDesc.BTC_ACCUMULATION": "BTC主导地位正在逐步上升。大资金通常在更广泛的山寨币反弹之前积累BTC。",
+  "cryptoMetrics.phaseDesc.BTC_EXPANSION": "比特币占主导地位，稳定币收缩。这是典型的早期牛市阶段，BTC引领市场。",
+  "cryptoMetrics.phaseDesc.ALTSEASON": "山寨币正在获得主导地位，BTC撤退。资金正在从BTC转向高贝塔资产。",
+  "cryptoMetrics.phaseDesc.DISTRIBUTION": "比特币主导地位下降，稳定币增长。这可能预示着获利了结。",
+  "cryptoMetrics.phaseDesc.RISK_OFF": "稳定币主导地位升高。资金正在逃离风险资产。历史上这先于市场回调。",
+  "cryptoMetrics.phaseDesc.TRANSITION": "市场处于过渡阶段。没有明确的主导趋势——等待确认。",
+  "cryptoMetrics.interpretation.BTC_ACCUMULATION": "BTC主导地位{{btc_d}}正在上升，山寨币份额被压缩。机构资金积累通常先于下一波上涨。",
+  "cryptoMetrics.interpretation.BTC_EXPANSION": "比特币占据总市值的{{btc_d}}，稳定币收缩至{{stable_d}}。历史上这是牛市早期的标志。",
+  "cryptoMetrics.interpretation.ALTSEASON": "山寨币占市场的{{alt_d}}，BTC主导地位降至{{btc_d}}。资金转向高风险资产——典型的山寨季信号。",
+  "cryptoMetrics.interpretation.DISTRIBUTION": "比特币主导地位下降（{{btc_d}}），稳定币增长（{{stable_d}}）。获利了结正在进行中。",
+  "cryptoMetrics.interpretation.RISK_OFF": "稳定币主导地位已攀升至{{stable_d}}。投资者转向观望。这通常与宏观不确定性或局部顶部重合。",
+  "cryptoMetrics.interpretation.TRANSITION": "市场混合：BTC {{btc_d}}，山寨{{alt_d}}，稳定币{{stable_d}}。尚无决定性趋势——等待一方突破。"
 }

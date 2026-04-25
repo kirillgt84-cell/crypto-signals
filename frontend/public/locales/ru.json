@@ -1006,5 +1006,17 @@
   "dashboard.connectWallet": "Подключить кошелёк",
   "dashboard.connectWalletDesc": "Подключите криптокошелёк для синхронизации портфеля",
   "dashboard.walletStatus": "Статус",
-  "dashboard.notConnected": "Не подключено"
+  "dashboard.notConnected": "Не подключено",
+  "cryptoMetrics.phaseDesc.BTC_ACCUMULATION": "Доминация BTC растёт постепенно. Крупные игроки обычно накапливают BTC перед альт-рали.",
+  "cryptoMetrics.phaseDesc.BTC_EXPANSION": "Биткоин доминирует, стейблкоины сжимаются. Типичная ранняя фаза бычьего рынка, где BTC лидирует.",
+  "cryptoMetrics.phaseDesc.ALTSEASON": "Альткоины набирают доминирование, BTC отступает. Капитал перетекает из BTC в более рискованные активы.",
+  "cryptoMetrics.phaseDesc.DISTRIBUTION": "Доминация биткоина падает, стейблкоины растут. Возможен фиксация прибыли и подготовка к снижению.",
+  "cryptoMetrics.phaseDesc.RISK_OFF": "Доминация стейблкоинов повышена. Капитал бежит из рисковых активов. Исторически это предшествует коррекциям.",
+  "cryptoMetrics.phaseDesc.TRANSITION": "Рынок в переходной фазе. Нет чёткого тренда доминирования — ждите подтверждения.",
+  "cryptoMetrics.interpretation.BTC_ACCUMULATION": "Доминация BTC {{btc_d}} растёт, доля альткоинов сжимается. Накопление институционалов обычно предшествует новому импульсу.",
+  "cryptoMetrics.interpretation.BTC_EXPANSION": "Биткоин занимает {{btc_d}} капитализации, стейблкоины сокращаются до {{stable_d}}. Исторически это ранняя фаза бычьего рынка.",
+  "cryptoMetrics.interpretation.ALTSEASON": "Альткоины составляют {{alt_d}} рынка, доминация BTC снижается до {{btc_d}}. Классический альтсезон — капитал в высокорискованные активы.",
+  "cryptoMetrics.interpretation.DISTRIBUTION": "Доминация BTC падает ({{btc_d}}), стейблкоины растут ({{stable_d}}). Идёт фиксация прибыли, капитал уходит в безопасность.",
+  "cryptoMetrics.interpretation.RISK_OFF": "Доминация стейблкоинов выросла до {{stable_d}}. Инвесторы уходят в сторону. Часто совпадает с макро-неопределённостью.",
+  "cryptoMetrics.interpretation.TRANSITION": "Рынок смешанный: BTC {{btc_d}}, альты {{alt_d}}, стейблы {{stable_d}}. Решающего тренда пока нет — ждите пробоя."
 }

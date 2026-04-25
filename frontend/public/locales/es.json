@@ -1006,5 +1006,17 @@
   "dashboard.connectWallet": "Conectar billetera",
   "dashboard.connectWalletDesc": "Conecte su billetera crypto para sincronizar el portafolio",
   "dashboard.walletStatus": "Estado",
-  "dashboard.notConnected": "No conectado"
+  "dashboard.notConnected": "No conectado",
+  "cryptoMetrics.phaseDesc.BTC_ACCUMULATION": "La dominancia de BTC está subiendo gradualmente. El dinero inteligente suele acumular BTC antes de los rallies de alts.",
+  "cryptoMetrics.phaseDesc.BTC_EXPANSION": "Bitcoin domina mientras los stablecoins se contraen. Fase alcista temprana típica donde BTC lidera.",
+  "cryptoMetrics.phaseDesc.ALTSEASON": "Las altcoins ganan dominancia mientras BTC retrocede. El capital rota de BTC a activos de mayor beta.",
+  "cryptoMetrics.phaseDesc.DISTRIBUTION": "La dominancia de Bitcoin cae mientras los stablecoins crecen. Puede señalar toma de ganancias.",
+  "cryptoMetrics.phaseDesc.RISK_OFF": "La dominancia de stablecoins está elevada. El capital huye de activos riesgosos. Históricamente precede correcciones.",
+  "cryptoMetrics.phaseDesc.TRANSITION": "El mercado está en fase de transición. No hay tendencia clara — espere confirmación.",
+  "cryptoMetrics.interpretation.BTC_ACCUMULATION": "Dominancia BTC en {{btc_d}} está subiendo mientras la participación de altcoins se comprime. La acumulación institucional suele preceder el siguiente impulso.",
+  "cryptoMetrics.interpretation.BTC_EXPANSION": "Bitcoin captura {{btc_d}} de la capitalización mientras los stablecoins se contraen a {{stable_d}}. Patrón histórico de mercado alcista temprano.",
+  "cryptoMetrics.interpretation.ALTSEASON": "Las altcoins representan {{alt_d}} del mercado mientras la dominancia de BTC cae a {{btc_d}}. Rotación clásica hacia activos de mayor riesgo.",
+  "cryptoMetrics.interpretation.DISTRIBUTION": "La dominancia de BTC declina ({{btc_d}}) mientras los stablecoins crecen ({{stable_d}}). Toma de ganancias en curso.",
+  "cryptoMetrics.interpretation.RISK_OFF": "La dominancia de stablecoins ha subido a {{stable_d}}. Los inversores se mueven a la espera. Suele coincidir con incertidumbre macro.",
+  "cryptoMetrics.interpretation.TRANSITION": "Mercado mixto: BTC {{btc_d}}, alts {{alt_d}}, stables {{stable_d}}. Aún no hay tendencia decisiva — espere una ruptura."
 }
