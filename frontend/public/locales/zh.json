@@ -370,7 +370,7 @@
   "heatmap.volDelta": "成交量变化",
   "clusterMap.priceLevel": "价格水平",
   "clusterMap.volume": "交易量",
-  "dashboard.exchangeFlows": "交易所流入流出（24小时）",
+  "dashboard.exchangeFlows": "交易所净流入（24小时）",
   "signals.long": "多头",
   "signals.short": "空头",
   "signals.high": "最高",

@@ -224,6 +224,11 @@ async def get_oi_analysis(
             data['oi_change_value'] = round(current_oi - old_oi, 2)
             print(f"DEBUG router fallback: OI calc - current={current_oi}, old={old_oi}, change={oi_change_pct:.2f}%")
         else:
+            # Ensure keys always exist
+            if 'oi_change_24h' not in data:
+                data['oi_change_24h'] = 0
+            if 'oi_change_value' not in data:
+                data['oi_change_value'] = 0
             print(f"DEBUG router: using fetcher OI change={data.get('oi_change_24h', 0)}%")
         
         # Расчет изменения 24h объема из heatmap_snapshots (реальные данные)
@@ -272,15 +277,24 @@ async def get_oi_analysis(
             data.get('volume_change', 15)
         )
         
-        # Расчет Exchange Flow как разница фьючерс/спот объема (24ч)
-        # Положительный = больше активности на фьючерсах (спекуляция)
-        # Отрицательный = больше на споте (аккумуляция)
-        futures_volume = data.get('real_volume_24h', 0) or data.get('volume_24h', 0)
-        spot_volume = data.get('spot_volume', 0)
-        if futures_volume > 0 and spot_volume > 0:
-            exchange_flow = ((futures_volume - spot_volume) / (futures_volume + spot_volume)) * 1000
+        # Расчет Exchange Flow: сначала пробуем реальный on-chain netflow из DeFiLlama
+        netflow_data = await fetcher.get_exchange_netflow("Binance")
+        if netflow_data.get("exchange_flow") is not None:
+            exchange_flow = netflow_data["exchange_flow"]
+            data["exchange_flow_source"] = "defillama"
+            data["exchange_flow_raw_24h"] = netflow_data.get("inflows_24h")
+            data["exchange_flow_tvl"] = netflow_data.get("clean_assets_tvl")
         else:
-            exchange_flow = 0
+            # Fallback: synthetic metric как разница фьючерс/спот объема (24ч)
+            # Положительный = больше активности на фьючерсах (спекуляция)
+            # Отрицательный = больше на споте (аккумуляция)
+            futures_volume = data.get('real_volume_24h', 0) or data.get('volume_24h', 0)
+            spot_volume = data.get('spot_volume', 0)
+            if futures_volume > 0 and spot_volume > 0:
+                exchange_flow = ((futures_volume - spot_volume) / (futures_volume + spot_volume)) * 1000
+            else:
+                exchange_flow = 0
+            data["exchange_flow_source"] = "synthetic"
         
         data["exchange_flow"] = round(exchange_flow, 2)
         data["analysis"] = advanced

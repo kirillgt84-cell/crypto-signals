@@ -370,7 +370,7 @@
   "heatmap.volDelta": "Δ Vol",
   "clusterMap.priceLevel": "Nivel de Precio",
   "clusterMap.volume": "Volumen",
-  "dashboard.exchangeFlows": "Flujos de Intercambio (24h)",
+  "dashboard.exchangeFlows": "Flujo Neto de Exchange (24h)",
   "signals.long": "Largo",
   "signals.short": "Corto",
   "signals.high": "Alto",

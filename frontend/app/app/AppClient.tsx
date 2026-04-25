@@ -455,7 +455,7 @@ function SecondaryIndicators({ data, timeframe, loading }: { data: MarketData; t
             </div>
           ) : (
             <CardTitle className="text-xl flex items-center gap-1">
-              {data.exchange_flow > 0 ? "+" : ""}{data.exchange_flow.toFixed(0)} {data.symbol}
+              {data.exchange_flow > 0 ? "+" : ""}{data.exchange_flow.toFixed(1)}
             </CardTitle>
           )}
         </CardHeader>
@@ -751,7 +751,7 @@ export default function Dashboard() {
             rsi: 58,
             macd: 125,
             macd_signal: 98,
-            exchange_flow: -450,
+            exchange_flow: -35,
             sentiment: {
               long_short_ratio: 1.0,
               long_accounts_pct: 50.0,

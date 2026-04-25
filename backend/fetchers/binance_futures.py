@@ -813,6 +813,77 @@ class BinanceFuturesFetcher:
             print(f"DEBUG: Error fetching exchange info: {e}")
             return []
     
+    async def get_exchange_netflow(self, exchange_name: str = "Binance") -> Dict:
+        """
+        Получает реальный on-chain netflow с бирж через DeFiLlama CEX API.
+        Возвращает нормализованный exchange_flow score и raw данные.
+        """
+        import time
+        import logging
+        logger = logging.getLogger(__name__)
+        
+        # Simple in-memory cache (5 min TTL)
+        cache_key = f"defillama_cex_{exchange_name}"
+        now = time.time()
+        if hasattr(self, '_netflow_cache') and self._netflow_cache.get('key') == cache_key:
+            if now - self._netflow_cache.get('ts', 0) < 300:
+                return self._netflow_cache['data']
+        
+        try:
+            session = await self._get_session()
+            async with session.get(
+                "https://api.llama.fi/cexs",
+                headers={"Accept": "application/json"},
+                timeout=aiohttp.ClientTimeout(total=10)
+            ) as resp:
+                data = await resp.json()
+            
+            if not isinstance(data, dict) or 'cexs' not in data:
+                logger.warning("DeFiLlama CEX API: unexpected response format")
+                return {"exchange_flow": None, "source": "defillama", "error": "bad format"}
+            
+            cex_data = None
+            for cex in data['cexs']:
+                if cex.get('name', '').lower() == exchange_name.lower():
+                    cex_data = cex
+                    break
+            
+            if not cex_data:
+                logger.warning(f"DeFiLlama CEX API: {exchange_name} not found")
+                return {"exchange_flow": None, "source": "defillama", "error": f"{exchange_name} not found"}
+            
+            inflows_24h = float(cex_data.get('inflows_24h', 0) or 0)
+            inflows_1w = float(cex_data.get('inflows_1w', 0) or 0)
+            inflows_1m = float(cex_data.get('inflows_1m', 0) or 0)
+            clean_assets_tvl = float(cex_data.get('cleanAssetsTvl', 0) or 0)
+            current_tvl = float(cex_data.get('currentTvl', 0) or 0)
+            
+            # Normalize: % of clean assets * 5000 to get ~±100 scale
+            if clean_assets_tvl > 0:
+                netflow_pct = inflows_24h / clean_assets_tvl
+                exchange_flow = netflow_pct * 5000
+            else:
+                exchange_flow = 0
+            
+            result = {
+                "exchange_flow": round(exchange_flow, 2),
+                "inflows_24h": round(inflows_24h, 2),
+                "inflows_1w": round(inflows_1w, 2),
+                "inflows_1m": round(inflows_1m, 2),
+                "clean_assets_tvl": round(clean_assets_tvl, 2),
+                "current_tvl": round(current_tvl, 2),
+                "source": "defillama",
+                "exchange": exchange_name
+            }
+            
+            # Cache result
+            self._netflow_cache = {'key': cache_key, 'ts': now, 'data': result}
+            return result
+            
+        except Exception as e:
+            logger.error(f"DeFiLlama CEX netflow error: {e}")
+            return {"exchange_flow": None, "source": "defillama", "error": str(e)}
+    
     async def close(self):
         if self.session:
             await self.session.close()

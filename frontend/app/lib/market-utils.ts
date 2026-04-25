@@ -142,28 +142,30 @@ export const getCVDInterpretation = (cvd: number, cvdChange: number): { text: st
 export const getExchangeFlowInterpretation = (flow: number, timeframe: string): { text: string; trend: "up" | "down"; detail: string } => {
   const tfLabel = timeframe === "15" ? "scalp" : timeframe === "60" ? "intraday" : timeframe === "240" ? "swing" : "position"
   
-  if (flow < -500) {
+  // Thresholds adapted for real on-chain netflow (% of exchange reserves, scaled)
+  // Typical range: ±0.5% → ±25, extreme: ±1%+ → ±50+
+  if (flow < -50) {
     return { 
       text: "Strong outflow (Bullish)", 
       trend: "up",
       detail: `strong accumulation for ${tfLabel} trades`
     }
   }
-  if (flow < 0) {
+  if (flow < -10) {
     return { 
       text: "Outflow (Bullish)", 
       trend: "up",
       detail: `accumulating deficit - ${tfLabel} longs favorable`
     }
   }
-  if (flow > 500) {
+  if (flow > 50) {
     return { 
       text: "Strong inflow (Bearish)", 
       trend: "down",
       detail: `profit taking for ${tfLabel} - caution`
     }
   }
-  if (flow > 0) {
+  if (flow > 10) {
     return { 
       text: "Inflow (Bearish)", 
       trend: "down",

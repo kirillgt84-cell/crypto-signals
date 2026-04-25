@@ -370,7 +370,7 @@
   "heatmap.volDelta": "Изменение объема",
   "clusterMap.priceLevel": "Уровень цены",
   "clusterMap.volume": "Объем",
-  "dashboard.exchangeFlows": "Потоки на бирже (24ч)",
+  "dashboard.exchangeFlows": "Чистый приток на биржу (24ч)",
   "signals.long": "Длинная позиция",
   "signals.short": "Короткая позиция",
   "signals.high": "Высокий",

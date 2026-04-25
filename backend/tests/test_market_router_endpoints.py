@@ -22,6 +22,7 @@ class TestOiAnalysisEndpoint:
             "spot_volume": 25000000000,
             "spot_volume_change": 1.5,
         })
+        mock_fetcher.get_exchange_netflow = AsyncMock(return_value={"exchange_flow": None, "source": "defillama"})
 
         mock_db = mock_get_db.return_value
         mock_db.query = AsyncMock(return_value=[{
@@ -54,6 +55,7 @@ class TestOiAnalysisEndpoint:
         mock_fetcher.get_spot_volume = AsyncMock(return_value={
             "spot_volume": 25000000000,
         })
+        mock_fetcher.get_exchange_netflow = AsyncMock(return_value={"exchange_flow": None, "source": "defillama"})
 
         mock_db = mock_get_db.return_value
         mock_db.query = AsyncMock(return_value=[])
@@ -76,6 +78,7 @@ class TestOiAnalysisEndpoint:
             "volume_change": 0.01,
         })
         mock_fetcher.get_spot_volume = AsyncMock(return_value={"spot_volume": 0})
+        mock_fetcher.get_exchange_netflow = AsyncMock(return_value={"exchange_flow": None, "source": "defillama"})
 
         with patch("routers.market.get_db") as mock_get_db:
             mock_db = mock_get_db.return_value
