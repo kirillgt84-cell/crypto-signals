@@ -134,7 +134,7 @@ export default function CoinSearch({ onSelect, currentSymbol = "BTCUSDT" }: Coin
   }, [])
 
   const currentBase = currentSymbol.replace("USDT", "")
-  const selectedCoin = coins.find((c) => c.symbol === currentSymbol)
+  const selectedCoin = Array.isArray(coins) ? coins.find((c) => c.symbol === currentSymbol) : undefined
 
   return (
     <div ref={containerRef} className="relative w-72">
