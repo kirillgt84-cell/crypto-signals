@@ -29,6 +29,7 @@ import {
   Shield,
   Bell,
   LogOut,
+  Wallet,
 } from "lucide-react"
 
 type ProfileTab = "overview" | "security" | "preferences" | "subscription"
@@ -403,6 +404,25 @@ export default function ProfilePage() {
                       <li className="flex items-center gap-2"><CheckCircle className={cn("h-4 w-4", isPro ? "text-emerald-500" : "text-slate-400")} /> {t("profile.oiSignals")} {isPro ? "" : `( ${t("common.pro")} )`}</li>
                       <li className="flex items-center gap-2"><CheckCircle className={cn("h-4 w-4", isPro ? "text-emerald-500" : "text-slate-400")} /> {t("profile.emailTelegram")} {isPro ? "" : `( ${t("common.pro")} )`}</li>
                     </ul>
+                  </CardContent>
+                </Card>
+
+                <Card className="border">
+                  <CardHeader>
+                    <CardTitle className="text-base font-semibold">{t("dashboard.connectWallet")}</CardTitle>
+                    <CardDescription>{t("dashboard.connectWalletDesc") || "Connect your crypto wallet for portfolio sync"}</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="flex items-center justify-between rounded-lg border p-4">
+                      <div>
+                        <p className="text-sm font-medium">{t("dashboard.walletStatus") || "Status"}</p>
+                        <p className="text-sm text-muted-foreground">{t("dashboard.notConnected") || "Not connected"}</p>
+                      </div>
+                    </div>
+                    <Button variant="outline" className="w-full items-center gap-2">
+                      <Wallet className="h-4 w-4" />
+                      {t("dashboard.connect")}
+                    </Button>
                   </CardContent>
                 </Card>
               </div>

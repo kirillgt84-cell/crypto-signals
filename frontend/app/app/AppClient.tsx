@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react"
 import { useSidebar } from "@/hooks/useSidebar"
 
-import { TrendingUp, TrendingDown, Minus, Activity, BarChart4, BarChartHorizontal, Wallet, Crosshair, BadgeDollarSign, GitCompare, Loader2 } from "lucide-react"
+import { TrendingUp, TrendingDown, Minus, Activity, BarChart4, BarChartHorizontal, Crosshair, BadgeDollarSign, GitCompare, Loader2 } from "lucide-react"
 import { UserMenu } from "@/app/components/UserMenu"
 import { AuthModal } from "@/app/components/AuthModal"
 import { ProBlurOverlay } from "@/app/components/ProBlurOverlay"
@@ -823,7 +823,6 @@ export default function Dashboard() {
         {/* Header */}
         <header className="flex h-16 items-center justify-between border-b border-border px-4 lg:px-6">
           <div className="flex items-center gap-4">
-            <UserMenu onOpenAuth={() => setAuthOpen(true)} />
             <CoinSearch onSelect={(sym) => setSymbol(sym.replace("USDT", ""))} currentSymbol={symbol + "USDT"} />
             <Select value={timeframe} onValueChange={setTimeframe}>
               <SelectTrigger className="w-20">
@@ -839,10 +838,7 @@ export default function Dashboard() {
           </div>
           <div className="flex items-center gap-2">
             <ThemeToggle />
-            <Button variant="outline" size="sm" className="hidden sm:flex items-center gap-2">
-              <Wallet className="h-4 w-4" />
-              {t("dashboard.connect")}
-            </Button>
+            <UserMenu onOpenAuth={() => setAuthOpen(true)} />
           </div>
         </header>
 

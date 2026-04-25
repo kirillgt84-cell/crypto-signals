@@ -1002,5 +1002,9 @@
   "landing.pricing.save": "Save 24%",
   "landing.pricing.firstMonth": "Primer mes",
   "landing.pricing.thenMonthly": "luego $25/mes",
-  "landing.nav.app": "APP"
+  "landing.nav.app": "APP",
+  "dashboard.connectWallet": "Conectar billetera",
+  "dashboard.connectWalletDesc": "Conecte su billetera crypto para sincronizar el portafolio",
+  "dashboard.walletStatus": "Estado",
+  "dashboard.notConnected": "No conectado"
 }

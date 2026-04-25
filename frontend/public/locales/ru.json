@@ -1002,5 +1002,9 @@
   "landing.pricing.save": "Save 24%",
   "landing.pricing.firstMonth": "Первый месяц",
   "landing.pricing.thenMonthly": "далее $25/мес",
-  "landing.nav.app": "APP"
+  "landing.nav.app": "APP",
+  "dashboard.connectWallet": "Подключить кошелёк",
+  "dashboard.connectWalletDesc": "Подключите криптокошелёк для синхронизации портфеля",
+  "dashboard.walletStatus": "Статус",
+  "dashboard.notConnected": "Не подключено"
 }

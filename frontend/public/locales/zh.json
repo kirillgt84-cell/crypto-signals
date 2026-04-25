@@ -1002,5 +1002,9 @@
   "landing.pricing.save": "Save 24%",
   "landing.pricing.firstMonth": "首月",
   "landing.pricing.thenMonthly": "之后$25/月",
-  "landing.nav.app": "APP"
+  "landing.nav.app": "APP",
+  "dashboard.connectWallet": "连接钱包",
+  "dashboard.connectWalletDesc": "连接您的加密钱包以同步投资组合",
+  "dashboard.walletStatus": "状态",
+  "dashboard.notConnected": "未连接"
 }

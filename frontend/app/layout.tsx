@@ -6,6 +6,7 @@ import { LanguageProvider } from './context/LanguageContext'
 import { AuthProvider } from './context/AuthContext'
 import { NewsletterPopup } from './components/NewsletterPopup'
 import { Footer } from './components/Footer'
+import { GlobalNavbar } from './components/GlobalNavbar'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -36,6 +37,7 @@ export default function RootLayout({
               enableSystem
               disableTransitionOnChange
             >
+              <GlobalNavbar />
               {children}
               <NewsletterPopup />
               <Footer />
