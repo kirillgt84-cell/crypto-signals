@@ -79,7 +79,7 @@ def _build_report_html(title: str, content_blocks: List[str]) -> str:
             <td style="padding:16px 20px;border-top:1px solid #1e293b;text-align:center;">
               <p style="margin:0;font-size:12px;color:#64748b;">
                 Sent by Mirkaso ·
-                <a href="https://crypto-signals-chi.vercel.app" style="color:#94a3b8;text-decoration:none;">Open Dashboard</a>
+                <a href="https://mirkaso.com" style="color:#94a3b8;text-decoration:none;">Open Dashboard</a>
               </p>
             </td>
           </tr>

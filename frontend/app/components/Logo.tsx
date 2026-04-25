@@ -5,9 +5,10 @@ import { cn } from "@/lib/utils"
 interface LogoProps {
   collapsed?: boolean
   className?: string
+  textClassName?: string
 }
 
-export function Logo({ collapsed = false, className }: LogoProps) {
+export function Logo({ collapsed = false, className, textClassName = "text-lg" }: LogoProps) {
   if (collapsed) {
     // Only icon when sidebar is collapsed
     return (
@@ -35,7 +36,7 @@ export function Logo({ collapsed = false, className }: LogoProps) {
           <rect x="26" y="10" width="8" height="26" fill="#2563eb" rx="1"/>
         </svg>
       </div>
-      <span className="text-[40px] font-bold tracking-tight uppercase leading-none text-[#1e3a5f] dark:text-foreground">
+      <span className={cn("font-bold tracking-tight uppercase leading-none text-[#1e3a5f] dark:text-foreground", textClassName)}>
         MIRKASO
       </span>
     </div>

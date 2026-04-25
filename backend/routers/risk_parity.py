@@ -210,7 +210,7 @@ async def risk_parity_ai_insight(body: AiInsightRequest, lang: str = Query("en",
                 headers={
                     "Authorization": f"Bearer {OPENROUTER_API_KEY}",
                     "Content-Type": "application/json",
-                    "HTTP-Referer": "https://crypto-signals-chi.vercel.app",
+                    "HTTP-Referer": "https://mirkaso.com",
                 },
                 json={
                     "model": "openai/gpt-4o-mini",

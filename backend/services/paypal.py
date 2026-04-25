@@ -78,8 +78,8 @@ class PayPalAPI:
                 }
             ],
             "application_context": {
-                "return_url": "https://crypto-signals-chi.vercel.app/profile?payment=success",
-                "cancel_url": "https://crypto-signals-chi.vercel.app/pricing?payment=cancelled",
+                "return_url": "https://mirkaso.com/pricing?payment=success",
+                "cancel_url": "https://mirkaso.com/pricing?payment=cancelled",
             },
         }
         return await self._api("POST", "/v2/checkout/orders", payload)

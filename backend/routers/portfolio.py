@@ -547,7 +547,7 @@ async def ai_insight(lang: str = Query("en", description="User language: en, ru,
                 headers={
                     "Authorization": f"Bearer {OPENROUTER_API_KEY}",
                     "Content-Type": "application/json",
-                    "HTTP-Referer": "https://crypto-signals-chi.vercel.app",
+                    "HTTP-Referer": "https://mirkaso.com",
                 },
                 json={
                     "model": "openai/gpt-4o-mini",

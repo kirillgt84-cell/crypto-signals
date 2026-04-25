@@ -417,8 +417,8 @@ async def create_trial(
     paypal = get_paypal_api()
     result = await paypal.create_subscription(
         plan_id=plan["paypal_plan_id"],
-        return_url="https://crypto-signals-chi.vercel.app/pricing?payment=success",
-        cancel_url="https://crypto-signals-chi.vercel.app/pricing?payment=cancelled",
+        return_url="https://mirkaso.com/pricing?payment=success",
+        cancel_url="https://mirkaso.com/pricing?payment=cancelled",
     )
 
     if result.get("status_code", 200) >= 400:
