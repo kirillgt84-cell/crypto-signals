@@ -272,10 +272,10 @@ async def get_oi_analysis(
             data.get('volume_change', 15)
         )
         
-        # Расчет Exchange Flow как разница фьючерс/спот объема
+        # Расчет Exchange Flow как разница фьючерс/спот объема (24ч)
         # Положительный = больше активности на фьючерсах (спекуляция)
         # Отрицательный = больше на споте (аккумуляция)
-        futures_volume = data.get('volume_24h', 0)
+        futures_volume = data.get('real_volume_24h', 0) or data.get('volume_24h', 0)
         spot_volume = data.get('spot_volume', 0)
         if futures_volume > 0 and spot_volume > 0:
             exchange_flow = ((futures_volume - spot_volume) / (futures_volume + spot_volume)) * 1000
