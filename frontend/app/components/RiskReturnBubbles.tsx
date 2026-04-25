@@ -87,7 +87,7 @@ export default function RiskReturnBubbles({ assets }: RiskReturnBubblesProps) {
           {t("riskReturnBubbles.title")}
         </span>
       </div>
-      <ResponsiveContainer width="100%" height={280}>
+      <ResponsiveContainer width="100%" height={280} minWidth={0} minHeight={0}>
         <ScatterChart margin={{ top: 10, right: 20, bottom: 30, left: 20 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
           <XAxis

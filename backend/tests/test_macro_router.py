@@ -91,8 +91,10 @@ class TestMacroRouter:
         mock_db.query = AsyncMock(side_effect=[
             # M2 rows
             [{"date": "2024-01-01", "value": 21000.0}, {"date": "2024-01-02", "value": 21100.0}],
-            # BTC rows
+            # BTC rows (oi_history — only 2 rows triggers fallback)
             [{"date": "2024-01-01", "close_price": 42000.0}, {"date": "2024-01-02", "close_price": 43000.0}],
+            # BTC asset lookup for fallback (empty = no macro_prices fallback)
+            [],
             # SPX asset
             [{"id": 1}],
             # SPX rows

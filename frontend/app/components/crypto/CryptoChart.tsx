@@ -123,7 +123,7 @@ export const CryptoChart = ({ data, showOI = false }: CryptoChartProps) => {
         onMouseLeave={handleMouseLeave}
         onTouchEnd={handleMouseLeave}
       >
-        <ResponsiveContainer width="100%" height="100%">
+        <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
           <LineChart
             data={data}
             margin={{ top: 0, right: 0, left: 0, bottom: 0 }}

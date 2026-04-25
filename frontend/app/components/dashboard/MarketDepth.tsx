@@ -45,7 +45,7 @@ export default function MarketDepth({ data }: MarketDepthProps) {
 
   return (
     <div className="h-[200px]">
-      <ResponsiveContainer width="100%" height="100%">
+      <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
         <BarChart
           data={chartData}
           layout="vertical"

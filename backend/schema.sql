@@ -339,7 +339,8 @@ CREATE TABLE IF NOT EXISTS macro_assets (
 INSERT INTO macro_assets (key, name, yahoo_symbol, category) VALUES
     ('spx500', 'S&P 500', '^GSPC', 'index'),
     ('gold', 'Gold Futures', 'GC=F', 'commodity'),
-    ('vix', 'VIX', '^VIX', 'volatility')
+    ('vix', 'VIX', '^VIX', 'volatility'),
+    ('btc', 'Bitcoin', 'BTC-USD', 'crypto')
 ON CONFLICT (key) DO NOTHING;
 
 CREATE TABLE IF NOT EXISTS macro_prices (

@@ -160,7 +160,7 @@ export default function CryptoChart({ symbol, timeframe }: CryptoChartProps) {
 
   return (
     <div className="h-[400px] w-full">
-      <ResponsiveContainer width="100%" height="100%">
+      <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
         <ComposedChart
           data={data}
           margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
@@ -241,7 +241,7 @@ export default function CryptoChart({ symbol, timeframe }: CryptoChartProps) {
       
       {/* Custom Candle Overlay */}
       <div className="absolute inset-0 pointer-events-none">
-        <ResponsiveContainer width="100%" height="100%">
+        <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
           <ComposedChart
             data={data}
             margin={{ top: 10, right: 30, left: 0, bottom: 20 }}

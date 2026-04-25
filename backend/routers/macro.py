@@ -2,12 +2,97 @@
 Macro correlations router: SPX500, Gold, VIX vs BTC.
 Open to all users (not Pro-restricted for now).
 """
-from typing import Optional
+from typing import Optional, List, Dict, Any
 from datetime import datetime, timedelta
 from fastapi import APIRouter
 from database import get_db
 
 router = APIRouter(prefix="/api/v1/macro", tags=["macro"])
+
+
+async def _get_macro_map(db, asset_id: int, cutoff: datetime) -> Dict[str, float]:
+    if not asset_id:
+        return {}
+    rows = await db.query(
+        """SELECT DISTINCT ON (DATE(time)) DATE(time) as day, close_price
+           FROM macro_prices WHERE asset_id = $1 AND time > $2
+           ORDER BY DATE(time), time DESC""",
+        [asset_id, cutoff],
+    )
+    return {str(r["day"]): float(r["close_price"]) for r in rows}
+
+
+async def _compute_monthly_correlations_fallback(db, limit: int = 60) -> List[Dict[str, Any]]:
+    """Compute monthly correlations from macro_prices + oi_history when macro_correlations is empty."""
+    import numpy as np
+    from collections import defaultdict
+
+    assets = await db.query("SELECT id, key FROM macro_assets WHERE key IN ('spx500', 'gold', 'vix')", [])
+    asset_map = {a["key"]: a["id"] for a in assets}
+    spx_id = asset_map.get("spx500")
+    gold_id = asset_map.get("gold")
+    vix_id = asset_map.get("vix")
+
+    btc_rows = await db.query(
+        """SELECT DISTINCT ON (DATE(time)) DATE(time) as day, price
+           FROM oi_history
+           WHERE symbol = 'BTCUSDT' AND time > NOW() - INTERVAL '5 years'
+           ORDER BY DATE(time), time DESC""",
+        [],
+    )
+    if len(btc_rows) < 5:
+        return []
+
+    all_days = sorted([str(r["day"]) for r in btc_rows])
+    btc_map = {str(r["day"]): r["price"] for r in btc_rows}
+
+    spx_map = await _get_macro_map(db, spx_id, datetime.utcnow() - timedelta(days=1825))
+    gold_map = await _get_macro_map(db, gold_id, datetime.utcnow() - timedelta(days=1825))
+    vix_map = await _get_macro_map(db, vix_id, datetime.utcnow() - timedelta(days=1825))
+
+    month_days = defaultdict(list)
+    for day in all_days:
+        month_days[day[:7]].append(day)
+
+    result = []
+    for month_str in sorted(month_days.keys())[-limit:]:
+        days = month_days[month_str]
+        end_day = max(days)
+        end_idx = all_days.index(end_day)
+        start_idx = max(0, end_idx - 29)
+        window = all_days[start_idx:end_idx + 1]
+
+        btc_vals = [btc_map[d] for d in window if d in btc_map]
+        spx_vals = [spx_map[d] for d in window if d in spx_map]
+        gold_vals = [gold_map[d] for d in window if d in gold_map]
+        vix_vals = [vix_map[d] for d in window if d in vix_map]
+
+        if len(btc_vals) < 5 or len(spx_vals) < 5 or len(gold_vals) < 5:
+            continue
+
+        btc_r = [(btc_vals[i] - btc_vals[i - 1]) / btc_vals[i - 1] for i in range(1, len(btc_vals))]
+        spx_r = [(spx_vals[i] - spx_vals[i - 1]) / spx_vals[i - 1] for i in range(1, len(spx_vals))]
+        gold_r = [(gold_vals[i] - gold_vals[i - 1]) / gold_vals[i - 1] for i in range(1, len(gold_vals))]
+        vix_r = [(vix_vals[i] - vix_vals[i - 1]) / vix_vals[i - 1] for i in range(1, len(vix_vals))] if len(vix_vals) == len(btc_vals) else []
+
+        btc_spx_corr = float(np.corrcoef(btc_r, spx_r)[0, 1]) if len(btc_r) == len(spx_r) and len(btc_r) > 2 else None
+        gold_btc_corr = float(np.corrcoef(gold_r, btc_r)[0, 1]) if len(gold_r) == len(btc_r) and len(gold_r) > 2 else None
+        vix_btc_corr = float(np.corrcoef(vix_r, btc_r)[0, 1]) if len(vix_r) == len(btc_r) and len(vix_r) > 2 else None
+
+        vix_price = vix_map.get(end_day)
+
+        result.append({
+            "date": end_day,
+            "btc_spx_correlation": btc_spx_corr,
+            "gold_btc_correlation": gold_btc_corr,
+            "vix_btc_correlation": vix_btc_corr,
+            "vix_level": vix_price,
+            "btc_price": btc_map.get(end_day),
+            "spx_price": spx_map.get(end_day),
+            "gold_price": gold_map.get(end_day),
+        })
+
+    return result
 
 
 @router.get("/assets")
@@ -67,11 +152,17 @@ async def get_correlations(limit: int = 90, interval: str = "daily"):
                LIMIT $1""",
             [limit],
         )
+        # Fallback: compute from raw prices if table is empty
+        if len(rows) < 2:
+            rows = await _compute_monthly_correlations_fallback(db, limit)
     else:
         rows = await db.query(
             """SELECT * FROM macro_correlations ORDER BY date DESC LIMIT $1""",
             [limit],
         )
+        if len(rows) < 2:
+            fallback = await _compute_monthly_correlations_fallback(db, limit)
+            rows = fallback[:limit]
     return [dict(r) for r in rows]
 
 
@@ -126,7 +217,7 @@ async def get_m2_comparison(assets: str = "btc,spx,gold", days: int = 365):
 
     asset_keys = [k.strip().lower() for k in assets.split(",") if k.strip()]
 
-    # BTC from oi_history
+    # BTC from oi_history, fallback to macro_prices
     if "btc" in asset_keys:
         btc_rows = await db.query(
             """SELECT DISTINCT ON (DATE(time)) DATE(time) as date, price as close_price
@@ -135,6 +226,16 @@ async def get_m2_comparison(assets: str = "btc,spx,gold", days: int = 365):
                ORDER BY DATE(time), time DESC""",
             [cutoff]
         )
+        if len(btc_rows) < 10:
+            # Fallback to macro_prices if BTC is tracked there
+            btc_asset = await db.query("SELECT id FROM macro_assets WHERE key = 'btc' LIMIT 1", [])
+            if btc_asset:
+                btc_rows = await db.query(
+                    """SELECT DISTINCT ON (DATE(time)) DATE(time) as date, close_price
+                       FROM macro_prices WHERE asset_id = $1 AND time > $2
+                       ORDER BY DATE(time), time DESC""",
+                    [btc_asset[0]["id"], cutoff]
+                )
         btc_map = {str(r["date"]): float(r["close_price"]) for r in btc_rows}
         result["series"]["btc"] = [btc_map.get(d) for d in dates]
 

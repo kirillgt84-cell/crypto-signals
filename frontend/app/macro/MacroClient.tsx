@@ -267,7 +267,7 @@ export default function MacroClient() {
                 </Card>
               </div>
 
-              {/* M2 Global Liquidity Comparison */}
+              {/* M2 Global Liquidity Comparison — Normalized Index (base = 100) */}
               {m2Data && m2Data.dates.length > 0 && (
                 <Card>
                   <CardHeader className="pb-2">
@@ -275,6 +275,7 @@ export default function MacroClient() {
                       <div>
                         <CardTitle className="text-base">{t("macro.m2ComparisonTitle")}</CardTitle>
                         <p className="text-xs text-muted-foreground mt-0.5">{t("macro.m2ComparisonSubtitle")}</p>
+                        <p className="text-[10px] text-muted-foreground mt-0.5">{t("macro.m2NormalizedHint") || "Index = 100 at start of period. Tooltip shows real values."}</p>
                       </div>
                       <div className="flex flex-wrap gap-2">
                         {[
@@ -315,14 +316,31 @@ export default function MacroClient() {
                     <div className="h-[450px]">
                       <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
                         <LineChart
-                          data={m2Data.dates.map((d: string, i: number) => ({
-                            date: d,
-                            m2: m2Data.series.m2[i],
-                            btc: m2Assets.has("btc") ? m2Data.series.btc?.[i] : null,
-                            spx: m2Assets.has("spx") ? m2Data.series.spx?.[i] : null,
-                            gold: m2Assets.has("gold") ? m2Data.series.gold?.[i] : null,
-                            vix: m2Assets.has("vix") ? m2Data.series.vix?.[i] : null,
-                          }))}
+                          data={(() => {
+                            const normalize = (arr: (number | null)[]) => {
+                              const first = arr.find((v) => v != null);
+                              if (first == null) return arr;
+                              return arr.map((v) => (v != null ? (v / first) * 100 : null));
+                            };
+                            const m2Norm = normalize(m2Data.series.m2);
+                            const btcNorm = m2Assets.has("btc") ? normalize(m2Data.series.btc) : null;
+                            const spxNormM2 = m2Assets.has("spx") ? normalize(m2Data.series.spx) : null;
+                            const goldNormM2 = m2Assets.has("gold") ? normalize(m2Data.series.gold) : null;
+                            const vixNormM2 = m2Assets.has("vix") ? normalize(m2Data.series.vix) : null;
+                            return m2Data.dates.map((d: string, i: number) => ({
+                              date: d,
+                              m2: m2Norm[i],
+                              btc: btcNorm?.[i] ?? null,
+                              spx: spxNormM2?.[i] ?? null,
+                              gold: goldNormM2?.[i] ?? null,
+                              vix: vixNormM2?.[i] ?? null,
+                              m2_orig: m2Data.series.m2[i],
+                              btc_orig: m2Data.series.btc?.[i] ?? null,
+                              spx_orig: m2Data.series.spx?.[i] ?? null,
+                              gold_orig: m2Data.series.gold?.[i] ?? null,
+                              vix_orig: m2Data.series.vix?.[i] ?? null,
+                            }));
+                          })()}
                           margin={{ top: 5, right: 5, left: 5, bottom: 5 }}
                         >
                           <CartesianGrid strokeDasharray="3 3" stroke="#334155" opacity={0.3} />
@@ -337,16 +355,10 @@ export default function MacroClient() {
                             minTickGap={30}
                           />
                           <YAxis
-                            yAxisId="left"
                             tick={{ fontSize: 10, fill: "#64748b" }}
-                            tickFormatter={(v: number) => `$${(v / 1000).toFixed(1)}T`}
-                            width={55}
-                          />
-                          <YAxis
-                            yAxisId="right"
-                            orientation="right"
-                            tick={{ fontSize: 10, fill: "#64748b" }}
-                            width={65}
+                            tickFormatter={(v: number) => `${v.toFixed(0)}`}
+                            width={45}
+                            domain={["auto", "auto"]}
                           />
                           <Tooltip
                             contentStyle={{
@@ -356,10 +368,21 @@ export default function MacroClient() {
                               fontSize: "12px",
                             }}
                             labelStyle={{ color: "#94a3b8" }}
-                            formatter={(value: any, name: string) => {
+                            formatter={(value: any, name: string, props: any) => {
                               if (value == null) return ["—", name];
-                              if (name === "M2") return [`$${(value / 1000).toFixed(2)}T`, name];
-                              return [value.toLocaleString(undefined, { maximumFractionDigits: 0 }), name];
+                              const origMap: Record<string, string> = {
+                                M2: "m2_orig",
+                                [t("macro.assetBTC")]: "btc_orig",
+                                [t("macro.assetSPX")]: "spx_orig",
+                                [t("macro.assetGold")]: "gold_orig",
+                                [t("macro.assetVIX")]: "vix_orig",
+                              };
+                              const origKey = origMap[name];
+                              const orig = origKey ? props?.payload?.[origKey] : null;
+                              if (orig == null) return ["—", name];
+                              if (name === "M2") return [`$${(orig / 1000).toFixed(2)}T`, name];
+                              if (name === t("macro.assetVIX")) return [orig.toFixed(1), name];
+                              return [`$${orig.toLocaleString(undefined, { maximumFractionDigits: 0 })}`, name];
                             }}
                           />
                           <Legend
@@ -368,7 +391,6 @@ export default function MacroClient() {
                             iconSize={6}
                           />
                           <Line
-                            yAxisId="left"
                             type="monotone"
                             dataKey="m2"
                             name="M2"
@@ -379,7 +401,6 @@ export default function MacroClient() {
                           />
                           {m2Assets.has("btc") && (
                             <Line
-                              yAxisId="right"
                               type="monotone"
                               dataKey="btc"
                               name={t("macro.assetBTC")}
@@ -392,7 +413,6 @@ export default function MacroClient() {
                           )}
                           {m2Assets.has("spx") && (
                             <Line
-                              yAxisId="right"
                               type="monotone"
                               dataKey="spx"
                               name={t("macro.assetSPX")}
@@ -405,7 +425,6 @@ export default function MacroClient() {
                           )}
                           {m2Assets.has("gold") && (
                             <Line
-                              yAxisId="right"
                               type="monotone"
                               dataKey="gold"
                               name={t("macro.assetGold")}
@@ -418,7 +437,6 @@ export default function MacroClient() {
                           )}
                           {m2Assets.has("vix") && (
                             <Line
-                              yAxisId="right"
                               type="monotone"
                               dataKey="vix"
                               name={t("macro.assetVIX")}
