@@ -9,14 +9,15 @@ import { LandingStats } from "../LandingStats"
 import { LandingHero } from "../LandingHero"
 
 describe("LandingNavbar", () => {
-  it("renders logo, nav links and APP button", () => {
+  it("renders logo, nav links and auth buttons for guests", () => {
     render(<LandingNavbar />)
     expect(screen.getByText("MIRKASO")).toBeInTheDocument()
     expect(screen.getByText("landing.nav.features")).toBeInTheDocument()
     expect(screen.getByText("landing.nav.howItWorks")).toBeInTheDocument()
     expect(screen.getByText("landing.nav.pricing")).toBeInTheDocument()
     expect(screen.getByText("landing.nav.faq")).toBeInTheDocument()
-    expect(screen.getByText("APP")).toBeInTheDocument()
+    expect(screen.getByText("landing.nav.signIn")).toBeInTheDocument()
+    expect(screen.getByText("landing.nav.getStarted")).toBeInTheDocument()
   })
 })
 

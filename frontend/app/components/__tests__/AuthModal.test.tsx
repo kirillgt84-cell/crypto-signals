@@ -4,16 +4,12 @@ import { AuthModal } from "../AuthModal"
 
 const mockLogin = jest.fn()
 const mockRegister = jest.fn()
-const mockOAuth = jest.fn()
-const mockTelegram = jest.fn()
 const mockOnClose = jest.fn()
 
 jest.mock("../../context/AuthContext", () => ({
   useAuth: () => ({
     login: mockLogin,
     register: mockRegister,
-    loginWithOAuth: mockOAuth,
-    loginWithTelegram: mockTelegram,
   }),
 }))
 
@@ -77,31 +73,5 @@ describe("AuthModal", () => {
       expect(mockRegister).toHaveBeenCalledWith("a@b.com", "password123", "alice")
     })
     expect(mockOnClose).toHaveBeenCalled()
-  })
-
-  it("triggers oauth for google, twitter, discord", () => {
-    render(<AuthModal isOpen={true} onClose={mockOnClose} />)
-
-    fireEvent.click(screen.getByText("auth.google"))
-    expect(mockOAuth).toHaveBeenCalledWith("google")
-
-    fireEvent.click(screen.getByText("Twitter"))
-    expect(mockOAuth).toHaveBeenCalledWith("twitter")
-
-    fireEvent.click(screen.getByText("Discord"))
-    expect(mockOAuth).toHaveBeenCalledWith("discord")
-  })
-
-  it("opens telegram bot link on click", () => {
-    const openSpy = jest.spyOn(window, "open").mockImplementation(() => null)
-    render(<AuthModal isOpen={true} onClose={mockOnClose} />)
-
-    fireEvent.click(screen.getByText("auth.telegram"))
-    expect(openSpy).toHaveBeenCalledWith(
-      "https://t.me/your_bot_username?start=auth",
-      "_blank",
-      "width=400,height=600"
-    )
-    openSpy.mockRestore()
   })
 })

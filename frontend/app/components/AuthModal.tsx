@@ -50,7 +50,7 @@ export function AuthModal({ isOpen, onClose, defaultTab = "login" }: AuthModalPr
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-md bg-card border-2">
+      <DialogContent className="w-[90vw] sm:w-[60vw] max-w-4xl bg-card border-2">
         <DialogHeader>
           <DialogTitle className="text-center text-2xl font-bold">
             {activeTab === "login" ? t("authModal.welcomeBack") : t("authModal.createAccount")}

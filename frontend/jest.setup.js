@@ -35,6 +35,29 @@ jest.mock('./app/context/LanguageContext', () => ({
 
 
 
+// Mock AuthContext globally
+jest.mock('@/app/context/AuthContext', () => ({
+  useAuth: () => ({
+    user: null,
+    isAuthenticated: false,
+    isLoading: false,
+    isPro: false,
+    login: jest.fn(),
+    register: jest.fn(),
+    logout: jest.fn(),
+    loginWithOAuth: jest.fn(),
+    loginWithTelegram: jest.fn(),
+    refreshToken: jest.fn(),
+    updateProfile: jest.fn(),
+    updatePreferences: jest.fn(),
+    changePassword: jest.fn(),
+    refreshUser: jest.fn(),
+    sendVerificationEmail: jest.fn(),
+    verifyEmail: jest.fn(),
+  }),
+  AuthProvider: ({ children }) => children,
+}))
+
 // Mock fetch globally
 global.fetch = jest.fn()
 
