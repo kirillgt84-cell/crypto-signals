@@ -70,10 +70,10 @@ async def _compute_monthly_correlations_fallback(db, limit: int = 60) -> List[Di
         if len(btc_vals) < 5 or len(spx_vals) < 5 or len(gold_vals) < 5:
             continue
 
-        btc_r = [(btc_vals[i] - btc_vals[i - 1]) / btc_vals[i - 1] for i in range(1, len(btc_vals))]
-        spx_r = [(spx_vals[i] - spx_vals[i - 1]) / spx_vals[i - 1] for i in range(1, len(spx_vals))]
-        gold_r = [(gold_vals[i] - gold_vals[i - 1]) / gold_vals[i - 1] for i in range(1, len(gold_vals))]
-        vix_r = [(vix_vals[i] - vix_vals[i - 1]) / vix_vals[i - 1] for i in range(1, len(vix_vals))] if len(vix_vals) == len(btc_vals) else []
+        btc_r = [(btc_vals[i] - btc_vals[i - 1]) / btc_vals[i - 1] for i in range(1, len(btc_vals)) if btc_vals[i - 1] != 0]
+        spx_r = [(spx_vals[i] - spx_vals[i - 1]) / spx_vals[i - 1] for i in range(1, len(spx_vals)) if spx_vals[i - 1] != 0]
+        gold_r = [(gold_vals[i] - gold_vals[i - 1]) / gold_vals[i - 1] for i in range(1, len(gold_vals)) if gold_vals[i - 1] != 0]
+        vix_r = [(vix_vals[i] - vix_vals[i - 1]) / vix_vals[i - 1] for i in range(1, len(vix_vals)) if vix_vals[i - 1] != 0] if len(vix_vals) == len(btc_vals) else []
 
         btc_spx_corr = float(np.corrcoef(btc_r, spx_r)[0, 1]) if len(btc_r) == len(spx_r) and len(btc_r) > 2 else None
         gold_btc_corr = float(np.corrcoef(gold_r, btc_r)[0, 1]) if len(gold_r) == len(btc_r) and len(gold_r) > 2 else None

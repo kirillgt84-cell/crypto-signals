@@ -317,7 +317,8 @@ export default function MacroClient() {
                       <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
                         <LineChart
                           data={(() => {
-                            const normalize = (arr: (number | null)[]) => {
+                            const normalize = (arr: (number | null)[] | undefined) => {
+                              if (!Array.isArray(arr)) return [];
                               const first = arr.find((v) => v != null);
                               if (first == null) return arr;
                               return arr.map((v) => (v != null ? (v / first) * 100 : null));
