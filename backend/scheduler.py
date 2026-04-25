@@ -11,7 +11,7 @@ from database import get_db
 from services.notifications import send_daily_reports, send_weekly_reports, send_telegram_alerts
 from fetchers.etf_farside import FarsideETFFetcher
 from fetchers.binance_heatmap import BinanceHeatmapFetcher
-from services.macro_sync import sync_macro_prices, calculate_correlations
+from services.macro_sync import sync_macro_prices, calculate_correlations, backfill_correlations
 
 logger = logging.getLogger(__name__)
 
@@ -328,6 +328,7 @@ async def run_macro_sync():
     try:
         await sync_macro_prices()
         await calculate_correlations()
+        await backfill_correlations()
         logger.info("[Scheduler] Macro sync completed")
     except Exception as e:
         logger.error(f"[Scheduler] Macro sync failed: {e}")

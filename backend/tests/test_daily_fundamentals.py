@@ -15,6 +15,19 @@ from daily_fundamentals import (
 )
 
 
+@pytest.fixture
+def mock_db():
+    """Return a mock db for save_metric tests."""
+    db = Mock()
+    db.executed = []
+
+    async def capture_execute(sql, args=None):
+        db.executed.append((sql, args))
+
+    db.execute = capture_execute
+    return db
+
+
 class TestInterpretMvrv:
     def test_undervalued(self):
         status, desc = interpret_mvrv(0.8)
@@ -126,6 +139,15 @@ class TestSaveMetric:
         sql, args = mock_db.executed[0]
         assert "INSERT INTO fundamental_metrics" in sql
         assert args[3] == json.dumps(raw)
+
+    async def test_save_metric_with_computed_at(self, mock_db):
+        from datetime import datetime
+        raw = {"test": True}
+        obs_date = datetime(2024, 1, 15)
+        result = await save_metric(mock_db, "GLOBAL", "m2", 21000.5, raw, computed_at=obs_date)
+        assert result["saved"] is True
+        sql, args = mock_db.executed[0]
+        assert args[4] == obs_date
 
     async def test_save_metric_failure(self, mock_db):
         async def fail_execute(sql, args=None):
@@ -257,7 +279,10 @@ class TestCollectFundamentals:
         mock_funding.return_value = 0.0001
         mock_bn24.return_value = {"price": 75000.0, "price_change_24h_pct": 1.5}
 
-        with patch("daily_fundamentals.fetch_fred_m2", new_callable=AsyncMock, return_value=21000.5):
+        with patch("daily_fundamentals.fetch_fred_m2_history", new_callable=AsyncMock, return_value=[
+            {"date": "2024-01-01", "value": 21000.5},
+            {"date": "2024-02-01", "value": 21200.0},
+        ]):
             results = await collect_fundamentals()
 
         assert all(r["saved"] for r in results)
@@ -270,9 +295,9 @@ class TestCollectFundamentals:
         assert btc_results[3]["metric"] == "market_momentum"
         assert btc_results[4]["metric"] == "funding_rate"
 
-        # M2 saved under GLOBAL
+        # M2 saved under GLOBAL (2 history points)
         m2_results = [r for r in results if r["symbol"] == "GLOBAL" and r["metric"] == "m2"]
-        assert len(m2_results) == 1
+        assert len(m2_results) == 2
         assert m2_results[0]["value"] == 21000.5
 
         eth_results = [r for r in results if r["symbol"] == "ETH"]

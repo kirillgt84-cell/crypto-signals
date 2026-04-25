@@ -82,35 +82,35 @@ export default function MacroClient() {
   // Normalize for overlay chart (scale to % change from start)
   const normalize = (data: MacroPrice[]) => {
     if (!data.length) return [];
-    const base = data[data.length - 1]?.close_price || 1;
-    return data
-      .map((d) => ({
-        date: d.time,
-        value: ((d.close_price / base) * 100) - 100,
-      }))
-      .reverse();
+    const sorted = [...data].sort((a, b) => new Date(a.time).getTime() - new Date(b.time).getTime());
+    const base = sorted[0]?.close_price || 1;
+    return sorted.map((d) => ({
+      date: d.time,
+      value: ((d.close_price / base) * 100) - 100,
+    }));
   };
 
   const spxNorm = normalize(spxPrices);
   const goldNorm = normalize(goldPrices);
 
-  // Merge for overlay chart
-  const mergedChart = spxNorm.map((s, i) => ({
+  // Merge for overlay chart by date (SPX and Gold may have different trading days)
+  const goldMap = new Map(goldNorm.map((d) => [d.date, d.value]));
+  const mergedChart = spxNorm.map((s) => ({
     date: s.date,
     spx: s.value,
-    gold: goldNorm[i]?.value ?? null,
+    gold: goldMap.get(s.date) ?? null,
   }));
 
-  const corrChart = correlations
-    .slice()
-    .reverse()
-    .map((c) => ({
-      date: c.date,
-      "BTC ↔ SPX": c.btc_spx_correlation != null ? Number(c.btc_spx_correlation).toFixed(2) : null,
-      [t("macro.goldBtcLabel")]: c.gold_btc_correlation != null ? Number(c.gold_btc_correlation).toFixed(2) : null,
-      "VIX ↔ BTC": c.vix_btc_correlation != null ? Number(c.vix_btc_correlation).toFixed(2) : null,
-      VIX: c.vix_level != null ? Number(c.vix_level).toFixed(1) : null,
-    }));
+  const sortedCorrelations = [...correlations].sort(
+    (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
+  );
+  const corrChart = sortedCorrelations.map((c) => ({
+    date: c.date,
+    "BTC ↔ SPX": c.btc_spx_correlation != null ? Number(c.btc_spx_correlation) : null,
+    [t("macro.goldBtcLabel")]: c.gold_btc_correlation != null ? Number(c.gold_btc_correlation) : null,
+    "VIX ↔ BTC": c.vix_btc_correlation != null ? Number(c.vix_btc_correlation) : null,
+    VIX: c.vix_level != null ? Number(c.vix_level) : null,
+  }));
 
   const corrColor = (val: number | null | undefined) => {
     if (val == null) return "text-slate-500";

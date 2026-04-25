@@ -7,6 +7,7 @@ import asyncio
 import httpx
 import logging
 import json
+from datetime import datetime
 from database import get_db
 
 logger = logging.getLogger(__name__)
@@ -58,18 +59,24 @@ async def fetch_binance_24hr(client: httpx.AsyncClient, symbol: str):
         logger.error(f"[Fundamentals] Binance 24hr {symbol} error: {e}")
     return None
 
-async def fetch_fred_m2():
-    """Fetch latest M2 Money Stock from FRED API"""
+async def fetch_fred_m2_history(limit: int = 60):
+    """Fetch M2 Money Stock history from FRED API"""
     try:
         from services.macro_pulse.fred_client import FREDClient
         client = FREDClient()
-        observations = await client.get_series_observations("M2SL", limit=2)
-        if observations and len(observations) > 0:
-            latest = observations[0]
-            return float(latest.get("value", 0))
+        observations = await client.get_series_observations("M2SL", limit=limit)
+        results = []
+        for obs in (observations or []):
+            val = obs.get("value")
+            if val is not None and val != ".":
+                results.append({
+                    "date": obs.get("date"),
+                    "value": float(val),
+                })
+        return results
     except Exception as e:
         logger.error(f"[FRED] M2 fetch error: {e}")
-    return None
+    return []
 
 async def fetch_binance_funding(client: httpx.AsyncClient, symbol: str):
     """Fetch latest funding rate from Binance"""
@@ -120,16 +127,18 @@ def interpret_sopr(sopr: float):
         return "LOSS_SELLING", "Short-term holders selling at loss"
     return "NEUTRAL", "Break-even zone"
 
-async def save_metric(db, symbol: str, name: str, value: float, raw_data: dict):
+async def save_metric(db, symbol: str, name: str, value: float, raw_data: dict, computed_at: datetime = None):
     try:
+        if computed_at is None:
+            computed_at = datetime.utcnow()
         await db.execute(
-            """INSERT INTO fundamental_metrics (symbol, metric_name, value, raw_data)
-               VALUES ($1, $2, $3, $4)
+            """INSERT INTO fundamental_metrics (symbol, metric_name, value, raw_data, computed_at)
+               VALUES ($1, $2, $3, $4, $5)
                ON CONFLICT (symbol, metric_name, computed_at) DO UPDATE
                SET value = EXCLUDED.value, raw_data = EXCLUDED.raw_data""",
-            [symbol, name, value, json.dumps(raw_data)]
+            [symbol, name, value, json.dumps(raw_data), computed_at]
         )
-        logger.info(f"[Fundamentals] Saved {symbol}/{name} = {value}")
+        logger.info(f"[Fundamentals] Saved {symbol}/{name} = {value} @ {computed_at}")
         return {"saved": True, "symbol": symbol, "metric": name, "value": value}
     except Exception as e:
         logger.error(f"[Fundamentals] Failed to save {symbol}/{name}: {e}")
@@ -204,15 +213,16 @@ async def collect_fundamentals():
                     "description": interpret_funding(funding)[1],
                 }))
     
-    # Fetch M2 Global Liquidity from FRED
-    m2_value = await fetch_fred_m2()
-    if m2_value:
-        results.append(await save_metric(db, "GLOBAL", "m2", m2_value, {
+    # Fetch M2 Global Liquidity history from FRED
+    m2_history = await fetch_fred_m2_history(limit=60)
+    for m2 in m2_history:
+        obs_date = datetime.strptime(m2["date"], "%Y-%m-%d")
+        results.append(await save_metric(db, "GLOBAL", "m2", m2["value"], {
             "source": "FRED",
             "series": "M2SL",
             "interpretation": "GLOBAL_LIQUIDITY",
-            "description": f"M2 Money Stock: ${m2_value:,.0f}B",
-        }))
+            "description": f"M2 Money Stock: ${m2['value']:,.0f}B",
+        }, computed_at=obs_date))
 
     await db.close()
     logger.info("[Fundamentals] Collection finished")
