@@ -12,7 +12,7 @@ export function Logo({ collapsed = false, className }: LogoProps) {
     // Only icon when sidebar is collapsed
     return (
       <div className={cn("flex items-center justify-center", className)} data-testid="logo-icon">
-        <div className="relative h-9 w-9">
+        <div className="relative h-10 w-10">
           <svg viewBox="0 0 40 40" className="w-full h-full">
             {/* 3 ascending dark blue chart bars */}
             <rect x="6" y="26" width="8" height="10" fill="#2563eb" rx="1"/>
@@ -27,7 +27,7 @@ export function Logo({ collapsed = false, className }: LogoProps) {
   // Full logo with text
   return (
     <div className={cn("flex items-center gap-2", className)}>
-      <div className="relative h-9 w-9" data-testid="logo-icon">
+      <div className="relative h-10 w-10" data-testid="logo-icon">
         <svg viewBox="0 0 40 40" className="w-full h-full">
           {/* 3 ascending dark blue chart bars */}
           <rect x="6" y="26" width="8" height="10" fill="#2563eb" rx="1"/>
@@ -35,7 +35,7 @@ export function Logo({ collapsed = false, className }: LogoProps) {
           <rect x="26" y="10" width="8" height="26" fill="#2563eb" rx="1"/>
         </svg>
       </div>
-      <span className="text-4xl font-bold tracking-tight uppercase leading-none text-[#1e3a5f] dark:text-foreground">
+      <span className="text-[40px] font-bold tracking-tight uppercase leading-none text-[#1e3a5f] dark:text-foreground">
         MIRKASO
       </span>
     </div>
