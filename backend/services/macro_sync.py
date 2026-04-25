@@ -59,7 +59,7 @@ async def _get_daily_returns(db, asset_id: int, days: int = 30) -> List[float]:
     prices.reverse()
     if len(prices) < 3:
         return []
-    returns = [(prices[i] - prices[i - 1]) / prices[i - 1] for i in range(1, len(prices))]
+    returns = [(prices[i] - prices[i - 1]) / prices[i - 1] for i in range(1, len(prices)) if prices[i - 1] != 0]
     return returns
 
 
@@ -119,11 +119,11 @@ async def calculate_correlations():
             logger.warning("[Macro] Not enough aligned data for correlation")
             return
 
-        # Calculate returns
-        btc_r = [(btc_returns[i] - btc_returns[i - 1]) / btc_returns[i - 1] for i in range(1, len(btc_returns))]
-        spx_r = [(spx_returns[i] - spx_returns[i - 1]) / spx_returns[i - 1] for i in range(1, len(spx_returns))]
-        gold_r = [(gold_returns[i] - gold_returns[i - 1]) / gold_returns[i - 1] for i in range(1, len(gold_returns))]
-        vix_r = [(vix_returns[i] - vix_returns[i - 1]) / vix_returns[i - 1] for i in range(1, len(vix_returns))] if len(vix_returns) == len(btc_returns) else []
+        # Calculate returns (zero-division guarded)
+        btc_r = [(btc_returns[i] - btc_returns[i - 1]) / btc_returns[i - 1] for i in range(1, len(btc_returns)) if btc_returns[i - 1] != 0]
+        spx_r = [(spx_returns[i] - spx_returns[i - 1]) / spx_returns[i - 1] for i in range(1, len(spx_returns)) if spx_returns[i - 1] != 0]
+        gold_r = [(gold_returns[i] - gold_returns[i - 1]) / gold_returns[i - 1] for i in range(1, len(gold_returns)) if gold_returns[i - 1] != 0]
+        vix_r = [(vix_returns[i] - vix_returns[i - 1]) / vix_returns[i - 1] for i in range(1, len(vix_returns)) if vix_returns[i - 1] != 0]
 
         # Correlations
         btc_spx_corr = float(np.corrcoef(btc_r, spx_r)[0, 1]) if len(btc_r) == len(spx_r) and len(btc_r) > 2 else None
@@ -212,18 +212,26 @@ async def backfill_correlations():
             start_idx = max(0, end_idx - 29)
             window = all_days[start_idx:end_idx + 1]
 
-            btc_vals = [btc_map[d] for d in window if d in btc_map]
-            spx_vals = [spx_map[d] for d in window if d in spx_map]
-            gold_vals = [gold_map[d] for d in window if d in gold_map]
-            vix_vals = [vix_map[d] for d in window if d in vix_map]
+            # Build aligned day-by-day series
+            aligned_btc = []
+            aligned_spx = []
+            aligned_gold = []
+            aligned_vix = []
+            for d in window:
+                if d in btc_map and d in spx_map and d in gold_map:
+                    aligned_btc.append(btc_map[d])
+                    aligned_spx.append(spx_map[d])
+                    aligned_gold.append(gold_map[d])
+                    if d in vix_map:
+                        aligned_vix.append(vix_map[d])
 
-            if len(btc_vals) < 5 or len(spx_vals) < 5 or len(gold_vals) < 5:
+            if len(aligned_btc) < 5:
                 continue
 
-            btc_r = [(btc_vals[i] - btc_vals[i - 1]) / btc_vals[i - 1] for i in range(1, len(btc_vals))]
-            spx_r = [(spx_vals[i] - spx_vals[i - 1]) / spx_vals[i - 1] for i in range(1, len(spx_vals))]
-            gold_r = [(gold_vals[i] - gold_vals[i - 1]) / gold_vals[i - 1] for i in range(1, len(gold_vals))]
-            vix_r = [(vix_vals[i] - vix_vals[i - 1]) / vix_vals[i - 1] for i in range(1, len(vix_vals))] if len(vix_vals) == len(btc_vals) else []
+            btc_r = [(aligned_btc[i] - aligned_btc[i - 1]) / aligned_btc[i - 1] for i in range(1, len(aligned_btc)) if aligned_btc[i - 1] != 0]
+            spx_r = [(aligned_spx[i] - aligned_spx[i - 1]) / aligned_spx[i - 1] for i in range(1, len(aligned_spx)) if aligned_spx[i - 1] != 0]
+            gold_r = [(aligned_gold[i] - aligned_gold[i - 1]) / aligned_gold[i - 1] for i in range(1, len(aligned_gold)) if aligned_gold[i - 1] != 0]
+            vix_r = [(aligned_vix[i] - aligned_vix[i - 1]) / aligned_vix[i - 1] for i in range(1, len(aligned_vix)) if aligned_vix[i - 1] != 0]
 
             btc_spx_corr = float(np.corrcoef(btc_r, spx_r)[0, 1]) if len(btc_r) == len(spx_r) and len(btc_r) > 2 else None
             gold_btc_corr = float(np.corrcoef(gold_r, btc_r)[0, 1]) if len(gold_r) == len(btc_r) and len(gold_r) > 2 else None
