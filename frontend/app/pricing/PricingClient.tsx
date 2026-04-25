@@ -3,45 +3,22 @@
 import { useState, useEffect } from "react";
 import { useSidebar } from "@/hooks/useSidebar";
 import { useAuth } from "../context/AuthContext";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Check, Zap, Crown, Loader2 } from "lucide-react";
+import { Check, Star, Zap, Crown, Loader2 } from "lucide-react";
 import Sidebar from "../components/admin/Sidebar";
 import { cn } from "@/lib/utils";
 import { useSearchParams } from "next/navigation";
 import { useLanguage } from "@/app/context/LanguageContext";
 
-import { API_BASE_URL } from "@/app/lib/api"
-
-const freeFeatures = [
-  "Real-time Dashboard (Price, OI, Volume, CVD)",
-  "Technical Indicators (RSI, MACD, Funding, Flows)",
-  "Interactive TradingView Chart",
-  "OI Analysis & Market Signals",
-  "Macro Dashboard (SPX500, Gold, VIX)",
-  "Portfolio Tracking (Manual + Binance)",
-  "ETF Flows",
-  "Paper Trading",
-];
-
-const proFeatures = [
-  "Everything in FREE",
-  "Volume Spike & OI Anomaly Scanner",
-  "Advanced Heatmap",
-  "Daily Market Reports",
-  "Telegram & Email Alerts",
-  "Short Term Entry Levels",
-  "Pro Fundamentals (MVRV, NUPL)",
-  "AI Portfolio Insights",
-  "Liquidation & PnL Alerts",
-];
+import { API_BASE_URL } from "@/app/lib/api";
 
 export default function PricingClient() {
   const { collapsed: sidebarCollapsed, toggle: toggleSidebar } = useSidebar();
   const { user, isAuthenticated } = useAuth();
   const searchParams = useSearchParams();
-  const [billingCycle, setBillingCycle] = useState<"monthly" | "yearly">("yearly");
+  const [isYearly, setIsYearly] = useState(true);
   const [processing, setProcessing] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const { t } = useLanguage();
@@ -69,11 +46,11 @@ export default function PricingClient() {
     try {
       const res = await fetch(`${API_BASE_URL}/payments/create-trial`, {
         method: "POST",
-        credentials: 'include',
+        credentials: "include",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ billing_cycle: billingCycle }),
+        body: JSON.stringify({ billing_cycle: isYearly ? "yearly" : "monthly" }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -96,8 +73,35 @@ export default function PricingClient() {
       window.dispatchEvent(new CustomEvent("open-auth-modal"));
       return;
     }
-    window.location.href = "/";
+    window.location.href = "/app";
   };
+
+  const freeFeatures = [
+    "landing.pricing.free.feature1",
+    "landing.pricing.free.feature2",
+    "landing.pricing.free.feature3",
+    "landing.pricing.free.feature4",
+    "landing.pricing.free.feature5",
+    "landing.pricing.free.feature6",
+    "landing.pricing.free.feature7",
+    "landing.pricing.free.feature8",
+  ];
+
+  const proFeatures = [
+    "landing.pricing.pro.feature1",
+    "landing.pricing.pro.feature2",
+    "landing.pricing.pro.feature3",
+    "landing.pricing.pro.feature4",
+    "landing.pricing.pro.feature5",
+    "landing.pricing.pro.feature6",
+    "landing.pricing.pro.feature7",
+    "landing.pricing.pro.feature8",
+  ];
+
+  const proPrice = isYearly ? "$19" : "$17";
+  const proPeriod = isYearly
+    ? t("landing.pricing.billedYearly") || "/mo billed annually"
+    : `/${t("landing.pricing.period")}`;
 
   return (
     <div className="flex min-h-screen bg-background text-foreground">
@@ -110,8 +114,8 @@ export default function PricingClient() {
               <Crown className="h-8 w-8 text-amber-400" />
               {t("pricing.title")}
             </h1>
-            <p className="mt-2 text-slate-400">
-              Unlock the full potential of your trading analytics
+            <p className="mt-2 text-muted-foreground">
+              {t("landing.pricing.subtitle")}
             </p>
             {isPro && (
               <Badge className="mt-3 bg-emerald-500/20 text-emerald-400 border-emerald-500/30">
@@ -126,93 +130,109 @@ export default function PricingClient() {
             </div>
           )}
 
+          {/* Toggle */}
+          <div className="flex items-center justify-center gap-4 pt-4 mb-10">
+            <button
+              onClick={() => setIsYearly(true)}
+              className={`text-lg font-medium transition-colors ${isYearly ? "text-foreground" : "text-muted-foreground hover:text-foreground"}`}
+            >
+              {t("landing.pricing.yearly") || "Yearly"}
+            </button>
+            <div
+              className="relative w-14 h-8 rounded-full bg-muted cursor-pointer border border-border"
+              onClick={() => setIsYearly(!isYearly)}
+            >
+              <div
+                className={`absolute top-1 left-1 w-6 h-6 rounded-full bg-primary transition-transform ${isYearly ? "translate-x-0" : "translate-x-6"}`}
+              />
+            </div>
+            <button
+              onClick={() => setIsYearly(false)}
+              className={`text-lg font-medium transition-colors ${!isYearly ? "text-foreground" : "text-muted-foreground hover:text-foreground"}`}
+            >
+              {t("landing.pricing.monthly") || "Monthly"}
+            </button>
+            {isYearly && (
+              <Badge variant="secondary" className="text-sm font-semibold px-3 py-1">
+                {t("landing.pricing.save") || "Save 24%"}
+              </Badge>
+            )}
+          </div>
+
           {/* Plans */}
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 max-w-4xl mx-auto">
-            {/* FREE */}
-            <Card>
-              <CardHeader className="pb-3">
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-lg font-bold">{t("pricing.freePlan")}</CardTitle>
-                  <Badge className="bg-slate-700 text-slate-300 border-slate-600 text-[10px]">FOREVER FREE</Badge>
+          <div className="grid lg:grid-cols-2 gap-10 items-stretch">
+            {/* Free Plan */}
+            <Card className="flex flex-col border-2 relative overflow-hidden">
+              <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-muted to-muted/50" />
+              <CardHeader className="pb-4 pt-8">
+                <CardTitle className="flex items-center justify-between text-2xl">
+                  <span className="flex items-center gap-2">
+                    <Zap className="w-6 h-6 text-yellow-500" />
+                    {t("landing.pricing.free.name")}
+                  </span>
+                </CardTitle>
+                <div className="mt-4">
+                  <span className="text-5xl font-bold tracking-tight">{t("landing.pricing.free.price")}</span>
+                  <span className="text-muted-foreground text-lg"> /{t("landing.pricing.period")}</span>
                 </div>
-                <p className="text-sm text-slate-400">{t("pricing.freeDescription")}</p>
+                <CardDescription className="text-base mt-3 leading-relaxed">
+                  {t("landing.pricing.free.description")}
+                </CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-baseline gap-1">
-                  <span className="text-3xl font-bold">$0</span>
-                  <span className="text-sm text-slate-500">{t("pricing.perMonth")}</span>
-                </div>
-                <ul className="space-y-2 text-sm text-slate-300">
-                  {freeFeatures.map((f) => (
-                    <li key={f} className="flex items-center gap-2">
-                      <Check className="h-4 w-4 text-emerald-400 shrink-0" /> {f}
-                    </li>
-                  ))}
-                </ul>
-                <Button
-                  className="w-full"
-                  onClick={handleFreeStart}
-                >
-                  Get Started
+
+              <CardContent className="pb-4">
+                <Button className="w-full text-base py-6" variant="outline" onClick={handleFreeStart}>
+                  {t("landing.pricing.free.cta")}
                 </Button>
               </CardContent>
-            </Card>
 
-            {/* PRO */}
-            <Card className="border-amber-500/30 ring-1 ring-amber-500/20 relative overflow-hidden">
-              <div className="absolute top-0 right-0 bg-amber-500 text-black text-[10px] font-bold px-2 py-1 rounded-bl-lg">
-                MOST POPULAR
-              </div>
-              <CardHeader className="pb-3">
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-lg font-bold">{t("pricing.proPlan")}</CardTitle>
-                  <Badge className="bg-amber-500/20 text-amber-400 border-amber-500/30 text-[10px]">
-                    <Zap className="mr-1 h-3 w-3" /> PRO
-                  </Badge>
-                </div>
-                <p className="text-sm text-slate-400">{t("pricing.proDescription")}</p>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {/* Billing toggle */}
-                <div className="flex items-center justify-center gap-2 bg-muted rounded-lg p-1">
-                  <button
-                    onClick={() => setBillingCycle("monthly")}
-                    className={cn(
-                      "flex-1 text-xs font-medium py-1.5 rounded-md transition-colors",
-                      billingCycle === "monthly" ? "bg-secondary text-secondary-foreground" : "text-muted-foreground hover:text-foreground"
-                    )}
-                  >
-                    {t("pricing.monthly")}
-                  </button>
-                  <button
-                    onClick={() => setBillingCycle("yearly")}
-                    className={cn(
-                      "flex-1 text-xs font-medium py-1.5 rounded-md transition-colors",
-                      billingCycle === "yearly" ? "bg-secondary text-secondary-foreground" : "text-muted-foreground hover:text-foreground"
-                    )}
-                  >
-                    {t("pricing.yearly")}
-                  </button>
-                </div>
+              <hr className="border-dashed mx-6" />
 
-                <div className="flex items-baseline gap-1">
-                  <span className="text-3xl font-bold">${billingCycle === "monthly" ? "25" : "19"}</span>
-                  <span className="text-sm text-slate-500">/mo</span>
-                  {billingCycle === "yearly" && (
-                    <span className="ml-2 text-xs text-slate-400">billed as $228/yr</span>
-                  )}
-                </div>
-
-                <ul className="space-y-2 text-sm text-slate-300">
-                  {proFeatures.map((f) => (
-                    <li key={f} className="flex items-center gap-2">
-                      <Check className={cn("h-4 w-4 shrink-0", f.startsWith("Everything") ? "text-emerald-400" : "text-amber-400")} /> {f}
+              <CardFooter className="flex-1 pt-6 pb-8">
+                <ul className="space-y-4 w-full">
+                  {freeFeatures.map((key) => (
+                    <li key={key} className="flex items-start gap-3">
+                      <Check className="h-5 w-5 text-green-500 mt-0.5 shrink-0" />
+                      <span className="text-base text-muted-foreground leading-snug">{t(key)}</span>
                     </li>
                   ))}
                 </ul>
+              </CardFooter>
+            </Card>
 
+            {/* Pro Plan */}
+            <Card className="flex flex-col border-2 border-primary/40 relative overflow-hidden shadow-2xl shadow-primary/10">
+              <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-primary via-purple-500 to-primary" />
+              <CardHeader className="pb-4 pt-8">
+                <CardTitle className="flex items-center justify-between text-2xl">
+                  <span className="flex items-center gap-2">
+                    <Star className="w-6 h-6 text-primary fill-primary" />
+                    {t("landing.pricing.pro.name")}
+                  </span>
+                  <Badge variant="secondary" className="text-sm text-primary font-semibold px-3 py-1">
+                    {t("landing.pricing.popular")}
+                  </Badge>
+                </CardTitle>
+                <div className="mt-4">
+                  <span className="text-5xl font-bold tracking-tight">{proPrice}</span>
+                  {!isYearly && (
+                    <span className="text-muted-foreground text-lg line-through ml-2">$25</span>
+                  )}
+                  <span className="text-muted-foreground text-lg"> {proPeriod}</span>
+                </div>
+                {!isYearly && (
+                  <p className="text-sm text-muted-foreground mt-1">
+                    {t("landing.pricing.firstMonth")}, {t("landing.pricing.thenMonthly")}
+                  </p>
+                )}
+                <CardDescription className="text-base mt-3 leading-relaxed">
+                  {t("landing.pricing.pro.description")}
+                </CardDescription>
+              </CardHeader>
+
+              <CardContent className="pb-4">
                 <Button
-                  className="w-full bg-amber-500 text-black hover:bg-amber-600 font-semibold"
+                  className="w-full text-base py-6"
                   onClick={handleSubscribe}
                   disabled={processing || isPro}
                 >
@@ -222,15 +242,34 @@ export default function PricingClient() {
                     t("pricing.currentPlan")
                   ) : (
                     <>
-                      <Zap className="mr-2 h-4 w-4" />
-                      {t("pricing.upgradeToPro")}
+                      <Star className="mr-2 h-4 w-4" />
+                      {t("landing.pricing.pro.cta")}
                     </>
                   )}
                 </Button>
-                <p className="text-center text-[10px] text-slate-500">
+                <p className="text-center text-xs text-muted-foreground mt-2">
                   No charge for 7 days. Cancel anytime. PayPal required.
                 </p>
               </CardContent>
+
+              <hr className="border-dashed mx-6" />
+
+              <CardFooter className="flex-1 pt-6 pb-8">
+                <ul className="space-y-4 w-full">
+                  <li className="flex items-start gap-3 pb-3 border-b border-dashed">
+                    <Check className="h-5 w-5 text-primary mt-0.5 shrink-0" />
+                    <span className="text-base font-semibold text-foreground leading-snug">
+                      {t("landing.pricing.includesFree")}
+                    </span>
+                  </li>
+                  {proFeatures.map((key) => (
+                    <li key={key} className="flex items-start gap-3">
+                      <Star className="h-5 w-5 text-primary mt-0.5 shrink-0" />
+                      <span className="text-base text-muted-foreground leading-snug">{t(key)}</span>
+                    </li>
+                  ))}
+                </ul>
+              </CardFooter>
             </Card>
           </div>
         </div>
