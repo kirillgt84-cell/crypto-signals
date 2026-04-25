@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react"
 import { useSidebar } from "@/hooks/useSidebar"
-import Link from "next/link"
+
 import { TrendingUp, TrendingDown, Minus, Activity, BarChart4, BarChartHorizontal, Wallet, Crosshair, BadgeDollarSign, GitCompare, Loader2 } from "lucide-react"
 import { UserMenu } from "@/app/components/UserMenu"
 import { AuthModal } from "@/app/components/AuthModal"
@@ -823,12 +823,7 @@ export default function Dashboard() {
         {/* Header */}
         <header className="flex h-16 items-center justify-between border-b border-border px-4 lg:px-6">
           <div className="flex items-center gap-4">
-            <Link href="/" className="flex items-center gap-2 shrink-0">
-              <Logo className="h-8 w-auto" />
-            </Link>
-            <div className="w-px h-6 bg-border hidden sm:block" />
             <UserMenu onOpenAuth={() => setAuthOpen(true)} />
-            <div className="w-px h-6 bg-border hidden sm:block" />
             <CoinSearch onSelect={(sym) => setSymbol(sym.replace("USDT", ""))} currentSymbol={symbol + "USDT"} />
             <Select value={timeframe} onValueChange={setTimeframe}>
               <SelectTrigger className="w-20">
