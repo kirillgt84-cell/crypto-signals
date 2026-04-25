@@ -129,36 +129,36 @@ def _detect_phase(btc_d: float, stable_d: float, alt_d: float) -> tuple[str, str
     """
     Phase detection based on dominance levels.
     Returns (phase_key, description).
+    Descriptions are neutral — they describe relative performance, not recommendations.
     """
-    # Simplified heuristics for MVP
     if stable_d > 0.18:
         return (
             "RISK_OFF",
-            "Stablecoin dominance is elevated. Capital is fleeing risk assets. Historically this precedes or accompanies market corrections.",
+            "Stablecoin dominance is elevated. Dollar-pegged assets are expanding their share, reflecting a contraction in risk-asset exposure.",
         )
     if btc_d > 0.52 and stable_d < 0.12:
         return (
             "BTC_EXPANSION",
-            "Bitcoin dominates while stablecoins shrink. This is typical of early bull phases where BTC leads the market.",
+            "Bitcoin dominates while stablecoins contract. BTC is outperforming both altcoins and stable-pegged assets on a relative basis.",
         )
     if btc_d < 0.45 and alt_d > 0.45 and stable_d < 0.12:
         return (
             "ALTSEASON",
-            "Altcoins are gaining dominance while BTC retreats. Capital is rotating from BTC into higher-beta assets.",
+            "Altcoins are gaining dominance while BTC retreats. Alternative cryptocurrencies are outperforming Bitcoin on a relative basis.",
         )
     if btc_d > 0.48 and stable_d < 0.12:
         return (
             "BTC_ACCUMULATION",
-            "BTC dominance is rising gradually. Smart money often accumulates BTC before broader alt rallies.",
+            "BTC dominance is rising gradually. Bitcoin is gaining share relative to altcoins, reflecting relative strength within the crypto market.",
         )
     if btc_d < 0.50 and stable_d > 0.12:
         return (
             "DISTRIBUTION",
-            "Bitcoin dominance is falling while stablecoins grow. This can signal profit-taking and preparation for lower prices.",
+            "Bitcoin dominance is falling while stablecoins expand. Capital is shifting toward lower-volatility, dollar-pegged instruments.",
         )
     return (
         "TRANSITION",
-        "The market is in a transitional phase. No clear dominance trend is dominant — wait for confirmation.",
+        "The market is in a transitional phase. Dominance metrics are range-bound with no sustained outperformance from any single asset class.",
     )
 
 
@@ -194,47 +194,38 @@ def _generate_signal(
 def _generate_interpretation(
     phase: str, btc_d: float, stable_d: float, alt_d: float, signal: SignalData
 ) -> str:
+    """Neutral market-structure description. No investment advice."""
     parts = []
     if phase == "BTC_EXPANSION":
         parts.append(
-            f"Bitcoin captures {btc_d:.1%} of total market cap while stablecoins shrink to {stable_d:.1%}. "
-            "This pattern historically marks early-stage bull markets where BTC outperforms alts."
+            f"Bitcoin captures {btc_d:.1%} of total market cap while stablecoins contract to {stable_d:.1%}. "
+            "BTC is outperforming altcoins on a relative basis, reflecting a risk-off preference within the crypto sector."
         )
     elif phase == "ALTSEASON":
         parts.append(
-            f"Altcoins now represent {alt_d:.1%} of the market as BTC dominance fades to {btc_d:.1%}. "
-            "Capital is rotating into higher-risk assets — a classic altseason signature."
+            f"Altcoins represent {alt_d:.1%} of the market as BTC dominance retreats to {btc_d:.1%}. "
+            "Altcoins are outperforming Bitcoin on a relative basis, indicating broader risk appetite within the sector."
         )
     elif phase == "RISK_OFF":
         parts.append(
-            f"Stablecoin dominance has climbed to {stable_d:.1%}. "
-            "Investors are moving to the sidelines. This often coincides with macro uncertainty or local tops."
+            f"Stablecoin dominance has expanded to {stable_d:.1%}. "
+            "Capital is concentrating in dollar-pegged instruments, reflecting reduced risk tolerance across the crypto market."
         )
     elif phase == "BTC_ACCUMULATION":
         parts.append(
-            f"BTC dominance at {btc_d:.1%} is rising while altcoin share is compressed. "
-            "Institutional and smart-money accumulation typically precedes the next leg up."
+            f"BTC dominance at {btc_d:.1%} is expanding while altcoin share compresses. "
+            "Bitcoin is outperforming the broader crypto market on a relative basis."
         )
     elif phase == "DISTRIBUTION":
         parts.append(
-            f"Bitcoin dominance is declining ({btc_d:.1%}) while stablecoins grow ({stable_d:.1%}). "
-            "Profit-taking is underway — capital is moving to safety."
+            f"Bitcoin dominance is declining to {btc_d:.1%} while stablecoins expand to {stable_d:.1%}. "
+            "Relative capital flows favor stable-value instruments over volatile assets."
         )
     else:
         parts.append(
-            f"Market is mixed: BTC {btc_d:.1%}, alts {alt_d:.1%}, stables {stable_d:.1%}. "
-            "No dominant trend is visible yet."
+            f"Market structure is balanced: BTC {btc_d:.1%}, alts {alt_d:.1%}, stables {stable_d:.1%}. "
+            "No single asset class shows sustained relative outperformance — the distribution remains range-bound."
         )
-
-    # Action sentence
-    if signal.type == "BUY_BTC":
-        parts.append("Action: overweight BTC relative to alts.")
-    elif signal.type == "BUY_ALTS":
-        parts.append("Action: consider increasing altcoin exposure.")
-    elif signal.type == "MOVE_TO_STABLES":
-        parts.append("Action: reduce risk exposure and build stablecoin reserves.")
-    else:
-        parts.append("Action: maintain current allocation and wait for clearer direction.")
 
     return " ".join(parts)
 
