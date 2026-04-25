@@ -75,7 +75,7 @@ class MarketStateResponse(BaseModel):
 
 async def _fetch_coingecko_global() -> dict:
     try:
-        async with httpx.AsyncClient(timeout=15) as client:
+        async with httpx.AsyncClient(timeout=8) as client:
             resp = await client.get("https://api.coingecko.com/api/v3/global")
             resp.raise_for_status()
             return resp.json()
@@ -92,10 +92,10 @@ async def _fetch_stablecoin_mcaps() -> float:
     )
     headers = {"User-Agent": "Mozilla/5.0 (compatible; MirkasoBot/1.0)"}
     
-    # Try primary endpoint with retries
-    for attempt in range(3):
+    # Try primary endpoint with 2 quick retries
+    for attempt in range(2):
         try:
-            async with httpx.AsyncClient(timeout=15) as client:
+            async with httpx.AsyncClient(timeout=8) as client:
                 resp = await client.get(url, headers=headers)
                 resp.raise_for_status()
                 coins = resp.json()
@@ -104,13 +104,14 @@ async def _fetch_stablecoin_mcaps() -> float:
                     return total
         except Exception:
             logger.warning(f"CoinGecko stablecoin markets fetch failed (attempt {attempt + 1})")
-        import asyncio
-        await asyncio.sleep(1.5 * (attempt + 1))
+        if attempt == 0:
+            import asyncio
+            await asyncio.sleep(0.5)
     
     # Fallback: try category endpoint
     try:
         fallback_url = "https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&category=stablecoins&per_page=250"
-        async with httpx.AsyncClient(timeout=15) as client:
+        async with httpx.AsyncClient(timeout=8) as client:
             resp = await client.get(fallback_url, headers=headers)
             resp.raise_for_status()
             coins = resp.json()
@@ -243,7 +244,11 @@ def _find_historical_match(phase: str) -> Optional[HistoricalMatch]:
 
 
 async def _compute_market_state() -> MarketStateResponse:
-    global_data = await _fetch_coingecko_global()
+    # Fetch both CoinGecko endpoints in parallel to cut latency
+    global_task = _fetch_coingecko_global()
+    stable_task = _fetch_stablecoin_mcaps()
+    global_data, stable_mcap = await asyncio.gather(global_task, stable_task)
+
     data = global_data.get("data") or {}
 
     total_mcap = (data.get("total_market_cap") or {}).get("usd") or 0
@@ -254,7 +259,6 @@ async def _compute_market_state() -> MarketStateResponse:
     btc_mcap_pct = ((market_cap_pct.get("btc") or 0) / 100) if market_cap_pct else 0.0
     btc_mcap = total_mcap * btc_mcap_pct
 
-    stable_mcap = await _fetch_stablecoin_mcaps()
     stable_d = stable_mcap / total_mcap if total_mcap else 0.0
     alt_d = max(0.0, 1.0 - btc_mcap_pct - stable_d)
     # Normalize if sum != 1 due to data gaps
