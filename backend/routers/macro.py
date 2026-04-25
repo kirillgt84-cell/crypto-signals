@@ -6,7 +6,9 @@ from typing import Optional, List, Dict, Any
 from datetime import datetime, timedelta
 from fastapi import APIRouter
 from database import get_db
+import logging
 
+logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/v1/macro", tags=["macro"])
 
 
@@ -197,7 +199,7 @@ async def get_m2_comparison(assets: str = "btc,spx,gold", days: int = 365):
     db = get_db()
     cutoff = datetime.utcnow() - timedelta(days=days)
 
-    # M2 history
+    # M2 history from DB
     m2_rows = await db.query(
         """SELECT computed_at::date as date, value
            FROM fundamental_metrics
@@ -206,6 +208,28 @@ async def get_m2_comparison(assets: str = "btc,spx,gold", days: int = 365):
            ORDER BY computed_at ASC""",
         [cutoff]
     )
+
+    # Fallback: if DB has sparse M2 history, fetch directly from FRED
+    expected_weeks = days // 7
+    if len(m2_rows) < expected_weeks * 0.5:
+        try:
+            from services.macro_pulse.fred_client import FREDClient
+            client = FREDClient()
+            fred_obs = await client.get_series_observations(
+                "M2SL",
+                start_date=cutoff.strftime("%Y-%m-%d"),
+                limit=10000
+            )
+            fred_rows = []
+            for obs in (fred_obs or []):
+                val = obs.get("value")
+                if val is not None and val != ".":
+                    fred_rows.append({"date": obs.get("date"), "value": float(val)})
+            # FRED returns desc; reverse to ascending
+            fred_rows.reverse()
+            m2_rows = fred_rows
+        except Exception as e:
+            logger.warning(f"M2 FRED fallback failed: {e}")
 
     dates = [str(r["date"]) for r in m2_rows]
     result = {

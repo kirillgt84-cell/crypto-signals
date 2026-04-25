@@ -59,12 +59,12 @@ async def fetch_binance_24hr(client: httpx.AsyncClient, symbol: str):
         logger.error(f"[Fundamentals] Binance 24hr {symbol} error: {e}")
     return None
 
-async def fetch_fred_m2_history(limit: int = 60):
+async def fetch_fred_m2_history(start_date: str = "2019-01-01", limit: int = 1000):
     """Fetch M2 Money Stock history from FRED API"""
     try:
         from services.macro_pulse.fred_client import FREDClient
         client = FREDClient()
-        observations = await client.get_series_observations("M2SL", limit=limit)
+        observations = await client.get_series_observations("M2SL", start_date=start_date, limit=limit)
         results = []
         for obs in (observations or []):
             val = obs.get("value")
@@ -73,6 +73,8 @@ async def fetch_fred_m2_history(limit: int = 60):
                     "date": obs.get("date"),
                     "value": float(val),
                 })
+        # FRED returns desc order; reverse to ascending
+        results.reverse()
         return results
     except Exception as e:
         logger.error(f"[FRED] M2 fetch error: {e}")
@@ -213,8 +215,8 @@ async def collect_fundamentals():
                     "description": interpret_funding(funding)[1],
                 }))
     
-    # Fetch M2 Global Liquidity history from FRED
-    m2_history = await fetch_fred_m2_history(limit=60)
+    # Fetch M2 Global Liquidity history from FRED (6+ years backfill)
+    m2_history = await fetch_fred_m2_history(start_date="2019-01-01", limit=1000)
     for m2 in m2_history:
         obs_date = datetime.strptime(m2["date"], "%Y-%m-%d")
         results.append(await save_metric(db, "GLOBAL", "m2", m2["value"], {
