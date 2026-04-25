@@ -91,7 +91,10 @@ describe("LandingPricing", () => {
     render(<LandingPricing />)
     const monthlyBtn = screen.getByText("landing.pricing.monthly")
     fireEvent.click(monthlyBtn)
+    expect(screen.getByText("$17")).toBeInTheDocument()
     expect(screen.getByText("$25")).toBeInTheDocument()
+    expect(screen.getByText(/landing.pricing.firstMonth/i)).toBeInTheDocument()
+    expect(screen.getByText(/landing.pricing.thenMonthly/i)).toBeInTheDocument()
   })
 
   it("lists all free and pro features", () => {

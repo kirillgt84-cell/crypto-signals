@@ -15,3 +15,6 @@ tsconfig.tsbuildinfo
 *.tsbuildinfo
 screenshot.js
 
+
+# Backtest spec backup
+mirkaso-backtest-tz*.md

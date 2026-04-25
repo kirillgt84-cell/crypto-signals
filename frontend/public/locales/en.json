@@ -856,7 +856,7 @@
   "landing.howItWorks.step4.description": "Execute informed decisions with precise entry and risk levels.",
   "landing.pricing.title1": "Simple",
   "landing.pricing.titleHighlight": "Pricing",
-  "landing.pricing.subtitle": "Start free, upgrade when you need more power.",
+  "landing.pricing.subtitle": "Start free, upgrade when you need more features.",
   "landing.pricing.popular": "Most Popular",
   "landing.pricing.period": "month",
   "landing.pricing.free.name": "Free",
@@ -999,5 +999,7 @@
   "landing.pricing.yearly": "Yearly",
   "landing.pricing.monthly": "Monthly",
   "landing.pricing.billedYearly": "/mo billed annually",
-  "landing.pricing.save": "Save 24%"
+  "landing.pricing.save": "Save 24%",
+  "landing.pricing.firstMonth": "First month",
+  "landing.pricing.thenMonthly": "then $25/mo"
 }

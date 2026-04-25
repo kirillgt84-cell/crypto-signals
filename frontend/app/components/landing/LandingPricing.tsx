@@ -41,7 +41,7 @@ export function LandingPricing() {
     "landing.pricing.pro.feature8",
   ]
 
-  const proPrice = isYearly ? "$19" : "$25"
+  const proPrice = isYearly ? "$19" : "$17"
   const proPeriod = isYearly
     ? t("landing.pricing.billedYearly") || "/mo billed annually"
     : `/${t("landing.pricing.period")}`
@@ -144,8 +144,16 @@ export function LandingPricing() {
             </CardTitle>
             <div className="mt-4">
               <span className="text-5xl font-bold tracking-tight">{proPrice}</span>
+              {!isYearly && (
+                <span className="text-muted-foreground text-lg line-through ml-2">$25</span>
+              )}
               <span className="text-muted-foreground text-lg"> {proPeriod}</span>
             </div>
+            {!isYearly && (
+              <p className="text-sm text-muted-foreground mt-1">
+                {t("landing.pricing.firstMonth")}, {t("landing.pricing.thenMonthly")}
+              </p>
+            )}
             <CardDescription className="text-base mt-3 leading-relaxed">
               {t("landing.pricing.pro.description")}
             </CardDescription>
