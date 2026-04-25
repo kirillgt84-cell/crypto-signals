@@ -5,6 +5,11 @@ import { AuthModal } from "../AuthModal"
 const mockLogin = jest.fn()
 const mockRegister = jest.fn()
 const mockOnClose = jest.fn()
+const mockPush = jest.fn()
+
+jest.mock("next/navigation", () => ({
+  useRouter: () => ({ push: mockPush }),
+}))
 
 jest.mock("../../context/AuthContext", () => ({
   useAuth: () => ({
@@ -16,6 +21,7 @@ jest.mock("../../context/AuthContext", () => ({
 describe("AuthModal", () => {
   beforeEach(() => {
     jest.clearAllMocks()
+    mockPush.mockClear()
   })
 
   it("renders login tab by default", () => {
@@ -44,6 +50,7 @@ describe("AuthModal", () => {
       expect(mockLogin).toHaveBeenCalledWith("a@b.com", "password123")
     })
     expect(mockOnClose).toHaveBeenCalled()
+    expect(mockPush).toHaveBeenCalledWith("/app")
   })
 
   it("shows error on login failure", async () => {
@@ -73,5 +80,6 @@ describe("AuthModal", () => {
       expect(mockRegister).toHaveBeenCalledWith("a@b.com", "password123", "alice")
     })
     expect(mockOnClose).toHaveBeenCalled()
+    expect(mockPush).toHaveBeenCalledWith("/app")
   })
 })

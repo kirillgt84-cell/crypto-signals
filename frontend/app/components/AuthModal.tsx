@@ -36,10 +36,11 @@ export function AuthModal({ isOpen, onClose, defaultTab = "login" }: AuthModalPr
       if (activeTab === "login") {
         await login(email, password)
         onClose()
+        router.push("/app")
       } else {
         await register(email, password, username || undefined)
         onClose()
-        router.push("/profile")
+        router.push("/app")
       }
     } catch (err: any) {
       setError(err.message || t("authModal.unknownError"))
