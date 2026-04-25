@@ -1021,5 +1021,6 @@
   "cryptoMetrics.interpretation.ALTSEASON": "Altcoins represent {{alt_d}} of the market as BTC dominance retreats to {{btc_d}}. Altcoins are outperforming Bitcoin on a relative basis, indicating broader risk appetite within the sector.",
   "cryptoMetrics.interpretation.DISTRIBUTION": "Bitcoin dominance is declining to {{btc_d}} while stablecoins expand to {{stable_d}}. Relative capital flows favor stable-value instruments over volatile assets.",
   "cryptoMetrics.interpretation.RISK_OFF": "Stablecoin dominance has expanded to {{stable_d}}. Capital is concentrating in dollar-pegged instruments, reflecting reduced risk tolerance across the crypto market.",
-  "cryptoMetrics.interpretation.TRANSITION": "Market structure is balanced: BTC {{btc_d}}, alts {{alt_d}}, stables {{stable_d}}. No single asset class shows sustained relative outperformance — the distribution remains range-bound."
+  "cryptoMetrics.interpretation.TRANSITION": "Market structure is balanced: BTC {{btc_d}}, alts {{alt_d}}, stables {{stable_d}}. No single asset class shows sustained relative outperformance — the distribution remains range-bound.",
+  "cryptoMetrics.chartTitle": "BTC Chart"
 }

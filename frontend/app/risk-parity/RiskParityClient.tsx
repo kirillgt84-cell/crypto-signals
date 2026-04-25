@@ -341,6 +341,81 @@ export default function RiskParityClient() {
             </p>
           </div>
 
+          {/* Action Bar */}
+          <div className="flex flex-wrap items-center gap-3 mb-6">
+            <Button
+              onClick={handleCalculate}
+              disabled={calculateLoading || getTickers().length === 0}
+            >
+              {calculateLoading ? (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <Calculator className="h-4 w-4 mr-2" />
+              )}
+              {t("riskParity.calculate")}
+            </Button>
+            <div className="flex items-center gap-2">
+              {["1y", "2y", "5y", "10y"].map((p) => (
+                <Button
+                  key={p}
+                  size="sm"
+                  variant={backtestPeriod === p ? "default" : "outline"}
+                  onClick={() => setBacktestPeriod(p)}
+                >
+                  {t(`riskParity.period${p}` as any)}
+                </Button>
+              ))}
+              <Button
+                onClick={handleBacktest}
+                disabled={backtestLoading || getTickers().length === 0}
+              >
+                {backtestLoading ? (
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                ) : (
+                  <TrendingUp className="h-4 w-4 mr-2" />
+                )}
+                {t("riskParity.runBacktest")}
+              </Button>
+            </div>
+            <Button
+              variant="outline"
+              onClick={fetchAiInsight}
+              disabled={aiInsightLoading || getTickers().length === 0}
+            >
+              {aiInsightLoading ? (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <Bot className="h-4 w-4 mr-2" />
+              )}
+              {t("riskParity.aiInsight")}
+            </Button>
+          </div>
+
+          {calculateError && (
+            <div className="mb-4 p-3 rounded-lg bg-rose-500/10 border border-rose-500/20 text-sm text-rose-500">
+              {calculateError}
+            </div>
+          )}
+
+          {backtestError && (
+            <div className="mb-4 p-3 rounded-lg bg-rose-500/10 border border-rose-500/20 text-sm text-rose-500">
+              {backtestError}
+            </div>
+          )}
+
+          {/* AI Insight (immediate) */}
+          {aiInsight && (
+            <div className="rounded-xl border bg-card p-6 mb-6">
+              <div className="flex items-center gap-2 mb-4">
+                <Bot className="h-5 w-5 text-indigo-500" />
+                <h3 className="text-lg font-semibold">{t("riskParity.aiInsight")}</h3>
+              </div>
+              <div className="text-sm text-muted-foreground leading-relaxed whitespace-pre-wrap">
+                {aiInsight}
+              </div>
+            </div>
+          )}
+
           {/* Strategy Selector */}
           <div className="space-y-4 mb-8">
             <h2 className="text-lg font-semibold flex items-center gap-2">
@@ -402,19 +477,19 @@ export default function RiskParityClient() {
             {/* Strategy Guide */}
             <Card className="mt-4">
               <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium">{t("riskParity.strategyInterpretationTitle")}</CardTitle>
+                <CardTitle className="text-base font-medium">{t("riskParity.strategyInterpretationTitle")}</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs text-muted-foreground leading-relaxed">
-                  <div className="p-3 rounded-lg bg-muted/50">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-muted-foreground leading-relaxed">
+                  <div className="p-4 rounded-lg bg-muted/50">
                     <p className="font-semibold text-foreground mb-1">{t("riskParity.allWeather")}</p>
                     <p>{t("riskParity.strategyAllWeatherDesc")}</p>
                   </div>
-                  <div className="p-3 rounded-lg bg-muted/50">
+                  <div className="p-4 rounded-lg bg-muted/50">
                     <p className="font-semibold text-foreground mb-1">{t("riskParity.allWeatherCrypto")}</p>
                     <p>{t("riskParity.strategyAllWeatherCryptoDesc")}</p>
                   </div>
-                  <div className="p-3 rounded-lg bg-muted/50">
+                  <div className="p-4 rounded-lg bg-muted/50">
                     <p className="font-semibold text-foreground mb-1">{t("riskParity.inverseVol")}</p>
                     <p>{t("riskParity.strategyInverseVolDesc")}</p>
                   </div>
@@ -423,27 +498,8 @@ export default function RiskParityClient() {
             </Card>
           </div>
 
-          {/* Calculate Section */}
+          {/* Calculate results */}
           <div className="mb-8">
-            <Button
-              onClick={handleCalculate}
-              disabled={calculateLoading || getTickers().length === 0}
-              className="mb-6"
-            >
-              {calculateLoading ? (
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-              ) : (
-                <Calculator className="h-4 w-4 mr-2" />
-              )}
-              {t("riskParity.calculate")}
-            </Button>
-
-            {calculateError && (
-              <div className="mb-4 p-3 rounded-lg bg-rose-500/10 border border-rose-500/20 text-sm text-rose-500">
-                {calculateError}
-              </div>
-            )}
-
             {weightsData && (
               <div className="space-y-6">
                 {/* Weights Bar Chart */}
@@ -545,41 +601,8 @@ export default function RiskParityClient() {
             )}
           </div>
 
-          {/* Backtest Section */}
+          {/* Backtest results */}
           <div className="space-y-6">
-            <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold flex items-center gap-2">
-                <TrendingUp className="h-5 w-5 text-indigo-500" />
-                {t("riskParity.backtestTitle")}
-              </h2>
-              <div className="flex items-center gap-2">
-                {["1y", "2y", "5y", "10y"].map((p) => (
-                  <Button
-                    key={p}
-                    size="sm"
-                    variant={backtestPeriod === p ? "default" : "outline"}
-                    onClick={() => setBacktestPeriod(p)}
-                  >
-                    {t(`riskParity.period${p}` as any)}
-                  </Button>
-                ))}
-                <Button
-                  onClick={handleBacktest}
-                  disabled={backtestLoading || getTickers().length === 0}
-                >
-                  {backtestLoading ? (
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  ) : null}
-                  {t("riskParity.runBacktest")}
-                </Button>
-              </div>
-            </div>
-
-            {backtestError && (
-              <div className="p-3 rounded-lg bg-rose-500/10 border border-rose-500/20 text-sm text-rose-500">
-                {backtestError}
-              </div>
-            )}
 
             {backtestData && (
               <div className="space-y-6">
@@ -677,10 +700,10 @@ export default function RiskParityClient() {
                 {/* Metrics Guide */}
                 <Card>
                   <CardHeader className="pb-2">
-                    <CardTitle className="text-sm font-medium">{t("riskParity.metricsInterpretationTitle")}</CardTitle>
+                    <CardTitle className="text-base font-medium">{t("riskParity.metricsInterpretationTitle")}</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 text-xs text-muted-foreground leading-relaxed">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 text-sm text-muted-foreground leading-relaxed">
                       {[
                         { label: "CAGR", desc: t("riskParity.metricCagrDesc") },
                         { label: "Sharpe", desc: t("riskParity.metricSharpeDesc") },
@@ -689,7 +712,7 @@ export default function RiskParityClient() {
                         { label: "Calmar", desc: t("riskParity.metricCalmarDesc") },
                         { label: t("riskParity.volatility"), desc: t("riskParity.metricVolatilityDesc") },
                       ].map((item) => (
-                        <div key={item.label} className="p-3 rounded-lg bg-muted/50">
+                        <div key={item.label} className="p-4 rounded-lg bg-muted/50">
                           <p className="font-semibold text-foreground mb-1">{item.label}</p>
                           <p>{item.desc}</p>
                         </div>
@@ -706,41 +729,11 @@ export default function RiskParityClient() {
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <p className="text-sm text-muted-foreground leading-relaxed">
+                    <p className="text-base text-muted-foreground leading-relaxed">
                       {getInterpretation(backtestData, t)}
                     </p>
                   </CardContent>
                 </Card>
-
-                {/* AI Insight */}
-                <div className="rounded-xl border bg-card p-6">
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-lg font-semibold flex items-center gap-2">
-                      <Bot className="h-5 w-5 text-indigo-500" />
-                      {t("riskParity.aiInsight")}
-                    </h3>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={fetchAiInsight}
-                      disabled={aiInsightLoading}
-                    >
-                      {aiInsightLoading ? (
-                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      ) : null}
-                      {t("common.analyze")}
-                    </Button>
-                  </div>
-                  {aiInsight ? (
-                    <div className="text-sm text-muted-foreground leading-relaxed whitespace-pre-wrap">
-                      {aiInsight}
-                    </div>
-                  ) : (
-                    <p className="text-sm text-muted-foreground">
-                      {t("riskParity.aiInsightDescription")}
-                    </p>
-                  )}
-                </div>
               </div>
             )}
           </div>

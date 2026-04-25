@@ -11,8 +11,10 @@ export function GlobalNavbar() {
   const pathname = usePathname()
   const [authOpen, setAuthOpen] = useState(false)
 
-  // Hidden on landing (/), app dashboard (/app), and admin (/admin/*)
-  if (pathname === "/" || pathname === "/app" || pathname?.startsWith("/admin")) {
+  // Hidden on landing (/), all dashboard pages with Sidebar, and admin (/admin/*)
+  const sidebarPaths = ["/app", "/risk-parity", "/portfolio", "/macro", "/crypto-metrics", "/signals", "/trades", "/yield-curve", "/position-calc", "/profile", "/heatmap", "/pricing"]
+  const isDashboard = sidebarPaths.some(p => pathname === p || pathname?.startsWith(p + "/"))
+  if (pathname === "/" || isDashboard || pathname?.startsWith("/admin")) {
     return null
   }
 

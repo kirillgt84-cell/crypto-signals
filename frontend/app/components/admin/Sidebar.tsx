@@ -66,7 +66,7 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
       {/* Mobile Overlay */}
       {mobileOpen && (
         <div 
-          className="fixed inset-0 z-[60] bg-black/50 lg:hidden"
+          className="fixed inset-0 z-40 overflow-hidden bg-black/50 lg:hidden"
           onClick={() => setMobileOpen(false)}
         />
       )}
@@ -74,7 +74,7 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
       {/* Sidebar */}
       <aside
         className={cn(
-          "fixed left-0 top-0 z-[60] h-screen border-r border-border bg-sidebar transition-all duration-300",
+          "fixed left-0 top-0 z-40 overflow-hidden h-screen border-r border-border bg-sidebar transition-all duration-300",
           collapsed ? "w-16" : "w-64",
           mobileOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
         )}

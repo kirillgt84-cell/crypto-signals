@@ -1021,5 +1021,6 @@
   "cryptoMetrics.interpretation.ALTSEASON": "山寨币占市场的{{alt_d}}，BTC主导地位回落至{{btc_d}}。山寨币在相对基础上跑赢了比特币，表明板块内部风险偏好正在扩大。",
   "cryptoMetrics.interpretation.DISTRIBUTION": "比特币主导地位下降至{{btc_d}}，稳定币扩张至{{stable_d}}。相对资金流向倾向于稳定价值工具而非波动性资产。",
   "cryptoMetrics.interpretation.RISK_OFF": "稳定币主导地位已攀升至{{stable_d}}。资金正集中于锚定美元的资产，反映了加密市场风险容忍度的下降。",
-  "cryptoMetrics.interpretation.TRANSITION": "市场结构平衡：BTC {{btc_d}}，山寨{{alt_d}}，稳定币{{stable_d}}。没有任何单一资产类别表现出持续的相对跑赢——分布仍处于区间波动状态。"
+  "cryptoMetrics.interpretation.TRANSITION": "市场结构平衡：BTC {{btc_d}}，山寨{{alt_d}}，稳定币{{stable_d}}。没有任何单一资产类别表现出持续的相对跑赢——分布仍处于区间波动状态。",
+  "cryptoMetrics.chartTitle": "BTC 图表"
 }

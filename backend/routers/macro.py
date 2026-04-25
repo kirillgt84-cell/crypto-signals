@@ -43,6 +43,20 @@ async def _compute_monthly_correlations_fallback(db, limit: int = 60) -> List[Di
         [],
     )
     if len(btc_rows) < 5:
+        # Fallback 1: macro_prices if BTC is tracked there
+        btc_asset = await db.query("SELECT id FROM macro_assets WHERE key = 'btc' LIMIT 1", [])
+        if btc_asset:
+            btc_rows = await db.query(
+                """SELECT DISTINCT ON (DATE(time)) DATE(time) as day, close_price as price
+                   FROM macro_prices WHERE asset_id = $1 AND time > NOW() - INTERVAL '5 years'
+                   ORDER BY DATE(time), time DESC""",
+                [btc_asset[0]["id"]],
+            )
+    if len(btc_rows) < 5:
+        # Fallback 2: Binance spot API
+        binance_rows = await _fetch_btc_from_binance(datetime.utcnow() - timedelta(days=1825))
+        btc_rows = [{"day": r["date"], "price": r["close_price"]} for r in binance_rows]
+    if len(btc_rows) < 5:
         return []
 
     all_days = sorted([str(r["day"]) for r in btc_rows])
@@ -226,7 +240,7 @@ async def _fetch_btc_from_binance(cutoff: datetime) -> list:
                 current_start = candles[-1][0] + 1
         results = []
         for c in all_candles:
-            dt = datetime.fromtimestamp(c[0] / 1000).strftime("%Y-%m-%d")
+            dt = datetime.utcfromtimestamp(c[0] / 1000).strftime("%Y-%m-%d")
             results.append({"date": dt, "close_price": float(c[4])})
         return results
     except Exception as e:
