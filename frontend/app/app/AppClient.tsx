@@ -211,7 +211,7 @@ function SentimentCards({ data, loading }: { data: MarketData; loading: boolean 
         <div>
           <p className="text-xs text-muted-foreground uppercase tracking-wider">{t("dashboard.longShortRatio")}</p>
           <p className="text-xl font-bold font-mono mt-1">{s.long_short_ratio?.toFixed(2) ?? "—"}</p>
-          <p className="text-[10px] text-muted-foreground mt-0.5">
+          <p className="text-sm text-muted-foreground mt-1">
             {t("dashboard.longAccounts")}: {s.long_accounts_pct?.toFixed(1) ?? 0}% · {t("dashboard.shortAccounts")}: {s.short_accounts_pct?.toFixed(1) ?? 0}%
           </p>
         </div>
@@ -221,7 +221,7 @@ function SentimentCards({ data, loading }: { data: MarketData; loading: boolean 
         <div>
           <p className="text-xs text-muted-foreground uppercase tracking-wider">{t("dashboard.topTraderRatio")}</p>
           <p className="text-xl font-bold font-mono mt-1">{s.top_trader_ratio?.toFixed(2) ?? "—"}</p>
-          <p className="text-[10px] text-muted-foreground mt-0.5">
+          <p className="text-sm text-muted-foreground mt-1">
             Long: {s.top_long_pct?.toFixed(1) ?? 0}% · Short: {s.top_short_pct?.toFixed(1) ?? 0}%
           </p>
         </div>
@@ -231,7 +231,7 @@ function SentimentCards({ data, loading }: { data: MarketData; loading: boolean 
         <div>
           <p className="text-xs text-muted-foreground uppercase tracking-wider">{t("dashboard.takerVolumeRatio")}</p>
           <p className="text-xl font-bold font-mono mt-1">{s.taker_volume_ratio?.toFixed(2) ?? "—"}</p>
-          <p className="text-[10px] text-muted-foreground mt-0.5">
+          <p className="text-sm text-muted-foreground mt-1">
             Buy: {s.taker_buy?.toFixed(1) ?? 0} · Sell: {s.taker_sell?.toFixed(1) ?? 0}
           </p>
         </div>
@@ -543,7 +543,7 @@ export default function Dashboard() {
   // Map frontend timeframe to backend API timeframe
   const getApiTimeframe = (tf: string) => {
     const mapping: Record<string, string> = {
-      "15": "1h",
+      "15": "15m",
       "60": "1h",
       "240": "4h",
       "D": "1d",
