@@ -301,8 +301,11 @@ async def refresh_token(request: Request = None, response: Response = None):
     
     if not refresh_token and request:
         # Fallback to body for backward compatibility during transition
-        body = await request.json()
-        refresh_token = body.get("refresh_token")
+        try:
+            body = await request.json()
+            refresh_token = body.get("refresh_token")
+        except Exception:
+            pass
     
     if not refresh_token:
         raise HTTPException(status_code=401, detail="No refresh token provided")

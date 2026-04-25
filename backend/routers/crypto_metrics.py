@@ -76,10 +76,14 @@ class MarketStateResponse(BaseModel):
 
 
 async def _fetch_coingecko_global() -> dict:
-    async with httpx.AsyncClient(timeout=15) as client:
-        resp = await client.get("https://api.coingecko.com/api/v3/global")
-        resp.raise_for_status()
-        return resp.json()
+    try:
+        async with httpx.AsyncClient(timeout=15) as client:
+            resp = await client.get("https://api.coingecko.com/api/v3/global")
+            resp.raise_for_status()
+            return resp.json()
+    except Exception:
+        logger.warning("CoinGecko global fetch failed, returning empty fallback")
+        return {"data": {}}
 
 
 async def _fetch_stablecoin_mcaps() -> float:
@@ -88,12 +92,16 @@ async def _fetch_stablecoin_mcaps() -> float:
         "https://api.coingecko.com/api/v3/coins/markets"
         f"?vs_currency=usd&ids={ids_param}&per_page=250"
     )
-    async with httpx.AsyncClient(timeout=15) as client:
-        resp = await client.get(url)
-        resp.raise_for_status()
-        coins = resp.json()
-        total = sum(c.get("market_cap", 0) or 0 for c in coins)
-        return total
+    try:
+        async with httpx.AsyncClient(timeout=15) as client:
+            resp = await client.get(url)
+            resp.raise_for_status()
+            coins = resp.json()
+            total = sum(c.get("market_cap", 0) or 0 for c in coins)
+            return total
+    except Exception:
+        logger.warning("CoinGecko stablecoin markets fetch failed, returning 0")
+        return 0.0
 
 
 def _detect_phase(btc_d: float, stable_d: float, alt_d: float) -> tuple[str, str]:
@@ -224,14 +232,18 @@ def _find_historical_match(phase: str) -> Optional[HistoricalMatch]:
 
 async def _compute_market_state() -> MarketStateResponse:
     global_data = await _fetch_coingecko_global()
-    data = global_data.get("data", {})
+    data = global_data.get("data") or {}
 
-    total_mcap = data.get("total_market_cap", {}).get("usd", 0)
-    btc_mcap_pct = data.get("market_cap_percentage", {}).get("btc", 0) / 100
+    total_mcap = (data.get("total_market_cap") or {}).get("usd") or 0
+    if total_mcap <= 0:
+        raise ValueError("Invalid total market cap from CoinGecko")
+
+    market_cap_pct = data.get("market_cap_percentage") or {}
+    btc_mcap_pct = ((market_cap_pct.get("btc") or 0) / 100) if market_cap_pct else 0.0
     btc_mcap = total_mcap * btc_mcap_pct
 
     stable_mcap = await _fetch_stablecoin_mcaps()
-    stable_d = stable_mcap / total_mcap if total_mcap else 0
+    stable_d = stable_mcap / total_mcap if total_mcap else 0.0
     alt_d = max(0.0, 1.0 - btc_mcap_pct - stable_d)
     # Normalize if sum != 1 due to data gaps
     total_d = btc_mcap_pct + stable_d + alt_d
@@ -278,7 +290,23 @@ async def get_market_state():
         # Return cached stale data if available
         if _cache:
             return _cache
-        raise
+        # Return fallback placeholder so the UI doesn't crash
+        return MarketStateResponse(
+            btc_dominance=0.0,
+            alt_dominance=0.0,
+            stable_dominance=0.0,
+            total_market_cap_usd=0,
+            btc_market_cap_usd=0,
+            stable_market_cap_usd=0,
+            alt_market_cap_usd=0,
+            phase="UNKNOWN",
+            phase_description="Market data is temporarily unavailable. Please try again later.",
+            flows=FlowData(btc_to_alt=False, alt_to_btc=False, crypto_to_stable=False, stable_to_btc=False),
+            signal=SignalData(type="HOLD", strength="weak"),
+            interpretation="Market data is currently unavailable. Please wait a few minutes and refresh.",
+            historical_match=None,
+            updated_at=datetime.now(timezone.utc).isoformat(),
+        )
 
     _cache = state
     _cache_time = now

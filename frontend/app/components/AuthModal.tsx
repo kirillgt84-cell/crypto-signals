@@ -9,7 +9,7 @@ import { useLanguage } from "../context/LanguageContext"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 
 interface AuthModalProps {
   isOpen: boolean
@@ -55,6 +55,11 @@ export function AuthModal({ isOpen, onClose, defaultTab = "login" }: AuthModalPr
           <DialogTitle className="text-center text-2xl font-bold">
             {activeTab === "login" ? t("authModal.welcomeBack") : t("authModal.createAccount")}
           </DialogTitle>
+          <DialogDescription className="sr-only">
+            {activeTab === "login"
+              ? "Sign in to your Mirkaso account to access trading analytics and portfolio tools."
+              : "Create a new Mirkaso account to start using trading analytics and portfolio tools."}
+          </DialogDescription>
         </DialogHeader>
 
         <div className="flex rounded-lg bg-muted p-1 mb-6">

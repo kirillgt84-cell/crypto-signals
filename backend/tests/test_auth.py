@@ -346,6 +346,20 @@ class TestRefreshLogout:
         assert exc.value.status_code == 401
 
     @patch("routers.auth.get_db")
+    async def test_refresh_token_empty_body_returns_401_not_500(self, mock_get_db, mock_db):
+        """Empty or invalid JSON body must not cause an unhandled 500."""
+        mock_get_db.return_value = mock_db
+        from routers.auth import refresh_token
+        from fastapi import HTTPException
+        from starlette.requests import Request
+        async def receive():
+            return {"type": "http.request", "body": b""}
+        req = Request({"type": "http", "method": "POST", "headers": []}, receive=receive)
+        with pytest.raises(HTTPException) as exc:
+            await refresh_token(req)
+        assert exc.value.status_code == 401
+
+    @patch("routers.auth.get_db")
     async def test_logout(self, mock_get_db, mock_db):
         mock_get_db.return_value = mock_db
         mock_db.execute = AsyncMock()
