@@ -26,6 +26,7 @@ export function TradingViewChart({
 }: TradingViewChartProps) {
   
   const tvSymbol = useMemo(() => {
+    if (symbol.includes(":")) return symbol
     return `BINANCE:${symbol}USDT.P`
   }, [symbol])
   

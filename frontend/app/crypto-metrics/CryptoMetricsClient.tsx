@@ -19,7 +19,6 @@ import {
   Activity,
   ChevronDown,
   ChevronUp,
-  ExternalLink,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useLanguage } from "@/app/context/LanguageContext";
@@ -97,6 +96,7 @@ export default function CryptoMetricsClient() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [chartExpanded, setChartExpanded] = useState(true);
+  const [chartSymbol, setChartSymbol] = useState("BTC");
   const { t } = useLanguage();
 
   const fetchData = useCallback(async () => {
@@ -150,11 +150,10 @@ export default function CryptoMetricsClient() {
             <div className="space-y-8">
               {/* Dominance Indicators + Total Cap (compact 4-col row) */}
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                <Card className="border-l-4 border-l-orange-500 cursor-pointer hover:shadow-md transition-shadow" onClick={() => window.open("https://www.tradingview.com/chart/?symbol=CRYPTOCAP:BTC.D", "_blank")}>
+                <Card className="border-l-4 border-l-orange-500 cursor-pointer hover:shadow-md transition-shadow" onClick={() => { setChartSymbol("CRYPTOCAP:BTC.D"); setChartExpanded(true); }}>
                   <CardHeader className="pb-1">
                     <CardTitle className="text-xs text-muted-foreground uppercase flex items-center gap-1">
                       {t("cryptoMetrics.btcDominance")}
-                      <ExternalLink className="h-3 w-3" />
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
@@ -162,11 +161,10 @@ export default function CryptoMetricsClient() {
                     <p className="text-xs text-muted-foreground">{formatCap(data.btc_market_cap_usd)}</p>
                   </CardContent>
                 </Card>
-                <Card className="border-l-4 border-l-indigo-500 cursor-pointer hover:shadow-md transition-shadow" onClick={() => window.open("https://www.tradingview.com/chart/?symbol=CRYPTOCAP:TOTAL2", "_blank")}>
+                <Card className="border-l-4 border-l-indigo-500 cursor-pointer hover:shadow-md transition-shadow" onClick={() => { setChartSymbol("CRYPTOCAP:TOTAL2"); setChartExpanded(true); }}>
                   <CardHeader className="pb-1">
                     <CardTitle className="text-xs text-muted-foreground uppercase flex items-center gap-1">
                       {t("cryptoMetrics.altDominance")}
-                      <ExternalLink className="h-3 w-3" />
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
@@ -174,11 +172,10 @@ export default function CryptoMetricsClient() {
                     <p className="text-xs text-muted-foreground">{formatCap(data.alt_market_cap_usd)}</p>
                   </CardContent>
                 </Card>
-                <Card className="border-l-4 border-l-emerald-500 cursor-pointer hover:shadow-md transition-shadow" onClick={() => window.open("https://www.tradingview.com/chart/?symbol=CRYPTOCAP:USDT.D", "_blank")}>
+                <Card className="border-l-4 border-l-emerald-500 cursor-pointer hover:shadow-md transition-shadow" onClick={() => { setChartSymbol("CRYPTOCAP:USDT.D"); setChartExpanded(true); }}>
                   <CardHeader className="pb-1">
                     <CardTitle className="text-xs text-muted-foreground uppercase flex items-center gap-1">
                       {t("cryptoMetrics.stableDominance")}
-                      <ExternalLink className="h-3 w-3" />
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
@@ -186,11 +183,10 @@ export default function CryptoMetricsClient() {
                     <p className="text-xs text-muted-foreground">{formatCap(data.stable_market_cap_usd)}</p>
                   </CardContent>
                 </Card>
-                <Card className="border-l-4 border-l-blue-500 cursor-pointer hover:shadow-md transition-shadow" onClick={() => window.open("https://www.tradingview.com/chart/?symbol=CRYPTOCAP:TOTAL", "_blank")}>
+                <Card className="border-l-4 border-l-blue-500 cursor-pointer hover:shadow-md transition-shadow" onClick={() => { setChartSymbol("CRYPTOCAP:TOTAL"); setChartExpanded(true); }}>
                   <CardHeader className="pb-1">
                     <CardTitle className="text-xs text-muted-foreground uppercase flex items-center gap-1">
                       {t("cryptoMetrics.totalMarketCap")}
-                      <ExternalLink className="h-3 w-3" />
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
@@ -319,7 +315,7 @@ export default function CryptoMetricsClient() {
                 </div>
                 {chartExpanded && (
                   <CardContent className="p-0 overflow-hidden rounded-xl">
-                    <TradingViewChart symbol="BTC" timeframe="D" />
+                    <TradingViewChart symbol={chartSymbol} timeframe="D" />
                   </CardContent>
                 )}
               </Card>

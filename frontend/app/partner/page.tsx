@@ -82,7 +82,7 @@ export default function PartnerPage() {
   if (!isAuthenticated) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <p className="text-muted-foreground">Please sign in to access Partner Program</p>
+        <p className="text-muted-foreground">{t("partner.signInRequired")}</p>
       </div>
     );
   }
@@ -100,17 +100,17 @@ export default function PartnerPage() {
           <div className="mb-8">
             <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2">
               <Gift className="h-6 w-6 text-indigo-500" />
-              Partner Program
+              {t("partner.title")}
             </h1>
             <p className="text-muted-foreground text-sm mt-1">
-              Invite friends and earn 20% from their Pro subscriptions
+              {t("partner.subtitle")}
             </p>
           </div>
 
           {loading ? (
             <div className="text-center py-20 text-muted-foreground">
               <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
-              Loading...
+              {t("common.loading")}
             </div>
           ) : stats?.code ? (
             <div className="space-y-6">
@@ -118,7 +118,7 @@ export default function PartnerPage() {
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <Card>
                   <CardHeader className="pb-2">
-                    <CardTitle className="text-xs text-muted-foreground uppercase">Total Referrals</CardTitle>
+                    <CardTitle className="text-xs text-muted-foreground uppercase">{t("partner.totalReferrals")}</CardTitle>
                   </CardHeader>
                   <CardContent>
                     <p className="text-3xl font-bold">{stats.total_referrals}</p>
@@ -126,7 +126,7 @@ export default function PartnerPage() {
                 </Card>
                 <Card>
                   <CardHeader className="pb-2">
-                    <CardTitle className="text-xs text-muted-foreground uppercase">Active</CardTitle>
+                    <CardTitle className="text-xs text-muted-foreground uppercase">{t("partner.active")}</CardTitle>
                   </CardHeader>
                   <CardContent>
                     <p className="text-3xl font-bold">{stats.active_referrals}</p>
@@ -134,7 +134,7 @@ export default function PartnerPage() {
                 </Card>
                 <Card>
                   <CardHeader className="pb-2">
-                    <CardTitle className="text-xs text-muted-foreground uppercase">Total Earned</CardTitle>
+                    <CardTitle className="text-xs text-muted-foreground uppercase">{t("partner.totalEarned")}</CardTitle>
                   </CardHeader>
                   <CardContent>
                     <p className="text-3xl font-bold">${stats.total_earned.toFixed(2)}</p>
@@ -142,7 +142,7 @@ export default function PartnerPage() {
                 </Card>
                 <Card>
                   <CardHeader className="pb-2">
-                    <CardTitle className="text-xs text-muted-foreground uppercase">Available</CardTitle>
+                    <CardTitle className="text-xs text-muted-foreground uppercase">{t("partner.available")}</CardTitle>
                   </CardHeader>
                   <CardContent>
                     <p className="text-3xl font-bold">${stats.available_balance.toFixed(2)}</p>
@@ -153,7 +153,7 @@ export default function PartnerPage() {
               {/* Referral Link */}
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-base font-semibold">Your Referral Link</CardTitle>
+                  <CardTitle className="text-base font-semibold">{t("partner.yourReferralLink")}</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="flex items-center gap-2">
@@ -161,11 +161,11 @@ export default function PartnerPage() {
                       {stats.referral_link}
                     </code>
                     <Button variant="outline" size="sm" onClick={copyLink}>
-                      {copied ? "Copied!" : <Copy className="h-4 w-4" />}
+                      {copied ? t("partner.copied") : <Copy className="h-4 w-4" />}
                     </Button>
                   </div>
                   <p className="text-sm text-muted-foreground">
-                    Share this link with friends. They get <strong>20% off</strong> their first month, and you earn <strong>$3.80</strong> per Pro subscriber.
+                    {t("partner.shareText")}
                   </p>
                 </CardContent>
               </Card>
@@ -174,17 +174,17 @@ export default function PartnerPage() {
               {stats.referrals && stats.referrals.length > 0 && (
                 <Card>
                   <CardHeader>
-                    <CardTitle className="text-base font-semibold">Your Referrals</CardTitle>
+                    <CardTitle className="text-base font-semibold">{t("partner.yourReferrals")}</CardTitle>
                   </CardHeader>
                   <CardContent>
                     <div className="overflow-x-auto">
                       <table className="w-full text-sm">
                         <thead>
                           <tr className="border-b">
-                            <th className="text-left py-2 px-3 font-medium text-muted-foreground">User</th>
-                            <th className="text-left py-2 px-3 font-medium text-muted-foreground">Status</th>
-                            <th className="text-left py-2 px-3 font-medium text-muted-foreground">Joined</th>
-                            <th className="text-right py-2 px-3 font-medium text-muted-foreground">Revenue</th>
+                            <th className="text-left py-2 px-3 font-medium text-muted-foreground">{t("partner.user")}</th>
+                            <th className="text-left py-2 px-3 font-medium text-muted-foreground">{t("partner.status")}</th>
+                            <th className="text-left py-2 px-3 font-medium text-muted-foreground">{t("partner.joined")}</th>
+                            <th className="text-right py-2 px-3 font-medium text-muted-foreground">{t("partner.revenue")}</th>
                           </tr>
                         </thead>
                         <tbody>
@@ -193,7 +193,7 @@ export default function PartnerPage() {
                               <td className="py-2 px-3">{ref.username || ref.email}</td>
                               <td className="py-2 px-3">
                                 <Badge variant={ref.status === "subscribed" ? "default" : "secondary"}>
-                                  {ref.status}
+                                  {ref.status === "subscribed" ? t("partner.subscribed") : t("partner.pending")}
                                 </Badge>
                               </td>
                               <td className="py-2 px-3 text-muted-foreground">
@@ -215,16 +215,16 @@ export default function PartnerPage() {
               {stats.transactions && stats.transactions.length > 0 && (
                 <Card>
                   <CardHeader>
-                    <CardTitle className="text-base font-semibold">Earnings History</CardTitle>
+                    <CardTitle className="text-base font-semibold">{t("partner.earningsHistory")}</CardTitle>
                   </CardHeader>
                   <CardContent>
                     <div className="overflow-x-auto">
                       <table className="w-full text-sm">
                         <thead>
                           <tr className="border-b">
-                            <th className="text-left py-2 px-3 font-medium text-muted-foreground">Date</th>
-                            <th className="text-left py-2 px-3 font-medium text-muted-foreground">Type</th>
-                            <th className="text-right py-2 px-3 font-medium text-muted-foreground">Amount</th>
+                            <th className="text-left py-2 px-3 font-medium text-muted-foreground">{t("partner.date")}</th>
+                            <th className="text-left py-2 px-3 font-medium text-muted-foreground">{t("partner.type")}</th>
+                            <th className="text-right py-2 px-3 font-medium text-muted-foreground">{t("partner.amount")}</th>
                           </tr>
                         </thead>
                         <tbody>
@@ -233,7 +233,11 @@ export default function PartnerPage() {
                               <td className="py-2 px-3 text-muted-foreground">
                                 {new Date(tx.created_at).toLocaleDateString()}
                               </td>
-                              <td className="py-2 px-3">{tx.type}</td>
+                              <td className="py-2 px-3">{
+                                tx.type === "reward" ? t("partner.reward") :
+                                tx.type === "payout" ? t("partner.payout") :
+                                tx.type
+                              }</td>
                               <td className="py-2 px-3 text-right font-mono text-emerald-500">
                                 +${parseFloat(tx.amount).toFixed(2)}
                               </td>
@@ -250,13 +254,13 @@ export default function PartnerPage() {
             <Card className="text-center py-12">
               <CardContent className="space-y-4">
                 <Users className="h-12 w-12 text-muted-foreground mx-auto" />
-                <h2 className="text-xl font-semibold">Become a Partner</h2>
+                <h2 className="text-xl font-semibold">{t("partner.becomePartner")}</h2>
                 <p className="text-muted-foreground max-w-md mx-auto">
-                  Generate your unique referral code and start earning 20% from every Pro subscriber you invite.
+                  {t("partner.becomeDescription")}
                 </p>
                 <Button onClick={generateCode}>
                   <TrendingUp className="h-4 w-4 mr-2" />
-                  Generate Code
+                  {t("partner.generateCode")}
                 </Button>
               </CardContent>
             </Card>

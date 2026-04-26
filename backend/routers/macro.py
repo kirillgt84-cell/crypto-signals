@@ -57,6 +57,10 @@ async def _compute_monthly_correlations_fallback(db, limit: int = 60) -> List[Di
         binance_rows = await _fetch_btc_from_binance(datetime.utcnow() - timedelta(days=1825))
         btc_rows = [{"day": r["date"], "price": r["close_price"]} for r in binance_rows]
     if len(btc_rows) < 5:
+        # Fallback 3: CoinGecko
+        cg_rows = await _fetch_from_coingecko("bitcoin", days=1825)
+        btc_rows = [{"day": r["date"], "price": r["close_price"]} for r in cg_rows]
+    if len(btc_rows) < 5:
         return []
 
     all_days = sorted([str(r["day"]) for r in btc_rows])
@@ -79,29 +83,32 @@ async def _compute_monthly_correlations_fallback(db, limit: int = 60) -> List[Di
         window = all_days[start_idx:end_idx + 1]
 
         # Build aligned day-by-day series so returns match the same dates
-        aligned_btc = []
-        aligned_spx = []
-        aligned_gold = []
-        aligned_vix = []
+        aligned_btc_spx = []
+        aligned_gold_btc = []
+        aligned_vix_btc = []
         for d in window:
-            if d in btc_map and d in spx_map and d in gold_map:
-                aligned_btc.append(btc_map[d])
-                aligned_spx.append(spx_map[d])
-                aligned_gold.append(gold_map[d])
+            if d in btc_map:
+                if d in spx_map:
+                    aligned_btc_spx.append((btc_map[d], spx_map[d]))
+                if d in gold_map:
+                    aligned_gold_btc.append((gold_map[d], btc_map[d]))
                 if d in vix_map:
-                    aligned_vix.append(vix_map[d])
+                    aligned_vix_btc.append((vix_map[d], btc_map[d]))
 
-        if len(aligned_btc) < 5:
-            continue
+        def _calc_corr(pairs: list) -> Optional[float]:
+            if len(pairs) < 5:
+                return None
+            a = [p[0] for p in pairs]
+            b = [p[1] for p in pairs]
+            a_r = [(a[i] - a[i - 1]) / a[i - 1] for i in range(1, len(a)) if a[i - 1] != 0]
+            b_r = [(b[i] - b[i - 1]) / b[i - 1] for i in range(1, len(b)) if b[i - 1] != 0]
+            if len(a_r) != len(b_r) or len(a_r) < 2:
+                return None
+            return float(np.corrcoef(a_r, b_r)[0, 1])
 
-        btc_r = [(aligned_btc[i] - aligned_btc[i - 1]) / aligned_btc[i - 1] for i in range(1, len(aligned_btc)) if aligned_btc[i - 1] != 0]
-        spx_r = [(aligned_spx[i] - aligned_spx[i - 1]) / aligned_spx[i - 1] for i in range(1, len(aligned_spx)) if aligned_spx[i - 1] != 0]
-        gold_r = [(aligned_gold[i] - aligned_gold[i - 1]) / aligned_gold[i - 1] for i in range(1, len(aligned_gold)) if aligned_gold[i - 1] != 0]
-        vix_r = [(aligned_vix[i] - aligned_vix[i - 1]) / aligned_vix[i - 1] for i in range(1, len(aligned_vix)) if aligned_vix[i - 1] != 0]
-
-        btc_spx_corr = float(np.corrcoef(btc_r, spx_r)[0, 1]) if len(btc_r) == len(spx_r) and len(btc_r) > 2 else None
-        gold_btc_corr = float(np.corrcoef(gold_r, btc_r)[0, 1]) if len(gold_r) == len(btc_r) and len(gold_r) > 2 else None
-        vix_btc_corr = float(np.corrcoef(vix_r, btc_r)[0, 1]) if len(vix_r) == len(btc_r) and len(vix_r) > 2 else None
+        btc_spx_corr = _calc_corr(aligned_btc_spx)
+        gold_btc_corr = _calc_corr(aligned_gold_btc)
+        vix_btc_corr = _calc_corr(aligned_vix_btc)
 
         vix_price = vix_map.get(end_day)
 
@@ -248,6 +255,31 @@ async def _fetch_btc_from_binance(cutoff: datetime) -> list:
         return []
 
 
+async def _fetch_from_coingecko(coin_id: str, days: int = 365) -> list:
+    """Fetch daily closes from CoinGecko as fallback."""
+    import httpx
+    try:
+        async with httpx.AsyncClient(timeout=30) as client:
+            resp = await client.get(
+                f"https://api.coingecko.com/api/v3/coins/{coin_id}/market_chart",
+                params={"vs_currency": "usd", "days": str(days)}
+            )
+            data = resp.json()
+            prices = data.get("prices", [])
+            from collections import defaultdict
+            day_prices = defaultdict(list)
+            for ts_ms, price in prices:
+                dt = datetime.utcfromtimestamp(ts_ms / 1000).strftime("%Y-%m-%d")
+                day_prices[dt].append(float(price))
+            results = []
+            for dt in sorted(day_prices.keys()):
+                results.append({"date": dt, "close_price": day_prices[dt][-1]})
+            return results
+    except Exception as e:
+        logger.warning(f"CoinGecko fallback failed for {coin_id}: {e}")
+        return []
+
+
 @router.get("/m2-comparison")
 async def get_m2_comparison(assets: str = "btc", days: int = 365):
     """Get M2 Global Liquidity history aligned with selected asset prices for chart overlay.
@@ -319,7 +351,17 @@ async def get_m2_comparison(assets: str = "btc", days: int = 365):
         if len(btc_rows) < 10:
             # Fallback 2: Binance API
             btc_rows = await _fetch_btc_from_binance(cutoff)
+        if len(btc_rows) < 10:
+            # Fallback 3: CoinGecko
+            btc_rows = await _fetch_from_coingecko("bitcoin", days=days)
         btc_map = {str(r["date"]): float(r["close_price"]) for r in btc_rows if r["close_price"] is not None}
+
+        # If M2 dates empty but BTC has data, use BTC dates as primary
+        if not dates and btc_map:
+            dates = sorted(btc_map.keys())
+            result["dates"] = dates
+            result["series"]["m2"] = [None] * len(dates)
+
         result["series"]["btc"] = [btc_map.get(d) for d in dates]
 
     # Other assets from macro_prices
