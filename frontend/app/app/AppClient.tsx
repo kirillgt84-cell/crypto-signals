@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react"
 import { useSidebar } from "@/hooks/useSidebar"
 
 import { TrendingUp, TrendingDown, Minus, Activity, BarChart4, BarChartHorizontal, Crosshair, BadgeDollarSign, GitCompare, Loader2 } from "lucide-react"
+import TrialStatusBanner from "@/app/components/TrialStatusBanner"
 import { UserMenu } from "@/app/components/UserMenu"
 import { AuthModal } from "@/app/components/AuthModal"
 import { ProBlurOverlay } from "@/app/components/ProBlurOverlay"
@@ -480,7 +481,7 @@ export default function Dashboard() {
   const { collapsed: sidebarCollapsed, toggle: toggleSidebar } = useSidebar()
   const [authOpen, setAuthOpen] = useState(false)
   const isFirstLoad = useRef(true)
-  const { isAuthenticated } = useAuth()
+  const { isAuthenticated, user } = useAuth()
   const { t } = useLanguage()
 
   useEffect(() => {
@@ -846,6 +847,15 @@ export default function Dashboard() {
         {error && (
           <div className="mx-4 mt-4 p-3 bg-amber-500/10 border border-amber-500/20 rounded-lg text-sm text-amber-600">
             ⚠️ {error}
+          </div>
+        )}
+
+        {user?.trial_expires_at && (
+          <div className="mx-4 mt-4">
+            <TrialStatusBanner
+              expiresAt={user.trial_expires_at}
+              tier={user.trial_source === "promo_code" ? "pro" : undefined}
+            />
           </div>
         )}
 

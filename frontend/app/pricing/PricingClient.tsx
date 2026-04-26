@@ -7,6 +7,8 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Check, Star, Zap, Crown, Loader2 } from "lucide-react";
+import PromoCodeInput from "../components/PromoCodeInput";
+import TrialStatusBanner from "../components/TrialStatusBanner";
 import Sidebar from "../components/admin/Sidebar";
 import { cn } from "@/lib/utils";
 import { useSearchParams } from "next/navigation";
@@ -168,6 +170,16 @@ export default function PricingClient() {
             )}
           </div>
 
+          {/* Trial banner if active */}
+          {user?.trial_expires_at && (
+            <div className="mb-8">
+              <TrialStatusBanner
+                expiresAt={user.trial_expires_at}
+                tier={user.trial_source === "promo_code" ? "pro" : undefined}
+              />
+            </div>
+          )}
+
           {/* Plans */}
           <div className="grid lg:grid-cols-2 gap-10 items-stretch">
             {/* Free Plan */}
@@ -281,6 +293,13 @@ export default function PricingClient() {
               </CardFooter>
             </Card>
           </div>
+
+          {/* Promo code section */}
+          {!isPro && !user?.trial_expires_at && (
+            <div className="mt-12 flex justify-center">
+              <PromoCodeInput />
+            </div>
+          )}
         </div>
       </main>
     </div>

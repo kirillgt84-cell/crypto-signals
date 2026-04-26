@@ -22,6 +22,9 @@ interface User {
   subscription_tier: "free" | "pro" | "admin"
   preferences?: UserPreferences | null
   connected_oauth?: string[]
+  trial_activated_at?: string | null
+  trial_expires_at?: string | null
+  trial_source?: string | null
 }
 
 interface AuthContextType {

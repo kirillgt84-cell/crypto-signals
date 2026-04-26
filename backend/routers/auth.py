@@ -199,6 +199,55 @@ async def get_current_user_optional(request: Request = None, credentials: HTTPAu
     except Exception:
         return None
 
+
+async def get_effective_tier(user_id: int) -> dict:
+    """Determine effective tier considering active promo trial, subscription, or free fallback."""
+    db = get_db()
+    try:
+        # Check active promo activation
+        promo_rows = await db.query(
+            """SELECT pa.*, pc.trial_tier
+               FROM promo_code_activations pa
+               JOIN promo_codes pc ON pa.promo_code_id = pc.id
+               WHERE pa.user_id = $1
+                 AND pa.status = 'active'
+                 AND pa.expires_at > NOW()
+               ORDER BY pa.expires_at DESC LIMIT 1""",
+            [user_id]
+        )
+        if promo_rows:
+            row = promo_rows[0]
+            return {
+                "tier": row.get("trial_tier", "pro"),
+                "source": "promo_trial",
+                "expires_at": row.get("expires_at"),
+                "is_trial": True,
+            }
+
+        # Check regular subscription
+        user_rows = await db.query(
+            "SELECT subscription_tier, trial_expires_at FROM users WHERE id = $1",
+            [user_id]
+        )
+        if user_rows:
+            tier = user_rows[0].get("subscription_tier", "free")
+            if tier in ("pro", "admin"):
+                return {
+                    "tier": tier,
+                    "source": "subscription",
+                    "is_trial": False,
+                }
+
+        return {
+            "tier": "free",
+            "source": "free",
+            "is_trial": False,
+        }
+    except Exception as e:
+        logging.getLogger(__name__).error(f"get_effective_tier failed: {e}")
+        return {"tier": "free", "source": "error", "is_trial": False}
+
+
 # ============= EMAIL/PASSWORD AUTH =============
 
 @router.post("/register", response_model=TokenResponse)

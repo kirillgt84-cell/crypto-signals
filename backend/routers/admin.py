@@ -1,9 +1,10 @@
 """
 Admin router for user management and reports
 """
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, HTTPException, Depends, Body
 from database import get_db
 from routers.auth import get_current_user
+from datetime import datetime
 
 router = APIRouter(prefix="/api/v1/admin", tags=["admin"])
 
@@ -226,3 +227,87 @@ async def admin_scanner_settings(body: dict, admin: dict = Depends(require_admin
             [str(min_score)],
         )
     return {"message": "Settings updated"}
+
+
+# ============= PROMO CODE ADMIN =============
+
+@router.post("/promo-codes")
+async def create_promo_code(
+    body: dict,
+    admin: dict = Depends(require_admin)
+):
+    """Create a new promo code. Only admins."""
+    db = get_db()
+
+    code = body.get("code", "").strip().upper()
+    if len(code) < 3 or len(code) > 50:
+        raise HTTPException(status_code=400, detail="Code must be 3-50 characters")
+
+    existing = await db.query("SELECT id FROM promo_codes WHERE code = $1 LIMIT 1", [code])
+    if existing:
+        raise HTTPException(status_code=400, detail="Promo code already exists")
+
+    description = body.get("description")
+    partner_id = body.get("partner_id")
+    partner_name = body.get("partner_name")
+    max_uses = body.get("max_uses")
+    valid_until = body.get("valid_until")
+    trial_days = body.get("trial_days", 7)
+    trial_tier = body.get("trial_tier", "pro")
+    discount_percent = body.get("discount_percent", 0)
+    discount_applies_to = body.get("discount_applies_to")
+    is_referral_linked = body.get("is_referral_linked", False)
+
+    if valid_until and isinstance(valid_until, str):
+        valid_until = datetime.fromisoformat(valid_until.replace("Z", "+00:00"))
+
+    await db.execute(
+        """INSERT INTO promo_codes
+           (code, description, partner_id, partner_name, max_uses, valid_until,
+            trial_days, trial_tier, discount_percent, discount_applies_to, is_referral_linked)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)""",
+        [code, description, partner_id, partner_name, max_uses, valid_until,
+         trial_days, trial_tier, discount_percent, discount_applies_to, is_referral_linked]
+    )
+
+    return {"success": True, "code": code}
+
+
+@router.get("/promo-codes")
+async def list_promo_codes(admin: dict = Depends(require_admin)):
+    """List all promo codes with stats."""
+    db = get_db()
+    rows = await db.query(
+        """SELECT
+            pc.*,
+            COUNT(DISTINCT pa.user_id) as total_activations,
+            COUNT(DISTINCT CASE WHEN pa.status = 'active' THEN pa.user_id END) as active_trials,
+            COUNT(DISTINCT CASE WHEN pa.status = 'converted' THEN pa.user_id END) as conversions
+        FROM promo_codes pc
+        LEFT JOIN promo_code_activations pa ON pc.id = pa.promo_code_id
+        GROUP BY pc.id
+        ORDER BY pc.created_at DESC""",
+        []
+    )
+    return {"promo_codes": [dict(r) for r in rows]}
+
+
+@router.patch("/promo-codes/{code_id}")
+async def update_promo_code(
+    code_id: int,
+    body: dict,
+    admin: dict = Depends(require_admin)
+):
+    """Update promo code fields (toggle active, extend valid_until, etc)."""
+    db = get_db()
+    allowed = ["description", "max_uses", "valid_until", "is_active", "trial_days", "trial_tier", "discount_percent"]
+    updates = {k: v for k, v in body.items() if k in allowed}
+    if not updates:
+        raise HTTPException(status_code=400, detail="No valid fields to update")
+
+    set_clause = ", ".join(f"{k} = ${i+2}" for i, k in enumerate(updates.keys()))
+    await db.execute(
+        f"UPDATE promo_codes SET {set_clause}, updated_at = NOW() WHERE id = $1",
+        [code_id] + list(updates.values())
+    )
+    return {"message": "Promo code updated"}

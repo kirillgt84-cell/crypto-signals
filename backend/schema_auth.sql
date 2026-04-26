@@ -23,6 +23,9 @@ ALTER TABLE users ADD COLUMN IF NOT EXISTS is_active BOOLEAN DEFAULT TRUE;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS subscription_tier VARCHAR(20) DEFAULT 'free';
+ALTER TABLE users ADD COLUMN IF NOT EXISTS trial_activated_at TIMESTAMP DEFAULT NULL;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS trial_expires_at TIMESTAMP DEFAULT NULL;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS trial_source VARCHAR(50) DEFAULT NULL;
 
 -- Add constraints separately (safe for existing columns)
 DO $$
@@ -390,3 +393,47 @@ CREATE TABLE IF NOT EXISTS user_portfolio_settings (
     manual_portfolio_enabled BOOLEAN DEFAULT FALSE,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+-- ========== PROMO CODE MODULE ==========
+
+CREATE TABLE IF NOT EXISTS promo_codes (
+    id SERIAL PRIMARY KEY,
+    code VARCHAR(50) UNIQUE NOT NULL,
+    description TEXT,
+    partner_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+    partner_name VARCHAR(100),
+    max_uses INTEGER DEFAULT NULL,
+    current_uses INTEGER DEFAULT 0,
+    is_active BOOLEAN DEFAULT TRUE,
+    valid_from TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    valid_until TIMESTAMP WITH TIME ZONE DEFAULT NULL,
+    trial_days INTEGER DEFAULT 7,
+    trial_tier VARCHAR(20) DEFAULT 'pro',
+    discount_percent INTEGER DEFAULT 0,
+    discount_applies_to VARCHAR(20) DEFAULT NULL,
+    is_referral_linked BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_promo_codes_code ON promo_codes(code);
+CREATE INDEX IF NOT EXISTS idx_promo_codes_partner ON promo_codes(partner_id);
+CREATE INDEX IF NOT EXISTS idx_promo_codes_active ON promo_codes(is_active, valid_until);
+
+CREATE TABLE IF NOT EXISTS promo_code_activations (
+    id SERIAL PRIMARY KEY,
+    promo_code_id INTEGER NOT NULL REFERENCES promo_codes(id) ON DELETE CASCADE,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    activated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
+    status VARCHAR(20) DEFAULT 'active',
+    converted_to_tier VARCHAR(20) DEFAULT NULL,
+    converted_at TIMESTAMP WITH TIME ZONE DEFAULT NULL,
+    ip_address INET,
+    user_agent TEXT,
+    UNIQUE(user_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_promo_activations_user ON promo_code_activations(user_id);
+CREATE INDEX IF NOT EXISTS idx_promo_activations_code ON promo_code_activations(promo_code_id);
+CREATE INDEX IF NOT EXISTS idx_promo_activations_status ON promo_code_activations(status, expires_at);

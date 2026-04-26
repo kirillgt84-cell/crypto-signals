@@ -353,6 +353,60 @@ async def should_run_fundamentals() -> bool:
     except Exception:
         return True
 
+async def expire_promo_trials():
+    """Expires promo trials and reverts users to free tier if no active subscription."""
+    try:
+        db = get_db()
+        # Find expired active promo activations
+        rows = await db.query(
+            """SELECT pa.id, pa.user_id, pa.promo_code_id, u.email, u.telegram_id
+               FROM promo_code_activations pa
+               JOIN users u ON pa.user_id = u.id
+               WHERE pa.status = 'active' AND pa.expires_at < NOW()""",
+            []
+        )
+        for row in rows:
+            user_id = row["user_id"]
+            # Mark activation as expired
+            await db.execute(
+                "UPDATE promo_code_activations SET status = 'expired' WHERE id = $1",
+                [row["id"]]
+            )
+            # Revert user to free if no active subscription
+            await db.execute(
+                """UPDATE users
+                   SET subscription_tier = 'free',
+                       trial_expires_at = NULL,
+                       trial_source = NULL
+                   WHERE id = $1
+                     AND subscription_tier NOT IN ('admin')
+                     AND NOT EXISTS (
+                         SELECT 1 FROM subscriptions
+                         WHERE user_id = $1 AND status = 'active'
+                           AND current_period_end > NOW()
+                     )""",
+                [user_id]
+            )
+            logger.info(f"[Scheduler] Expired promo trial for user {user_id}")
+
+            # Send notification (best effort)
+            try:
+                from services.notifications import send_notification
+                await send_notification(
+                    user_id=user_id,
+                    title="Trial истек",
+                    message="Ваш пробный период закончился. Оформите подписку для продолжения.",
+                    action_url="/pricing",
+                    action_text="Оформить подписку"
+                )
+            except Exception as ne:
+                logger.warning(f"[Scheduler] Failed to send trial expiry notification: {ne}")
+
+        logger.info(f"[Scheduler] Promo trial expiration checked: {len(rows)} expired")
+    except Exception as e:
+        logger.error(f"[Scheduler] Promo trial expiration failed: {e}")
+
+
 def start_scheduler():
     """Запускает планировщик"""
     scheduler = AsyncIOScheduler()
@@ -449,6 +503,15 @@ def start_scheduler():
         'interval',
         hours=4,
         id='macro_sync',
+        replace_existing=True
+    )
+
+    # Expire promo trials every hour
+    scheduler.add_job(
+        expire_promo_trials,
+        'interval',
+        hours=1,
+        id='expire_promo_trials',
         replace_existing=True
     )
 

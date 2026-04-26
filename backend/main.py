@@ -36,6 +36,7 @@ from routers.risk_parity import router as risk_parity_router
 from routers.crypto_metrics import router as crypto_metrics_router
 from routers.position_calc import router as position_calc_router
 from routers.partner import router as partner_router
+from routers.promo import router as promo_router
 from scheduler import start_scheduler, stop_scheduler
 
 # Глобальная переменная для scheduler
@@ -257,6 +258,7 @@ app.include_router(risk_parity_router)
 app.include_router(crypto_metrics_router)
 app.include_router(position_calc_router)
 app.include_router(partner_router)
+app.include_router(promo_router)
 
 # ============= Health Check =============
 @app.get("/health")
