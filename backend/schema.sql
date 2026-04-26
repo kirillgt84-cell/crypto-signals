@@ -262,6 +262,15 @@ JOIN portfolio_models m ON m.name = w.model
 JOIN categories c ON c.name = w.category
 ON CONFLICT (model_id, category_id) DO NOTHING;
 
+CREATE TABLE IF NOT EXISTS portfolio_model_assets (
+    id SERIAL PRIMARY KEY,
+    model_id INTEGER NOT NULL REFERENCES portfolio_models(id) ON DELETE CASCADE,
+    asset_symbol VARCHAR(20) NOT NULL,
+    asset_name VARCHAR(50),
+    target_weight DECIMAL(5, 2) NOT NULL,
+    UNIQUE(model_id, asset_symbol)
+);
+
 CREATE TABLE IF NOT EXISTS user_portfolio_settings (
     user_id INTEGER PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
     selected_model_id INTEGER REFERENCES portfolio_models(id),

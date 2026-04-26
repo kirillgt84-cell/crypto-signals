@@ -6,6 +6,11 @@ from main import app
 from routers.auth import get_current_user
 
 
+@pytest.fixture(autouse=True)
+def mock_encryption_key(monkeypatch):
+    monkeypatch.setenv("ENCRYPTION_KEY", "test_encryption_key_for_tests")
+
+
 def mock_admin():
     return {"id": 1, "email": "admin@test.com", "username": "admin", "subscription_tier": "admin"}
 

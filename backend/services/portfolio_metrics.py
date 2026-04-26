@@ -91,7 +91,7 @@ async def get_portfolio_metrics(user_id: int, days: int = 90) -> Dict[str, Any]:
     rows = await db.query(
         """SELECT date, total_notional
            FROM portfolio_history
-           WHERE user_id = $1 AND date > CURRENT_DATE - INTERVAL '$2 days'
+           WHERE user_id = $1 AND date > CURRENT_DATE - $2 * INTERVAL '1 day'
            ORDER BY date ASC""",
         [user_id, days],
     )

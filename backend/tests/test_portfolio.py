@@ -4,6 +4,11 @@ from unittest.mock import AsyncMock, patch, MagicMock
 from fastapi import HTTPException
 
 
+@pytest.fixture(autouse=True)
+def mock_encryption_key(monkeypatch):
+    monkeypatch.setenv("ENCRYPTION_KEY", "test_encryption_key_for_tests")
+
+
 @pytest.fixture
 def mock_db():
     db = MagicMock()

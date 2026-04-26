@@ -184,7 +184,7 @@ export default function PortfolioClient() {
   const [manualAmount, setManualAmount] = useState("");
   const [manualPrice, setManualPrice] = useState("");
   const [manualSide, setManualSide] = useState("LONG");
-  const [activeTab, setActiveTab] = useState<"assets" | "allocation" | "models" | "history" | "risk">("assets");
+  const [activeTab, setActiveTab] = useState<"assets" | "allocation" | "models" | "history" | "risk">("models");
   const [marketType, setMarketType] = useState("futures");
   const [alerts, setAlerts] = useState<any[]>([]);
   const [alertOpen, setAlertOpen] = useState(false);
@@ -633,7 +633,7 @@ export default function PortfolioClient() {
 
           {/* Tabs */}
           <div className="flex items-center gap-2 mb-6 border-b overflow-x-auto">
-            {(["assets", "allocation", "models", "history", "risk"] as const).map((tab) => (
+            {(["models", "assets", "allocation", "history", "risk"] as const).map((tab) => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}

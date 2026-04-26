@@ -77,6 +77,11 @@ async def _get_user_source(user_id: int, provider: str = "binance") -> Optional[
 @router.post("/connect/binance")
 async def connect_binance(req: ConnectBinanceRequest, current_user: dict = Depends(get_current_user)):
     """Save encrypted Binance API credentials and test connection (Futures or Spot)."""
+    import os
+    if not os.getenv("ENCRYPTION_KEY"):
+        logger.error("ENCRYPTION_KEY env var not set — cannot store API credentials")
+        raise HTTPException(status_code=503, detail="Server encryption is not configured. Please contact support.")
+
     market_type = req.market_type or "futures"
     if market_type not in ("futures", "spot"):
         raise HTTPException(status_code=400, detail="market_type must be 'futures' or 'spot'")
@@ -90,7 +95,10 @@ async def connect_binance(req: ConnectBinanceRequest, current_user: dict = Depen
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Invalid API credentials or insufficient permissions: {e}")
     finally:
-        await fetcher.close()
+        try:
+            await fetcher.close()
+        except Exception:
+            pass
 
     db = get_db()
     # Deactivate old source of same market type
