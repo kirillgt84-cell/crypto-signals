@@ -865,11 +865,6 @@ export default function Dashboard() {
         {/* Row 1.5: Sentiment Cards */}
         <SentimentCards data={marketData} loading={loading} />
 
-        {/* Market Gauge */}
-        <div className="px-4 pt-2 lg:px-6">
-          <MarketGauge />
-        </div>
-
         {/* Row 2: TradingView Chart + OI Analysis + Fundamentals */}
         <div className="flex flex-col lg:flex-row gap-4 px-4 py-4 lg:px-6">
           <div className="lg:w-2/3 flex flex-col">
@@ -893,6 +888,9 @@ export default function Dashboard() {
               <ProBlurOverlay title={t("dashboard.entryLevels")} description="Get exact entry, stop, and take-profit levels with scenario planning.">
                 <EntryLevels data={marketData} sentiment={marketData.sentiment} loading={loading} />
               </ProBlurOverlay>
+              <div className="mt-4 pt-4 border-t border-border">
+                <MarketGauge symbol={symbol + "USDT"} timeframe={getApiTimeframe(timeframe)} />
+              </div>
             </CardContent>
           </Card>
           <ProBlurOverlay title={t("dashboard.fundamentals")} description="MVRV, NUPL, and funding context with trading interpretation.">

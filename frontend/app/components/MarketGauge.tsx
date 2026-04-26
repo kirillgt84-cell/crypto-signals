@@ -29,14 +29,6 @@ interface GaugeData {
   divergence: null | object
 }
 
-const TIMEFRAMES = [
-  { value: "1h", label: "1H" },
-  { value: "4h", label: "4H" },
-  { value: "1d", label: "1D" },
-]
-
-const SYMBOLS = ["BTCUSDT", "ETHUSDT", "SOLUSDT"]
-
 function getSignalColor(type: string) {
   if (type.startsWith("consider_longs")) return "bg-emerald-500/10 border-emerald-500/30"
   if (type.startsWith("consider_shorts")) return "bg-rose-500/10 border-rose-500/30"
@@ -51,18 +43,24 @@ function getSignalTextColor(type: string) {
   return "text-slate-400"
 }
 
-export function MarketGauge({ className }: { className?: string }) {
+interface MarketGaugeProps {
+  symbol: string
+  timeframe: string
+  className?: string
+}
+
+export function MarketGauge({ symbol, timeframe, className }: MarketGaugeProps) {
   const { t } = useLanguage()
-  const [symbol, setSymbol] = useState("BTCUSDT")
-  const [timeframe, setTimeframe] = useState("1h")
   const [data, setData] = useState<GaugeData | null>(null)
   const [loading, setLoading] = useState(true)
+
+  const effectiveTimeframe = ["1h", "4h", "1d"].includes(timeframe) ? timeframe : "1h"
 
   const fetchGauge = useCallback(async () => {
     setLoading(true)
     try {
       const res = await fetch(
-        `${API_BASE_URL}/market/gauge?symbol=${symbol}&timeframe=${timeframe}`,
+        `${API_BASE_URL}/market/gauge?symbol=${symbol.toUpperCase()}&timeframe=${effectiveTimeframe}`,
         { cache: "no-store" }
       )
       if (res.ok) {
@@ -73,7 +71,7 @@ export function MarketGauge({ className }: { className?: string }) {
     } finally {
       setLoading(false)
     }
-  }, [symbol, timeframe])
+  }, [symbol, effectiveTimeframe])
 
   useEffect(() => {
     fetchGauge()
@@ -101,36 +99,10 @@ export function MarketGauge({ className }: { className?: string }) {
   return (
     <div
       className={cn(
-        "rounded-xl border border-border bg-card p-4 w-full max-w-[380px]",
+        "rounded-xl border border-border bg-card p-4 w-full",
         className
       )}
     >
-      {/* Header */}
-      <div className="flex items-center justify-between mb-4">
-        <select
-          value={symbol}
-          onChange={(e) => setSymbol(e.target.value)}
-          className="bg-transparent text-sm font-medium text-foreground border-none outline-none cursor-pointer"
-        >
-          {SYMBOLS.map((s) => (
-            <option key={s} value={s}>
-              {s}
-            </option>
-          ))}
-        </select>
-        <select
-          value={timeframe}
-          onChange={(e) => setTimeframe(e.target.value)}
-          className="bg-transparent text-sm text-muted-foreground border-none outline-none cursor-pointer"
-        >
-          {TIMEFRAMES.map((tf) => (
-            <option key={tf.value} value={tf.value}>
-              {tf.label}
-            </option>
-          ))}
-        </select>
-      </div>
-
       {loading && !data ? (
         <div className="h-48 flex items-center justify-center">
           <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
