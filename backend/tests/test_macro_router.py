@@ -90,7 +90,9 @@ class TestMacroRouter:
         mock_db.query = AsyncMock(side_effect=[
             # M2 rows (2 rows, days=30 → threshold=30//7*0.5≈2, no FRED fallback)
             [{"date": "2024-01-01", "value": 21000.0}, {"date": "2024-01-02", "value": 21100.0}],
-            # BTC rows from oi_history (10 rows → no BTC fallback)
+            # BTC asset lookup
+            [{"id": 3}],
+            # BTC rows from macro_prices (10 rows → no oi_history/Binance fallback)
             [{"date": f"2024-01-{i:02d}", "close_price": 41000.0 + i * 1000} for i in range(1, 11)],
             # SPX asset
             [{"id": 1}],
@@ -112,14 +114,14 @@ class TestMacroRouter:
         assert data["series"]["gold"] == [2000.0, 2050.0]
 
     def test_get_m2_comparison_empty_m2_btc_coingecko(self, client):
-        """When M2 DB is empty and oi_history is empty, CoinGecko BTC fallback should drive dates."""
+        """When M2 DB is empty and macro_prices/oi_history are empty, CoinGecko BTC fallback should drive dates."""
         mock_db = MagicMock()
         mock_db.query = AsyncMock(side_effect=[
             # M2 rows — empty
             [],
-            # BTC oi_history — empty
-            [],
             # BTC macro_asset lookup — empty
+            [],
+            # BTC oi_history — empty
             [],
             # SPX asset — empty
             [],
@@ -146,9 +148,9 @@ class TestMacroRouter:
         mock_db.query = AsyncMock(side_effect=[
             # M2 rows
             [{"date": "2024-01-01", "value": 21000.0}],
-            # BTC oi_history — empty
-            [],
             # BTC macro_asset lookup — empty
+            [],
+            # BTC oi_history — empty
             [],
         ])
         with patch("routers.macro.get_db", return_value=mock_db), \
@@ -175,7 +177,9 @@ class TestMacroRouter:
                 {"id": 2, "key": "gold"},
                 {"id": 3, "key": "vix"},
             ],
-            # oi_history BTCUSDT (30 rows → enough)
+            # btc_asset lookup
+            [{"id": 4}],
+            # macro_prices BTCUSDT (30 rows → enough)
             btc_rows,
             # macro_prices spx (_get_macro_map)
             spx_rows,
@@ -208,9 +212,9 @@ class TestMacroRouter:
             [],
             # macro_assets
             [{"id": 1, "key": "spx500"}, {"id": 2, "key": "gold"}, {"id": 3, "key": "vix"}],
-            # oi_history — empty
+            # btc_asset lookup — empty
             [],
-            # macro_assets btc lookup — empty
+            # oi_history — empty
             [],
         ])
         with patch("routers.macro.get_db", return_value=mock_db), \

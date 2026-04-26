@@ -71,14 +71,24 @@ async def calculate_correlations():
         assets = await db.query("SELECT id, key FROM macro_assets WHERE key IN ('spx500', 'gold')", [])
         asset_map = {a["key"]: a["id"] for a in assets}
 
-        # BTC data from oi_history (use last price of each day)
-        btc_rows = await db.query(
-            """SELECT DISTINCT ON (DATE(time)) DATE(time) as day, price
-               FROM oi_history
-               WHERE symbol = 'BTCUSDT' AND time > NOW() - INTERVAL '45 days'
-               ORDER BY DATE(time), time DESC""",
-            [],
-        )
+        # BTC data from macro_prices, fallback to oi_history
+        btc_rows = []
+        btc_asset = await db.query("SELECT id FROM macro_assets WHERE key = 'btc' LIMIT 1", [])
+        if btc_asset:
+            btc_rows = await db.query(
+                """SELECT DISTINCT ON (DATE(time)) DATE(time) as day, close_price as price
+                   FROM macro_prices WHERE asset_id = $1 AND time > NOW() - INTERVAL '45 days'
+                   ORDER BY DATE(time), time DESC""",
+                [btc_asset[0]["id"]],
+            )
+        if len(btc_rows) < 5:
+            btc_rows = await db.query(
+                """SELECT DISTINCT ON (DATE(time)) DATE(time) as day, price
+                   FROM oi_history
+                   WHERE symbol = 'BTCUSDT' AND time > NOW() - INTERVAL '45 days'
+                   ORDER BY DATE(time), time DESC""",
+                [],
+            )
         btc_prices = {str(r["day"]): r["price"] for r in btc_rows}
 
         # Get macro prices aligned with BTC dates
@@ -170,13 +180,23 @@ async def backfill_correlations():
         gold_id = asset_map.get("gold")
         vix_id = asset_map.get("vix")
 
-        btc_rows = await db.query(
-            """SELECT DISTINCT ON (DATE(time)) DATE(time) as day, price
-               FROM oi_history
-               WHERE symbol = 'BTCUSDT' AND time > NOW() - INTERVAL '5 years'
-               ORDER BY DATE(time), time DESC""",
-            [],
-        )
+        btc_rows = []
+        btc_asset = await db.query("SELECT id FROM macro_assets WHERE key = 'btc' LIMIT 1", [])
+        if btc_asset:
+            btc_rows = await db.query(
+                """SELECT DISTINCT ON (DATE(time)) DATE(time) as day, close_price as price
+                   FROM macro_prices WHERE asset_id = $1 AND time > NOW() - INTERVAL '5 years'
+                   ORDER BY DATE(time), time DESC""",
+                [btc_asset[0]["id"]],
+            )
+        if len(btc_rows) < 5:
+            btc_rows = await db.query(
+                """SELECT DISTINCT ON (DATE(time)) DATE(time) as day, price
+                   FROM oi_history
+                   WHERE symbol = 'BTCUSDT' AND time > NOW() - INTERVAL '5 years'
+                   ORDER BY DATE(time), time DESC""",
+                [],
+            )
         if len(btc_rows) < 5:
             logger.warning("[Macro Backfill] Not enough BTC data")
             return

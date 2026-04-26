@@ -13,6 +13,7 @@ ASSETS = {
     "spx500": "^GSPC",
     "gold": "GC=F",
     "vix": "^VIX",
+    "btc": "BTC-USD",
 }
 
 

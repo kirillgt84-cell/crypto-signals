@@ -35,27 +35,28 @@ async def _compute_monthly_correlations_fallback(db, limit: int = 60) -> List[Di
     gold_id = asset_map.get("gold")
     vix_id = asset_map.get("vix")
 
-    btc_rows = await db.query(
-        """SELECT DISTINCT ON (DATE(time)) DATE(time) as day, price
-           FROM oi_history
-           WHERE symbol = 'BTCUSDT' AND time > NOW() - INTERVAL '5 years'
-           ORDER BY DATE(time), time DESC""",
-        [],
-    )
-    if len(btc_rows) < 5:
-        # Fallback 1: macro_prices if BTC is tracked there
-        btc_asset = await db.query("SELECT id FROM macro_assets WHERE key = 'btc' LIMIT 1", [])
-        if btc_asset:
-            btc_rows = await db.query(
-                """SELECT DISTINCT ON (DATE(time)) DATE(time) as day, close_price as price
-                   FROM macro_prices WHERE asset_id = $1 AND time > NOW() - INTERVAL '5 years'
-                   ORDER BY DATE(time), time DESC""",
-                [btc_asset[0]["id"]],
-            )
-    if len(btc_rows) < 5:
-        # Fallback 2: Binance spot API
+    btc_rows = []
+    btc_asset = await db.query("SELECT id FROM macro_assets WHERE key = 'btc' LIMIT 1", [])
+    if btc_asset:
+        btc_rows = await db.query(
+            """SELECT DISTINCT ON (DATE(time)) DATE(time) as day, close_price as price
+               FROM macro_prices WHERE asset_id = $1 AND time > NOW() - INTERVAL '5 years'
+               ORDER BY DATE(time), time DESC""",
+            [btc_asset[0]["id"]],
+        )
+    if not btc_rows or len(btc_rows) < 5:
+        # Fallback 1: Binance spot API (full history)
         binance_rows = await _fetch_btc_from_binance(datetime.utcnow() - timedelta(days=1825))
         btc_rows = [{"day": r["date"], "price": r["close_price"]} for r in binance_rows]
+    if len(btc_rows) < 5:
+        # Fallback 2: oi_history (recent snapshots)
+        btc_rows = await db.query(
+            """SELECT DISTINCT ON (DATE(time)) DATE(time) as day, price
+               FROM oi_history
+               WHERE symbol = 'BTCUSDT' AND time > NOW() - INTERVAL '5 years'
+               ORDER BY DATE(time), time DESC""",
+            [],
+        )
     if len(btc_rows) < 5:
         # Fallback 3: CoinGecko
         cg_rows = await _fetch_from_coingecko("bitcoin", days=1825)
@@ -329,28 +330,29 @@ async def get_m2_comparison(assets: str = "btc", days: int = 365):
 
     asset_keys = [k.strip().lower() for k in assets.split(",") if k.strip()]
 
-    # BTC from oi_history, fallback to macro_prices, then Binance API
+    # BTC from macro_prices, fallback to Binance API, then oi_history, then CoinGecko
     if "btc" in asset_keys:
-        btc_rows = await db.query(
-            """SELECT DISTINCT ON (DATE(time)) DATE(time) as date, price as close_price
-               FROM oi_history
-               WHERE symbol = 'BTCUSDT' AND time > $1
-               ORDER BY DATE(time), time DESC""",
-            [cutoff]
-        )
-        if len(btc_rows) < 10:
-            # Fallback 1: macro_prices if BTC is tracked there
-            btc_asset = await db.query("SELECT id FROM macro_assets WHERE key = 'btc' LIMIT 1", [])
-            if btc_asset:
-                btc_rows = await db.query(
-                    """SELECT DISTINCT ON (DATE(time)) DATE(time) as date, close_price
-                       FROM macro_prices WHERE asset_id = $1 AND time > $2
-                       ORDER BY DATE(time), time DESC""",
-                    [btc_asset[0]["id"], cutoff]
-                )
-        if len(btc_rows) < 10:
-            # Fallback 2: Binance API
+        btc_rows = []
+        btc_asset = await db.query("SELECT id FROM macro_assets WHERE key = 'btc' LIMIT 1", [])
+        if btc_asset:
+            btc_rows = await db.query(
+                """SELECT DISTINCT ON (DATE(time)) DATE(time) as date, close_price
+                   FROM macro_prices WHERE asset_id = $1 AND time > $2
+                   ORDER BY DATE(time), time DESC""",
+                [btc_asset[0]["id"], cutoff]
+            )
+        if not btc_rows or len(btc_rows) < 10:
+            # Fallback 1: Binance API (full history)
             btc_rows = await _fetch_btc_from_binance(cutoff)
+        if len(btc_rows) < 10:
+            # Fallback 2: oi_history (recent snapshots)
+            btc_rows = await db.query(
+                """SELECT DISTINCT ON (DATE(time)) DATE(time) as date, price as close_price
+                   FROM oi_history
+                   WHERE symbol = 'BTCUSDT' AND time > $1
+                   ORDER BY DATE(time), time DESC""",
+                [cutoff]
+            )
         if len(btc_rows) < 10:
             # Fallback 3: CoinGecko
             btc_rows = await _fetch_from_coingecko("bitcoin", days=days)

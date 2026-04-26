@@ -38,7 +38,9 @@ class TestMacroSync:
         # Return only 3 assets and 2 BTC rows
         mock_db.query = AsyncMock(side_effect=[
             [{"id": 1, "key": "spx500"}, {"id": 2, "key": "gold"}],  # assets
-            [{"day": "2024-01-01", "price": 40000}, {"day": "2024-01-02", "price": 41000}],  # btc
+            [{"id": 99}],  # btc_asset
+            [],  # macro_prices btc (empty)
+            [{"day": "2024-01-01", "price": 40000}, {"day": "2024-01-02", "price": 41000}],  # oi_history btc
             [{"close_price": 4000}],  # spx for day 1
             [{"close_price": 1800}],  # gold for day 1
             [{"close_price": 4050}],  # spx for day 2
@@ -62,8 +64,10 @@ class TestMacroSync:
         call_count = 0
         responses = [
             [{"id": 1, "key": "spx500"}, {"id": 2, "key": "gold"}],  # 0 assets
-            btc_rows,  # 1 btc
-            [{"id": 3}],  # 2 vix id
+            [{"id": 99}],  # 1 btc_asset
+            [],  # 2 macro_prices btc (empty -> fallback)
+            btc_rows,  # 3 oi_history btc
+            [{"id": 3}],  # 4 vix id
         ]
         # Add spx/gold/vix for each of 6 days (18 items)
         for i in range(6):
