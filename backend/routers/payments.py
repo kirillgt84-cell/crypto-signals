@@ -364,7 +364,7 @@ async def paypal_webhook(
                 )
                 if not existing_reward:
                     plan_price = await db.query("SELECT price FROM plans WHERE id = $1", [plan_id])
-                    if plan_price:
+                    if plan_price and plan_price[0]["price"] is not None:
                         price = float(plan_price[0]["price"])
                         reward = round(price * 0.2, 2)
                         ref_code_row = await db.query(
@@ -476,21 +476,23 @@ async def create_trial(
     is_referral = user and user[0]["referred_by_code"] and not user[0]["referral_discount_used"]
 
     if is_referral:
-        discount_price = plan["price"] * 0.8
+        discount_price = float(plan["price"] or 0) * 0.8
         paypal = get_paypal_api()
         product_res = await paypal.create_product(
             name="Mirkaso Pro (Referral Discount)",
             description=f"Pro subscription with 20% referral discount — ${discount_price:.2f}/{req.billing_cycle}"
         )
-        plan_res = await paypal.create_plan(
-            product_id=product_res["id"],
-            name=f"{plan['name']} (Discounted)",
-            amount=discount_price,
-            currency="USD",
-            trial_days=7,
-            billing_cycle=req.billing_cycle,
-        )
-        paypal_plan_id = plan_res["id"]
+        if product_res.get("id"):
+            plan_res = await paypal.create_plan(
+                product_id=product_res["id"],
+                name=f"{plan['name']} (Discounted)",
+                amount=discount_price,
+                currency="USD",
+                trial_days=7,
+                billing_cycle=req.billing_cycle,
+            )
+            if plan_res.get("id"):
+                paypal_plan_id = plan_res["id"]
         await db.execute(
             "UPDATE users SET referral_discount_used = TRUE WHERE id = $1",
             [current_user["id"]]

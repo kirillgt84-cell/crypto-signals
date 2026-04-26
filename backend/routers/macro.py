@@ -21,7 +21,7 @@ async def _get_macro_map(db, asset_id: int, cutoff: datetime) -> Dict[str, float
            ORDER BY DATE(time), time DESC""",
         [asset_id, cutoff],
     )
-    return {str(r["day"]): float(r["close_price"]) for r in rows}
+    return {str(r["day"]): float(r["close_price"]) for r in rows if r["close_price"] is not None}
 
 
 async def _compute_monthly_correlations_fallback(db, limit: int = 60) -> List[Dict[str, Any]]:
@@ -287,11 +287,11 @@ async def get_m2_comparison(assets: str = "btc", days: int = 365):
         except Exception as e:
             logger.warning(f"M2 FRED fallback failed: {e}")
 
-    dates = [str(r["date"]) for r in m2_rows]
+    dates = [str(r["date"]) for r in m2_rows if r["value"] is not None]
     result = {
         "dates": dates,
         "series": {
-            "m2": [float(r["value"]) for r in m2_rows]
+            "m2": [float(r["value"]) for r in m2_rows if r["value"] is not None]
         }
     }
 
@@ -319,7 +319,7 @@ async def get_m2_comparison(assets: str = "btc", days: int = 365):
         if len(btc_rows) < 10:
             # Fallback 2: Binance API
             btc_rows = await _fetch_btc_from_binance(cutoff)
-        btc_map = {str(r["date"]): float(r["close_price"]) for r in btc_rows}
+        btc_map = {str(r["date"]): float(r["close_price"]) for r in btc_rows if r["close_price"] is not None}
         result["series"]["btc"] = [btc_map.get(d) for d in dates]
 
     # Other assets from macro_prices
@@ -337,7 +337,7 @@ async def get_m2_comparison(assets: str = "btc", days: int = 365):
                ORDER BY DATE(time), time DESC""",
             [asset[0]["id"], cutoff]
         )
-        price_map = {str(r["date"]): float(r["close_price"]) for r in rows}
+        price_map = {str(r["date"]): float(r["close_price"]) for r in rows if r["close_price"] is not None}
         result["series"][key] = [price_map.get(d) for d in dates]
 
     return result

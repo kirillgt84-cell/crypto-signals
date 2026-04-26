@@ -268,7 +268,7 @@ export default function MacroClient() {
               </div>
 
               {/* M2 Global Liquidity Comparison — Normalized Index (base = 100) */}
-              {m2Data && m2Data.dates.length > 0 && (
+              {m2Data && m2Data.dates.length > 0 ? (
                 <Card>
                   <CardHeader className="pb-2">
                     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
@@ -415,7 +415,16 @@ export default function MacroClient() {
                     </div>
                   </CardContent>
                 </Card>
-              )}
+              ) : m2Data ? (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-base">{t("macro.m2ComparisonTitle")}</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-sm text-muted-foreground text-center py-12">{t("common.noData")}</p>
+                  </CardContent>
+                </Card>
+              ) : null}
 
               {/* Price Overlay Chart */}
               <Card>

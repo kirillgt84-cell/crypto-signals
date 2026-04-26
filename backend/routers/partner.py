@@ -92,8 +92,8 @@ async def partner_stats(current_user: dict = Depends(get_current_user)):
         "referral_link": f"https://mirkaso.com/?ref={code['code']}",
         "total_referrals": code["total_referrals"],
         "active_referrals": code["active_referrals"],
-        "total_earned": float(code["total_earned"]),
-        "available_balance": float(code["available_balance"]),
+        "total_earned": float(code["total_earned"] or 0),
+        "available_balance": float(code["available_balance"] or 0),
         "referrals": [dict(r) for r in refs],
         "transactions": [dict(t) for t in txs],
     }
@@ -107,7 +107,7 @@ async def get_balance(current_user: dict = Depends(get_current_user)):
         "SELECT available_balance FROM referral_codes WHERE user_id = $1 LIMIT 1",
         [current_user["id"]]
     )
-    return {"balance": float(row[0]["available_balance"]) if row else 0.00}
+    return {"balance": float(row[0]["available_balance"] or 0) if row else 0.00}
 
 
 @router.get("/check-eligibility")
