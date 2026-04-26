@@ -47,54 +47,17 @@ interface FundamentalsCardProps {
   loading?: boolean
 }
 
-const METRIC_INFO: Record<string, string> = {
-  mvrv: "Market Value to Realized Value — ratio of market cap to realized cap. Shows if an asset is overvalued or undervalued.",
-  nupl: "Net Unrealized Profit/Loss — share of unrealized profit/loss. Reflects market emotional state.",
-  sopr: "Spent Output Profit Ratio — ratio of sold price to purchase price. >1 = profit-taking, <1 = loss realization.",
-  m2: "Global M2 money supply in trillions USD. Broad measure of liquidity. Expansion typically supports risk-on assets.",
-  funding: "Fee for holding margin positions. Positive = longs overpay, negative = shorts overpay.",
-  market_momentum: "Price change over 24 hours. Reflects short-term market impulse.",
-}
-
-function getMVRVInterpretation(value: number): string {
-  if (value < 1.0) return "Asset is deeply undervalued. Traditionally considered an accumulation zone with low risk for long positions."
-  if (value < 2.5) return "Fair market valuation. Risks are balanced, trend may continue."
-  if (value < 3.5) return "Market overvaluation. Correction possible, consider partial profit taking."
-  return "Extreme overvaluation (bubble). High probability of deep correction."
-}
-
-function getNUPLInterpretation(value: number): string {
-  if (value < -0.25) return "Market in capitulation. Unrealized losses dominate. Often forms a local bottom."
-  if (value < 0) return "Hope phase. Investors breaking even, sentiment cautiously positive."
-  if (value < 0.25) return "Moderate profit. Healthy bull trend without overheating signs."
-  if (value < 0.5) return "Euphoria. Most investors in profit, market beginning to overheat."
-  return "Extreme greed. Unrealized profit at peak, reversal risk is maximal."
-}
-
-function getFundingInterpretation(value: number): string {
-  if (value < -0.001) return "Shorts overpay. Pressure on shorts may trigger a short squeeze."
-  if (value <= 0.001) return "Neutral funding. Balance between longs and shorts."
-  return "Longs overpay. Overheated long market, high liquidation risk."
-}
-
-function getSOPRInterpretation(value: number): string {
-  if (value < 0.98) return "Capitulation. Sellers realizing heavy losses — often marks a local market bottom."
-  if (value < 1.0) return "Loss zone. Sellers breaking even or slightly underwater. Transitional area."
-  if (value < 1.02) return "Profit zone. Sellers taking modest profits. Healthy bull market signal."
-  return "Extreme profit-taking. Distribution phase with elevated reversal risk."
-}
-
 function ZoneCard({
   title,
   valueFormatted,
   interpretation,
-  infoKey,
+  infoText,
   children,
 }: {
   title: string
   valueFormatted: string
   interpretation: string
-  infoKey: string
+  infoText: string
   children: React.ReactNode
 }) {
   return (
@@ -105,7 +68,7 @@ function ZoneCard({
           <div className="group relative">
             <Info className="w-5 h-5 text-slate-600 cursor-help hover:text-slate-400 transition-colors" />
             <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-60 p-3 bg-popover border border-border rounded-md text-xs text-popover-foreground opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-20 shadow-xl leading-relaxed">
-              {METRIC_INFO[infoKey]}
+              {infoText}
             </div>
           </div>
         </div>
@@ -157,6 +120,35 @@ function ZoneBar({
 
 export function FundamentalsCard({ symbol, loading: parentLoading }: FundamentalsCardProps) {
   const { t } = useLanguage()
+
+  const getMVRVInterpretation = (value: number) => {
+    if (value < 1.0) return t("fundamentals.mvrvDeepUndervalued")
+    if (value < 2.5) return t("fundamentals.mvrvFair")
+    if (value < 3.5) return t("fundamentals.mvrvOvervalued")
+    return t("fundamentals.mvrvBubble")
+  }
+
+  const getNUPLInterpretation = (value: number) => {
+    if (value < -0.25) return t("fundamentals.nuplCapitulation")
+    if (value < 0) return t("fundamentals.nuplHope")
+    if (value < 0.25) return t("fundamentals.nuplModerateProfit")
+    if (value < 0.5) return t("fundamentals.nuplEuphoria")
+    return t("fundamentals.nuplExtremeGreed")
+  }
+
+  const getFundingInterpretation = (value: number) => {
+    if (value < -0.001) return t("fundamentals.fundingShortsOverpay")
+    if (value <= 0.001) return t("fundamentals.fundingNeutral")
+    return t("fundamentals.fundingLongsOverpay")
+  }
+
+  const getSOPRInterpretation = (value: number) => {
+    if (value < 0.98) return t("fundamentals.soprCapitulation")
+    if (value < 1.0) return t("fundamentals.soprLoss")
+    if (value < 1.02) return t("fundamentals.soprProfit")
+    return t("fundamentals.soprEuphoria")
+  }
+
   const [data, setData] = useState<FundamentalsData>({ mvrv: null, nupl: null, sopr: null, composite: null })
   const [loading, setLoading] = useState(true)
 
@@ -249,6 +241,12 @@ export function FundamentalsCard({ symbol, loading: parentLoading }: Fundamental
     return "⚖️"
   }
 
+  const getSentimentLabel = (s: string) => {
+    if (s === "BULLISH") return t("fundamentals.sentimentBullish")
+    if (s === "BEARISH") return t("fundamentals.sentimentBearish")
+    return t("fundamentals.sentimentNeutral")
+  }
+
   const comps = data.composite?.components || {}
 
   return (
@@ -272,7 +270,7 @@ export function FundamentalsCard({ symbol, loading: parentLoading }: Fundamental
           <div className="flex items-center gap-3">
             <span className="text-2xl leading-none">{getSentimentEmoji(sentiment)}</span>
             <div>
-              <div className={cn("text-base font-bold", getSentimentColor(sentiment))}>{sentiment}</div>
+              <div className={cn("text-base font-bold", getSentimentColor(sentiment))}>{getSentimentLabel(sentiment)}</div>
               <div className="text-xs text-slate-500">{t("fundamentals.compositeScore")}</div>
             </div>
           </div>
@@ -295,7 +293,7 @@ export function FundamentalsCard({ symbol, loading: parentLoading }: Fundamental
               title="MVRV"
               valueFormatted={data.mvrv.value.toFixed(2)}
               interpretation={getMVRVInterpretation(data.mvrv.value)}
-              infoKey="mvrv"
+              infoText={t("fundamentals.mvrv")}
             >
               <ZoneBar
                 segments={[
@@ -322,7 +320,7 @@ export function FundamentalsCard({ symbol, loading: parentLoading }: Fundamental
               title="NUPL"
               valueFormatted={`${data.nupl.value > 0 ? "+" : ""}${data.nupl.value.toFixed(2)}`}
               interpretation={getNUPLInterpretation(data.nupl.value)}
-              infoKey="nupl"
+              infoText={t("fundamentals.nupl")}
             >
               <ZoneBar
                 segments={[
@@ -350,7 +348,7 @@ export function FundamentalsCard({ symbol, loading: parentLoading }: Fundamental
               title="SOPR"
               valueFormatted={data.sopr.value.toFixed(4)}
               interpretation={getSOPRInterpretation(data.sopr.value)}
-              infoKey="sopr"
+              infoText={t("fundamentals.sopr")}
             >
               <ZoneBar
                 segments={[
@@ -383,7 +381,7 @@ export function FundamentalsCard({ symbol, loading: parentLoading }: Fundamental
                   ? t("fundamentals.strongBearishMomentum")
                   : t("fundamentals.moderateMomentum")
               }
-              infoKey="market_momentum"
+              infoText={t("fundamentals.momentumTooltip")}
             >
               <ZoneBar
                 segments={[
@@ -410,7 +408,7 @@ export function FundamentalsCard({ symbol, loading: parentLoading }: Fundamental
               title={t("fundamentals.fundingRate")}
               valueFormatted={`${(comps.funding.value * 100).toFixed(3)}%`}
               interpretation={getFundingInterpretation(comps.funding.value)}
-              infoKey="funding"
+              infoText={t("fundamentals.fundingTooltip")}
             >
               <ZoneBar
                 segments={[
@@ -444,7 +442,7 @@ export function FundamentalsCard({ symbol, loading: parentLoading }: Fundamental
           >
             {comps.mvrv && (
               <div className="text-center">
-                <p className="text-[10px] text-slate-500 uppercase">MVRV</p>
+                <p className="text-[10px] text-slate-500 uppercase">{t("fundamentals.mvrvLabel")}</p>
                 <p className="text-xs font-mono font-bold text-popover-foreground">
                   {comps.mvrv.normalized > 0 ? "+" : ""}
                   {comps.mvrv.normalized.toFixed(2)}
@@ -453,7 +451,7 @@ export function FundamentalsCard({ symbol, loading: parentLoading }: Fundamental
             )}
             {comps.nupl && (
               <div className="text-center">
-                <p className="text-[10px] text-slate-500 uppercase">NUPL</p>
+                <p className="text-[10px] text-slate-500 uppercase">{t("fundamentals.nuplLabel")}</p>
                 <p className="text-xs font-mono font-bold text-popover-foreground">
                   {comps.nupl.normalized > 0 ? "+" : ""}
                   {comps.nupl.normalized.toFixed(2)}
@@ -462,7 +460,7 @@ export function FundamentalsCard({ symbol, loading: parentLoading }: Fundamental
             )}
             {comps.sopr && (
               <div className="text-center">
-                <p className="text-[10px] text-slate-500 uppercase">SOPR</p>
+                <p className="text-[10px] text-slate-500 uppercase">{t("fundamentals.soprLabel")}</p>
                 <p className="text-xs font-mono font-bold text-popover-foreground">
                   {comps.sopr.normalized > 0 ? "+" : ""}
                   {comps.sopr.normalized.toFixed(2)}
@@ -471,7 +469,7 @@ export function FundamentalsCard({ symbol, loading: parentLoading }: Fundamental
             )}
             {comps.funding && (
               <div className="text-center">
-                <p className="text-[10px] text-slate-500 uppercase">Funding</p>
+                <p className="text-[10px] text-slate-500 uppercase">{t("fundamentals.fundingLabel")}</p>
                 <p className="text-xs font-mono font-bold text-popover-foreground">
                   {comps.funding.normalized > 0 ? "+" : ""}
                   {comps.funding.normalized.toFixed(2)}
@@ -480,7 +478,7 @@ export function FundamentalsCard({ symbol, loading: parentLoading }: Fundamental
             )}
             {comps.market_momentum && (
               <div className="text-center">
-                <p className="text-[10px] text-slate-500 uppercase">Momentum</p>
+                <p className="text-[10px] text-slate-500 uppercase">{t("fundamentals.momentumLabel")}</p>
                 <p className="text-xs font-mono font-bold text-popover-foreground">
                   {comps.market_momentum.normalized > 0 ? "+" : ""}
                   {comps.market_momentum.normalized.toFixed(2)}
