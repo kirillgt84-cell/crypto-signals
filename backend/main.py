@@ -2,6 +2,7 @@
 Mirkaso API
 Precision in Investment Management
 """
+import asyncio
 import logging
 import os
 from fastapi import FastAPI, HTTPException
@@ -91,32 +92,33 @@ async def lifespan(app: FastAPI):
     # Запускаем scheduler
     scheduler = start_scheduler()
     
-    # Первоначальное сохранение OI
-    from scheduler import save_oi_snapshot, should_run_fundamentals, save_fundamentals_snapshot
-    await save_oi_snapshot()
+    # Первоначальные задачи запускаем в фоне, чтобы не блокировать старт API
+    async def _run_background_tasks():
+        from scheduler import save_oi_snapshot, should_run_fundamentals, save_fundamentals_snapshot
+        try:
+            await save_oi_snapshot()
+        except Exception as e:
+            logger.error(f"Failed initial OI snapshot: {e}")
+        
+        try:
+            if should_run_fundamentals():
+                await save_fundamentals_snapshot()
+        except Exception as e:
+            logger.error(f"Failed initial fundamentals: {e}")
+        
+        try:
+            from scheduler import save_etf_snapshot
+            await save_etf_snapshot()
+        except Exception as e:
+            logger.error(f"Failed initial ETF snapshot: {e}")
+        
+        try:
+            from scheduler import run_anomaly_scan
+            await run_anomaly_scan()
+        except Exception as e:
+            logger.error(f"Failed initial anomaly scan: {e}")
     
-    # Первоначальный сбор фундаменталок
-    try:
-        logger.info("Triggering initial fundamentals collection on startup...")
-        await save_fundamentals_snapshot()
-    except Exception as e:
-        logger.error(f"Failed to run fundamentals on startup: {e}")
-    
-    # Первоначальный сбор ETF данных
-    try:
-        from scheduler import save_etf_snapshot
-        logger.info("Triggering initial ETF collection on startup...")
-        await save_etf_snapshot()
-    except Exception as e:
-        logger.error(f"Failed to run ETF snapshot on startup: {e}")
-    
-    # Первоначальный скан аномалий
-    try:
-        from scheduler import run_anomaly_scan
-        logger.info("Triggering initial anomaly scan on startup...")
-        await run_anomaly_scan()
-    except Exception as e:
-        logger.error(f"Failed to run initial anomaly scan on startup: {e}")
+    asyncio.create_task(_run_background_tasks())
     
     yield
     
