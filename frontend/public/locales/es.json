@@ -1053,5 +1053,6 @@
   "partner.reward": "Recompensa",
   "partner.payout": "Pago",
   "partner.statsError": "Error al cargar las estadísticas del socio. Inténtalo de nuevo más tarde.",
-  "partner.generateError": "Error al generar el código de referido. Inténtalo de nuevo más tarde."
+  "partner.generateError": "Error al generar el código de referido. Inténtalo de nuevo más tarde.",
+  "positionCalc.riskTip": "Consejo: primero determine su riesgo por operación. Se recomienda arriesgar no más del 1–2% de su depósito en cada operación."
 }

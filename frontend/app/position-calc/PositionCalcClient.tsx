@@ -21,6 +21,7 @@ import {
   Crown,
   TrendingUp,
   ShieldAlert,
+  Info,
 } from "lucide-react"
 
 interface CalcResult {
@@ -311,6 +312,10 @@ export default function PositionCalcClient() {
                     placeholder={form.risk_type === "percent" ? "1" : "100"}
                   />
                   {errors.risk_value && <p className="text-xs text-red-500 mt-1">{errors.risk_value}</p>}
+                  <div className="flex items-start gap-2 mt-2 text-xs text-amber-700 dark:text-amber-400 bg-amber-500/10 rounded-md px-3 py-2">
+                    <Info className="h-4 w-4 shrink-0 mt-0.5" />
+                    <span>{t("positionCalc.riskTip")}</span>
+                  </div>
                 </div>
 
                 {/* Entry & Stop */}

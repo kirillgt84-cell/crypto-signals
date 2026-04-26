@@ -1053,5 +1053,6 @@
   "partner.reward": "Reward",
   "partner.payout": "Payout",
   "partner.statsError": "Failed to load partner stats. Please try again later.",
-  "partner.generateError": "Failed to generate referral code. Please try again later."
+  "partner.generateError": "Failed to generate referral code. Please try again later.",
+  "positionCalc.riskTip": "Tip: determine your risk per trade first. It is recommended to risk no more than 1–2% of your deposit on each trade."
 }
