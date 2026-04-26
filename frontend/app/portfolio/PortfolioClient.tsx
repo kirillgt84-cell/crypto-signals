@@ -179,6 +179,7 @@ export default function PortfolioClient() {
   const [connectOpen, setConnectOpen] = useState(false);
   const [apiKey, setApiKey] = useState("");
   const [apiSecret, setApiSecret] = useState("");
+  const [isTestnet, setIsTestnet] = useState(false);
   const [manualOpen, setManualOpen] = useState(false);
   const [manualSymbol, setManualSymbol] = useState("");
   const [manualAmount, setManualAmount] = useState("");
@@ -333,7 +334,7 @@ export default function PortfolioClient() {
         method: "POST",
         credentials: 'include',
         headers,
-        body: JSON.stringify({ api_key: apiKey.trim(), api_secret: apiSecret.trim(), market_type: marketType }),
+        body: JSON.stringify({ api_key: apiKey.trim(), api_secret: apiSecret.trim(), market_type: marketType, testnet: isTestnet }),
       });
       if (res.ok) {
         setConnectOpen(false);
@@ -352,7 +353,7 @@ export default function PortfolioClient() {
   const handleDisconnect = async () => {
     if (!user) return;
     if (!confirm(`Disconnect Binance ${marketType}?`)) return;
-    await fetch(`${API_BASE_URL}/portfolio/disconnect/binance?market_type=${marketType}`, { method: "DELETE", credentials: 'include', headers });
+    await fetch(`${API_BASE_URL}/portfolio/disconnect/binance?market_type=${marketType}&testnet=${isTestnet}`, { method: "DELETE", credentials: 'include', headers });
     await fetchSummary();
   };
 
@@ -597,6 +598,18 @@ export default function PortfolioClient() {
                         onChange={(e) => setApiSecret(e.target.value)}
                         placeholder={t("portfolio.apiSecret")}
                       />
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <input
+                        id="testnet"
+                        type="checkbox"
+                        checked={isTestnet}
+                        onChange={(e) => setIsTestnet(e.target.checked)}
+                        className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+                      />
+                      <Label htmlFor="testnet" className="text-sm font-normal cursor-pointer">
+                        Testnet
+                      </Label>
                     </div>
                   </div>
                   <DialogFooter>

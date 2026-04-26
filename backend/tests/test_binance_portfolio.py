@@ -98,3 +98,15 @@ class TestBinancePortfolioFetcher:
         assert any(a["asset_name"] == "USDT" for a in assets)
         # DUST should be excluded (<$1)
         assert not any(a["asset_name"] == "DUST" for a in assets)
+
+    def test_testnet_urls(self):
+        """Testnet flag switches base URLs."""
+        fetcher = BinancePortfolioFetcher("key", "secret", testnet=True)
+        assert fetcher.base_fapi == "https://testnet.binancefuture.com"
+        assert fetcher.base_spot == "https://testnet.binance.vision"
+
+    def test_mainnet_urls_default(self):
+        """Default fetcher uses production URLs."""
+        fetcher = BinancePortfolioFetcher("key", "secret")
+        assert fetcher.base_fapi == "https://fapi.binance.com"
+        assert fetcher.base_spot == "https://api.binance.com"

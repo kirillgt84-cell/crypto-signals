@@ -23,6 +23,7 @@ class ConnectBinanceRequest(BaseModel):
     api_secret: str
     label: Optional[str] = "Binance"
     market_type: Optional[str] = "futures"  # futures | spot
+    testnet: Optional[bool] = False
 
 
 class ManualAssetRequest(BaseModel):
@@ -86,7 +87,7 @@ async def connect_binance(req: ConnectBinanceRequest, current_user: dict = Depen
     if market_type not in ("futures", "spot"):
         raise HTTPException(status_code=400, detail="market_type must be 'futures' or 'spot'")
 
-    fetcher = BinancePortfolioFetcher(req.api_key, req.api_secret)
+    fetcher = BinancePortfolioFetcher(req.api_key, req.api_secret, testnet=req.testnet or False)
     try:
         if market_type == "spot":
             await fetcher.get_spot_account()
@@ -101,26 +102,26 @@ async def connect_binance(req: ConnectBinanceRequest, current_user: dict = Depen
             pass
 
     db = get_db()
-    # Deactivate old source of same market type
+    # Deactivate old source of same market type and testnet flag
     await db.execute(
-        "UPDATE account_sources SET is_active = FALSE WHERE user_id = $1 AND provider = 'binance' AND market_type = $2",
-        [current_user["id"], market_type],
+        "UPDATE account_sources SET is_active = FALSE WHERE user_id = $1 AND provider = 'binance' AND market_type = $2 AND COALESCE(testnet, FALSE) = $3",
+        [current_user["id"], market_type, req.testnet or False],
     )
     # Insert new
     await db.execute(
-        """INSERT INTO account_sources (user_id, type, provider, market_type, label, api_key_encrypted, api_secret_encrypted, is_active)
-           VALUES ($1, 'cex', 'binance', $2, $3, $4, $5, TRUE)""",
-        [current_user["id"], market_type, req.label, encrypt(req.api_key), encrypt(req.api_secret)],
+        """INSERT INTO account_sources (user_id, type, provider, market_type, label, api_key_encrypted, api_secret_encrypted, is_active, testnet)
+           VALUES ($1, 'cex', 'binance', $2, $3, $4, $5, TRUE, $6)""",
+        [current_user["id"], market_type, req.label, encrypt(req.api_key), encrypt(req.api_secret), req.testnet or False],
     )
     return {"message": f"Binance {market_type.capitalize()} connected successfully"}
 
 
 @router.delete("/disconnect/binance")
-async def disconnect_binance(current_user: dict = Depends(get_current_user), market_type: Optional[str] = "futures"):
+async def disconnect_binance(current_user: dict = Depends(get_current_user), market_type: Optional[str] = "futures", testnet: Optional[bool] = False):
     db = get_db()
     await db.execute(
-        "UPDATE account_sources SET is_active = FALSE WHERE user_id = $1 AND provider = 'binance' AND market_type = $2",
-        [current_user["id"], market_type],
+        "UPDATE account_sources SET is_active = FALSE WHERE user_id = $1 AND provider = 'binance' AND market_type = $2 AND COALESCE(testnet, FALSE) = $3",
+        [current_user["id"], market_type, testnet],
     )
     return {"message": f"Binance {market_type.capitalize()} disconnected"}
 

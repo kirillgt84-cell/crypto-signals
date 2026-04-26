@@ -224,6 +224,9 @@ CREATE TABLE IF NOT EXISTS account_sources (
 
 CREATE INDEX IF NOT EXISTS idx_account_sources_user ON account_sources(user_id);
 
+-- Add testnet flag to account_sources for Binance testnet connections
+ALTER TABLE account_sources ADD COLUMN IF NOT EXISTS testnet BOOLEAN DEFAULT FALSE;
+
 -- System categories (admin-managed)
 CREATE TABLE IF NOT EXISTS categories (
     id SERIAL PRIMARY KEY,

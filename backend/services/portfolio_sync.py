@@ -51,7 +51,7 @@ async def sync_user_portfolio(user_id: int) -> Dict[str, Any]:
     """Sync all connected sources for a user."""
     db = get_db()
     sources = await db.query(
-        "SELECT id, type, provider, market_type, api_key_encrypted, api_secret_encrypted FROM account_sources WHERE user_id = $1 AND is_active = TRUE",
+        "SELECT id, type, provider, market_type, api_key_encrypted, api_secret_encrypted, COALESCE(testnet, FALSE) as testnet FROM account_sources WHERE user_id = $1 AND is_active = TRUE",
         [user_id],
     )
 
@@ -63,7 +63,7 @@ async def sync_user_portfolio(user_id: int) -> Dict[str, Any]:
             if src["provider"] in ("binance", "binance-futures", "binance-spot") and src["api_key_encrypted"] and src["api_secret_encrypted"]:
                 api_key = decrypt(src["api_key_encrypted"])
                 api_secret = decrypt(src["api_secret_encrypted"])
-                fetcher = BinancePortfolioFetcher(api_key, api_secret)
+                fetcher = BinancePortfolioFetcher(api_key, api_secret, testnet=src.get("testnet", False))
                 market_type = src.get("market_type") or "futures"
                 try:
                     if market_type == "spot":

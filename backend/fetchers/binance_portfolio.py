@@ -13,13 +13,18 @@ logger = logging.getLogger(__name__)
 
 BINANCE_FAPI = "https://fapi.binance.com"
 BINANCE_SPOT = "https://api.binance.com"
+BINANCE_FAPI_TESTNET = "https://testnet.binancefuture.com"
+BINANCE_SPOT_TESTNET = "https://testnet.binance.vision"
 
 
 class BinancePortfolioFetcher:
-    def __init__(self, api_key: str, api_secret: str):
+    def __init__(self, api_key: str, api_secret: str, testnet: bool = False):
         self.api_key = api_key
         self.api_secret = api_secret
+        self.testnet = testnet
         self.client: Optional[httpx.AsyncClient] = None
+        self.base_fapi = BINANCE_FAPI_TESTNET if testnet else BINANCE_FAPI
+        self.base_spot = BINANCE_SPOT_TESTNET if testnet else BINANCE_SPOT
 
     async def _get_client(self) -> httpx.AsyncClient:
         if not self.client:
@@ -33,7 +38,8 @@ class BinancePortfolioFetcher:
             hashlib.sha256,
         ).hexdigest()
 
-    async def _get(self, path: str, params: Optional[Dict] = None, base_url: str = BINANCE_FAPI) -> Dict:
+    async def _get(self, path: str, params: Optional[Dict] = None, base_url: str = None) -> Dict:
+        base_url = base_url or self.base_fapi
         client = await self._get_client()
         ts = str(int(time.time() * 1000))
         qs = f"timestamp={ts}"
@@ -112,7 +118,7 @@ class BinancePortfolioFetcher:
 
     async def get_spot_account(self) -> Dict:
         """Get spot account info (balances)."""
-        return await self._get("/api/v3/account", base_url=BINANCE_SPOT)
+        return await self._get("/api/v3/account", base_url=self.base_spot)
 
     async def get_spot_prices(self, symbols: List[str]) -> Dict[str, float]:
         """Get current spot prices for symbols (no auth required)."""
@@ -121,7 +127,7 @@ class BinancePortfolioFetcher:
             return {}
         # Batch via ticker/price? For multiple symbols we can use /api/v3/ticker/price
         # But simpler: get all and filter
-        resp = await client.get(f"{BINANCE_SPOT}/api/v3/ticker/price")
+        resp = await client.get(f"{self.base_spot}/api/v3/ticker/price")
         data = resp.json() if resp.status_code == 200 else []
         prices = {}
         for item in data:

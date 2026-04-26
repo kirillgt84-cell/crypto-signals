@@ -288,6 +288,9 @@ CREATE TABLE IF NOT EXISTS portfolio_rebalance_suggestions (
 -- Add market_type to account_sources for spot/futures distinction
 ALTER TABLE account_sources ADD COLUMN IF NOT EXISTS market_type VARCHAR(20) DEFAULT 'futures';
 
+-- Add testnet flag to account_sources for Binance testnet connections
+ALTER TABLE account_sources ADD COLUMN IF NOT EXISTS testnet BOOLEAN DEFAULT FALSE;
+
 -- ========== PORTFOLIO ALERTS ==========
 
 CREATE TABLE IF NOT EXISTS portfolio_alert_settings (
