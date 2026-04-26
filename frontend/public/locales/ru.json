@@ -1076,5 +1076,20 @@
   "fundamentals.nuplLabel": "NUPL",
   "fundamentals.soprLabel": "SOPR",
   "fundamentals.fundingLabel": "Фандинг",
-  "fundamentals.momentumLabel": "Импульс"
+  "fundamentals.momentumLabel": "Импульс",
+  "marketGauge.oversold": "Перепродан",
+  "marketGauge.overbought": "Перекуплен",
+  "marketGauge.neutral": "Нейтрально",
+  "marketGauge.strength": "Уверенность",
+  "marketGauge.disclaimer": "Не является инвестиционной рекомендацией. Решение принимает пользователь.",
+  "marketGauge.signal.consider_longs": "Рассматривать лонги",
+  "marketGauge.signal.await_bounce": "Вероятен отскок",
+  "marketGauge.signal.consider_shorts": "Рассматривать шорты",
+  "marketGauge.signal.neutral": "Нейтрально",
+  "marketGauge.signal.await_correction": "Вероятна коррекция",
+  "marketGauge.desc.consider_longs": "RSI перепродан, импульс разворачивается. Возможен отскок",
+  "marketGauge.desc.await_bounce": "Перепроданность без подтверждения импульса. Дождаться разворота MACD",
+  "marketGauge.desc.consider_shorts": "RSI перекуплен, импульс разворачивается. Возможна коррекция",
+  "marketGauge.desc.neutral": "Боковик. Нет выраженного преимущества",
+  "marketGauge.desc.await_correction": "Перекупленность без подтверждения импульса. Дождаться разворота MACD"
 }

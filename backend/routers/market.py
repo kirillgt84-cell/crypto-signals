@@ -637,6 +637,75 @@ async def get_heatmap(
     except Exception as e:
         import traceback
         raise HTTPException(status_code=500, detail=f"{str(e)}\n{traceback.format_exc()}")
+# ── Market Gauge ─────────────────────────────────────────────────────────────
+
+@router.get("/gauge")
+async def get_market_gauge(
+    symbol: str = Query("BTCUSDT", description="Trading pair symbol"),
+    timeframe: str = Query("1h", description="Timeframe: 1h, 4h, 1d")
+):
+    """RSI + MACD gauge with neutral signal interpretation."""
+    import logging
+    logger = logging.getLogger(__name__)
+
+    if timeframe not in ("1h", "4h", "1d"):
+        raise HTTPException(status_code=400, detail="timeframe must be 1h, 4h, or 1d")
+
+    try:
+        gauge = await fetcher.get_gauge_data(symbol.upper(), timeframe)
+    except Exception as e:
+        logger.error(f"Gauge fetch error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+    rsi = gauge.get("rsi", 50.0)
+    macd_trend = gauge.get("macd_trend", "bull")
+    macd_momentum = gauge.get("macd_momentum", "increasing")
+
+    # Signal logic — returns type codes for i18n on frontend
+    if rsi < 30 and macd_trend == "bull" and macd_momentum == "increasing":
+        signal = {"type": "consider_longs", "strength": 5 if rsi < 20 else 4}
+    elif rsi < 30 and macd_trend == "bear":
+        signal = {"type": "await_bounce", "strength": 2}
+    elif rsi < 45 and macd_trend == "bull":
+        signal = {"type": "consider_longs", "strength": 3}
+    elif 45 <= rsi <= 55:
+        signal = {"type": "neutral", "strength": 1}
+    elif rsi > 70 and macd_trend == "bear" and macd_momentum == "decreasing":
+        signal = {"type": "consider_shorts", "strength": 5 if rsi > 80 else 4}
+    elif rsi > 70 and macd_trend == "bull":
+        signal = {"type": "await_correction", "strength": 2}
+    elif rsi > 55 and macd_trend == "bear":
+        signal = {"type": "consider_shorts", "strength": 3}
+    else:
+        signal = {"type": "neutral", "strength": 2}
+
+    # RSI zone
+    if rsi < 30:
+        rsi_zone = "oversold"
+    elif rsi > 70:
+        rsi_zone = "overbought"
+    else:
+        rsi_zone = "neutral"
+
+    from datetime import datetime, timezone
+    return {
+        "symbol": symbol.upper(),
+        "timeframe": timeframe,
+        "timestamp": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
+        "rsi": {
+            "value": rsi,
+            "zone": rsi_zone,
+        },
+        "macd": {
+            "trend": macd_trend,
+            "histogram": gauge.get("macd_histogram", [0.0, 0.0, 0.0, 0.0, 0.0]),
+            "momentum": macd_momentum,
+        },
+        "signal": signal,
+        "divergence": None,
+    }
+
+
 # Deploy timestamp: Sun Apr 12 09:39:12 CEST 2026
 
 # ── Coin Search ──────────────────────────────────────────────────────────────

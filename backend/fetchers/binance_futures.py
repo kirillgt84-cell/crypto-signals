@@ -653,6 +653,83 @@ class BinanceFuturesFetcher:
                 "error": "Using fallback data"
             }
     
+    async def get_gauge_data(self, symbol: str = "BTCUSDT", timeframe: str = "1h") -> Dict:
+        """
+        Получает RSI + MACD histogram для Market Gauge.
+        timeframe: 1h, 4h, 1d
+        """
+        import logging
+        logger = logging.getLogger(__name__)
+
+        try:
+            session = await self._get_session()
+
+            # Нужно минимум 100 свечей для RSI(14) + MACD(12,26,9)
+            async with session.get(
+                f"{self.BASE_URL}/fapi/v1/klines",
+                params={"symbol": symbol, "interval": timeframe, "limit": 120},
+                headers={"Accept": "application/json"}
+            ) as resp:
+                klines = await resp.json()
+
+            if not isinstance(klines, list) or len(klines) < 100:
+                raise ValueError("Insufficient klines data for gauge")
+
+            df = pd.DataFrame(klines, columns=[
+                'timestamp', 'open', 'high', 'low', 'close', 'volume',
+                'close_time', 'quote_volume', 'trades', 'taker_buy_base',
+                'taker_buy_quote', 'ignore'
+            ])
+            df['close'] = df['close'].astype(float)
+
+            # RSI
+            delta = df['close'].diff()
+            gain = (delta.where(delta > 0, 0)).rolling(window=14).mean()
+            loss = (-delta.where(delta < 0, 0)).rolling(window=14).mean()
+            rs = gain / loss
+            df['rsi'] = 100 - (100 / (1 + rs))
+
+            # MACD
+            ema12 = df['close'].ewm(span=12, adjust=False).mean()
+            ema26 = df['close'].ewm(span=26, adjust=False).mean()
+            df['macd'] = ema12 - ema26
+            df['macd_signal'] = df['macd'].ewm(span=9, adjust=False).mean()
+            df['macd_histogram'] = df['macd'] - df['macd_signal']
+
+            rsi_value = float(round(df['rsi'].iloc[-1], 1))
+
+            # Last 5 histogram values
+            hist_values = df['macd_histogram'].tail(5).tolist()
+            hist = [float(round(v, 4)) for v in hist_values]
+
+            # MACD trend: bull if macd > signal, bear otherwise
+            macd_val = df['macd'].iloc[-1]
+            signal_val = df['macd_signal'].iloc[-1]
+            macd_trend = "bull" if macd_val > signal_val else "bear"
+
+            # MACD momentum: increasing if last hist > previous hist
+            macd_momentum = "increasing" if len(hist) >= 2 and hist[-1] > hist[-2] else "decreasing"
+
+            return {
+                "symbol": symbol,
+                "timeframe": timeframe,
+                "rsi": rsi_value,
+                "macd_trend": macd_trend,
+                "macd_histogram": hist,
+                "macd_momentum": macd_momentum,
+            }
+        except Exception as e:
+            logger.error(f"Gauge data error: {e}")
+            return {
+                "symbol": symbol,
+                "timeframe": timeframe,
+                "rsi": 50.0,
+                "macd_trend": "bull",
+                "macd_histogram": [0.0, 0.0, 0.0, 0.0, 0.0],
+                "macd_momentum": "increasing",
+                "error": str(e),
+            }
+
     async def get_spot_volume(self, symbol: str = "BTCUSDT", timeframe: str = "1h") -> Dict:
         """
         Получает 24-часовой спотовый объем для сравнения с фьючерсным

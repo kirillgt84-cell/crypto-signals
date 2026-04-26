@@ -1076,5 +1076,20 @@
   "fundamentals.nuplLabel": "NUPL",
   "fundamentals.soprLabel": "SOPR",
   "fundamentals.fundingLabel": "Funding",
-  "fundamentals.momentumLabel": "Momentum"
+  "fundamentals.momentumLabel": "Momentum",
+  "marketGauge.oversold": "Oversold",
+  "marketGauge.overbought": "Overbought",
+  "marketGauge.neutral": "Neutral",
+  "marketGauge.strength": "Confidence",
+  "marketGauge.disclaimer": "Not investment advice. User makes their own decisions.",
+  "marketGauge.signal.consider_longs": "Consider longs",
+  "marketGauge.signal.await_bounce": "Bounce likely",
+  "marketGauge.signal.consider_shorts": "Consider shorts",
+  "marketGauge.signal.neutral": "Neutral",
+  "marketGauge.signal.await_correction": "Correction likely",
+  "marketGauge.desc.consider_longs": "RSI oversold, momentum turning. Possible bounce",
+  "marketGauge.desc.await_bounce": "Oversold without momentum confirmation. Wait for MACD reversal",
+  "marketGauge.desc.consider_shorts": "RSI overbought, momentum turning. Possible correction",
+  "marketGauge.desc.neutral": "Sideways. No clear advantage",
+  "marketGauge.desc.await_correction": "Overbought without momentum confirmation. Wait for MACD reversal"
 }

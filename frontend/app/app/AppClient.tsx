@@ -23,6 +23,7 @@ import { OITerminal } from "@/app/components/OITerminal"
 import { EntryLevels } from "@/app/components/EntryLevels"
 
 import { FundamentalsCard } from "@/app/components/FundamentalsCard"
+import { MarketGauge } from "@/app/components/MarketGauge"
 import Sidebar from "@/app/components/admin/Sidebar"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { cn } from "@/lib/utils"
@@ -853,6 +854,11 @@ export default function Dashboard() {
 
         {/* Row 1.5: Sentiment Cards */}
         <SentimentCards data={marketData} loading={loading} />
+
+        {/* Market Gauge */}
+        <div className="px-4 pt-2 lg:px-6">
+          <MarketGauge />
+        </div>
 
         {/* Row 2: TradingView Chart + OI Analysis + Fundamentals */}
         <div className="flex flex-col lg:flex-row gap-4 px-4 py-4 lg:px-6">

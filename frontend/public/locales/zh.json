@@ -1076,5 +1076,20 @@
   "fundamentals.nuplLabel": "NUPL",
   "fundamentals.soprLabel": "SOPR",
   "fundamentals.fundingLabel": "资金费率",
-  "fundamentals.momentumLabel": "动量"
+  "fundamentals.momentumLabel": "动量",
+  "marketGauge.oversold": "超卖",
+  "marketGauge.overbought": "超买",
+  "marketGauge.neutral": "中性",
+  "marketGauge.strength": "置信度",
+  "marketGauge.disclaimer": "不构成投资建议。用户自行决策。",
+  "marketGauge.signal.consider_longs": "考虑做多",
+  "marketGauge.signal.await_bounce": "反弹可能",
+  "marketGauge.signal.consider_shorts": "考虑做空",
+  "marketGauge.signal.neutral": "中性",
+  "marketGauge.signal.await_correction": "回调可能",
+  "marketGauge.desc.consider_longs": "RSI超卖，动能转向。可能出现反弹",
+  "marketGauge.desc.await_bounce": "超卖但未获动能确认。等待MACD反转",
+  "marketGauge.desc.consider_shorts": "RSI超买，动能转向。可能出现回调",
+  "marketGauge.desc.neutral": "横盘。无明显优势",
+  "marketGauge.desc.await_correction": "超买但未获动能确认。等待MACD反转"
 }

@@ -257,3 +257,70 @@ class TestSentimentEndpoint:
         assert result["long_short_ratio"] == 1.25
         assert result["sentiment_signal"] == "bullish"
         mock_fetcher.get_sentiment_metrics.assert_called_once_with("BTCUSDT")
+
+
+
+@pytest.mark.asyncio
+class TestGaugeEndpoint:
+    @patch("routers.market.fetcher")
+    async def test_get_market_gauge_consider_longs(self, mock_fetcher):
+        from routers.market import get_market_gauge
+
+        mock_fetcher.get_gauge_data = AsyncMock(return_value={
+            "symbol": "BTCUSDT",
+            "timeframe": "1h",
+            "rsi": 25.0,
+            "macd_trend": "bull",
+            "macd_histogram": [0.5, 0.8, 1.2, 1.5, 1.8],
+            "macd_momentum": "increasing",
+        })
+
+        result = await get_market_gauge("BTCUSDT", "1h")
+
+        assert result["symbol"] == "BTCUSDT"
+        assert result["timeframe"] == "1h"
+        assert result["rsi"]["value"] == 25.0
+        assert result["rsi"]["zone"] == "oversold"
+        assert result["macd"]["trend"] == "bull"
+        assert result["macd"]["momentum"] == "increasing"
+        assert result["signal"]["type"] == "consider_longs"
+        assert result["signal"]["strength"] == 4
+        assert "timestamp" in result
+
+    @patch("routers.market.fetcher")
+    async def test_get_market_gauge_neutral(self, mock_fetcher):
+        from routers.market import get_market_gauge
+
+        mock_fetcher.get_gauge_data = AsyncMock(return_value={
+            "symbol": "BTCUSDT",
+            "timeframe": "1h",
+            "rsi": 50.0,
+            "macd_trend": "bear",
+            "macd_histogram": [0.1, 0.0, -0.1, -0.2, -0.3],
+            "macd_momentum": "decreasing",
+        })
+
+        result = await get_market_gauge("BTCUSDT", "1h")
+
+        assert result["rsi"]["zone"] == "neutral"
+        assert result["signal"]["type"] == "neutral"
+        assert result["signal"]["strength"] == 1
+
+    @patch("routers.market.fetcher")
+    async def test_get_market_gauge_consider_shorts(self, mock_fetcher):
+        from routers.market import get_market_gauge
+
+        mock_fetcher.get_gauge_data = AsyncMock(return_value={
+            "symbol": "BTCUSDT",
+            "timeframe": "1h",
+            "rsi": 85.0,
+            "macd_trend": "bear",
+            "macd_histogram": [-0.5, -0.8, -1.2, -1.5, -1.8],
+            "macd_momentum": "decreasing",
+        })
+
+        result = await get_market_gauge("BTCUSDT", "1h")
+
+        assert result["rsi"]["zone"] == "overbought"
+        assert result["signal"]["type"] == "consider_shorts"
+        assert result["signal"]["strength"] == 5
