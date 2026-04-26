@@ -17,7 +17,8 @@ import {
   GitBranch,
   ScanEye,
   PieChart,
-  Calculator
+  Calculator,
+  Gift
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Logo } from '../Logo';
@@ -47,6 +48,7 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
     { href: '/position-calc', label: t('sidebar.positionCalc'), icon: Calculator },
     { href: '/risk-parity', label: t('sidebar.riskParity'), icon: Scale },
     { href: '/yield-curve', label: t('sidebar.yieldCurve'), icon: GitBranch },
+    { href: '/partner', label: t('sidebar.partner'), icon: Gift },
     { href: '/pricing', label: t('sidebar.pricing'), icon: Crown },
     ...(isAdmin ? [{ href: '/admin', label: t('sidebar.admin'), icon: ShieldCheck }] : []),
   ];

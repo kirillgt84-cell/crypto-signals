@@ -1,5 +1,6 @@
 "use client"
 
+import { useEffect } from "react"
 import { LandingNavbar } from "./components/landing/LandingNavbar"
 
 import { LandingFeatures } from "./components/landing/LandingFeatures"
@@ -12,6 +13,15 @@ import { LandingCTA } from "./components/landing/LandingCTA"
 import { ScrollToTop } from "./components/landing/ScrollToTop"
 
 export default function LandingClient() {
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search)
+    const refCode = urlParams.get("ref")
+    if (refCode) {
+      const expires = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toUTCString()
+      document.cookie = `ref_code=${refCode};expires=${expires};path=/;SameSite=Lax`
+    }
+  }, [])
+
   return (
     <div className="flex min-h-screen flex-col">
       <LandingNavbar />

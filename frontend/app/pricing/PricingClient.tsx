@@ -21,7 +21,16 @@ export default function PricingClient() {
   const [isYearly, setIsYearly] = useState(true);
   const [processing, setProcessing] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+  const [referralEligible, setReferralEligible] = useState(false);
   const { t } = useLanguage();
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      fetch(`${API_BASE_URL}/partner/check-eligibility`, { credentials: "include" })
+        .then((r) => r.json())
+        .then((data) => setReferralEligible(data.eligible));
+    }
+  }, [isAuthenticated]);
 
   const payment = searchParams.get("payment");
 

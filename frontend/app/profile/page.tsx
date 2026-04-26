@@ -30,15 +30,17 @@ import {
   Bell,
   LogOut,
   Wallet,
+  Users,
 } from "lucide-react"
 
-type ProfileTab = "overview" | "security" | "preferences" | "subscription"
+type ProfileTab = "overview" | "security" | "preferences" | "subscription" | "partner"
 
 const navIcons: Record<ProfileTab, React.ElementType> = {
   overview: User,
   security: Lock,
   preferences: Settings,
   subscription: CreditCard,
+  partner: Users,
 }
 
 import { API_BASE_URL } from "@/app/lib/api"
@@ -499,6 +501,24 @@ export default function ProfilePage() {
                         onCheckedChange={(v) => handlePrefToggle("notifications_enabled", v)}
                       />
                     </div>
+                  </CardContent>
+                </Card>
+              </div>
+            )}
+
+            {activeTab === "partner" && (
+              <div className="space-y-4">
+                <Card className="border">
+                  <CardHeader>
+                    <CardTitle className="text-base font-semibold">Partner Program</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <p className="text-sm text-muted-foreground">
+                      Invite friends and earn 20% from their Pro subscriptions.
+                    </p>
+                    <Button variant="outline" onClick={() => window.location.href = "/partner"}>
+                      Open Partner Dashboard
+                    </Button>
                   </CardContent>
                 </Card>
               </div>

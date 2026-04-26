@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { motion, AnimatePresence } from "framer-motion"
 import { X, Mail, Lock, User } from "lucide-react"
@@ -24,9 +24,17 @@ export function AuthModal({ isOpen, onClose, defaultTab = "login" }: AuthModalPr
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [username, setUsername] = useState("")
+  const [referralCode, setReferralCode] = useState("")
   const { login, register } = useAuth()
   const { t } = useLanguage()
   const router = useRouter()
+
+  useEffect(() => {
+    const match = document.cookie.match(/ref_code=([^;]+)/)
+    if (match) {
+      setReferralCode(match[1])
+    }
+  }, [])
 
   const handleEmailSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -38,7 +46,7 @@ export function AuthModal({ isOpen, onClose, defaultTab = "login" }: AuthModalPr
         onClose()
         router.push("/app")
       } else {
-        await register(email, password, username || undefined)
+        await register(email, password, username || undefined, referralCode || undefined)
         onClose()
         router.push("/app")
       }
@@ -96,10 +104,18 @@ export function AuthModal({ isOpen, onClose, defaultTab = "login" }: AuthModalPr
             <Input type="password" placeholder={t("auth.password")} value={password} onChange={(e) => setPassword(e.target.value)} className="pl-10" required minLength={8} />
           </div>
           {activeTab === "register" && (
-            <div className="relative">
-              <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <Input type="text" placeholder={t("profile.username") + " (" + t("common.optional") + ")"} value={username} onChange={(e) => setUsername(e.target.value)} className="pl-10" />
-            </div>
+            <>
+              <div className="relative">
+                <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input type="text" placeholder={t("profile.username") + " (" + t("common.optional") + ")"} value={username} onChange={(e) => setUsername(e.target.value)} className="pl-10" />
+              </div>
+              <div className="relative">
+                <Input type="text" placeholder={t("auth.referralCode") || "Referral Code (optional)"} value={referralCode} onChange={(e) => setReferralCode(e.target.value)} className="pl-10" />
+              </div>
+              {referralCode && (
+                <p className="text-xs text-emerald-500">🎉 20% off your first month!</p>
+              )}
+            </>
           )}
           <Button type="submit" className="w-full" disabled={isLoading}>
             {isLoading ? <span className="animate-pulse">{t("common.loading")}</span> : activeTab === "login" ? t("common.signIn") : t("authModal.createAccount")}

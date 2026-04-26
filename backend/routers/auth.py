@@ -73,6 +73,7 @@ class RegisterRequest(BaseModel):
     email: EmailStr
     password: str
     username: Optional[str] = None
+    referral_code: Optional[str] = None
 
 class LoginRequest(BaseModel):
     email: EmailStr
@@ -228,13 +229,44 @@ async def register(req: RegisterRequest, request: Request = None, response: Resp
            VALUES ($1, $2, $3, 'free') RETURNING id, email, username, subscription_tier""",
         [req.email, password_hash, username]
     )
-    
+
     user = result[0]
-    
+    user_id = user["id"]
+
+    # Handle referral code
+    referred_by = None
+    if req.referral_code:
+        ref_code = await db.query(
+            "SELECT * FROM referral_codes WHERE code = $1 AND is_active = TRUE LIMIT 1",
+            [req.referral_code]
+        )
+        if ref_code:
+            ref_code_id = ref_code[0]["id"]
+            referrer_user_id = ref_code[0]["user_id"]
+            if referrer_user_id != user_id:
+                referred_by = req.referral_code
+                await db.execute(
+                    """INSERT INTO referrals (referrer_code_id, referred_user_id, status)
+                       VALUES ($1, $2, 'registered')""",
+                    [ref_code_id, user_id]
+                )
+                await db.execute(
+                    "UPDATE referral_codes SET total_referrals = total_referrals + 1 WHERE id = $1",
+                    [ref_code_id]
+                )
+            else:
+                logger.warning(f"User {user_id} tried to use own referral code")
+
+    if referred_by:
+        await db.execute(
+            "UPDATE users SET referred_by_code = $1 WHERE id = $2",
+            [referred_by, user_id]
+        )
+
     # Create default preferences
     await db.execute(
         "INSERT INTO user_preferences (user_id) VALUES ($1)",
-        [user["id"]]
+        [user_id]
     )
     
     # Generate tokens

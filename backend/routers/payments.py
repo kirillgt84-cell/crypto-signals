@@ -346,9 +346,61 @@ async def paypal_webhook(
         )
         sub = await db.query("SELECT user_id, plan_id FROM subscriptions WHERE paypal_subscription_id = $1", [sub_id])
         if sub:
-            plan = await db.query("SELECT tier FROM plans WHERE id = $1", [sub[0]["plan_id"]])
+            user_id = sub[0]["user_id"]
+            plan_id = sub[0]["plan_id"]
+
+            # --- REFERRAL REWARD ---
+            user_row = await db.query(
+                "SELECT referred_by_code FROM users WHERE id = $1", [user_id]
+            )
+            if user_row and user_row[0]["referred_by_code"]:
+                ref_code = user_row[0]["referred_by_code"]
+                existing_reward = await db.query(
+                    """SELECT 1 FROM referral_transactions t
+                       JOIN referral_codes c ON c.id = t.referral_code_id
+                       WHERE c.code = $1 AND t.type = 'reward'
+                       AND t.paypal_transaction_id = $2 LIMIT 1""",
+                    [ref_code, sub_id],
+                )
+                if not existing_reward:
+                    plan_price = await db.query("SELECT price FROM plans WHERE id = $1", [plan_id])
+                    if plan_price:
+                        price = float(plan_price[0]["price"])
+                        reward = round(price * 0.2, 2)
+                        ref_code_row = await db.query(
+                            "SELECT id, user_id FROM referral_codes WHERE code = $1",
+                            [ref_code],
+                        )
+                        if ref_code_row:
+                            ref_code_id = ref_code_row[0]["id"]
+                            referrer_id = ref_code_row[0]["user_id"]
+                            await db.execute(
+                                """UPDATE referral_codes
+                                   SET available_balance = available_balance + $1,
+                                       total_earned = total_earned + $1,
+                                       active_referrals = active_referrals + 1
+                                   WHERE id = $2""",
+                                [reward, ref_code_id],
+                            )
+                            await db.execute(
+                                """UPDATE referrals
+                                   SET status = 'subscribed',
+                                       converted_at = NOW(),
+                                       revenue_generated = revenue_generated + $1,
+                                       reward_earned = reward_earned + $2
+                                   WHERE referrer_code_id = $3 AND referred_user_id = $4""",
+                                [price, reward, ref_code_id, user_id],
+                            )
+                            await db.execute(
+                                """INSERT INTO referral_transactions
+                                   (referral_code_id, user_id, type, amount, description, paypal_transaction_id)
+                                   VALUES ($1, $2, 'reward', $3, 'Referral subscription activated', $4)""",
+                                [ref_code_id, referrer_id, reward, sub_id],
+                            )
+
+            plan = await db.query("SELECT tier FROM plans WHERE id = $1", [plan_id])
             if plan:
-                await _grant_access(sub[0]["user_id"], plan[0]["tier"])
+                await _grant_access(user_id, plan[0]["tier"])
 
     elif event_type == "BILLING.SUBSCRIPTION.CANCELLED":
         sub_id = resource_id
@@ -414,9 +466,39 @@ async def create_trial(
         raise HTTPException(status_code=400, detail="You already have an active subscription")
 
     plan = await _get_or_create_trial_plan(req.billing_cycle)
+    paypal_plan_id = plan["paypal_plan_id"]
+
+    # Check referral eligibility
+    user = await db.query(
+        "SELECT referred_by_code, referral_discount_used FROM users WHERE id = $1",
+        [current_user["id"]]
+    )
+    is_referral = user and user[0]["referred_by_code"] and not user[0]["referral_discount_used"]
+
+    if is_referral:
+        discount_price = plan["price"] * 0.8
+        paypal = get_paypal_api()
+        product_res = await paypal.create_product(
+            name="Mirkaso Pro (Referral Discount)",
+            description=f"Pro subscription with 20% referral discount — ${discount_price:.2f}/{req.billing_cycle}"
+        )
+        plan_res = await paypal.create_plan(
+            product_id=product_res["id"],
+            name=f"{plan['name']} (Discounted)",
+            amount=discount_price,
+            currency="USD",
+            trial_days=7,
+            billing_cycle=req.billing_cycle,
+        )
+        paypal_plan_id = plan_res["id"]
+        await db.execute(
+            "UPDATE users SET referral_discount_used = TRUE WHERE id = $1",
+            [current_user["id"]]
+        )
+
     paypal = get_paypal_api()
     result = await paypal.create_subscription(
-        plan_id=plan["paypal_plan_id"],
+        plan_id=paypal_plan_id,
         return_url="https://mirkaso.com/pricing?payment=success",
         cancel_url="https://mirkaso.com/pricing?payment=cancelled",
     )

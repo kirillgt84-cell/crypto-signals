@@ -30,7 +30,7 @@ interface AuthContextType {
   isAuthenticated: boolean
   isPro: boolean
   login: (email: string, password: string) => Promise<void>
-  register: (email: string, password: string, username?: string) => Promise<void>
+  register: (email: string, password: string, username?: string, referral_code?: string) => Promise<void>
   logout: () => void
   loginWithOAuth: (provider: string) => void
   loginWithTelegram: (user: any) => Promise<void>
@@ -105,12 +105,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(data.user)
   }
 
-  const register = async (email: string, password: string, username?: string) => {
+  const register = async (email: string, password: string, username?: string, referral_code?: string) => {
     const res = await fetch(authUrl('/register'), {
       method: "POST", cache: 'no-store',
       credentials: 'include',
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password, username })
+      body: JSON.stringify({ email, password, username, referral_code })
     })
     if (!res.ok) {
       const error = await res.json()
