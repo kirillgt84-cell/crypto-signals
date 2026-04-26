@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useAuth } from "../context/AuthContext";
 import { useLanguage } from "@/app/context/LanguageContext";
 import { API_BASE_URL } from "@/app/lib/api";
@@ -29,24 +30,31 @@ export default function PartnerPage() {
   const { t } = useLanguage();
   const [stats, setStats] = useState<PartnerStats | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
 
   const fetchStats = async () => {
+    setError(null);
     try {
       const res = await fetch(`${API_BASE_URL}/partner/stats`, {
         credentials: "include",
       });
       if (res.ok) {
         setStats(await res.json());
+      } else {
+        const text = await res.text();
+        setError(text || t("partner.statsError"));
       }
     } catch (e) {
       console.error("Partner stats fetch failed", e);
+      setError(t("partner.statsError"));
     } finally {
       setLoading(false);
     }
   };
 
   const generateCode = async () => {
+    setError(null);
     try {
       const res = await fetch(`${API_BASE_URL}/partner/generate-code`, {
         method: "POST",
@@ -59,9 +67,13 @@ export default function PartnerPage() {
             ? { ...prev, code: data.code, referral_link: data.referral_link }
             : null
         );
+      } else {
+        const text = await res.text();
+        setError(text || t("partner.generateError"));
       }
     } catch (e) {
       console.error("Generate code failed", e);
+      setError(t("partner.generateError"));
     }
   };
 
@@ -106,6 +118,12 @@ export default function PartnerPage() {
               {t("partner.subtitle")}
             </p>
           </div>
+
+          {error && (
+            <Alert variant="destructive" className="mb-6">
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          )}
 
           {loading ? (
             <div className="text-center py-20 text-muted-foreground">

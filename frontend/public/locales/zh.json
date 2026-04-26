@@ -1051,5 +1051,7 @@
   "partner.subscribed": "已订阅",
   "partner.pending": "待处理",
   "partner.reward": "奖励",
-  "partner.payout": "提现"
+  "partner.payout": "提现",
+  "partner.statsError": "加载合作伙伴统计失败，请稍后重试。",
+  "partner.generateError": "生成推荐码失败，请稍后重试。"
 }

@@ -24,6 +24,10 @@ function DashboardContent() {
   const { user, logout } = useAuth()
   const { t } = useLanguage()
   const router = useRouter()
+
+  useEffect(() => {
+    router.replace("/app")
+  }, [router])
   const [preferences, setPreferences] = useState({
     theme: "dark",
     language: "en",

@@ -1051,5 +1051,7 @@
   "partner.subscribed": "Suscrito",
   "partner.pending": "Pendiente",
   "partner.reward": "Recompensa",
-  "partner.payout": "Pago"
+  "partner.payout": "Pago",
+  "partner.statsError": "Error al cargar las estadísticas del socio. Inténtalo de nuevo más tarde.",
+  "partner.generateError": "Error al generar el código de referido. Inténtalo de nuevo más tarde."
 }

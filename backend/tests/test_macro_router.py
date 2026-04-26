@@ -84,17 +84,14 @@ class TestMacroRouter:
         assert "prices" in data
         assert data["correlation"]["btc_price"] == 50000
 
-
     def test_get_m2_comparison(self, client):
         """M2 comparison should return aligned M2 + selected asset prices."""
         mock_db = MagicMock()
         mock_db.query = AsyncMock(side_effect=[
-            # M2 rows
+            # M2 rows (2 rows, days=30 → threshold=30//7*0.5≈2, no FRED fallback)
             [{"date": "2024-01-01", "value": 21000.0}, {"date": "2024-01-02", "value": 21100.0}],
-            # BTC rows (oi_history — only 2 rows triggers fallback)
-            [{"date": "2024-01-01", "close_price": 42000.0}, {"date": "2024-01-02", "close_price": 43000.0}],
-            # BTC asset lookup for fallback (empty = no macro_prices fallback)
-            [],
+            # BTC rows from oi_history (10 rows → no BTC fallback)
+            [{"date": f"2024-01-{i:02d}", "close_price": 41000.0 + i * 1000} for i in range(1, 11)],
             # SPX asset
             [{"id": 1}],
             # SPX rows
@@ -105,7 +102,7 @@ class TestMacroRouter:
             [{"date": "2024-01-01", "close_price": 2000.0}, {"date": "2024-01-02", "close_price": 2050.0}],
         ])
         with patch("routers.macro.get_db", return_value=mock_db):
-            resp = client.get("/api/v1/macro/m2-comparison?assets=btc,spx,gold&days=365")
+            resp = client.get("/api/v1/macro/m2-comparison?assets=btc,spx,gold&days=30")
         assert resp.status_code == 200
         data = resp.json()
         assert data["dates"] == ["2024-01-01", "2024-01-02"]
@@ -113,3 +110,113 @@ class TestMacroRouter:
         assert data["series"]["btc"] == [42000.0, 43000.0]
         assert data["series"]["spx"] == [4500.0, 4600.0]
         assert data["series"]["gold"] == [2000.0, 2050.0]
+
+    def test_get_m2_comparison_empty_m2_btc_coingecko(self, client):
+        """When M2 DB is empty and oi_history is empty, CoinGecko BTC fallback should drive dates."""
+        mock_db = MagicMock()
+        mock_db.query = AsyncMock(side_effect=[
+            # M2 rows — empty
+            [],
+            # BTC oi_history — empty
+            [],
+            # BTC macro_asset lookup — empty
+            [],
+            # SPX asset — empty
+            [],
+            # Gold asset — empty
+            [],
+        ])
+        cg_data = [
+            {"date": "2024-01-01", "close_price": 42000.0},
+            {"date": "2024-01-02", "close_price": 43000.0},
+        ]
+        with patch("routers.macro.get_db", return_value=mock_db), \
+             patch("routers.macro._fetch_btc_from_binance", return_value=[]), \
+             patch("routers.macro._fetch_from_coingecko", return_value=cg_data):
+            resp = client.get("/api/v1/macro/m2-comparison?assets=btc&days=30")
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["dates"] == ["2024-01-01", "2024-01-02"]
+        assert data["series"]["m2"] == [None, None]
+        assert data["series"]["btc"] == [42000.0, 43000.0]
+
+    def test_get_m2_comparison_all_btc_fallbacks_fail(self, client):
+        """When all BTC sources fail, btc series should be None values."""
+        mock_db = MagicMock()
+        mock_db.query = AsyncMock(side_effect=[
+            # M2 rows
+            [{"date": "2024-01-01", "value": 21000.0}],
+            # BTC oi_history — empty
+            [],
+            # BTC macro_asset lookup — empty
+            [],
+        ])
+        with patch("routers.macro.get_db", return_value=mock_db), \
+             patch("routers.macro._fetch_btc_from_binance", return_value=[]), \
+             patch("routers.macro._fetch_from_coingecko", return_value=[]):
+            resp = client.get("/api/v1/macro/m2-comparison?assets=btc&days=30")
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["dates"] == ["2024-01-01"]
+        assert data["series"]["btc"] == [None]
+
+    def test_get_correlations_fallback_computes(self, client):
+        """When macro_correlations table is empty, fallback should compute correlations from raw prices."""
+        mock_db = MagicMock()
+        btc_rows = [{"day": f"2024-01-{i:02d}", "price": 40000.0 + i * 1000} for i in range(1, 31)]
+        spx_rows = [{"day": f"2024-01-{i:02d}", "close_price": 4500.0 + i * 10} for i in range(1, 31)]
+        gold_rows = [{"day": f"2024-01-{i:02d}", "close_price": 2000.0 + i * 5} for i in range(1, 31)]
+        mock_db.query = AsyncMock(side_effect=[
+            # macro_correlations — empty (triggers fallback)
+            [],
+            # macro_assets (spx500, gold, vix)
+            [
+                {"id": 1, "key": "spx500"},
+                {"id": 2, "key": "gold"},
+                {"id": 3, "key": "vix"},
+            ],
+            # oi_history BTCUSDT (30 rows → enough)
+            btc_rows,
+            # macro_prices spx (_get_macro_map)
+            spx_rows,
+            # macro_prices gold
+            gold_rows,
+            # macro_prices vix
+            [],
+        ])
+        with patch("routers.macro.get_db", return_value=mock_db), \
+             patch("routers.macro._fetch_btc_from_binance", return_value=[]), \
+             patch("routers.macro._fetch_from_coingecko", return_value=[]):
+            resp = client.get("/api/v1/macro/correlations?limit=30")
+        assert resp.status_code == 200
+        data = resp.json()
+        assert len(data) > 0
+        # Last record should have computed correlations for btc↔spx and gold↔btc
+        last = data[-1]
+        assert last["date"] == "2024-01-30"
+        assert isinstance(last["btc_spx_correlation"], float)
+        assert isinstance(last["gold_btc_correlation"], float)
+        # VIX was empty so correlation should be None
+        assert last["vix_btc_correlation"] is None
+        assert last["vix_level"] is None
+
+    def test_get_correlations_all_fallbacks_fail(self, client):
+        """When macro_correlations is empty and all raw price sources fail, return empty list."""
+        mock_db = MagicMock()
+        mock_db.query = AsyncMock(side_effect=[
+            # macro_correlations — empty
+            [],
+            # macro_assets
+            [{"id": 1, "key": "spx500"}, {"id": 2, "key": "gold"}, {"id": 3, "key": "vix"}],
+            # oi_history — empty
+            [],
+            # macro_assets btc lookup — empty
+            [],
+        ])
+        with patch("routers.macro.get_db", return_value=mock_db), \
+             patch("routers.macro._fetch_btc_from_binance", return_value=[]), \
+             patch("routers.macro._fetch_from_coingecko", return_value=[]):
+            resp = client.get("/api/v1/macro/correlations?limit=30")
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data == []

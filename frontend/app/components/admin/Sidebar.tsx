@@ -40,7 +40,7 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
   const isAdmin = user?.subscription_tier === 'admin';
 
   const navItems = [
-    { href: '/dashboard', label: t('sidebar.dashboard'), icon: LayoutDashboard },
+    { href: '/app', label: t('sidebar.dashboard'), icon: LayoutDashboard },
     { href: '/portfolio', label: t('sidebar.portfolio'), icon: Briefcase },
     { href: '/signals', label: t('sidebar.signals'), icon: ScanEye },
     { href: '/macro', label: t('sidebar.macro'), icon: Network },

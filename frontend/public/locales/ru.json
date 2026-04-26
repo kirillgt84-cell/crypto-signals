@@ -1051,5 +1051,7 @@
   "partner.subscribed": "Подписан",
   "partner.pending": "В ожидании",
   "partner.reward": "Вознаграждение",
-  "partner.payout": "Выплата"
+  "partner.payout": "Выплата",
+  "partner.statsError": "Не удалось загрузить статистику партнёра. Попробуйте позже.",
+  "partner.generateError": "Не удалось сгенерировать реферальный код. Попробуйте позже."
 }

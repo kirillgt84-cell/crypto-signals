@@ -1051,5 +1051,7 @@
   "partner.subscribed": "Subscribed",
   "partner.pending": "Pending",
   "partner.reward": "Reward",
-  "partner.payout": "Payout"
+  "partner.payout": "Payout",
+  "partner.statsError": "Failed to load partner stats. Please try again later.",
+  "partner.generateError": "Failed to generate referral code. Please try again later."
 }

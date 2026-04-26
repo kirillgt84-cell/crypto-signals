@@ -13,6 +13,63 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/v1/partner", tags=["partner"])
 
 
+async def _ensure_referral_tables(db):
+    """Auto-create referral tables if they don't exist (self-healing for new deployments)."""
+    await db.execute("""
+        CREATE TABLE IF NOT EXISTS referral_codes (
+            id SERIAL PRIMARY KEY,
+            user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+            code VARCHAR(20) NOT NULL UNIQUE,
+            created_at TIMESTAMP DEFAULT NOW(),
+            total_referrals INTEGER DEFAULT 0,
+            active_referrals INTEGER DEFAULT 0,
+            total_earned DECIMAL(10,2) DEFAULT 0.00,
+            available_balance DECIMAL(10,2) DEFAULT 0.00,
+            withdrawn_balance DECIMAL(10,2) DEFAULT 0.00,
+            is_active BOOLEAN DEFAULT TRUE
+        )
+    """)
+    await db.execute("CREATE INDEX IF NOT EXISTS idx_referral_codes_code ON referral_codes(code)")
+    await db.execute("CREATE INDEX IF NOT EXISTS idx_referral_codes_user ON referral_codes(user_id)")
+
+    await db.execute("""
+        CREATE TABLE IF NOT EXISTS referrals (
+            id SERIAL PRIMARY KEY,
+            referrer_code_id INTEGER NOT NULL REFERENCES referral_codes(id) ON DELETE CASCADE,
+            referred_user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+            status VARCHAR(20) DEFAULT 'registered',
+            joined_at TIMESTAMP DEFAULT NOW(),
+            converted_at TIMESTAMP,
+            cancelled_at TIMESTAMP,
+            revenue_generated DECIMAL(10,2) DEFAULT 0.00,
+            reward_earned DECIMAL(10,2) DEFAULT 0.00,
+            UNIQUE(referred_user_id)
+        )
+    """)
+    await db.execute("CREATE INDEX IF NOT EXISTS idx_referrals_referrer ON referrals(referrer_code_id)")
+    await db.execute("CREATE INDEX IF NOT EXISTS idx_referrals_user ON referrals(referred_user_id)")
+
+    await db.execute("""
+        CREATE TABLE IF NOT EXISTS referral_transactions (
+            id SERIAL PRIMARY KEY,
+            referral_code_id INTEGER REFERENCES referral_codes(id) ON DELETE CASCADE,
+            referral_id INTEGER REFERENCES referrals(id) ON DELETE SET NULL,
+            user_id INTEGER REFERENCES users(id),
+            type VARCHAR(20) NOT NULL,
+            amount DECIMAL(10,2) NOT NULL,
+            currency VARCHAR(3) DEFAULT 'USD',
+            description TEXT,
+            paypal_transaction_id VARCHAR(100),
+            created_at TIMESTAMP DEFAULT NOW()
+        )
+    """)
+    await db.execute("CREATE INDEX IF NOT EXISTS idx_ref_tx_code ON referral_transactions(referral_code_id)")
+    await db.execute("CREATE INDEX IF NOT EXISTS idx_ref_tx_user ON referral_transactions(user_id)")
+
+    await db.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS referred_by_code VARCHAR(20)")
+    await db.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS referral_discount_used BOOLEAN DEFAULT FALSE")
+
+
 class GenerateCodeResponse(BaseModel):
     code: str
     referral_link: str
@@ -22,6 +79,7 @@ class GenerateCodeResponse(BaseModel):
 async def generate_referral_code(current_user: dict = Depends(get_current_user)):
     """Create a referral code for the current user."""
     db = get_db()
+    await _ensure_referral_tables(db)
 
     existing = await db.query(
         "SELECT * FROM referral_codes WHERE user_id = $1 LIMIT 1",
@@ -51,6 +109,7 @@ async def generate_referral_code(current_user: dict = Depends(get_current_user))
 async def partner_stats(current_user: dict = Depends(get_current_user)):
     """Partner dashboard stats."""
     db = get_db()
+    await _ensure_referral_tables(db)
 
     code_row = await db.query(
         "SELECT * FROM referral_codes WHERE user_id = $1 LIMIT 1",
@@ -103,6 +162,7 @@ async def partner_stats(current_user: dict = Depends(get_current_user)):
 async def get_balance(current_user: dict = Depends(get_current_user)):
     """Current referral balance."""
     db = get_db()
+    await _ensure_referral_tables(db)
     row = await db.query(
         "SELECT available_balance FROM referral_codes WHERE user_id = $1 LIMIT 1",
         [current_user["id"]]
@@ -114,6 +174,7 @@ async def get_balance(current_user: dict = Depends(get_current_user)):
 async def check_referral_eligibility(current_user: dict = Depends(get_current_user)):
     """Check if current user can use referral discount."""
     db = get_db()
+    await _ensure_referral_tables(db)
     user = await db.query(
         "SELECT referred_by_code, referral_discount_used FROM users WHERE id = $1",
         [current_user["id"]]
