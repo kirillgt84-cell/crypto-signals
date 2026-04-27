@@ -291,7 +291,7 @@ function OIAnalysisCards({ data, loading, timeframe }: { data: MarketData; loadi
       <MetricCard
         title={t("dashboard.cvd")}
         value={`${(data?.cvd || 0) > 0 ? "+" : ""}${((data?.cvd || 0) / 1e6).toFixed(2)} mln`}
-        subvalue={getCVDInterpretation(data?.cvd || 0, data?.cvd_change || 0).text}
+        subvalue={getCVDInterpretation(data?.cvd || 0, data?.cvd_change || 0, t).text}
         trend={(data?.cvd || 0) > 0 ? "Buying" : (data?.cvd || 0) < 0 ? "Selling" : "Neutral"}
         trendUp={(data?.cvd || 0) > 0}
         icon={GitCompare}
@@ -386,11 +386,11 @@ function SecondaryIndicators({ data, timeframe, loading }: { data: MarketData; t
   const funding = data?.funding || 0
   const futuresSpotRatio = data?.futures_spot_ratio || 0
   
-  const rsiInterp = getRSIInterpretation(rsi, timeframe)
-  const macdInterp = getMACDInterpretation(macd, macdSignal, timeframe)
-  const fundingInterp = getFundingInterpretation(funding, timeframe)
-  const flowInterp = getFuturesSpotRatioInterpretation(futuresSpotRatio, timeframe)
-  const cvdInterp = getCVDInterpretation(data.cvd, data.cvd_change)
+  const rsiInterp = getRSIInterpretation(rsi, timeframe, t)
+  const macdInterp = getMACDInterpretation(macd, macdSignal, timeframe, t)
+  const fundingInterp = getFundingInterpretation(funding, timeframe, t)
+  const flowInterp = getFuturesSpotRatioInterpretation(futuresSpotRatio, timeframe, t)
+  const cvdInterp = getCVDInterpretation(data.cvd, data.cvd_change, t)
   
   return (
     <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 px-4 pb-6 lg:px-6">
