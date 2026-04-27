@@ -131,6 +131,7 @@ class BinanceFuturesFetcher:
                 "oi_change_24h": round(oi_change_pct, 2),
                 "oi_change_value": round(oi_change_value, 2),
                 "price": final_price,
+                "price_change": round(price_change_pct, 2) if 'current_close' in locals() else 0,
                 "price_change_24h": round(price_change_pct, 2) if 'current_close' in locals() else 0,
                 "price_change_24h_pct": round(price_change_24h_pct, 2),
                 "volume_24h": volume,

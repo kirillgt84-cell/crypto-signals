@@ -59,6 +59,7 @@ interface MarketData {
   symbol: string
   price: number
   change_24h: number
+  price_change: number
   oi: number
   oi_change: number
   volume: number
@@ -254,9 +255,9 @@ function OIAnalysisCards({ data, loading, timeframe }: { data: MarketData; loadi
       <MetricCard
         title={t("dashboard.price")}
         value={price > 0 ? `$${price.toLocaleString(undefined, {maximumFractionDigits: decimals})}` : "--"}
-        subvalue={`24h: ${(data?.change_24h || 0) >= 0 ? "+" : ""}${(data?.change_24h || 0).toFixed(2)}%`}
-        trend={(data?.change_24h || 0) >= 0 ? "Rising" : "Falling"}
-        trendUp={(data?.change_24h || 0) >= 0}
+        subvalue={`${formatTfLabel(timeframe)}: ${(data?.price_change || 0) >= 0 ? "+" : ""}${(data?.price_change || 0).toFixed(2)}%`}
+        trend={(data?.price_change || 0) >= 0 ? "Rising" : "Falling"}
+        trendUp={(data?.price_change || 0) >= 0}
         icon={BadgeDollarSign}
         loading={loading}
       />
@@ -495,6 +496,7 @@ export default function Dashboard() {
     symbol: "BTC",
     price: 67234,
     change_24h: 0,
+    price_change: 0,
     oi: 15.5e9,
     oi_change: 0,
     volume: 28.3e9,
@@ -659,6 +661,7 @@ export default function Dashboard() {
           symbol,
           price: price,
           change_24h: Number(oiData.change_24h) || Number(oiData.price_change_24h) || 0,
+          price_change: Number(oiData.price_change) || Number(oiData.price_change_24h) || 0,
           oi: oi,
           oi_change: Number(oiData.oi_change_24h) || Number(oiData.oi_change) || 0,
           volume: Number(oiData.volume) || Number(oiData.volume_24h) || 0,
@@ -712,7 +715,7 @@ export default function Dashboard() {
           ...oiData.analysis,
           // Use calculated values from marketData (more accurate)
           oi_change_pct: combinedData.oi_change,
-          price_change_pct: combinedData.change_24h,
+          price_change_pct: combinedData.price_change,
           volume_change_pct: combinedData.volume_change,
         } : null
         setOiAnalysis(enrichedAnalysis)
@@ -732,6 +735,7 @@ export default function Dashboard() {
             symbol,
             price: fallbackPrice,
             change_24h: 2.5,
+            price_change: 2.5,
             oi: 15.5e9,
             oi_change: 5.2,
             volume: 28.3e9,
