@@ -42,7 +42,7 @@ interface AnomalySignal {
 import { API_BASE_URL } from "@/app/lib/api"
 
 export default function SignalsClient() {
-  const { isPro } = useAuth();
+  const { canAccess } = useAuth();
   const { t } = useLanguage();
   const [signals, setSignals] = useState<AnomalySignal[]>([]);
   const [loading, setLoading] = useState(false);
@@ -59,7 +59,7 @@ export default function SignalsClient() {
   const [settingsOpen, setSettingsOpen] = useState(false);
 
   const fetchSignals = useCallback(async () => {
-    if (!isPro) return;
+    if (!canAccess("anomaly_scanner")) return;
     setLoading(true);
     setError(null);
     try {
@@ -84,10 +84,10 @@ export default function SignalsClient() {
     } finally {
       setLoading(false);
     }
-  }, [isPro, minScore, direction, confidence, category]);
+  }, [canAccess, minScore, direction, confidence, category]);
 
   const fetchScannerStatus = useCallback(async () => {
-    if (!isPro) return;
+    if (!canAccess("anomaly_scanner")) return;
     try {
       const res = await fetch(`${API_BASE_URL}/scanner/status`, {
         credentials: 'include',
@@ -96,10 +96,10 @@ export default function SignalsClient() {
     } catch (e) {
       console.error("Failed to fetch scanner status", e);
     }
-  }, [isPro]);
+  }, [canAccess]);
 
   const fetchScannerSettings = useCallback(async () => {
-    if (!isPro) return;
+    if (!canAccess("anomaly_scanner")) return;
     try {
       const res = await fetch(`${API_BASE_URL}/scanner/settings`, {
         credentials: 'include',
@@ -108,10 +108,10 @@ export default function SignalsClient() {
     } catch (e) {
       console.error("Failed to fetch scanner settings", e);
     }
-  }, [isPro]);
+  }, [canAccess]);
 
   const saveScannerSettings = async (updates: any) => {
-    if (!isPro) return;
+    if (!canAccess("anomaly_scanner")) return;
     try {
       const res = await fetch(`${API_BASE_URL}/scanner/settings`, {
         method: "PATCH",
@@ -128,7 +128,7 @@ export default function SignalsClient() {
   };
 
   const handleScanNow = async () => {
-    if (!isPro) return;
+    if (!canAccess("anomaly_scanner")) return;
     setScanningNow(true);
     try {
       const res = await fetch(`${API_BASE_URL}/scanner/scan-now`, {
@@ -212,7 +212,7 @@ export default function SignalsClient() {
             <p className="mt-1 text-sm text-slate-400">
               Volume Spike / OI Anomaly Scanner — Pro only
             </p>
-            {isPro && scannerStatus && (
+            {canAccess("anomaly_scanner") && scannerStatus && (
               <div className="mt-2 flex items-center gap-3 text-xs">
                 <span className="flex items-center gap-1 text-emerald-400">
                   <Activity className="h-3 w-3" />
@@ -230,7 +230,7 @@ export default function SignalsClient() {
             )}
           </div>
           <div className="flex items-center gap-2">
-            {isPro && (
+            {canAccess("anomaly_scanner") && (
               <Button
                 variant="outline"
                 size="sm"
@@ -256,7 +256,7 @@ export default function SignalsClient() {
         </div>
 
         {/* Content */}
-        {!isPro ? (
+        {!canAccess("anomaly_scanner") ? (
           <Card>
             <CardContent className="p-8">
               <ProBlurOverlay title={t("proOverlay.title")} description={t("proOverlay.description")}>

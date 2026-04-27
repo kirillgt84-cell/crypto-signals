@@ -46,7 +46,7 @@ const navIcons: Record<ProfileTab, React.ElementType> = {
 import { API_BASE_URL } from "@/app/lib/api"
 
 export default function ProfilePage() {
-  const { user, isLoading, isPro, updateProfile, updatePreferences, changePassword, refreshUser, logout, sendVerificationEmail, verifyEmail } = useAuth()
+  const { user, isLoading, isPaid, normalizedTier, canAccess, updateProfile, updatePreferences, changePassword, refreshUser, logout, sendVerificationEmail, verifyEmail } = useAuth()
   const { theme, setTheme } = useTheme()
   const { language, setLanguage, t } = useLanguage()
 
@@ -321,7 +321,7 @@ export default function ProfilePage() {
                           ) : (
                             <Badge variant="outline" className="text-amber-600 border-amber-200"><AlertCircle className="mr-1 h-3 w-3" /> {t("profile.unverified")}</Badge>
                           )}
-                          <Badge className={isPro ? "bg-violet-500" : "bg-slate-500"}>{isPro ? t("common.pro") : t("common.free")}</Badge>
+                          <Badge className={isPaid ? "bg-violet-500" : "bg-slate-500"}>{normalizedTier ? t(`common.${normalizedTier}`) : t("common.starter")}</Badge>
                           {!user.is_email_verified && user.email && (
                             <div className="mt-2 space-y-2">
                               {!verificationSent ? (
@@ -389,22 +389,22 @@ export default function ProfilePage() {
                     <div className="flex items-center justify-between rounded-lg border p-4">
                       <div>
                         <p className="text-sm font-medium">{t("profile.currentPlan")}</p>
-                        <p className="text-2xl font-bold tracking-tight">{isPro ? t("common.pro") : t("common.free")}</p>
+                        <p className="text-2xl font-bold tracking-tight">{normalizedTier ? t(`common.${normalizedTier}`) : t("common.starter")}</p>
                       </div>
-                      {isPro ? (
+                      {isPaid ? (
                         <Badge className="bg-emerald-500">{t("common.active")}</Badge>
                       ) : (
                         <Button onClick={handleUpgrade} disabled={loadingAction === "upgrade"}>
                           {loadingAction === "upgrade" && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                          {t("pricing.upgradeToPro")}
+                          {t("pricing.upgradeToTrader") || "Upgrade to Trader"}
                         </Button>
                       )}
                     </div>
                     <ul className="space-y-2 text-sm text-muted-foreground">
                       <li className="flex items-center gap-2"><CheckCircle className="h-4 w-4 text-emerald-500" /> {t("profile.realtimeData")}</li>
                       <li className="flex items-center gap-2"><CheckCircle className="h-4 w-4 text-emerald-500" /> {t("profile.etfFlows")}</li>
-                      <li className="flex items-center gap-2"><CheckCircle className={cn("h-4 w-4", isPro ? "text-emerald-500" : "text-slate-400")} /> {t("profile.oiSignals")} {isPro ? "" : `( ${t("common.pro")} )`}</li>
-                      <li className="flex items-center gap-2"><CheckCircle className={cn("h-4 w-4", isPro ? "text-emerald-500" : "text-slate-400")} /> {t("profile.emailTelegram")} {isPro ? "" : `( ${t("common.pro")} )`}</li>
+                      <li className="flex items-center gap-2"><CheckCircle className={cn("h-4 w-4", canAccess("anomaly_scanner") ? "text-emerald-500" : "text-slate-400")} /> {t("profile.oiSignals")} {canAccess("anomaly_scanner") ? "" : `( ${t("common.trader")} )`}</li>
+                      <li className="flex items-center gap-2"><CheckCircle className={cn("h-4 w-4", canAccess("alerts_realtime") ? "text-emerald-500" : "text-slate-400")} /> {t("profile.emailTelegram")} {canAccess("alerts_realtime") ? "" : `( ${t("common.trader")} )`}</li>
                     </ul>
                   </CardContent>
                 </Card>
@@ -576,7 +576,7 @@ export default function ProfilePage() {
                   </CardContent>
                 </Card>
 
-                {isPro && (
+                {isPaid && (
                   <Card className="border">
                     <CardHeader>
                       <CardTitle className="text-base font-semibold flex items-center gap-2"><Mail className="h-4 w-4" /> {t("profile.testNotifications")}</CardTitle>

@@ -110,11 +110,12 @@ async def validate_promo_code(code: str, user_id: int) -> dict:
     if referral:
         return {"valid": False, "error": "USER_ALREADY_HAS_REFERRAL"}
 
+    from core.tiers import normalize_tier
     return {
         "valid": True,
         "promo": promo,
         "trial_days": promo.get("trial_days", 7),
-        "trial_tier": promo.get("trial_tier", "pro"),
+        "trial_tier": normalize_tier(promo.get("trial_tier", "pro")),
     }
 
 
@@ -157,6 +158,8 @@ async def activate_promo(
         [promo["id"]]
     )
 
+    from core.tiers import normalize_tier
+    normalized_tier = normalize_tier(validation["trial_tier"])
     # Update user with temporary tier
     await db.execute(
         """UPDATE users
@@ -165,7 +168,7 @@ async def activate_promo(
                trial_expires_at = $2,
                trial_source = 'promo_code'
            WHERE id = $3""",
-        [validation["trial_tier"], expires_at, current_user["id"]]
+        [normalized_tier, expires_at, current_user["id"]]
     )
 
     # Optional: link to referral if configured
@@ -185,8 +188,8 @@ async def activate_promo(
 
     return {
         "success": True,
-        "message": f"Промокод активирован. Доступ к {validation['trial_tier']} на {validation['trial_days']} дней.",
-        "tier": validation["trial_tier"],
+        "message": f"Промокод активирован. Доступ к {normalized_tier} на {validation['trial_days']} дней.",
+        "tier": normalized_tier,
         "expires_at": expires_at.isoformat(),
     }
 

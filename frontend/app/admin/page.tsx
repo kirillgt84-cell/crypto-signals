@@ -461,8 +461,9 @@ export default function AdminPage() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">{t("admin.allTiers")}</SelectItem>
-                    <SelectItem value="free">{t("common.free")}</SelectItem>
-                    <SelectItem value="pro">{t("common.pro")}</SelectItem>
+                    <SelectItem value="starter">{t("common.starter")}</SelectItem>
+                    <SelectItem value="trader">{t("common.trader")}</SelectItem>
+                    <SelectItem value="investor">{t("common.investor")}</SelectItem>
                     <SelectItem value="admin">{t("common.admin")}</SelectItem>
                   </SelectContent>
                 </Select>

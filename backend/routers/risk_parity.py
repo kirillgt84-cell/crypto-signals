@@ -7,6 +7,9 @@ from typing import List, Optional, Dict, Any
 from fastapi import APIRouter, HTTPException, Depends, Query
 from pydantic import BaseModel
 from routers.auth import get_current_user
+from core.tiers import require_tier
+
+_require_investor = require_tier("investor")
 from services.risk_parity import (
     run_comparison,
     risk_parity_weights,
@@ -149,7 +152,7 @@ async def run_backtest(body: BacktestRequest):
 
 
 @router.post("/ai-insight")
-async def risk_parity_ai_insight(body: AiInsightRequest, lang: str = Query("en", description="User language: en, ru, es, zh"), current_user: dict = Depends(get_current_user)):
+async def risk_parity_ai_insight(body: AiInsightRequest, lang: str = Query("en", description="User language: en, ru, es, zh"), current_user: dict = Depends(_require_investor)):
     """Get AI interpretation of risk parity backtest results. Neutral wording, no investment advice."""
     import httpx
 

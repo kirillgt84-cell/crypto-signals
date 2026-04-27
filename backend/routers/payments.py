@@ -103,19 +103,23 @@ async def _record_webhook_event(event_id: str, event_type: str, resource_type: s
     return False
 
 
+from core.tiers import normalize_tier
+
+
 async def _grant_access(user_id: int, tier: str = "pro"):
     db = get_db()
+    normalized = normalize_tier(tier)
     await db.execute(
         "UPDATE users SET subscription_tier = $1, updated_at = NOW() WHERE id = $2",
-        [tier, user_id],
+        [normalized, user_id],
     )
-    logger.info(f"[Payments] Granted {tier} access to user {user_id}")
+    logger.info(f"[Payments] Granted {normalized} access to user {user_id}")
 
 
 async def _revoke_access(user_id: int):
     db = get_db()
     await db.execute(
-        "UPDATE users SET subscription_tier = 'free', updated_at = NOW() WHERE id = $1",
+        "UPDATE users SET subscription_tier = 'starter', updated_at = NOW() WHERE id = $1",
         [user_id],
     )
     logger.info(f"[Payments] Revoked access from user {user_id}")

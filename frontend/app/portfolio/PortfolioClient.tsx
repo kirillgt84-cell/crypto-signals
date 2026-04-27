@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useSidebar } from "@/hooks/useSidebar";
 import Sidebar from "../components/admin/Sidebar";
 import { useAuth } from "../context/AuthContext";
+import { TierBlurOverlay } from "../components/ProBlurOverlay";
 import { cn } from "@/lib/utils";
 import {
   Wallet,
@@ -160,7 +161,7 @@ function getRiskInterpretation(metrics: any, t: any): string {
 }
 
 export default function PortfolioClient() {
-  const { user } = useAuth();
+  const { user, canAccess } = useAuth();
   const { collapsed: sidebarCollapsed, toggle: toggleSidebar } = useSidebar();
   const [mounted, setMounted] = useState(false);
   const [summary, setSummary] = useState<PortfolioSummary | null>(null);
@@ -556,9 +557,9 @@ export default function PortfolioClient() {
               </Button>
               <Dialog open={connectOpen} onOpenChange={setConnectOpen}>
                 <DialogTrigger asChild>
-                  <Button size="sm">
+                  <Button size="sm" disabled={!canAccess("binance_sync")}>
                     <LinkIcon className="h-4 w-4 mr-1" />
-                    {t("portfolio.connectBinance")}
+                    {canAccess("binance_sync") ? t("portfolio.connectBinance") : "Investor Only"}
                   </Button>
                 </DialogTrigger>
                 <DialogContent className="sm:max-w-md">
@@ -909,6 +910,7 @@ export default function PortfolioClient() {
 
           {/* Risk Metrics Tab */}
           {activeTab === "risk" && (
+            <TierBlurOverlay requiredFeature="portfolio_metrics_basic" title="Risk Metrics" description="Advanced portfolio analytics for Trader & Investor plans">
             <div className="space-y-6">
               <div className="flex items-center justify-between">
                 <h2 className="text-lg font-semibold">{t("portfolio.riskMetrics")}</h2>
@@ -985,15 +987,18 @@ export default function PortfolioClient() {
                 </div>
               )}
             </div>
+            </TierBlurOverlay>
           )}
 
           {activeTab === "models" && (
             <div className="space-y-8">
               <div className="flex items-center justify-between">
                 <h2 className="text-lg font-semibold">{t("portfolio.models")}</h2>
-                <Button size="sm" onClick={() => setCustomOpen(true)}>
-                  <Plus className="mr-2 h-4 w-4" /> {t("portfolio.createCustomModel")}
-                </Button>
+                {canAccess("custom_models") && (
+                  <Button size="sm" onClick={() => setCustomOpen(true)}>
+                    <Plus className="mr-2 h-4 w-4" /> {t("portfolio.createCustomModel")}
+                  </Button>
+                )}
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -1051,7 +1056,7 @@ export default function PortfolioClient() {
                 })}
               </div>
 
-              {deviation && deviation.length > 0 && (
+              {canAccess("rebalancing_signals") && deviation && deviation.length > 0 && (
                 <div className="rounded-xl border bg-card p-6">
                   <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
                     <Target className="h-5 w-5 text-indigo-500" />
@@ -1138,27 +1143,28 @@ export default function PortfolioClient() {
               </div>
 
               {/* AI Insight */}
-              <div className="rounded-xl border bg-card p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-semibold flex items-center gap-2">
-                    <Bot className="h-5 w-5 text-indigo-500" />
-                    {t("portfolio.aiInsight")}
-                    AI Insight
-                  </h3>
-                  <Button variant="outline" size="sm" onClick={fetchAiInsight}>
-                    Analyze
-                  </Button>
-                </div>
-                {aiInsight ? (
-                  <div className="text-sm text-muted-foreground leading-relaxed whitespace-pre-wrap">
-                    {aiInsight}
+              <TierBlurOverlay requiredFeature="ai_insight_basic" title="AI Insight" description="Unlock AI-powered portfolio analysis">
+                <div className="rounded-xl border bg-card p-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-lg font-semibold flex items-center gap-2">
+                      <Bot className="h-5 w-5 text-indigo-500" />
+                      {t("portfolio.aiInsight")}
+                    </h3>
+                    <Button variant="outline" size="sm" onClick={fetchAiInsight}>
+                      Analyze
+                    </Button>
                   </div>
-                ) : (
-                  <p className="text-sm text-muted-foreground">
-                    Click Analyze to get an AI-powered interpretation of your portfolio allocation and risk exposure.
-                  </p>
-                )}
-              </div>
+                  {aiInsight ? (
+                    <div className="text-sm text-muted-foreground leading-relaxed whitespace-pre-wrap">
+                      {aiInsight}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-muted-foreground">
+                      Click Analyze to get an AI-powered interpretation of your portfolio allocation and risk exposure.
+                    </p>
+                  )}
+                </div>
+              </TierBlurOverlay>
             </div>
           )}
         </div>

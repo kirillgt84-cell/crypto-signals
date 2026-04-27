@@ -36,11 +36,9 @@ class AnomalySettings(BaseModel):
     push_alerts: bool = False
 
 
-def _require_pro(current_user: dict = Depends(get_current_user)) -> dict:
-    tier = current_user.get("subscription_tier", "free")
-    if tier not in ("pro", "admin"):
-        raise HTTPException(status_code=403, detail="Pro subscription required")
-    return current_user
+from core.tiers import require_tier
+
+_require_trader = require_tier("trader")
 
 
 def _serialize_signal(row: dict) -> dict:
@@ -62,7 +60,7 @@ async def get_anomalies(
     confidence: Optional[str] = Query(None, pattern="^(high|medium|low)$"),
     category: Optional[str] = Query(None),
     limit: int = Query(50, ge=1, le=200),
-    current_user: dict = Depends(_require_pro),
+    current_user: dict = Depends(_require_trader),
 ):
     """Get active anomaly signals (Pro only)."""
     db = get_db()
@@ -99,7 +97,7 @@ async def get_anomalies(
 async def get_anomaly_history(
     symbol: Optional[str] = None,
     limit: int = Query(50, ge=1, le=200),
-    current_user: dict = Depends(_require_pro),
+    current_user: dict = Depends(_require_trader),
 ):
     """Get historical anomaly signals (including expired)."""
     db = get_db()
@@ -122,7 +120,7 @@ async def get_anomaly_history(
 @router.post("/scan-now")
 async def trigger_scan(
     min_score: int = Query(8, ge=0, le=13),
-    current_user: dict = Depends(_require_pro),
+    current_user: dict = Depends(_require_trader),
 ):
     """Manually trigger a scan (Pro only). Returns found signals without persisting."""
     signals = await scan_anomalies(min_score=min_score)
@@ -130,7 +128,7 @@ async def trigger_scan(
 
 
 @router.get("/status")
-async def scanner_status(current_user: dict = Depends(_require_pro)):
+async def scanner_status(current_user: dict = Depends(_require_trader)):
     """Get scanner run status (last scan time, counts)."""
     db = get_db()
     last_run = await db.query(
@@ -150,7 +148,7 @@ async def scanner_status(current_user: dict = Depends(_require_pro)):
 
 
 @router.get("/settings")
-async def get_scanner_settings(current_user: dict = Depends(_require_pro)):
+async def get_scanner_settings(current_user: dict = Depends(_require_trader)):
     """Get user's scanner alert settings."""
     db = get_db()
     rows = await db.query(
@@ -171,7 +169,7 @@ async def get_scanner_settings(current_user: dict = Depends(_require_pro)):
 @router.patch("/settings")
 async def update_scanner_settings(
     settings: AnomalySettings,
-    current_user: dict = Depends(_require_pro),
+    current_user: dict = Depends(_require_trader),
 ):
     """Update user's scanner alert settings."""
     db = get_db()

@@ -4,20 +4,38 @@ import { Lock } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useAuth } from "../context/AuthContext"
 import { useLanguage } from "../context/LanguageContext"
+import { getTierLabel } from "@/app/lib/tiers"
 
-interface ProBlurOverlayProps {
+interface TierBlurOverlayProps {
   children: React.ReactNode
   title?: string
   description?: string
+  requiredFeature?: string
+  requiredTier?: string
 }
 
-export function ProBlurOverlay({ children, title, description }: ProBlurOverlayProps) {
-  const { isPro, isAuthenticated } = useAuth()
+export function TierBlurOverlay({
+  children,
+  title,
+  description,
+  requiredFeature,
+  requiredTier,
+}: TierBlurOverlayProps) {
+  const { canAccess, tierLevel, isAuthenticated, normalizedTier } = useAuth()
   const { t } = useLanguage()
 
-  if (isPro) {
+  const hasAccess = requiredFeature
+    ? canAccess(requiredFeature)
+    : requiredTier
+      ? tierLevel >= (requiredTier === "trader" ? 2 : requiredTier === "investor" ? 3 : 1)
+      : true
+
+  if (hasAccess) {
     return <>{children}</>
   }
+
+  const targetTier = requiredTier || (requiredFeature ? "trader" : "trader")
+  const tierLabel = getTierLabel(targetTier).label
 
   return (
     <div className="relative h-full w-full">
@@ -42,10 +60,13 @@ export function ProBlurOverlay({ children, title, description }: ProBlurOverlayP
             className="mt-3 bg-amber-500 text-foreground hover:bg-amber-600"
             onClick={() => (window.location.href = "/profile?tab=subscription")}
           >
-            {t("pricing.upgradeToPro")}
+            {t("pricing.upgradeTo")} {tierLabel}
           </Button>
         )}
       </div>
     </div>
   )
 }
+
+// Backward-compatible alias
+export const ProBlurOverlay = TierBlurOverlay

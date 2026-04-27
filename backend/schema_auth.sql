@@ -202,7 +202,11 @@ INSERT INTO plans (name, description, price, currency, type, tier)
 VALUES 
     ('Pro Monthly', 'Monthly Pro subscription', 29.00, 'USD', 'subscription', 'pro'),
     ('Pro Yearly', 'Yearly Pro subscription (save 20%)', 279.00, 'USD', 'subscription', 'pro'),
-    ('Pro Lifetime', 'One-time lifetime Pro access', 499.00, 'USD', 'one_time', 'pro')
+    ('Pro Lifetime', 'One-time lifetime Pro access', 499.00, 'USD', 'one_time', 'pro'),
+    ('Trader Monthly', 'Monthly Trader subscription', 19.00, 'USD', 'subscription', 'trader'),
+    ('Trader Yearly', 'Yearly Trader subscription (save 20%)', 182.00, 'USD', 'subscription', 'trader'),
+    ('Investor Monthly', 'Monthly Investor subscription', 35.00, 'USD', 'subscription', 'investor'),
+    ('Investor Yearly', 'Yearly Investor subscription (save 20%)', 336.00, 'USD', 'subscription', 'investor')
 ON CONFLICT DO NOTHING;
 
 -- Portfolio Module Schema

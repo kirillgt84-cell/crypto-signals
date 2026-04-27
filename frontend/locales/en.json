@@ -1,1 +1,86 @@
-{"oiTerminal":{"title":"MARKET STATE"},"test":"Test"}
+{
+  "oiTerminal": {"title": "MARKET STATE"},
+  "test": "Test",
+  "common": {
+    "starter": "Starter",
+    "trader": "Trader",
+    "investor": "Investor",
+    "admin": "Admin",
+    "free": "Free",
+    "pro": "Pro",
+    "active": "Active",
+    "inactive": "Inactive",
+    "all": "All",
+    "loading": "Loading...",
+    "loadingError": "Failed to load data",
+    "noData": "No data",
+    "error": "Error",
+    "signIn": "Sign In",
+    "signOut": "Sign Out",
+    "save": "Save",
+    "status": "Status"
+  },
+  "pricing": {
+    "title": "Pricing",
+    "currentPlan": "Current Plan",
+    "upgradeTo": "Upgrade to",
+    "upgradeToTrader": "Upgrade to Trader",
+    "upgradeToInvestor": "Upgrade to Investor",
+    "success": "Payment successful! Your plan has been updated.",
+    "cancel": "Payment cancelled."
+  },
+  "landing": {
+    "pricing": {
+      "subtitle": "Choose the plan that fits your trading style",
+      "yearly": "Yearly",
+      "monthly": "Monthly",
+      "period": "mo",
+      "billedYearly": "/mo billed annually",
+      "save": "Save 20%",
+      "popular": "Popular",
+      "includesStarter": "Everything in Starter",
+      "includesTrader": "Everything in Trader",
+      "starter": {
+        "name": "Starter",
+        "price": "$0",
+        "description": "Essential tools to get started",
+        "cta": "Get Started",
+        "feature1": "Position Calculator",
+        "feature2": "Market Gauge (BTC, 1H)",
+        "feature3": "Community Telegram",
+        "feature4": "Email Support",
+        "feature5": "Learn Articles",
+        "feature6": "Referral Program",
+        "feature7": "Weekly Newsletter"
+      },
+      "trader": {
+        "name": "Trader",
+        "price": "$19",
+        "description": "Advanced analytics & real-time signals",
+        "cta": "Start Trial",
+        "feature1": "Anomaly Scanner",
+        "feature2": "Entry Levels & Fundamentals",
+        "feature3": "CVD Chart & Sentiment Panel",
+        "feature4": "Real-time Alerts (TG/Email/Push)",
+        "feature5": "Signal Feed with Filters",
+        "feature6": "Portfolio Basic Metrics",
+        "feature7": "AI Insight (1 per portfolio)",
+        "feature8": "Export CSV"
+      },
+      "investor": {
+        "name": "Investor",
+        "price": "$35",
+        "description": "Full power: AI, API, backtesting & more",
+        "cta": "Coming Soon",
+        "feature1": "Binance API Sync",
+        "feature2": "Risk Parity & Backtesting",
+        "feature3": "Custom Models & Rebalancing",
+        "feature4": "Unlimited AI Insights",
+        "feature5": "On-Chain & Macro Full",
+        "feature6": "API Access (1000 req/day)",
+        "feature7": "Advanced Portfolio Metrics",
+        "feature8": "Daily Digest Alerts"
+      }
+    }
+  }
+}

@@ -117,23 +117,21 @@ def _calculate(req: PositionCalcRequest) -> PositionCalcResponse:
     )
 
 
-def _require_pro(current_user: dict):
-    tier = current_user.get("subscription_tier", "free")
-    if tier not in ("pro", "admin"):
-        raise HTTPException(status_code=403, detail="Pro subscription required")
+from core.tiers import require_tier
+
+_require_starter = require_tier("starter")
 
 
 @router.post("/calculate", response_model=PositionCalcResponse)
 async def calculate_position(
     req: PositionCalcRequest,
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(_require_starter),
 ):
-    _require_pro(current_user)
     return _calculate(req)
 
 
 @router.get("/check-access")
-async def check_access(current_user: dict = Depends(get_current_user)):
-    """Quick check if user has Pro access to the calculator."""
+async def check_access(current_user: dict = Depends(_require_starter)):
+    """Quick check if user has access to the calculator."""
     tier = current_user.get("subscription_tier", "free")
-    return {"has_access": tier in ("pro", "admin"), "tier": tier}
+    return {"has_access": True, "tier": tier}

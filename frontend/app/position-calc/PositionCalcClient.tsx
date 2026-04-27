@@ -61,38 +61,9 @@ export default function PositionCalcClient() {
   const { collapsed, toggle } = useSidebar()
   const { t } = useLanguage()
   const { user, isAuthenticated } = useAuth()
-  const isPro = user?.subscription_tier === "pro" || user?.subscription_tier === "admin"
-
   const [form, setForm] = useState<FormState>(INITIAL_FORM)
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [result, setResult] = useState<CalcResult | null>(null)
-  const [checkingAccess, setCheckingAccess] = useState(true)
-  const [hasAccess, setHasAccess] = useState(false)
-
-  // Pro access check
-  useEffect(() => {
-    if (!isAuthenticated) {
-      setCheckingAccess(false)
-      return
-    }
-    const check = async () => {
-      try {
-        const res = await fetch(`${API_BASE_URL}/position-calc/check-access`, {
-          credentials: "include",
-        })
-        if (res.ok) {
-          const data = await res.json()
-          setHasAccess(data.has_access)
-        }
-      } catch {
-        // fallback to client-side check
-        setHasAccess(isPro)
-      } finally {
-        setCheckingAccess(false)
-      }
-    }
-    check()
-  }, [isAuthenticated, isPro])
 
   const validate = useCallback((): Record<string, string> => {
     const errs: Record<string, string> = {}
@@ -161,10 +132,10 @@ export default function PositionCalcClient() {
   }, [form, validate])
 
   useEffect(() => {
-    if (hasAccess) {
+    if (isAuthenticated) {
       setResult(calculate())
     }
-  }, [form, hasAccess, calculate])
+  }, [form, isAuthenticated, calculate])
 
   const handleReset = () => setForm(INITIAL_FORM)
 
@@ -172,29 +143,18 @@ export default function PositionCalcClient() {
     setForm((prev) => ({ ...prev, [field]: value }))
   }
 
-  // Upsell screen for non-Pro
-  if (!checkingAccess && !hasAccess) {
+  // Auth gate
+  if (!isAuthenticated) {
     return (
       <div className="min-h-screen bg-background">
         <Sidebar collapsed={collapsed} onToggle={toggle} />
         <main className={cn("transition-all duration-300", collapsed ? "lg:ml-16" : "lg:ml-64")}>
-          <div className="p-4 lg:p-8 max-w-2xl mx-auto">
-            <div className="mb-8">
-              <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2">
-                <Calculator className="h-6 w-6 text-indigo-500" />
-                {t("positionCalc.title")}
-              </h1>
-            </div>
-            <Card className="border-amber-500/20">
-              <CardContent className="pt-8 pb-8 text-center space-y-4">
-                <Crown className="h-12 w-12 text-amber-500 mx-auto" />
-                <h2 className="text-xl font-bold">{t("positionCalc.proOnlyTitle")}</h2>
-                <p className="text-muted-foreground max-w-md mx-auto">{t("positionCalc.proOnlyDesc")}</p>
-                <Button asChild className="gap-2">
-                  <a href="/pricing">{t("positionCalc.upgradeCta")}</a>
-                </Button>
-              </CardContent>
-            </Card>
+          <div className="p-4 lg:p-8 max-w-2xl mx-auto text-center space-y-4">
+            <Calculator className="h-12 w-12 text-indigo-500 mx-auto" />
+            <h2 className="text-xl font-bold">{t("positionCalc.signInTitle") || "Sign in to use Position Calculator"}</h2>
+            <Button onClick={() => window.dispatchEvent(new CustomEvent("open-auth-modal"))}>
+              {t("common.signIn")}
+            </Button>
           </div>
         </main>
       </div>

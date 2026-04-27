@@ -1,1 +1,86 @@
-{"oiTerminal":{"title":"СОСТОЯНИЕ РЫНКА"},"test":"Тест"}
+{
+  "oiTerminal": {"title": "СОСТОЯНИЕ РЫНКА"},
+  "test": "Тест",
+  "common": {
+    "starter": "Starter",
+    "trader": "Trader",
+    "investor": "Investor",
+    "admin": "Admin",
+    "free": "Free",
+    "pro": "Pro",
+    "active": "Активен",
+    "inactive": "Неактивен",
+    "all": "Все",
+    "loading": "Загрузка...",
+    "loadingError": "Ошибка загрузки",
+    "noData": "Нет данных",
+    "error": "Ошибка",
+    "signIn": "Войти",
+    "signOut": "Выйти",
+    "save": "Сохранить",
+    "status": "Статус"
+  },
+  "pricing": {
+    "title": "Тарифы",
+    "currentPlan": "Текущий план",
+    "upgradeTo": "Обновить до",
+    "upgradeToTrader": "Обновить до Trader",
+    "upgradeToInvestor": "Обновить до Investor",
+    "success": "Оплата прошла успешно! Ваш план обновлён.",
+    "cancel": "Оплата отменена."
+  },
+  "landing": {
+    "pricing": {
+      "subtitle": "Выберите план, который подходит вашему стилю торговли",
+      "yearly": "Годовой",
+      "monthly": "Месячный",
+      "period": "мес",
+      "billedYearly": "/мес при оплате за год",
+      "save": "Экономия 20%",
+      "popular": "Популярный",
+      "includesStarter": "Всё из Starter",
+      "includesTrader": "Всё из Trader",
+      "starter": {
+        "name": "Starter",
+        "price": "$0",
+        "description": "Базовые инструменты для старта",
+        "cta": "Начать",
+        "feature1": "Калькулятор позиции",
+        "feature2": "Market Gauge (BTC, 1H)",
+        "feature3": "Telegram сообщество",
+        "feature4": "Email поддержка",
+        "feature5": "Обучающие статьи",
+        "feature6": "Реферальная программа",
+        "feature7": "Еженедельный дайджест"
+      },
+      "trader": {
+        "name": "Trader",
+        "price": "$19",
+        "description": "Продвинутая аналитика и сигналы в реальном времени",
+        "cta": "Попробовать",
+        "feature1": "Сканер аномалий",
+        "feature2": "Уровни входа и фундаментал",
+        "feature3": "CVD график и сентимент",
+        "feature4": "Алерты в реальном времени",
+        "feature5": "Лента сигналов с фильтрами",
+        "feature6": "Базовые метрики портфеля",
+        "feature7": "AI Insight (1 на портфель)",
+        "feature8": "Экспорт CSV"
+      },
+      "investor": {
+        "name": "Investor",
+        "price": "$35",
+        "description": "Полная мощь: AI, API, бэктестинг и многое другое",
+        "cta": "Скоро",
+        "feature1": "Binance API Sync",
+        "feature2": "Risk Parity и бэктестинг",
+        "feature3": "Кастомные модели и ребалансировка",
+        "feature4": "Безлимитные AI Insights",
+        "feature5": "On-Chain и Macro полностью",
+        "feature6": "API доступ (1000 запросов/день)",
+        "feature7": "Расширенные метрики портфеля",
+        "feature8": "Ежедневный дайджест алертов"
+      }
+    }
+  }
+}

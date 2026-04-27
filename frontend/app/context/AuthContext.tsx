@@ -32,6 +32,14 @@ interface AuthContextType {
   isLoading: boolean
   isAuthenticated: boolean
   isPro: boolean
+  isPaid: boolean
+  normalizedTier: string
+  tierLevel: number
+  isStarter: boolean
+  isTrader: boolean
+  isInvestor: boolean
+  isAdmin: boolean
+  canAccess: (feature: string) => boolean
   login: (email: string, password: string) => Promise<void>
   register: (email: string, password: string, username?: string, referral_code?: string) => Promise<void>
   logout: () => void
@@ -51,6 +59,7 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
 import { API_BASE_URL } from "@/app/lib/api"
+import { normalizeTier, tierLevel as _tierLevel, canAccess as _canAccess } from "@/app/lib/tiers"
 
 const authUrl = (path: string) => `${API_BASE_URL}/auth${path}?_cb=${Date.now()}`
 
@@ -58,7 +67,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [isLoading, setIsLoading] = useState(true)
 
-  const isPro = ["pro", "trader", "investor"].includes(user?.subscription_tier || "")
+  const normalizedTier = normalizeTier(user?.subscription_tier)
+  const tierLevel = _tierLevel(normalizedTier)
+  const isStarter = normalizedTier === "starter"
+  const isTrader = normalizedTier === "trader"
+  const isInvestor = normalizedTier === "investor"
+  const isAdmin = normalizedTier === "investor" && user?.subscription_tier === "admin"
+  const isPaid = isTrader || isInvestor || isAdmin || ["pro", "trader", "investor"].includes(user?.subscription_tier || "")
+  const isPro = isPaid // backward compat
+  const canAccess = (feature: string) => _canAccess(normalizedTier, feature)
 
   useEffect(() => {
     const initAuth = async () => {
@@ -303,7 +320,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   return (
     <AuthContext.Provider
       value={{
-        user, isLoading, isAuthenticated: !!user, isPro,
+        user, isLoading, isAuthenticated: !!user, isPro, isPaid, normalizedTier, tierLevel,
+        isStarter, isTrader, isInvestor, isAdmin, canAccess,
         login, register, logout, loginWithOAuth, loginWithTelegram, refreshToken,
         updateProfile, updatePreferences, changePassword, refreshUser, sendVerificationEmail, verifyEmail,
         forgotPassword, resetPassword

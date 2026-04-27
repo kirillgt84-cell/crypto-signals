@@ -6,6 +6,10 @@ from fastapi import APIRouter, HTTPException, Depends, Request, Query
 from pydantic import BaseModel
 from database import get_db
 from routers.auth import get_current_user, get_current_user_optional
+from core.tiers import require_tier
+
+_require_trader = require_tier("trader")
+_require_investor = require_tier("investor")
 from services.portfolio_crypto import encrypt, decrypt
 from services.portfolio_sync import sync_user_portfolio, get_portfolio_summary
 from services.portfolio_metrics import get_portfolio_metrics
@@ -76,7 +80,7 @@ async def _get_user_source(user_id: int, provider: str = "binance") -> Optional[
 # ============= CONNECT / DISCONNECT =============
 
 @router.post("/connect/binance")
-async def connect_binance(req: ConnectBinanceRequest, current_user: dict = Depends(get_current_user)):
+async def connect_binance(req: ConnectBinanceRequest, current_user: dict = Depends(_require_investor)):
     """Save encrypted Binance API credentials and test connection (Futures or Spot)."""
     import os
     if not os.getenv("ENCRYPTION_KEY"):
@@ -117,7 +121,7 @@ async def connect_binance(req: ConnectBinanceRequest, current_user: dict = Depen
 
 
 @router.delete("/disconnect/binance")
-async def disconnect_binance(current_user: dict = Depends(get_current_user), market_type: Optional[str] = "futures", testnet: Optional[bool] = False):
+async def disconnect_binance(current_user: dict = Depends(_require_investor), market_type: Optional[str] = "futures", testnet: Optional[bool] = False):
     db = get_db()
     await db.execute(
         "UPDATE account_sources SET is_active = FALSE WHERE user_id = $1 AND provider = 'binance' AND market_type = $2 AND COALESCE(testnet, FALSE) = $3",
@@ -129,7 +133,7 @@ async def disconnect_binance(current_user: dict = Depends(get_current_user), mar
 # ============= SYNC =============
 
 @router.post("/sync")
-async def sync_portfolio(current_user: dict = Depends(get_current_user)):
+async def sync_portfolio(current_user: dict = Depends(_require_investor)):
     """Manually trigger portfolio sync."""
     result = await sync_user_portfolio(current_user["id"])
     return result
@@ -286,7 +290,7 @@ async def select_model(req: SelectModelRequest, current_user: dict = Depends(get
 
 
 @router.get("/models/deviation")
-async def get_deviation(current_user: dict = Depends(get_current_user)):
+async def get_deviation(current_user: dict = Depends(_require_investor)):
     """Compare current allocation vs selected model targets (asset-level)."""
     db = get_db()
     settings = await db.query(
@@ -362,7 +366,7 @@ async def get_deviation(current_user: dict = Depends(get_current_user)):
 
 
 @router.post("/models/custom")
-async def create_custom_model(req: CreateCustomModelRequest, current_user: dict = Depends(get_current_user)):
+async def create_custom_model(req: CreateCustomModelRequest, current_user: dict = Depends(_require_investor)):
     """Create a user-defined portfolio model with asset-level allocations."""
     db = get_db()
     # Validate weights sum to ~100
@@ -387,7 +391,7 @@ async def create_custom_model(req: CreateCustomModelRequest, current_user: dict 
 
 
 @router.delete("/models/custom/{model_id}")
-async def delete_custom_model(model_id: int, current_user: dict = Depends(get_current_user)):
+async def delete_custom_model(model_id: int, current_user: dict = Depends(_require_investor)):
     """Delete a custom model owned by the user."""
     db = get_db()
     row = await db.query(
@@ -473,7 +477,7 @@ async def admin_sources(current_user: dict = Depends(get_current_user)):
 # ============= METRICS =============
 
 @router.get("/metrics")
-async def portfolio_metrics(days: int = 90, current_user: dict = Depends(get_current_user)):
+async def portfolio_metrics(days: int = 90, current_user: dict = Depends(_require_trader)):
     """Get risk-adjusted portfolio metrics: drawdown, Sharpe, Sortino, Calmar."""
     metrics = await get_portfolio_metrics(current_user["id"], days)
     return metrics
@@ -489,7 +493,7 @@ OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions"
 
 
 @router.get("/ai-insight")
-async def ai_insight(lang: str = Query("en", description="User language: en, ru, es, zh"), current_user: dict = Depends(get_current_user)):
+async def ai_insight(lang: str = Query("en", description="User language: en, ru, es, zh"), current_user: dict = Depends(_require_trader)):
     """Get AI interpretation of portfolio allocation. Neutral wording, no investment advice."""
     summary = await get_portfolio_summary(current_user["id"])
     assets = summary.get("assets", []) if summary else []

@@ -7,7 +7,7 @@ import { TrendingUp, TrendingDown, Minus, Activity, BarChart4, BarChartHorizonta
 import TrialStatusBanner from "@/app/components/TrialStatusBanner"
 import { UserMenu } from "@/app/components/UserMenu"
 import { AuthModal } from "@/app/components/AuthModal"
-import { ProBlurOverlay } from "@/app/components/ProBlurOverlay"
+import { TierBlurOverlay } from "@/app/components/ProBlurOverlay"
 import { useAuth } from "@/app/context/AuthContext"
 import { useLanguage } from "@/app/context/LanguageContext"
 import { getRSIInterpretation, getMACDInterpretation, getFundingInterpretation, getFuturesSpotRatioInterpretation, getCVDInterpretation } from "@/app/lib/market-utils"
@@ -889,17 +889,17 @@ export default function Dashboard() {
               </CardTitle>
             </CardHeader>
             <CardContent className="pt-0 flex-1">
-              <ProBlurOverlay title={t("dashboard.entryLevels")} description="Get exact entry, stop, and take-profit levels with scenario planning.">
+              <TierBlurOverlay title={t("dashboard.entryLevels")} description="Get exact entry, stop, and take-profit levels with scenario planning." requiredFeature="entry_levels">
                 <EntryLevels data={marketData} sentiment={marketData.sentiment} loading={loading} />
-              </ProBlurOverlay>
+              </TierBlurOverlay>
               <div className="mt-4 pt-4 border-t border-border">
                 <MarketGauge symbol={symbol + "USDT"} timeframe={getApiTimeframe(timeframe)} />
               </div>
             </CardContent>
           </Card>
-          <ProBlurOverlay title={t("dashboard.fundamentals")} description="MVRV, NUPL, and funding context with trading interpretation.">
+          <TierBlurOverlay title={t("dashboard.fundamentals")} description="MVRV, NUPL, and funding context with trading interpretation." requiredFeature="fundamentals_card">
             <FundamentalsCard symbol={symbol} loading={loading} />
-          </ProBlurOverlay>
+          </TierBlurOverlay>
         </div>
 
         {/* Row 6: Secondary Indicators */}

@@ -200,6 +200,9 @@ async def get_current_user_optional(request: Request = None, credentials: HTTPAu
         return None
 
 
+from core.tiers import normalize_tier
+
+
 async def get_effective_tier(user_id: int) -> dict:
     """Determine effective tier considering active promo trial, subscription, or free fallback."""
     db = get_db()
@@ -218,7 +221,7 @@ async def get_effective_tier(user_id: int) -> dict:
         if promo_rows:
             row = promo_rows[0]
             return {
-                "tier": row.get("trial_tier", "pro"),
+                "tier": normalize_tier(row.get("trial_tier", "pro")),
                 "source": "promo_trial",
                 "expires_at": row.get("expires_at"),
                 "is_trial": True,
@@ -231,21 +234,22 @@ async def get_effective_tier(user_id: int) -> dict:
         )
         if user_rows:
             tier = user_rows[0].get("subscription_tier", "free")
-            if tier in ("pro", "admin"):
+            normalized = normalize_tier(tier)
+            if normalized != "starter":
                 return {
-                    "tier": tier,
+                    "tier": normalized,
                     "source": "subscription",
                     "is_trial": False,
                 }
 
         return {
-            "tier": "free",
+            "tier": "starter",
             "source": "free",
             "is_trial": False,
         }
     except Exception as e:
         logging.getLogger(__name__).error(f"get_effective_tier failed: {e}")
-        return {"tier": "free", "source": "error", "is_trial": False}
+        return {"tier": "starter", "source": "error", "is_trial": False}
 
 
 # ============= EMAIL/PASSWORD AUTH =============
