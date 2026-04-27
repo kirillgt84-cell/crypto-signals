@@ -399,16 +399,16 @@ function SecondaryIndicators({ data, timeframe, loading }: { data: MarketData; t
         <CardHeader className="pb-2">
           <CardDescription>{t("dashboard.fundingRate")} (8h)</CardDescription>
           {loading ? (
-            <div className="h-7 flex items-center">
-              <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+            <div className="h-8 flex items-center">
+              <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
             </div>
           ) : (
-            <CardTitle className="text-xl">{(data.funding * 100).toFixed(3)}%</CardTitle>
+            <CardTitle className="text-2xl">{(data.funding * 100).toFixed(3)}%</CardTitle>
           )}
         </CardHeader>
         <CardContent>
-          <p className={cn("text-xs", fundingInterp.color)}>{fundingInterp.text}</p>
-          <p className="text-xs text-muted-foreground mt-1">{fundingInterp.detail}</p>
+          <p className={cn("text-sm", fundingInterp.color)}>{fundingInterp.text}</p>
+          <p className="text-sm text-muted-foreground mt-1">{fundingInterp.detail}</p>
         </CardContent>
       </Card>
       
@@ -417,16 +417,16 @@ function SecondaryIndicators({ data, timeframe, loading }: { data: MarketData; t
         <CardHeader className="pb-2">
           <CardDescription>{t("dashboard.rsi")} (14)</CardDescription>
           {loading ? (
-            <div className="h-7 flex items-center">
-              <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+            <div className="h-8 flex items-center">
+              <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
             </div>
           ) : (
-            <CardTitle className="text-xl">{data.rsi.toFixed(1)}</CardTitle>
+            <CardTitle className="text-2xl">{data.rsi.toFixed(1)}</CardTitle>
           )}
         </CardHeader>
         <CardContent>
-          <p className={cn("text-xs", rsiInterp.color)}>{rsiInterp.text}</p>
-          <p className="text-xs text-muted-foreground mt-1">{rsiInterp.detail}</p>
+          <p className={cn("text-sm", rsiInterp.color)}>{rsiInterp.text}</p>
+          <p className="text-sm text-muted-foreground mt-1">{rsiInterp.detail}</p>
         </CardContent>
       </Card>
       
@@ -435,16 +435,16 @@ function SecondaryIndicators({ data, timeframe, loading }: { data: MarketData; t
         <CardHeader className="pb-2">
           <CardDescription>{t("dashboard.macd")}</CardDescription>
           {loading ? (
-            <div className="h-7 flex items-center">
-              <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+            <div className="h-8 flex items-center">
+              <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
             </div>
           ) : (
-            <CardTitle className="text-xl">{data.macd > 0 ? "+" : ""}{data.macd.toFixed(0)}</CardTitle>
+            <CardTitle className="text-2xl">{data.macd > 0 ? "+" : ""}{data.macd.toFixed(0)}</CardTitle>
           )}
         </CardHeader>
         <CardContent>
-          <p className={cn("text-xs", macdInterp.color)}>{macdInterp.text}</p>
-          <p className="text-xs text-muted-foreground mt-1">{macdInterp.detail}</p>
+          <p className={cn("text-sm", macdInterp.color)}>{macdInterp.text}</p>
+          <p className="text-sm text-muted-foreground mt-1">{macdInterp.detail}</p>
         </CardContent>
       </Card>
       
@@ -453,20 +453,20 @@ function SecondaryIndicators({ data, timeframe, loading }: { data: MarketData; t
         <CardHeader className="pb-2">
           <CardDescription>{t("dashboard.futuresSpotRatio") || "Futures/Spot"}</CardDescription>
           {loading ? (
-            <div className="h-7 flex items-center">
-              <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+            <div className="h-8 flex items-center">
+              <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
             </div>
           ) : (
-            <CardTitle className="text-xl flex items-center gap-1">
+            <CardTitle className="text-2xl flex items-center gap-1">
               {data.futures_spot_ratio.toFixed(1)}x
             </CardTitle>
           )}
         </CardHeader>
         <CardContent>
-          <p className={cn("text-xs", flowInterp.trend === "up" ? "text-emerald-500" : "text-red-500")}>
+          <p className={cn("text-sm", flowInterp.trend === "up" ? "text-emerald-500" : "text-red-500")}>
             {flowInterp.text}
           </p>
-          <p className="text-xs text-muted-foreground mt-1">{flowInterp.detail}</p>
+          <p className="text-sm text-muted-foreground mt-1">{flowInterp.detail}</p>
         </CardContent>
       </Card>
     </div>
