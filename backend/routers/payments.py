@@ -26,6 +26,7 @@ class CreateSubscriptionRequest(BaseModel):
 
 class CreateTrialRequest(BaseModel):
     billing_cycle: str  # "monthly" | "yearly"
+    tier: str = "trader"  # "trader" | "investor"
 
 
 # ============= HELPERS =============
@@ -41,25 +42,36 @@ async def _get_plan(plan_id: int) -> Optional[dict]:
     return dict(rows[0]) if rows else None
 
 
-async def _get_or_create_trial_plan(billing_cycle: str) -> dict:
-    """Find or create a PayPal billing plan with a 7-day trial."""
+async def _get_or_create_trial_plan(tier: str, billing_cycle: str) -> dict:
+    """Find or create a PayPal billing plan with a 7-day trial for a given tier."""
+    from core.tiers import normalize_tier
+    canonical = normalize_tier(tier)
+    if canonical not in ("trader", "investor"):
+        raise HTTPException(status_code=400, detail="tier must be 'trader' or 'investor'")
+
     db = get_db()
-    plan_name = f"Pro {billing_cycle.title()} Trial"
+    tier_label = canonical.capitalize()
+    plan_name = f"{tier_label} {billing_cycle.title()} Trial"
     rows = await db.query("SELECT * FROM plans WHERE name = $1 AND is_active = TRUE", [plan_name])
     if rows:
         return dict(rows[0])
 
+    # Pricing
+    if canonical == "trader":
+        amount = 19.0 if billing_cycle == "monthly" else 182.0
+    else:  # investor
+        amount = 35.0 if billing_cycle == "monthly" else 336.0
+
     # Create PayPal product + plan
     paypal = get_paypal_api()
     product_res = await paypal.create_product(
-        name="Mirkaso Pro",
-        description="Mirkaso Pro subscription with 7-day free trial",
+        name=f"Mirkaso {tier_label}",
+        description=f"Mirkaso {tier_label} subscription with 7-day free trial",
     )
     product_id = product_res.get("id")
     if not product_id:
         raise HTTPException(status_code=502, detail="PayPal product creation failed")
 
-    amount = 25.0 if billing_cycle == "monthly" else 228.0
     plan_res = await paypal.create_plan(
         product_id=product_id,
         name=plan_name,
@@ -76,7 +88,7 @@ async def _get_or_create_trial_plan(billing_cycle: str) -> dict:
     inserted = await db.query(
         """INSERT INTO plans (name, description, price, currency, type, paypal_plan_id, tier, is_active)
            VALUES ($1, $2, $3, $4, $5, $6, $7, TRUE) RETURNING id""",
-        [plan_name, f"Pro {billing_cycle} with 7-day trial", amount, "USD", "subscription", paypal_plan_id, "pro"],
+        [plan_name, f"{tier_label} {billing_cycle} with 7-day trial", amount, "USD", "subscription", paypal_plan_id, canonical],
     )
     plan_id = inserted[0]["id"]
     return {
@@ -86,7 +98,7 @@ async def _get_or_create_trial_plan(billing_cycle: str) -> dict:
         "currency": "USD",
         "type": "subscription",
         "paypal_plan_id": paypal_plan_id,
-        "tier": "pro",
+        "tier": canonical,
     }
 
 
@@ -459,17 +471,28 @@ async def create_trial(
     if req.billing_cycle not in ("monthly", "yearly"):
         raise HTTPException(status_code=400, detail="billing_cycle must be 'monthly' or 'yearly'")
 
-    # Prevent duplicate active trial for same user
+    from core.tiers import normalize_tier
+    canonical_tier = normalize_tier(req.tier)
+    if canonical_tier not in ("trader", "investor"):
+        raise HTTPException(status_code=400, detail="tier must be 'trader' or 'investor'")
+
+    # Prevent downgrade / duplicate active subscription
     db = get_db()
     existing = await db.query(
-        """SELECT 1 FROM subscriptions
-           WHERE user_id = $1 AND status IN ('created', 'active') LIMIT 1""",
+        """SELECT s.*, p.tier as plan_tier
+           FROM subscriptions s
+           JOIN plans p ON p.id = s.plan_id
+           WHERE s.user_id = $1 AND s.status IN ('created', 'active')
+           ORDER BY s.created_at DESC LIMIT 1""",
         [current_user["id"]],
     )
     if existing:
-        raise HTTPException(status_code=400, detail="You already have an active subscription")
+        current_plan_tier = existing[0].get("plan_tier", "starter")
+        # Allow upgrade (starter/trader → investor), block downgrade or same-tier duplicate
+        if current_plan_tier == canonical_tier:
+            raise HTTPException(status_code=400, detail="You already have an active subscription for this tier")
 
-    plan = await _get_or_create_trial_plan(req.billing_cycle)
+    plan = await _get_or_create_trial_plan(canonical_tier, req.billing_cycle)
     paypal_plan_id = plan["paypal_plan_id"]
 
     # Check referral eligibility
@@ -483,8 +506,8 @@ async def create_trial(
         discount_price = float(plan["price"] or 0) * 0.8
         paypal = get_paypal_api()
         product_res = await paypal.create_product(
-            name="Mirkaso Pro (Referral Discount)",
-            description=f"Pro subscription with 20% referral discount — ${discount_price:.2f}/{req.billing_cycle}"
+            name=f"Mirkaso {canonical_tier.capitalize()} (Referral Discount)",
+            description=f"{canonical_tier.capitalize()} subscription with 20% referral discount — ${discount_price:.2f}/{req.billing_cycle}"
         )
         if product_res.get("id"):
             plan_res = await paypal.create_plan(

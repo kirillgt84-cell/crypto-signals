@@ -49,11 +49,6 @@ export default function PricingClient() {
       window.dispatchEvent(new CustomEvent("open-auth-modal"));
       return;
     }
-    if (tier === "investor") {
-      // Investor plans not yet available in PayPal for Option A
-      setMessage("Investor plan coming soon. Contact support for early access.");
-      return;
-    }
     setProcessing(true);
     setMessage(null);
     try {
@@ -63,7 +58,7 @@ export default function PricingClient() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ billing_cycle: isYearly ? "yearly" : "monthly" }),
+        body: JSON.stringify({ billing_cycle: isYearly ? "yearly" : "monthly", tier }),
       });
       const data = await res.json();
       if (!res.ok) {
