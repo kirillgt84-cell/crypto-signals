@@ -231,44 +231,12 @@ async def get_oi_analysis(
                 data['oi_change_value'] = 0
             print(f"DEBUG router: using fetcher OI change={data.get('oi_change_24h', 0)}%")
         
-        # Расчет изменения 24h объема из heatmap_snapshots (реальные данные)
-        current_qv_24h = data.get('quote_volume_24h', 0)
-        if current_qv_24h > 0:
-            prev_qv_rows = await db.query(
-                """SELECT quote_volume_24h, snapshot_time FROM heatmap_snapshots
-                   WHERE symbol = $1 AND snapshot_time < NOW() - INTERVAL '20 hours'
-                   ORDER BY snapshot_time DESC LIMIT 1""",
-                [symbol_upper]
-            )
-            if prev_qv_rows and len(prev_qv_rows) > 0:
-                prev_qv = float(prev_qv_rows[0].get('quote_volume_24h', 0) or 0)
-                if prev_qv > 0:
-                    volume_change_24h = ((current_qv_24h - prev_qv) / prev_qv) * 100
-                    data['volume_change'] = round(volume_change_24h, 2)
-                    data['volume_change_source'] = '24h'
-                    print(f"DEBUG: 24h volume change for {symbol_upper}: curr={current_qv_24h}, prev={prev_qv}, change={volume_change_24h:.2f}%")
-                else:
-                    data['volume_change'] = data.get('volume_change', 0)
-                    data['volume_change_source'] = 'kline_fallback'
-            else:
-                data['volume_change'] = data.get('volume_change', 0)
-                data['volume_change_source'] = 'kline_fallback'
-        else:
-            data['volume_change'] = data.get('volume_change', 0)
-            data['volume_change_source'] = 'kline_fallback'
-        
+        # volume_change уже рассчитан fetcher-ом за выбранный таймфрейм (klines)
         # Спотовый объем
         spot_data = await fetcher.get_spot_volume(symbol_upper, timeframe)
         data['spot_volume'] = spot_data.get('spot_volume', 0)
-        
-        # Fallback: расчет изменения спотового объема из БД (kline-based)
-        if old_data and len(old_data) > 0:
-            old_spot_volume = old_data[0].get('spot_volume', 0) or 0
-            current_spot_volume = spot_data.get('spot_volume', 0)
-            spot_volume_change_pct = ((current_spot_volume - old_spot_volume) / old_spot_volume * 100) if old_spot_volume > 0 else 0
-            data['spot_volume_change'] = round(spot_volume_change_pct, 2)
-        else:
-            data['spot_volume_change'] = 0
+        # Используем kline-based изменение из fetcher-а (за выбранный таймфрейм)
+        data['spot_volume_change'] = spot_data.get('spot_volume_change', 0)
         
         # Добавляем расширенную интерпретацию
         advanced = interpret_oi_advanced(

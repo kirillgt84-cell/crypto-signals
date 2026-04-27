@@ -25,7 +25,10 @@ interface UserMenuProps {
 
 const tierBadge: Record<string, { labelKey: string; variant: any; icon: React.ReactNode }> = {
   free: { labelKey: "common.free", variant: "secondary", icon: <User className="size-3" /> },
+  starter: { labelKey: "common.free", variant: "secondary", icon: <User className="size-3" /> },
   pro: { labelKey: "common.pro", variant: "default", icon: <Crown className="size-3" /> },
+  trader: { labelKey: "common.pro", variant: "default", icon: <Crown className="size-3" /> },
+  investor: { labelKey: "common.pro", variant: "default", icon: <Crown className="size-3" /> },
   admin: { labelKey: "common.admin", variant: "destructive", icon: <ShieldCheck className="size-3" /> },
 }
 

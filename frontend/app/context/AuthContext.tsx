@@ -19,7 +19,7 @@ interface User {
   username: string
   avatar_url: string | null
   is_email_verified: boolean
-  subscription_tier: "free" | "pro" | "admin"
+  subscription_tier: "free" | "pro" | "admin" | "starter" | "trader" | "investor"
   preferences?: UserPreferences | null
   connected_oauth?: string[]
   trial_activated_at?: string | null
@@ -56,7 +56,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [isLoading, setIsLoading] = useState(true)
 
-  const isPro = user?.subscription_tier === "pro"
+  const isPro = ["pro", "trader", "investor"].includes(user?.subscription_tier || "")
 
   useEffect(() => {
     const initAuth = async () => {

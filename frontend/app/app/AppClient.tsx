@@ -263,7 +263,7 @@ function OIAnalysisCards({ data, loading, timeframe }: { data: MarketData; loadi
       <MetricCard
         title={t("dashboard.openInterest")}
         value={formatVolumeUSD((data?.oi || 0) * (data?.price || 0))}
-        subvalue={`${(data?.oi / 1e6)?.toFixed(2) || "0.00"}M contracts`}
+        subvalue={`${data?.oi >= 1e6 ? (data.oi / 1e6).toFixed(2) + "M" : data?.oi >= 1e3 ? (data.oi / 1e3).toFixed(2) + "K" : (data?.oi || 0).toFixed(2)} ${data?.symbol?.replace("USDT", "") || ""}`}
         trend={data?.oi_change > 0 ? "Rising" : data?.oi_change < 0 ? "Falling" : "Stable"}
         trendUp={data?.oi_change >= 0}
         icon={BarChart4}
@@ -272,7 +272,7 @@ function OIAnalysisCards({ data, loading, timeframe }: { data: MarketData; loadi
       <MetricCard
         title={t("dashboard.futuresVolume")}
         value={formatVolumeUSD((data?.volume || 0) * (data?.price || 0))}
-        subvalue={data?.volume_change !== undefined && data?.volume_change !== 0 ? `${data.volume_change >= 0 ? "+" : ""}${data.volume_change.toFixed(2)}% (24h)` : `24h volume`}
+        subvalue={data?.volume_change !== undefined && data?.volume_change !== 0 ? `${data.volume_change >= 0 ? "+" : ""}${data.volume_change.toFixed(2)}% (${formatTfLabel(timeframe)})` : `${formatTfLabel(timeframe)} volume`}
         trend={data?.volume_change > 0 ? "Rising" : data?.volume_change < 0 ? "Falling" : "Stable"}
         trendUp={data?.volume_change >= 0}
         icon={BarChartHorizontal}

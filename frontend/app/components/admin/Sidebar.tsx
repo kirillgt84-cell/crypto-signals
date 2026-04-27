@@ -76,7 +76,7 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
       {/* Sidebar */}
       <aside
         className={cn(
-          "fixed left-0 top-0 z-40 overflow-hidden h-screen border-r border-border bg-sidebar transition-all duration-300",
+          "fixed left-0 top-0 z-40 h-screen border-r border-border bg-sidebar transition-all duration-300",
           collapsed ? "w-16" : "w-64",
           mobileOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
         )}
@@ -114,7 +114,7 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
           </div>
 
           {/* Navigation */}
-          <nav className="flex-1 space-y-1 p-3">
+          <nav className="flex-1 space-y-1 p-3 overflow-y-auto">
             {navItems.map((item) => {
               const Icon = item.icon;
               const isActive = pathname === item.href;

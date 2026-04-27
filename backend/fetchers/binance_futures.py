@@ -136,7 +136,7 @@ class BinanceFuturesFetcher:
                 "volume_24h": volume,
                 "quote_volume_24h": round(quote_volume_24h, 2),
                 "real_volume_24h": round(real_volume_24h, 2),
-                "volume_change": round(volume_change_pct, 2) if 'volume_change_pct' in locals() and volume_change_pct != 0 else 0.01,
+                "volume_change": round(volume_change_pct, 2) if 'volume_change_pct' in locals() else 0,
                 "interpretation": self._interpret_oi(oi_change_pct, price_change_pct)
             }
         except Exception as e:
@@ -732,36 +732,38 @@ class BinanceFuturesFetcher:
 
     async def get_spot_volume(self, symbol: str = "BTCUSDT", timeframe: str = "1h") -> Dict:
         """
-        Получает 24-часовой спотовый объем для сравнения с фьючерсным
+        Получает спотовый объем за выбранный таймфрейм (klines)
         """
         session = await self._get_session()
         
         try:
-            # 24hr ticker для реального 24-часового объема
+            # Спотовые klines за выбранный таймфрейм
             async with session.get(
-                f"https://api.binance.com/api/v3/ticker/24hr",
-                params={"symbol": symbol},
+                f"https://api.binance.com/api/v3/klines",
+                params={"symbol": symbol, "interval": timeframe, "limit": 2},
                 headers={"Accept": "application/json"}
             ) as resp:
-                ticker = await resp.json()
+                klines = await resp.json()
             
-            spot_volume = float(ticker.get('volume', 0) or 0)
-            spot_quote_volume = float(ticker.get('quoteVolume', 0) or 0)
-            price_change_pct = float(ticker.get('priceChangePercent', 0) or 0)
+            spot_volume = 0
+            spot_volume_change = 0
+            if isinstance(klines, list) and len(klines) >= 2:
+                prev_volume = float(klines[0][5])
+                curr_volume = float(klines[1][5])
+                spot_volume = curr_volume
+                spot_volume_change = ((curr_volume - prev_volume) / prev_volume) * 100 if prev_volume > 0 else 0
             
             return {
                 "symbol": symbol,
                 "timeframe": timeframe,
                 "spot_volume": spot_volume,
-                "spot_quote_volume": spot_quote_volume,
-                "spot_volume_change": round(price_change_pct, 2)
+                "spot_volume_change": round(spot_volume_change, 2)
             }
         except Exception as e:
             return {
                 "symbol": symbol,
                 "timeframe": timeframe,
                 "spot_volume": 0,
-                "spot_quote_volume": 0,
                 "spot_volume_change": 0,
                 "error": str(e)
             }
