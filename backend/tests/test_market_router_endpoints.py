@@ -21,6 +21,7 @@ class TestOiAnalysisEndpoint:
         mock_fetcher.get_spot_volume = AsyncMock(return_value={
             "spot_volume": 25000000000,
             "spot_volume_change": 1.5,
+            "spot_quote_volume_24h": 2000000000,
         })
         mock_fetcher.get_exchange_netflow = AsyncMock(return_value={"exchange_flow": None, "source": "defillama"})
 
@@ -37,7 +38,7 @@ class TestOiAnalysisEndpoint:
         assert result["symbol"] == "BTCUSDT"
         assert result["oi_change_24h"] > 0
         assert result["analysis"]["signal"] in ["strong_bullish", "long_buildup", "neutral"]
-        assert "exchange_flow" in result
+        assert "futures_spot_ratio" in result
 
     @patch("routers.market.fetcher")
     @patch("routers.market.get_db")
@@ -54,6 +55,7 @@ class TestOiAnalysisEndpoint:
         })
         mock_fetcher.get_spot_volume = AsyncMock(return_value={
             "spot_volume": 25000000000,
+            "spot_quote_volume_24h": 2000000000,
         })
         mock_fetcher.get_exchange_netflow = AsyncMock(return_value={"exchange_flow": None, "source": "defillama"})
 
@@ -77,7 +79,7 @@ class TestOiAnalysisEndpoint:
             "volume_24h": 10000000000,
             "volume_change": 0.01,
         })
-        mock_fetcher.get_spot_volume = AsyncMock(return_value={"spot_volume": 0})
+        mock_fetcher.get_spot_volume = AsyncMock(return_value={"spot_volume": 0, "spot_quote_volume_24h": 0})
         mock_fetcher.get_exchange_netflow = AsyncMock(return_value={"exchange_flow": None, "source": "defillama"})
 
         with patch("routers.market.get_db") as mock_get_db:

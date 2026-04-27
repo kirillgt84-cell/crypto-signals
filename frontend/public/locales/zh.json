@@ -1091,5 +1091,18 @@
   "marketGauge.desc.await_bounce": "超卖但未获动能确认。等待MACD反转",
   "marketGauge.desc.consider_shorts": "RSI超买，动能转向。可能出现回调",
   "marketGauge.desc.neutral": "横盘。无明显优势",
-  "marketGauge.desc.await_correction": "超买但未获动能确认。等待MACD反转"
+  "marketGauge.desc.await_correction": "超买但未获动能确认。等待MACD反转",
+  "auth.forgotPasswordTitle": "重置密码",
+  "auth.forgotPasswordDescription": "输入您的电子邮件，我们将向您发送重置链接。",
+  "auth.sendResetLink": "发送重置链接",
+  "auth.resetLinkSent": "重置链接已发送！请检查您的电子邮件。",
+  "auth.resetPasswordDescription": "在下面输入您的新密码。",
+  "auth.newPassword": "新密码",
+  "auth.confirmPassword": "确认密码",
+  "auth.passwordsDoNotMatch": "密码不匹配",
+  "auth.passwordTooShort": "密码必须至少为8个字符",
+  "auth.resetSuccess": "密码更新成功！",
+  "auth.invalidToken": "无效或已过期的重置链接",
+  "auth.backToLogin": "返回登录",
+  "dashboard.futuresSpotRatio": "期货/现货比率"
 }

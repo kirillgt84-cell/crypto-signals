@@ -1091,5 +1091,18 @@
   "marketGauge.desc.await_bounce": "Oversold without momentum confirmation. Wait for MACD reversal",
   "marketGauge.desc.consider_shorts": "RSI overbought, momentum turning. Possible correction",
   "marketGauge.desc.neutral": "Sideways. No clear advantage",
-  "marketGauge.desc.await_correction": "Overbought without momentum confirmation. Wait for MACD reversal"
+  "marketGauge.desc.await_correction": "Overbought without momentum confirmation. Wait for MACD reversal",
+  "auth.forgotPasswordTitle": "Reset Password",
+  "auth.forgotPasswordDescription": "Enter your email and we'll send you a reset link.",
+  "auth.sendResetLink": "Send reset link",
+  "auth.resetLinkSent": "Reset link sent! Check your email.",
+  "auth.resetPasswordDescription": "Enter your new password below.",
+  "auth.newPassword": "New password",
+  "auth.confirmPassword": "Confirm password",
+  "auth.passwordsDoNotMatch": "Passwords do not match",
+  "auth.passwordTooShort": "Password must be at least 8 characters",
+  "auth.resetSuccess": "Password updated successfully!",
+  "auth.invalidToken": "Invalid or expired reset link",
+  "auth.backToLogin": "Back to login",
+  "dashboard.futuresSpotRatio": "Futures/Spot Ratio"
 }

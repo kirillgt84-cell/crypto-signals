@@ -340,7 +340,7 @@ async def login(req: LoginRequest, request: Request = None, response: Response =
     db = get_db()
     
     user = await db.query(
-        "SELECT id, email, username, password_hash, avatar_url, is_email_verified FROM users WHERE email = $1 AND is_active = TRUE",
+        "SELECT id, email, username, password_hash, avatar_url, is_email_verified, subscription_tier FROM users WHERE email = $1 AND is_active = TRUE",
         [req.email]
     )
     
@@ -591,7 +591,7 @@ async def oauth_callback(provider: str, req: OAuthCallbackRequest, request: Requ
     
     # Get user data
     user = await db.query(
-        "SELECT id, email, username, avatar_url, is_email_verified FROM users WHERE id = $1",
+        "SELECT id, email, username, avatar_url, is_email_verified, subscription_tier FROM users WHERE id = $1",
         [user_id]
     )
     
@@ -685,7 +685,7 @@ async def telegram_auth(req: TelegramAuthRequest, request: Request = None, respo
     refresh_token = create_refresh_token(user_id)
     
     user = await db.query(
-        "SELECT id, email, username, avatar_url FROM users WHERE id = $1",
+        "SELECT id, email, username, avatar_url, subscription_tier FROM users WHERE id = $1",
         [user_id]
     )
     
@@ -924,3 +924,110 @@ async def verify_email(req: VerifyEmailRequest, current_user: dict = Depends(get
         [row[0]["id"]]
     )
     return {"message": "Email verified successfully"}
+
+
+# ============= PASSWORD RESET =============
+
+class ForgotPasswordRequest(BaseModel):
+    email: EmailStr
+
+class ResetPasswordRequest(BaseModel):
+    token: str
+    new_password: str
+
+
+@router.post("/forgot-password")
+@limiter.limit("3/hour")
+async def forgot_password(req: ForgotPasswordRequest, request: Request = None):
+    """Send password reset link to email"""
+    db = get_db()
+    user = await db.query(
+        "SELECT id, email, password_hash FROM users WHERE email = $1 AND is_active = TRUE",
+        [req.email]
+    )
+
+    # Always return same message to prevent email enumeration
+    if not user:
+        return {"message": "If this email is registered, a reset link has been sent"}
+
+    user = user[0]
+    # Skip OAuth-only users (no password set)
+    if not user.get("password_hash"):
+        return {"message": "If this email is registered, a reset link has been sent"}
+
+    # Clean up old tokens for this user
+    await db.execute(
+        "DELETE FROM password_reset_tokens WHERE user_id = $1",
+        [user["id"]]
+    )
+
+    token = secrets.token_urlsafe(32)
+    token_hash = bcrypt.hashpw(token.encode(), bcrypt.gensalt()).decode()
+    expires_at = datetime.utcnow() + timedelta(hours=1)
+
+    await db.execute(
+        """INSERT INTO password_reset_tokens (user_id, token_hash, expires_at)
+           VALUES ($1, $2, $3)""",
+        [user["id"], token_hash, expires_at]
+    )
+
+    reset_url = f"{FRONTEND_URL}/reset-password?token={token}"
+    html = f"""
+    <html>
+      <body style="font-family:Arial,sans-serif;padding:24px;">
+        <h2>Password Reset</h2>
+        <p>Click the link below to reset your Mirkaso password:</p>
+        <p><a href="{reset_url}" style="font-size:18px;font-weight:bold;color:#6366f1;">Reset Password</a></p>
+        <p>This link expires in 1 hour.</p>
+        <p>If you didn't request this, you can safely ignore this email.</p>
+      </body>
+    </html>
+    """
+    result = await send_email(user["email"], "Mirkaso Password Reset", html)
+    if not result["success"]:
+        logger.error(f"Failed to send reset email: {result.get('error')}")
+        # Don't leak failure to client
+
+    return {"message": "If this email is registered, a reset link has been sent"}
+
+
+@router.post("/reset-password")
+@limiter.limit("5/minute")
+async def reset_password(req: ResetPasswordRequest, request: Request = None):
+    """Reset password using token from email"""
+    if len(req.new_password) < 8:
+        raise HTTPException(status_code=400, detail="Password must be at least 8 characters")
+
+    db = get_db()
+    tokens = await db.query(
+        """SELECT id, user_id, token_hash, expires_at, used
+           FROM password_reset_tokens
+           WHERE used = FALSE AND expires_at > NOW()""",
+        []
+    )
+
+    matched = None
+    for t in tokens:
+        if bcrypt.checkpw(req.token.encode(), t["token_hash"].encode()):
+            matched = t
+            break
+
+    if not matched:
+        raise HTTPException(status_code=400, detail="Invalid or expired reset token")
+
+    new_hash = bcrypt.hashpw(req.new_password.encode(), bcrypt.gensalt()).decode()
+    await db.execute(
+        "UPDATE users SET password_hash = $1, updated_at = NOW() WHERE id = $2",
+        [new_hash, matched["user_id"]]
+    )
+    await db.execute(
+        "UPDATE password_reset_tokens SET used = TRUE WHERE id = $1",
+        [matched["id"]]
+    )
+    # Revoke all refresh tokens for security
+    await db.execute(
+        "UPDATE refresh_tokens SET is_revoked = TRUE WHERE user_id = $1",
+        [matched["user_id"]]
+    )
+
+    return {"message": "Password updated successfully"}

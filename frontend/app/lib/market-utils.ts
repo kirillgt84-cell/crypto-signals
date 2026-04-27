@@ -139,42 +139,42 @@ export const getCVDInterpretation = (cvd: number, cvdChange: number): { text: st
   }
 }
 
-export const getExchangeFlowInterpretation = (flow: number, timeframe: string): { text: string; trend: "up" | "down"; detail: string } => {
+export const getFuturesSpotRatioInterpretation = (ratio: number, timeframe: string): { text: string; trend: "up" | "down"; detail: string } => {
   const tfLabel = timeframe === "15" ? "scalp" : timeframe === "60" ? "intraday" : timeframe === "240" ? "swing" : "position"
   
-  // Thresholds adapted for real on-chain netflow (% of exchange reserves, scaled)
-  // Typical range: ±0.5% → ±25, extreme: ±1%+ → ±50+
-  if (flow < -50) {
+  // Futures/Spot ratio: how much futures volume dominates spot
+  // > 5x = highly speculative, < 2x = spot-driven accumulation
+  if (ratio > 8) {
     return { 
-      text: "Strong outflow (Bullish)", 
-      trend: "up",
-      detail: `strong accumulation for ${tfLabel} trades`
-    }
-  }
-  if (flow < -10) {
-    return { 
-      text: "Outflow (Bullish)", 
-      trend: "up",
-      detail: `accumulating deficit - ${tfLabel} longs favorable`
-    }
-  }
-  if (flow > 50) {
-    return { 
-      text: "Strong inflow (Bearish)", 
+      text: "Speculative (High)", 
       trend: "down",
-      detail: `profit taking for ${tfLabel} - caution`
+      detail: `futures dominate ${tfLabel} — crowded leverage, caution`
     }
   }
-  if (flow > 10) {
+  if (ratio > 5) {
     return { 
-      text: "Inflow (Bearish)", 
+      text: "Speculative", 
       trend: "down",
-      detail: `selling pressure for ${tfLabel} trades`
+      detail: `elevated futures activity for ${tfLabel} trades`
+    }
+  }
+  if (ratio > 0 && ratio < 2) {
+    return { 
+      text: "Spot-driven (Bullish)", 
+      trend: "up",
+      detail: `spot accumulation dominant for ${tfLabel}`
+    }
+  }
+  if (ratio > 0 && ratio < 3) {
+    return { 
+      text: "Balanced", 
+      trend: "up",
+      detail: `healthy mix for ${tfLabel} — low leverage risk`
     }
   }
   return { 
     text: "Neutral", 
     trend: "up",
-    detail: "no significant flow activity"
+    detail: `typical futures premium for ${tfLabel} trades`
   }
 }

@@ -733,7 +733,7 @@ class BinanceFuturesFetcher:
 
     async def get_spot_volume(self, symbol: str = "BTCUSDT", timeframe: str = "1h") -> Dict:
         """
-        Получает спотовый объем за выбранный таймфрейм (klines)
+        Получает спотовый объем за выбранный таймфрейм (klines) и 24ч quote volume (ticker)
         """
         session = await self._get_session()
         
@@ -754,11 +754,25 @@ class BinanceFuturesFetcher:
                 spot_volume = curr_volume
                 spot_volume_change = ((curr_volume - prev_volume) / prev_volume) * 100 if prev_volume > 0 else 0
             
+            # 24h spot quote volume for futures/spot ratio
+            spot_quote_volume_24h = 0
+            try:
+                async with session.get(
+                    f"https://api.binance.com/api/v3/ticker/24hr",
+                    params={"symbol": symbol},
+                    headers={"Accept": "application/json"}
+                ) as resp:
+                    ticker = await resp.json()
+                spot_quote_volume_24h = float(ticker.get('quoteVolume', 0) or 0)
+            except Exception as e:
+                print(f"DEBUG: spot ticker/24hr failed for {symbol}: {e}")
+            
             return {
                 "symbol": symbol,
                 "timeframe": timeframe,
                 "spot_volume": spot_volume,
-                "spot_volume_change": round(spot_volume_change, 2)
+                "spot_volume_change": round(spot_volume_change, 2),
+                "spot_quote_volume_24h": spot_quote_volume_24h
             }
         except Exception as e:
             return {
@@ -766,6 +780,7 @@ class BinanceFuturesFetcher:
                 "timeframe": timeframe,
                 "spot_volume": 0,
                 "spot_volume_change": 0,
+                "spot_quote_volume_24h": 0,
                 "error": str(e)
             }
     

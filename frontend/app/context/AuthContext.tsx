@@ -44,6 +44,8 @@ interface AuthContextType {
   refreshUser: () => Promise<void>
   sendVerificationEmail: () => Promise<void>
   verifyEmail: (code: string) => Promise<void>
+  forgotPassword: (email: string) => Promise<void>
+  resetPassword: (token: string, newPassword: string) => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -257,6 +259,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await refreshUser()
   }
 
+  const forgotPassword = async (email: string) => {
+    const res = await fetch(authUrl('/forgot-password'), {
+      method: "POST", cache: 'no-store',
+      credentials: 'include',
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email })
+    })
+    if (!res.ok) {
+      const error = await res.json()
+      throw new Error(error.detail || "Failed to send reset link")
+    }
+  }
+
+  const resetPassword = async (token: string, newPassword: string) => {
+    const res = await fetch(authUrl('/reset-password'), {
+      method: "POST", cache: 'no-store',
+      credentials: 'include',
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ token, new_password: newPassword })
+    })
+    if (!res.ok) {
+      const error = await res.json()
+      throw new Error(error.detail || "Failed to reset password")
+    }
+  }
+
   useEffect(() => {
     const handleMessage = (event: MessageEvent) => {
       if (event.origin !== window.location.origin) return
@@ -277,7 +305,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       value={{
         user, isLoading, isAuthenticated: !!user, isPro,
         login, register, logout, loginWithOAuth, loginWithTelegram, refreshToken,
-        updateProfile, updatePreferences, changePassword, refreshUser, sendVerificationEmail, verifyEmail
+        updateProfile, updatePreferences, changePassword, refreshUser, sendVerificationEmail, verifyEmail,
+        forgotPassword, resetPassword
       }}
     >
       {children}

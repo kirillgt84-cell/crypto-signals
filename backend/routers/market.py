@@ -245,26 +245,17 @@ async def get_oi_analysis(
             data.get('volume_change', 15)
         )
         
-        # Расчет Exchange Flow: сначала пробуем реальный on-chain netflow из DeFiLlama
-        netflow_data = await fetcher.get_exchange_netflow("Binance")
-        if netflow_data.get("exchange_flow") is not None:
-            exchange_flow = netflow_data["exchange_flow"]
-            data["exchange_flow_source"] = "defillama"
-            data["exchange_flow_raw_24h"] = netflow_data.get("inflows_24h")
-            data["exchange_flow_tvl"] = netflow_data.get("clean_assets_tvl")
+        # Расчет Futures/Spot Volume Ratio — спекулятивность актива
+        futures_quote_volume = data.get('quote_volume_24h', 0)
+        spot_quote_volume = spot_data.get('spot_quote_volume_24h', 0)
+        if futures_quote_volume > 0 and spot_quote_volume > 0:
+            futures_spot_ratio = futures_quote_volume / spot_quote_volume
         else:
-            # Fallback: synthetic metric как разница фьючерс/спот объема (24ч)
-            # Положительный = больше активности на фьючерсах (спекуляция)
-            # Отрицательный = больше на споте (аккумуляция)
-            futures_volume = data.get('real_volume_24h', 0) or data.get('volume_24h', 0)
-            spot_volume = data.get('spot_volume', 0)
-            if futures_volume > 0 and spot_volume > 0:
-                exchange_flow = ((futures_volume - spot_volume) / (futures_volume + spot_volume)) * 1000
-            else:
-                exchange_flow = 0
-            data["exchange_flow_source"] = "synthetic"
+            futures_spot_ratio = 0
         
-        data["exchange_flow"] = round(exchange_flow, 2)
+        data["futures_spot_ratio"] = round(futures_spot_ratio, 2)
+        data["futures_quote_volume_24h"] = round(futures_quote_volume, 2)
+        data["spot_quote_volume_24h"] = round(spot_quote_volume, 2)
         data["analysis"] = advanced
         data["timeframe"] = timeframe
         return data

@@ -10,7 +10,7 @@ import { AuthModal } from "@/app/components/AuthModal"
 import { ProBlurOverlay } from "@/app/components/ProBlurOverlay"
 import { useAuth } from "@/app/context/AuthContext"
 import { useLanguage } from "@/app/context/LanguageContext"
-import { getRSIInterpretation, getMACDInterpretation, getFundingInterpretation, getExchangeFlowInterpretation, getCVDInterpretation } from "@/app/lib/market-utils"
+import { getRSIInterpretation, getMACDInterpretation, getFundingInterpretation, getFuturesSpotRatioInterpretation, getCVDInterpretation } from "@/app/lib/market-utils"
 import { Logo, LogoIcon } from "@/app/components/Logo"
 import { ThemeToggle } from "@/app/components/ThemeToggle"
 
@@ -81,7 +81,7 @@ interface MarketData {
   rsi: number
   macd: number
   macd_signal: number
-  exchange_flow: number
+  futures_spot_ratio: number
   sentiment: {
     long_short_ratio: number
     long_accounts_pct: number
@@ -384,12 +384,12 @@ function SecondaryIndicators({ data, timeframe, loading }: { data: MarketData; t
   const macd = data?.macd || 0
   const macdSignal = data?.macd_signal || 0
   const funding = data?.funding || 0
-  const exchangeFlow = data?.exchange_flow || 0
+  const futuresSpotRatio = data?.futures_spot_ratio || 0
   
   const rsiInterp = getRSIInterpretation(rsi, timeframe)
   const macdInterp = getMACDInterpretation(macd, macdSignal, timeframe)
   const fundingInterp = getFundingInterpretation(funding, timeframe)
-  const flowInterp = getExchangeFlowInterpretation(exchangeFlow, timeframe)
+  const flowInterp = getFuturesSpotRatioInterpretation(futuresSpotRatio, timeframe)
   const cvdInterp = getCVDInterpretation(data.cvd, data.cvd_change)
   
   return (
@@ -448,17 +448,17 @@ function SecondaryIndicators({ data, timeframe, loading }: { data: MarketData; t
         </CardContent>
       </Card>
       
-      {/* Exchange Flows */}
+      {/* Futures/Spot Ratio */}
       <Card className="bg-gradient-to-t from-pink-500/5 to-card">
         <CardHeader className="pb-2">
-          <CardDescription>{t("dashboard.exchangeFlows")}</CardDescription>
+          <CardDescription>{t("dashboard.futuresSpotRatio") || "Futures/Spot"}</CardDescription>
           {loading ? (
             <div className="h-7 flex items-center">
               <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
             </div>
           ) : (
             <CardTitle className="text-xl flex items-center gap-1">
-              {data.exchange_flow > 0 ? "+" : ""}{data.exchange_flow.toFixed(1)}
+              {data.futures_spot_ratio.toFixed(1)}x
             </CardTitle>
           )}
         </CardHeader>
@@ -518,7 +518,7 @@ export default function Dashboard() {
     rsi: 50,
     macd: 0,
     macd_signal: 0,
-    exchange_flow: 0,
+    futures_spot_ratio: 0,
     sentiment: {
       long_short_ratio: 1.0,
       long_accounts_pct: 50.0,
@@ -684,7 +684,7 @@ export default function Dashboard() {
           rsi: Number(levelsData?.ema_levels?.rsi) || Number(oiData.rsi) || 50,
           macd: Number(levelsData?.ema_levels?.macd) || Number(oiData.macd) || 0,
           macd_signal: Number(levelsData?.ema_levels?.macd_signal) || Number(oiData.macd_signal) || 0,
-          exchange_flow: Number(oiData.exchange_flow) || 0,
+          futures_spot_ratio: Number(oiData.futures_spot_ratio) || 0,
           sentiment: {
             long_short_ratio: Number(sentimentData.long_short_ratio) || 1.0,
             long_accounts_pct: Number(sentimentData.long_accounts_pct) || 50.0,
@@ -757,7 +757,7 @@ export default function Dashboard() {
             rsi: 58,
             macd: 125,
             macd_signal: 98,
-            exchange_flow: -35,
+            futures_spot_ratio: 8,
             sentiment: {
               long_short_ratio: 1.0,
               long_accounts_pct: 50.0,

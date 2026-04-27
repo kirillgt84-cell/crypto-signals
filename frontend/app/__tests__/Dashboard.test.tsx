@@ -37,7 +37,7 @@ const mockMarketData = {
   rsi: 58,
   macd: 125,
   macd_signal: 98,
-  exchange_flow: -35,
+  futures_spot_ratio: 8,
 }
 
 const mockLevels = {

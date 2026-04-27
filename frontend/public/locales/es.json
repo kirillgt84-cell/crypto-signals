@@ -1091,5 +1091,18 @@
   "marketGauge.desc.await_bounce": "Sobrevendido sin confirmación de momentum. Espere reversión del MACD",
   "marketGauge.desc.consider_shorts": "RSI sobrecomprado, momentum girando. Posible corrección",
   "marketGauge.desc.neutral": "Lateral. Sin ventaja clara",
-  "marketGauge.desc.await_correction": "Sobrecomprado sin confirmación de momentum. Espere reversión del MACD"
+  "marketGauge.desc.await_correction": "Sobrecomprado sin confirmación de momentum. Espere reversión del MACD",
+  "auth.forgotPasswordTitle": "Restablecer contraseña",
+  "auth.forgotPasswordDescription": "Ingresa tu correo y te enviaremos un enlace para restablecerla.",
+  "auth.sendResetLink": "Enviar enlace",
+  "auth.resetLinkSent": "¡Enlace enviado! Revisa tu correo.",
+  "auth.resetPasswordDescription": "Ingresa tu nueva contraseña.",
+  "auth.newPassword": "Nueva contraseña",
+  "auth.confirmPassword": "Confirmar contraseña",
+  "auth.passwordsDoNotMatch": "Las contraseñas no coinciden",
+  "auth.passwordTooShort": "La contraseña debe tener al menos 8 caracteres",
+  "auth.resetSuccess": "¡Contraseña actualizada con éxito!",
+  "auth.invalidToken": "Enlace inválido o expirado",
+  "auth.backToLogin": "Volver al inicio de sesión",
+  "dashboard.futuresSpotRatio": "Ratio Futuros/Spot"
 }

@@ -7,6 +7,7 @@ import { AuthProvider } from './context/AuthContext'
 import { NewsletterPopup } from './components/NewsletterPopup'
 import { Footer } from './components/Footer'
 import { GlobalNavbar } from './components/GlobalNavbar'
+import { GlobalAuthModal } from './components/GlobalAuthModal'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -39,6 +40,7 @@ export default function RootLayout({
             >
               <GlobalNavbar />
               {children}
+              <GlobalAuthModal />
               <NewsletterPopup />
               <Footer />
             </ThemeProvider>

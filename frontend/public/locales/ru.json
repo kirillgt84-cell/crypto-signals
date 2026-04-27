@@ -1091,5 +1091,18 @@
   "marketGauge.desc.await_bounce": "Перепроданность без подтверждения импульса. Дождаться разворота MACD",
   "marketGauge.desc.consider_shorts": "RSI перекуплен, импульс разворачивается. Возможна коррекция",
   "marketGauge.desc.neutral": "Боковик. Нет выраженного преимущества",
-  "marketGauge.desc.await_correction": "Перекупленность без подтверждения импульса. Дождаться разворота MACD"
+  "marketGauge.desc.await_correction": "Перекупленность без подтверждения импульса. Дождаться разворота MACD",
+  "auth.forgotPasswordTitle": "Сброс пароля",
+  "auth.forgotPasswordDescription": "Введите email, и мы отправим вам ссылку для сброса.",
+  "auth.sendResetLink": "Отправить ссылку",
+  "auth.resetLinkSent": "Ссылка отправлена! Проверьте почту.",
+  "auth.resetPasswordDescription": "Введите новый пароль ниже.",
+  "auth.newPassword": "Новый пароль",
+  "auth.confirmPassword": "Подтвердите пароль",
+  "auth.passwordsDoNotMatch": "Пароли не совпадают",
+  "auth.passwordTooShort": "Пароль должен быть не менее 8 символов",
+  "auth.resetSuccess": "Пароль успешно обновлён!",
+  "auth.invalidToken": "Неверная или просроченная ссылка",
+  "auth.backToLogin": "Вернуться к входу",
+  "dashboard.futuresSpotRatio": "Фьючерсы/Спот"
 }
