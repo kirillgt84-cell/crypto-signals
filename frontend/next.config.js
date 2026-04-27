@@ -38,6 +38,15 @@ const nextConfig = {
       },
     ];
   },
+  async redirects() {
+    return [
+      {
+        source: '/dashboard',
+        destination: '/app',
+        permanent: true,
+      },
+    ];
+  },
   async rewrites() {
     // Proxy API requests to backend during development
     return [

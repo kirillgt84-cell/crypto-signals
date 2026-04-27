@@ -6,7 +6,7 @@ export default function robots(): MetadataRoute.Robots {
       {
         userAgent: '*',
         allow: ['/'],
-        disallow: ['/dashboard', '/profile', '/admin', '/auth/callback', '/api'],
+        disallow: ['/profile', '/admin', '/auth/callback', '/api'],
       },
     ],
     sitemap: 'https://mirkaso.com/sitemap.xml',

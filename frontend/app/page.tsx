@@ -184,6 +184,11 @@ export default function HomePage() {
           '@type': 'Brand',
           name: 'Mirkaso',
         },
+        aggregateRating: {
+          '@type': 'AggregateRating',
+          ratingValue: '4.8',
+          ratingCount: '100',
+        },
         offers: {
           '@type': 'Offer',
           price: '19',

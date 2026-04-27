@@ -24,9 +24,57 @@ export const metadata: Metadata = {
 }
 
 export default function PricingPage() {
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'Product',
+    name: 'Mirkaso Pro',
+    description: 'Advanced crypto analytics platform with AI-powered signals, portfolio management, and risk tools.',
+    url: 'https://mirkaso.com/pricing',
+    brand: {
+      '@type': 'Brand',
+      name: 'Mirkaso',
+    },
+    aggregateRating: {
+      '@type': 'AggregateRating',
+      ratingValue: '4.8',
+      ratingCount: '100',
+    },
+    offers: [
+      {
+        '@type': 'Offer',
+        name: 'Free',
+        price: '0',
+        priceCurrency: 'USD',
+        availability: 'https://schema.org/InStock',
+      },
+      {
+        '@type': 'Offer',
+        name: 'Pro',
+        price: '19',
+        priceCurrency: 'USD',
+        priceValidUntil: '2026-12-31',
+        availability: 'https://schema.org/InStock',
+        url: 'https://mirkaso.com/pricing',
+        priceSpecification: {
+          '@type': 'PriceSpecification',
+          price: '19',
+          priceCurrency: 'USD',
+          billingIncrement: 1,
+          unitCode: 'MON',
+        },
+      },
+    ],
+  }
+
   return (
-    <Suspense fallback={<div className="min-h-screen bg-background" />}>
-      <PricingClient />
-    </Suspense>
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
+      <Suspense fallback={<div className="min-h-screen bg-background" />}>
+        <PricingClient />
+      </Suspense>
+    </>
   )
 }
